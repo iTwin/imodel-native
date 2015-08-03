@@ -54,7 +54,7 @@ struct JsDgnModel : RefCountedBaseWithCreate
 
     JsDgnModel(DgnModelR m) : m_model(&m) {;}
 
-    Utf8String GetModelId() {return Utf8PrintfString("%lld", m_model->GetModelId());}
+    Utf8String GetModelId() {return Utf8PrintfString("%lld", m_model->GetModelId().GetValueUnchecked());}
     JsDgnElement* CreateElement(Utf8StringCR elType, Utf8StringCR categoryName);
     void InsertElement(JsDgnElementP element);
     void DeleteAllElements();
