@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeomDetail::Init ()
+void GeomDetail::Init()
     {
     m_primitive     = nullptr;
     m_geomType      = HitGeomType::None;
@@ -28,20 +28,20 @@ void GeomDetail::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitiveCP GeomDetail::GetCurvePrimitive () const
+ICurvePrimitiveCP GeomDetail::GetCurvePrimitive() const
     {
-    return m_primitive.IsValid () ? m_primitive.get () : NULL;
+    return m_primitive.IsValid() ? m_primitive.get() : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitGeomType GeomDetail::GetCurvePrimitiveType () const
+HitGeomType GeomDetail::GetCurvePrimitiveType() const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return HitGeomType::None;
 
-    switch (m_primitive->GetCurvePrimitiveType ())
+    switch (m_primitive->GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
@@ -66,13 +66,13 @@ HitGeomType GeomDetail::GetCurvePrimitiveType () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitGeomType GeomDetail::GetEffectiveHitGeomType() const
     {
-    return (HitGeomType::Surface == m_geomType ? GetCurvePrimitiveType () : m_geomType);
+    return (HitGeomType::Surface == m_geomType ? GetCurvePrimitiveType() : m_geomType);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localToWorld, HitGeomType geomType)
+void GeomDetail::SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToWorld, HitGeomType geomType)
     {
     m_primitive = nullptr; 
     m_geomType  = HitGeomType::None;
@@ -80,19 +80,19 @@ void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localTo
     if (!curve)
         return;
 
-    switch (curve->GetCurvePrimitiveType ())
+    switch (curve->GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
             {
             DSegment3dCP  segment = curve->GetLineCP ();
 
-            if (segment->point[0].IsEqual (segment->point[1])) // Check for zero length lines and don't store redundant primitive...
+            if (segment->point[0].IsEqual(segment->point[1])) // Check for zero length lines and don't store redundant primitive...
                 {
                 m_geomType = HitGeomType::Point;
                 break;
                 }
 
-            m_primitive = curve->Clone ();
+            m_primitive = curve->Clone();
             m_geomType  = HitGeomType::Segment;
             break;
             }
@@ -101,20 +101,20 @@ void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localTo
             {
             bvector<DPoint3d> const* points = curve->GetLineStringCP ();
 
-            if ((1 == points->size ()) || (2 == points->size () && points->at (0).IsEqual (points->at (1))))
+            if ((1 == points->size()) || (2 == points->size() && points->at(0).IsEqual(points->at(1))))
                 {
                 m_geomType = HitGeomType::Point;
                 break;
                 }
 
-            m_primitive = curve->Clone ();
+            m_primitive = curve->Clone();
             m_geomType  = HitGeomType::Segment;
             break;
             }
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
             {
-            m_primitive = curve->Clone ();
+            m_primitive = curve->Clone();
             m_geomType  = HitGeomType::Arc;
             break;
             }
@@ -124,7 +124,7 @@ void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localTo
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
             {
-            m_primitive = curve->Clone ();
+            m_primitive = curve->Clone();
             m_geomType  = HitGeomType::Curve;
             break;
             }
@@ -143,19 +143,19 @@ void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localTo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomDetail::GetSegment (DSegment3dR segment) const
+bool GeomDetail::GetSegment(DSegment3dR segment) const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return false;
 
-    switch (m_primitive->GetCurvePrimitiveType ())
+    switch (m_primitive->GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
             segment = *m_primitive->GetLineCP ();
             return true;
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            return m_primitive->TryGetSegmentInLineString (segment, GetSegmentNumber ());
+            return m_primitive->TryGetSegmentInLineString(segment, GetSegmentNumber());
 
         default:
             return false;
@@ -165,12 +165,12 @@ bool GeomDetail::GetSegment (DSegment3dR segment) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomDetail::GetArc (DEllipse3dR ellipse) const
+bool GeomDetail::GetArc(DEllipse3dR ellipse) const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return false;
 
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != m_primitive->GetCurvePrimitiveType ())
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc != m_primitive->GetCurvePrimitiveType())
         return false;
 
     ellipse = *m_primitive->GetArcCP ();
@@ -183,36 +183,36 @@ bool GeomDetail::GetArc (DEllipse3dR ellipse) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeomDetail::FillGPA (GPArrayR gpa, bool singleSegment) const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return false;
 
     DSegment3d  segment;
 
-    if (singleSegment && GetSegment (segment))
+    if (singleSegment && GetSegment(segment))
         {
-        gpa.Add (segment.point, 2);
+        gpa.Add(segment.point, 2);
         }
     else
         {
-        switch (m_primitive->GetCurvePrimitiveType ())
+        switch (m_primitive->GetCurvePrimitiveType())
             {
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
-                gpa.Add (m_primitive->GetLineCP ()->point, 2);
+                gpa.Add(m_primitive->GetLineCP ()->point, 2);
                 break;
 
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                gpa.Add (&m_primitive->GetLineStringCP ()->front (), (int) m_primitive->GetLineStringCP ()->size ());
+                gpa.Add(&m_primitive->GetLineStringCP ()->front(), (int) m_primitive->GetLineStringCP ()->size());
                 break;
 
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-                gpa.Add (*m_primitive->GetArcCP ());
+                gpa.Add(*m_primitive->GetArcCP ());
                 break;
 
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-                gpa.Add (*m_primitive->GetProxyBsplineCurveCP ());
+                gpa.Add(*m_primitive->GetProxyBsplineCurveCP ());
                 break;
 
             default:
@@ -226,18 +226,18 @@ bool GeomDetail::FillGPA (GPArrayR gpa, bool singleSegment) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t GeomDetail::GetSegmentNumber () const
+size_t GeomDetail::GetSegmentNumber() const
     {
-    if (!m_primitive.IsValid () || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != m_primitive->GetCurvePrimitiveType ())
+    if (!m_primitive.IsValid() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != m_primitive->GetCurvePrimitiveType())
         return 0;
 
-    bvector<DPoint3d> const* points = m_primitive->GetLineStringCP ();
+    bvector<DPoint3d> const* points = m_primitive->GetLineStringCP();
 
-    if (points->size () < 3)
+    if (points->size() < 3)
         return 0;
         
-    double  fraction  = GetCloseParam ();
-    size_t  nSegments = (points->size ()-1);
+    double  fraction  = GetCloseParam();
+    size_t  nSegments = (points->size()-1);
     double  uSegRange = (1.0 / nSegments);
     size_t  segmentNo = (size_t) (fraction / uSegRange);
 
@@ -247,21 +247,21 @@ size_t GeomDetail::GetSegmentNumber () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-double GeomDetail::GetSegmentParam () const
+double GeomDetail::GetSegmentParam() const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return 0.0;
     
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != m_primitive->GetCurvePrimitiveType ())
-        return GetCloseParam ();
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != m_primitive->GetCurvePrimitiveType())
+        return GetCloseParam();
 
     bvector<DPoint3d> const* points = m_primitive->GetLineStringCP ();
 
-    if (points->size () < 3)
-        return GetCloseParam ();
+    if (points->size() < 3)
+        return GetCloseParam();
         
-    double  fraction  = GetCloseParam ();
-    size_t  nSegments = (points->size ()-1);
+    double  fraction  = GetCloseParam();
+    size_t  nSegments = (points->size()-1);
     double  uSegRange = (1.0 / nSegments);
     size_t  segmentNo = (size_t) (fraction / uSegRange);
     double  segmParam = ((fraction - (uSegRange * (segmentNo >= nSegments ? nSegments-1 : segmentNo))) * nSegments);
@@ -274,15 +274,15 @@ double GeomDetail::GetSegmentParam () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-double GeomDetail::GetCloseParam () const
+double GeomDetail::GetCloseParam() const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return 0.0;
 
     double      fraction;
     DPoint3d    curvePoint;
 
-    if (!m_primitive->ClosestPointBounded (m_closePoint, fraction, curvePoint))
+    if (!m_primitive->ClosestPointBounded(m_closePoint, fraction, curvePoint))
         return 0.0;
 
     return fraction;
@@ -291,21 +291,21 @@ double GeomDetail::GetCloseParam () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t GeomDetail::GetCloseVertex () const
+size_t GeomDetail::GetCloseVertex() const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return 0;
 
     size_t  nSegments = 1;
 
-    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == m_primitive->GetCurvePrimitiveType ())
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString == m_primitive->GetCurvePrimitiveType())
         {
         bvector<DPoint3d> const* points = m_primitive->GetLineStringCP ();
 
-        nSegments = ((points->size () < 3) ? 1 : (points->size ()-1));
+        nSegments = ((points->size() < 3) ? 1 : (points->size()-1));
         }
 
-    double  fraction  = GetCloseParam ();
+    double  fraction  = GetCloseParam();
     double  uSegRange = (1.0 / nSegments);
     size_t  closeVertex = (size_t) ((fraction + (uSegRange*.5)) / uSegRange);
 
@@ -315,21 +315,21 @@ size_t GeomDetail::GetCloseVertex () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t GeomDetail::GetPointCount () const
+size_t GeomDetail::GetPointCount() const
     {
     if (HitGeomType::Point == m_geomType)
         return 1;
 
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return 0;
 
-    switch (m_primitive->GetCurvePrimitiveType ())
+    switch (m_primitive->GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Line:
             return 2;
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            return m_primitive->GetLineStringCP ()->size ();
+            return m_primitive->GetLineStringCP ()->size();
 
         default:
             return 0;
@@ -339,17 +339,17 @@ size_t GeomDetail::GetPointCount () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomDetail::IsValidSurfaceHit () const
+bool GeomDetail::IsValidSurfaceHit() const
     {
-    return (HitGeomType::Surface == GetGeomType () && 0.0 != GetSurfaceNormal ().Magnitude ());
+    return (HitGeomType::Surface == GetGeomType() && 0.0 != GetSurfaceNormal().Magnitude());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomDetail::IsValidEdgeHit () const
+bool GeomDetail::IsValidEdgeHit() const
     {
-    switch (GetGeomType ())
+    switch (GetGeomType())
         {
         case HitGeomType::Segment:
         case HitGeomType::Curve:
@@ -366,24 +366,16 @@ bool GeomDetail::IsValidEdgeHit () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
     {
-    if (!m_primitive.IsValid ())
+    if (!m_primitive.IsValid())
         return NULL;
 
-    return m_primitive->GetId ();
+    return m_primitive->GetId();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail
-(
-DgnViewportR        viewport,
-GeometricElementCP  element,
-DPoint3dCR          testPoint,
-HitSource           source,
-ViewFlagsCR         viewFlags,
-GeomDetailCR        geomDetail
-) : m_viewport(viewport)
+HitDetail::HitDetail(DgnViewportR viewport, GeometricElementCP element, DPoint3dCR testPoint, HitSource source, ViewFlagsCR viewFlags, GeomDetailCR geomDetail) : m_viewport(viewport)
     {
     m_elementId         = (nullptr != element ? element->GetElementId() : DgnElementId());
     m_locateSource      = source;
@@ -396,7 +388,7 @@ GeomDetailCR        geomDetail
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail (HitDetail const& from) : m_viewport(from.m_viewport)
+HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport)
     {
     m_elementId         = from.m_elementId;
     m_locateSource      = from.m_locateSource;
@@ -410,7 +402,7 @@ HitDetail::HitDetail (HitDetail const& from) : m_viewport(from.m_viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::~HitDetail () {}
+HitDetail::~HitDetail() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
@@ -476,18 +468,18 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void HitDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
-    if (vp->IsActive())
-        T_HOST.GetGraphicsAdmin()._DrawInVp (this, vp, drawMode, drawPurpose, stopFlag);
+    if (vp.IsActive())
+        T_HOST.GetGraphicsAdmin()._DrawInVp(this, vp, drawMode, drawPurpose, stopFlag);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_GetInfoString (Utf8StringR pathDescr, Utf8CP delimiter) const
+void HitDetail::_GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const
     {
-    T_HOST.GetGraphicsAdmin()._GetInfoString (this, pathDescr, delimiter);
+    T_HOST.GetGraphicsAdmin()._GetInfoString(this, pathDescr, delimiter);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -524,7 +516,7 @@ GeometricElementCPtr HitDetail::GetElement() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::IsInSelectionSet () const
+bool HitDetail::IsInSelectionSet() const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -534,7 +526,7 @@ bool HitDetail::IsInSelectionSet () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Hilited HitDetail::IsHilited () const
+DgnElement::Hilited HitDetail::IsHilited() const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -544,7 +536,7 @@ DgnElement::Hilited HitDetail::IsHilited () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::_SetHilited (DgnElement::Hilited newState) const
+void HitDetail::_SetHilited(DgnElement::Hilited newState) const
     {
     GeometricElementCPtr element = GetElement();
 
@@ -563,7 +555,7 @@ void HitDetail::_SetHilited (DgnElement::Hilited newState) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitDetail::_IsSameHit (HitDetailCP otherHit) const
+bool HitDetail::_IsSameHit(HitDetailCP otherHit) const
     {
     if (nullptr == otherHit || m_elementId != otherHit->GetElementId())
         return false;
@@ -583,7 +575,7 @@ bool HitDetail::_IsSameHit (HitDetailCP otherHit) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapDetail::SnapDetail (HitDetail const* from) : HitDetail (*from)
+SnapDetail::SnapDetail(HitDetail const* from) : HitDetail(*from)
     {
     m_heat   = SNAP_HEAT_None;
     m_sprite = NULL;
@@ -605,15 +597,15 @@ SnapDetail::SnapDetail (HitDetail const* from) : HitDetail (*from)
         }
     else
         {
-        m_minScreenDist = m_geomDetail.GetScreenDist ();
-        m_geomDetail.SetScreenDist (0.0);
+        m_minScreenDist = m_geomDetail.GetScreenDist();
+        m_geomDetail.SetScreenDist(0.0);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapDetail::SnapDetail (SnapDetail const& from) : HitDetail (from)
+SnapDetail::SnapDetail(SnapDetail const& from) : HitDetail(from)
     {
     m_heat              = from.m_heat;
     m_screenPt          = from.m_screenPt;
@@ -627,7 +619,7 @@ SnapDetail::SnapDetail (SnapDetail const& from) : HitDetail (from)
     m_allowAssociations = from.m_allowAssociations;
 
     if (m_sprite)
-        m_sprite->AddRef ();
+        m_sprite->AddRef();
 
     if (NULL == from.m_customKeypointData || 0 == from.m_customKeypointSize)
         {
@@ -639,17 +631,17 @@ SnapDetail::SnapDetail (SnapDetail const& from) : HitDetail (from)
         m_customKeypointSize = from.m_customKeypointSize;
         m_customKeypointData = (Byte *) bentleyAllocator_malloc(m_customKeypointSize);
 
-        memcpy (m_customKeypointData, from.m_customKeypointData, m_customKeypointSize);
+        memcpy(m_customKeypointData, from.m_customKeypointData, m_customKeypointSize);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapDetail::~SnapDetail ()
+SnapDetail::~SnapDetail()
     {
     if (m_sprite)
-        m_sprite->Release ();
+        m_sprite->Release();
 
     if (NULL != m_customKeypointData)
         bentleyAllocator_free(m_customKeypointData);
@@ -658,9 +650,9 @@ SnapDetail::~SnapDetail ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapDetail* SnapDetail::_Clone () const 
+SnapDetail* SnapDetail::_Clone() const 
     {
-    return new SnapDetail (*this);
+    return new SnapDetail(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -668,7 +660,7 @@ SnapDetail* SnapDetail::_Clone () const
 * the snapped point, otherwise it returns the closest point on the element.
 * @bsimethod    HitDetail                                         KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3dCR SnapDetail::_GetHitPoint () const
+DPoint3dCR SnapDetail::_GetHitPoint() const
     {
     return (IsHot() ? m_snapPoint : m_geomDetail.GetClosestPoint());
     }
@@ -677,15 +669,15 @@ DPoint3dCR SnapDetail::_GetHitPoint () const
 * @return whether point has been adjusted
 * @bsimethod    SnapDetail                                        BrienBastings   08/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SnapDetail::PointWasAdjusted () const
+bool SnapDetail::PointWasAdjusted() const
     {
-    return (!m_snapPoint.IsEqual (m_adjustedPt, 1.0e-10));
+    return (!m_snapPoint.IsEqual(m_adjustedPt, 1.0e-10));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnapDetail::_SetHitPoint (DPoint3dCR hitPoint)
+void SnapDetail::_SetHitPoint(DPoint3dCR hitPoint)
     {
     m_snapPoint  = hitPoint;
     m_adjustedPt = hitPoint;
@@ -694,29 +686,29 @@ void SnapDetail::_SetHitPoint (DPoint3dCR hitPoint)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectDetail::IntersectDetail (HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR pt) : SnapDetail (firstHit)
+IntersectDetail::IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR pt) : SnapDetail(firstHit)
     {
     m_secondHit = (HitDetailP) secondHit;
 
     if (m_secondHit)
         m_secondHit->AddRef();
 
-    SetHitPoint (pt);
+    SetHitPoint(pt);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectDetail::IntersectDetail (IntersectDetail const& i2) : SnapDetail (i2)
+IntersectDetail::IntersectDetail(IntersectDetail const& i2) : SnapDetail(i2)
     {
     m_secondHit = i2.m_secondHit;
-    m_secondHit->AddRef ();
+    m_secondHit->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-IntersectDetail::~IntersectDetail ()
+IntersectDetail::~IntersectDetail()
     {
     if (m_secondHit)
         m_secondHit->Release();
@@ -727,9 +719,9 @@ IntersectDetail::~IntersectDetail ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ShaunSewall     12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-SnapDetail* IntersectDetail::_Clone () const 
+SnapDetail* IntersectDetail::_Clone() const 
     {
-    return new IntersectDetail (*this);
+    return new IntersectDetail(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -737,7 +729,7 @@ SnapDetail* IntersectDetail::_Clone () const
 * both paths of both hits are the same.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IntersectDetail::_IsSameHit (HitDetailCP otherPath) const
+bool IntersectDetail::_IsSameHit(HitDetailCP otherPath) const
     {
     // check base paths
     if (!T_Super::_IsSameHit(otherPath))
@@ -756,11 +748,11 @@ bool IntersectDetail::_IsSameHit (HitDetailCP otherPath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_SetHilited (DgnElement::Hilited newState) const
+void IntersectDetail::_SetHilited(DgnElement::Hilited newState) const
     {
-    T_Super::_SetHilited (newState);
+    T_Super::_SetHilited(newState);
 
-    m_secondHit->SetHilited (newState);
+    m_secondHit->SetHilited(newState);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -769,25 +761,25 @@ void IntersectDetail::_SetHilited (DgnElement::Hilited newState) const
 * is drawn using a dashed symbology.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IntersectDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
+void IntersectDetail::_DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     // start by drawing the first path normally
-    T_Super::_DrawInVp (vp, drawMode, drawPurpose, stopFlag);
+    T_Super::_DrawInVp(vp, drawMode, drawPurpose, stopFlag);
 
-    SnapDetail tmpSnapDetail (m_secondHit); // So display handlers know this is from a snap...
+    SnapDetail tmpSnapDetail(m_secondHit); // So display handlers know this is from a snap...
 
     // NOTE: When we're flashing, the hilite flags are not necessarily set on the elements. So to get the second path
     //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
-    DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited ();
+    DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited();
 
     if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited (DgnElement::Hilited::Normal);
+        tmpSnapDetail.SetHilited(DgnElement::Hilited::Normal);
 
-    tmpSnapDetail.SetSubSelectionMode (GetSubSelectionMode()); // Set correct flash mode...
-    tmpSnapDetail.DrawInVp (vp, drawMode, drawPurpose, stopFlag);
+    tmpSnapDetail.SetSubSelectionMode(GetSubSelectionMode()); // Set correct flash mode...
+    tmpSnapDetail.DrawInVp(vp, drawMode, drawPurpose, stopFlag);
 
     if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited (currHilite);
+        tmpSnapDetail.SetHilited(currHilite);
     }
 
 /*=================================================================================**//**
@@ -806,15 +798,15 @@ HitList::~HitList() {clear();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HitList::GetCount () const {return (int) size ();}
+int HitList::GetCount() const {return (int) size();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetailP HitList::Get (int i)
+HitDetailP HitList::Get(int i)
     {
     if (i < 0)                  // ***NEEDS WORK: the old ObjectArray used to support -1 == END
-        i = (int) size ();
+        i = (int) size();
     if (i >= GetCount())
         return NULL;
     return at(i).get();
@@ -823,25 +815,25 @@ HitDetailP HitList::Get (int i)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::Set (int i, HitDetailP p)
+void HitList::Set(int i, HitDetailP p)
     {
     if (i < 0 || i >= GetCount())
         {
-        BeAssert (false);
+        BeAssert(false);
         return;
         }
-    at (i) = p;
+    at(i) = p;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::Insert (int i, HitDetailP p)
+void HitList::Insert(int i, HitDetailP p)
     {
     if (i < 0 || i == (int)size())
-        push_back (p);
+        push_back(p);
     else
-        insert (begin()+i, p);
+        insert(begin()+i, p);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -849,7 +841,7 @@ void HitList::Insert (int i, HitDetailP p)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitList::DropNulls()
     {
-    erase (std::remove(begin(), end(), (HitDetailP)NULL), end());
+    erase(std::remove(begin(), end(), (HitDetailP)NULL), end());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -860,7 +852,7 @@ void HitList::DropNulls()
 void HitList::Empty()
     {
     // empty the list (also decrements ref counts of entries)
-    clear ();
+    clear();
 
     // we don't have a current hit.
     m_currHit = -1;
@@ -870,7 +862,7 @@ void HitList::Empty()
 * remove the first hit in the list.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::RemoveHit (int hitNum)
+void HitList::RemoveHit(int hitNum)
     {
     if (hitNum < 0)                     // *** NEEDS WORK: The old ObjectArray used to support -1 == END
         hitNum = (int) size() - 1;
@@ -878,10 +870,10 @@ void HitList::RemoveHit (int hitNum)
     if (hitNum == m_currHit)
         m_currHit = -1;
 
-    if (hitNum >= (int) size ())        // Locate calls GetNextHit, which increments m_currHit, until it goes beyond the end of size of the array.
+    if (hitNum >= (int) size())        // Locate calls GetNextHit, which increments m_currHit, until it goes beyond the end of size of the array.
         return;                         // Then Reset call RemoteCurrentHit, which passes in m_currHit. When it's out of range, we do nothing.
 
-    erase (begin() + hitNum);
+    erase(begin() + hitNum);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -889,15 +881,15 @@ void HitList::RemoveHit (int hitNum)
 * @return       the requested hit from the HitList
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetailP HitList::GetHit (int hitNum) const
+HitDetailP HitList::GetHit(int hitNum) const
     {
     if (hitNum < 0)                     // *** NEEDS WORK: The old ObjectArray used to support -1 == END
         hitNum = (int) size() - 1;
 
-    if (hitNum >= (int) size ())
+    if (hitNum >= (int) size())
         return NULL;
 
-    return  at (hitNum).get ();
+    return  at(hitNum).get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -905,13 +897,13 @@ HitDetailP HitList::GetHit (int hitNum) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitList::RemoveCurrentHit()
     {
-    RemoveHit (m_currHit);
+    RemoveHit(m_currHit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::SetCurrentHit (HitDetailCP hit)
+void HitList::SetCurrentHit(HitDetailCP hit)
     {
     ResetCurrentHit();
 
@@ -925,7 +917,7 @@ void HitList::SetCurrentHit (HitDetailCP hit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    06/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-static inline double tenthOfPixel (double inValue) {return ((int) ((inValue * 10.0) + 0.5)) / 10.0;}
+static inline double tenthOfPixel(double inValue) {return ((int) ((inValue * 10.0) + 0.5)) / 10.0;}
 
 #define COMPARE_RELATIVE(a,b) {if (a<b) return -1; if (a>b) return 1;}
 
@@ -934,7 +926,7 @@ static const double s_tooCloseTolerance = 1.0e-5;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool is2dHitCompare (HitDetailCR oHit1, HitDetailCR oHit2)
+static bool is2dHitCompare(HitDetailCR oHit1, HitDetailCR oHit2)
     {
     return (!oHit1.GetViewport().Is3dView() && !oHit2.GetViewport().Is3dView());
     }
@@ -942,7 +934,7 @@ static bool is2dHitCompare (HitDetailCR oHit1, HitDetailCR oHit2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int doZCompareOfSurfaceAndEdge (HitDetailCR oHitSurf, HitDetailCR oHitEdge)
+static int doZCompareOfSurfaceAndEdge(HitDetailCR oHitSurf, HitDetailCR oHitEdge)
     {
     DgnViewportR vp = oHitSurf.GetViewport();
     DPoint4d     homogeneousPlane;
@@ -962,15 +954,15 @@ static int doZCompareOfSurfaceAndEdge (HitDetailCR oHitSurf, HitDetailCR oHitEdg
     double  tol = s_tooCloseTolerance * (1.0 + fabs(a0) + fabs(a1) + fabs(homogeneousPlane.w));
 
 #if defined (NOT_NOT_DUMP)
-    if (fabs (a1) < tol)
-        printf ("Draw\n\n");
+    if (fabs(a1) < tol)
+        printf("Draw\n\n");
     else if (a0 * a1 > 0)
-        printf ("Edge wins\n\n");
+        printf("Edge wins\n\n");
     else
-        printf ("Surface wins\n\n");
+        printf("Surface wins\n\n");
 #endif
 
-    if (fabs (a1) < tol)
+    if (fabs(a1) < tol)
         return 0;
 
     return ((a0 * a1 > 0) ? 1 : -1);
@@ -979,13 +971,13 @@ static int doZCompareOfSurfaceAndEdge (HitDetailCR oHitSurf, HitDetailCR oHitEdg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
+static int doZCompare(HitDetailCR oHit1, HitDetailCR oHit2)
     {
     double  z1 = oHit1.GetGeomDetail().GetZValue();
     double  z2 = oHit2.GetGeomDetail().GetZValue();
 
     // For 2d hits z reflects display priority which should be checked before locate priority, etc. when a fill/surface hit is involved...
-    if (is2dHitCompare (oHit1, oHit2))
+    if (is2dHitCompare(oHit1, oHit2))
         {
         // screen z values are sorted descending
         COMPARE_RELATIVE (z2, z1);
@@ -998,7 +990,7 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
         return 0;
 
     // Always prioritize sprites (ex. HUD markers) over surface hits...
-    if (HitDetailSource::Sprite == oHit1.GetGeomDetail ().GetDetailSource () || HitDetailSource::Sprite == oHit2.GetGeomDetail ().GetDetailSource ())
+    if (HitDetailSource::Sprite == oHit1.GetGeomDetail().GetDetailSource() || HitDetailSource::Sprite == oHit2.GetGeomDetail().GetDetailSource())
         return 0;
 
     DVec3d  normal1 = oHit1.GetGeomDetail().GetSurfaceNormal();
@@ -1007,20 +999,20 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
     if (0.0 != normal1.Magnitude() && 0.0 != normal2.Magnitude())
         {
         // Both surface hits...if close let other criteria determine order...
-        if (DoubleOps::WithinTolerance (z1, z2, s_tooCloseTolerance))
+        if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
             return 0;
         }
     else if (0.0 != normal1.Magnitude())
         {
         // 1st is surface hit...project 2nd hit into plane defined by surface normal...
-        int compareResult = doZCompareOfSurfaceAndEdge (oHit1, oHit2);
+        int compareResult = doZCompareOfSurfaceAndEdge(oHit1, oHit2);
 
         return (0 == compareResult ? 0 : compareResult);
         }
     else if (0.0 != normal2.Magnitude())
         {
         // 2nd is surface hit...project 1st hit into plane defined by surface normal...
-        int compareResult = doZCompareOfSurfaceAndEdge (oHit2, oHit1);
+        int compareResult = doZCompareOfSurfaceAndEdge(oHit2, oHit1);
 
         return (0 == compareResult ? 0 : -compareResult);
         }
@@ -1034,7 +1026,7 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
             return 1;
         else if (isQvWireHit2 && !isQvWireHit1)
             return -1;
-        else if (DoubleOps::WithinTolerance (z1, z2, s_tooCloseTolerance))
+        else if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
             return 0; // Both QV or real edge hits...if close let other criteria determine order...
         }
 
@@ -1049,14 +1041,14 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
 * calling GetLocatePriority() and then GetLocateDistance() on each.
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-int HitList::Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const
+int HitList::Compare(HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const
     {
     if (NULL == oHit1 || NULL == oHit2)
         return 0;
 
     if (compareZ)
         {
-        int zCompareValue = doZCompare (*oHit1, *oHit2);
+        int zCompareValue = doZCompare(*oHit1, *oHit2);
 
         if (0 != zCompareValue)
             return zCompareValue;
@@ -1070,8 +1062,8 @@ int HitList::Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority
         COMPARE_RELATIVE (p1, p2);
         }
 
-    double dist1 = tenthOfPixel (oHit1->GetGeomDetail().GetScreenDist());
-    double dist2 = tenthOfPixel (oHit2->GetGeomDetail().GetScreenDist());
+    double dist1 = tenthOfPixel(oHit1->GetGeomDetail().GetScreenDist());
+    double dist2 = tenthOfPixel(oHit2->GetGeomDetail().GetScreenDist());
 
     COMPARE_RELATIVE (dist1, dist2);
 
@@ -1092,7 +1084,7 @@ bool            allowDuplicates,
 bool            comparePriority
 )
     {
-    HitList::iterator currHit = begin ();
+    HitList::iterator currHit = begin();
 
     HitDetail*  oldHit;
     int         count = GetCount();
@@ -1101,9 +1093,9 @@ bool            comparePriority
 
     while (index < count)
         {
-        oldHit = (HitDetail*) currHit->get ();
+        oldHit = (HitDetail*) currHit->get();
 
-        comparison = Compare (newHit, oldHit, comparePriority, true);
+        comparison = Compare(newHit, oldHit, comparePriority, true);
 
         // Caller can establish a policy to only ever allow one hit for a given path. However, we want to make sure
         // that the one hit we do save is the "best" hit for that path. Therefore, every time we get another hit
@@ -1125,17 +1117,17 @@ bool            comparePriority
         }
 
     // this increments ref count of newHit
-    insert (begin()+index, newHit);
+    insert(begin()+index, newHit);
 
 #if defined (NOT_NOT_DUMP)
-    printf ("HIT LIST COUNT: %d\n", GetCount ());
+    printf("HIT LIST COUNT: %d\n", GetCount());
 
     HitDetailP    thisPath;
 
-    for (int i=0; NULL != (thisPath = (HitDetailP) GetHit (i)); i++)
-        printf ("(%d) Elem: %I64d, GeomType: %d Z: %lf Normal: (%lf %lf %lf)\n", i, thisPath->GetHeadElem ()->GetElementId (), thisPath->GetGeomDetail ().GetGeomType (), thisPath->GetGeomDetail ().GetZValue (), thisPath->GetGeomDetail ().GetSurfaceNormal ().x, thisPath->GetGeomDetail ().GetSurfaceNormal ().y, thisPath->GetGeomDetail ().GetSurfaceNormal ().z);
+    for (int i=0; NULL != (thisPath = (HitDetailP) GetHit(i)); i++)
+        printf("(%d) Elem: %I64d, GeomType: %d Z: %lf Normal: (%lf %lf %lf)\n", i, thisPath->GetHeadElem()->GetElementId(), thisPath->GetGeomDetail().GetGeomType(), thisPath->GetGeomDetail().GetZValue(), thisPath->GetGeomDetail().GetSurfaceNormal().x, thisPath->GetGeomDetail().GetSurfaceNormal().y, thisPath->GetGeomDetail().GetSurfaceNormal().z);
 
-    printf ("\n\n");
+    printf("\n\n");
 #endif
 
     return index;
@@ -1144,18 +1136,18 @@ bool            comparePriority
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetailP HitList::GetCurrentHit () const
+HitDetailP HitList::GetCurrentHit() const
     {
     if (-1 == m_currHit)
         return NULL;
 
-    return GetHit (m_currHit);
+    return GetHit(m_currHit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetailP HitList::GetNextHit ()
+HitDetailP HitList::GetNextHit()
     {
     m_currHit++;
 
@@ -1166,7 +1158,7 @@ HitDetailP HitList::GetNextHit ()
 * search through hitlist and remove any hits that match a specified path.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitList::RemoveHitsFrom (HitDetailCR hit)
+bool HitList::RemoveHitsFrom(HitDetailCR hit)
     {
     HitDetailP  thisHit;
     bool        removedOne = false;
@@ -1174,10 +1166,10 @@ bool HitList::RemoveHitsFrom (HitDetailCR hit)
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((nullptr != (thisHit = GetHit (i))) && thisHit->IsSameHit(&hit))
+        if ((nullptr != (thisHit = GetHit(i))) && thisHit->IsSameHit(&hit))
             {
             removedOne = true;
-            RemoveHit (i);
+            RemoveHit(i);
             }
         }
     
@@ -1188,7 +1180,7 @@ bool HitList::RemoveHitsFrom (HitDetailCR hit)
 * search through hitlist and remove any hits that contain a specified elementRef.
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool HitList::RemoveHitsFrom (DgnElementCR element)
+bool HitList::RemoveHitsFrom(DgnElementCR element)
     {
     HitDetailP  thisHit;
     bool        removedOne = false;
@@ -1196,10 +1188,10 @@ bool HitList::RemoveHitsFrom (DgnElementCR element)
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((nullptr != (thisHit = GetHit (i))) && thisHit->GetElementId() == element.GetElementId())
+        if ((nullptr != (thisHit = GetHit(i))) && thisHit->GetElementId() == element.GetElementId())
             {
             removedOne = true;
-            RemoveHit (i);
+            RemoveHit(i);
             }
         }
 
@@ -1210,7 +1202,7 @@ bool HitList::RemoveHitsFrom (DgnElementCR element)
 * search through hitlist and remove any hits from the specified model
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool     HitList::RemoveHitsFrom (DgnModelR model)
+bool     HitList::RemoveHitsFrom(DgnModelR model)
     {
     HitDetailP  thisHit;
     bool        removedOne = false;
@@ -1218,10 +1210,10 @@ bool     HitList::RemoveHitsFrom (DgnModelR model)
     // walk backwards through list so we don't have to worry about what happens on remove
     for (int i=GetCount()-1; i>=0; i--)
         {
-        if ((NULL != (thisHit = GetHit (i))) && &model == &thisHit->GetDgnModel())
+        if ((NULL != (thisHit = GetHit(i))) && &model == &thisHit->GetDgnModel())
             {
             removedOne = true;
-            RemoveHit (i);
+            RemoveHit(i);
             }
         }
 
@@ -1231,14 +1223,14 @@ bool     HitList::RemoveHitsFrom (DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    Locate.Hitlist                                  KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitList::Dump (WCharCP label) const
+void HitList::Dump(WCharCP label) const
     {
-    printf ("%ls %d", label, GetCount());
+    printf("%ls %d", label, GetCount());
 
     HitDetailP thisHit;
 
     for (int i=0; NULL != (thisHit = GetHit(i)); i++)
-        printf ("\n -> ElementId : %llu", (long long unsigned int) thisHit->GetElementId().GetValue());
+        printf("\n -> ElementId : %llu", (long long unsigned int) thisHit->GetElementId().GetValue());
 
-    printf ("\n");
+    printf("\n");
     }

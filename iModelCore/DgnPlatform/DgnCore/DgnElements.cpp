@@ -1,4 +1,8 @@
-/*--------------------------------------------------------------------------------------+ | | $Source: DgnCore/DgnElements.cpp $
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/DgnElements.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -229,9 +233,9 @@ public:
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
     {
     for (int begin=0, end=m_nEntries; begin < end;)
@@ -317,9 +321,9 @@ void ElemIdInternalNode::SortInto(ElemIdRangeNodeP* into, ElemIdRangeNodeP* from
 static bool sortByAccessTime(ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLastUnReferenced() < n2->GetLastUnReferenced();}
 static bool sortById(ElemIdRangeNodeP n1, ElemIdRangeNodeP n2) {return n1->GetLowestId() < n2->GetLowestId();}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 ElemPurge ElemIdInternalNode::_Drop(uint64_t key)
     {
     for (unsigned index = 0; index <(unsigned)m_nEntries; ++index)

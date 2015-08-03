@@ -36,9 +36,7 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewport::DgnViewport()
     {
-    m_viewNumber        = -1;
     m_minLOD            = DEFAULT_MINUMUM_LOD;
-    m_viewNumber        = -1;
     m_isCameraOn        = false;
     m_needsRefresh      = false;
     m_zClipAdjusted     = false;
@@ -129,22 +127,14 @@ void DgnViewport::_GetViewCorners(DPoint3dR llb, DPoint3dR urf) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-BSIRect DgnViewport::GetViewRect() const
-    {
-    return _GetClientRect();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
-    DPoint3d        llb, urf;
+    DPoint3d llb, urf;
     _GetViewCorners(llb, urf);
 
-    Transform    scrToNpcTran;
+    Transform scrToNpcTran;
     bsiTransform_initFromRange(nullptr, &scrToNpcTran, &llb, &urf);
     scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
@@ -154,7 +144,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) const
     {
-    DPoint3d        llb, urf;
+    DPoint3d llb, urf;
     _GetViewCorners(llb, urf);
 
     Transform    npcToScrTran;
@@ -302,9 +292,9 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
     DVec3d    xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
 
-    DPoint3d    xExtent, yExtent, zExtent;
-    DPoint3d    origin;
-    double      frustFraction;
+    DPoint3d xExtent, yExtent, zExtent;
+    DPoint3d origin;
+    double   frustFraction;
 
     // Compute root vectors along edges of view frustum.
     if (camera)
@@ -317,8 +307,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         viewRot.Multiply(eyeToOrigin);                                                   // Rotate to view coordinates.
 
         double focusDistance = camera->GetFocusDistance();
-        double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;      // Limit front clip to be in front of camera plane.
-
+        double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;   // Limit front clip to be in front of camera plane.
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
@@ -463,15 +452,10 @@ static void validateCamera(CameraViewControllerR controller)
     CameraInfoR camera = controller.GetControllerCameraR();
     camera.ValidateLens();
     if (camera.IsFocusValid())
-         {
-         // we used to call controller.CenterEyePoint(nullptr) here, but that can cause existing MicroStation
-         // 1-point perspective views to jump, so i removed it. - KAB
          return;
-         }
 
     DPoint3dCR vDelta = controller.GetDelta();
     double maxDelta = vDelta.x > vDelta.y ? vDelta.x : vDelta.y;
-
     double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle()/2.0));
 
     if (focusDistance < vDelta.z / 2.0)
@@ -503,12 +487,12 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 
     DPoint3d origin = viewController->GetOrigin();
     DVec3d   delta  = viewController->GetDelta();
-    m_rotMatrix     = viewController->GetRotation();
 
+    m_rotMatrix     = viewController->GetRotation();
     m_rootViewFlags = viewController->GetViewFlags();
-    m_is3dView    = false;
-    m_isCameraOn  = false;
-    m_isSheetView = false;
+    m_is3dView      = false;
+    m_isCameraOn    = false;
+    m_isSheetView   = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
@@ -698,10 +682,10 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         }
     else
         {
-        /* get the view extents */
+        // get the view extents 
         delta.z = viewController->GetDelta().z;
 
-        /* make sure its not too big or too small */
+        // make sure its not too big or too small 
         auto stat = ValidateWindowSize(delta, true);
         if (stat != ViewportStatus::Success)
             return stat;
@@ -960,7 +944,6 @@ ViewportStatus DgnViewport::_Activate(QvPaintOptions const& opts)
 int DgnViewport::GetDefaultIndexedLineWidth(int index)
     {
     LIMIT_RANGE (0, 31, index);
-
     return index+1;
     }
 
@@ -999,9 +982,9 @@ void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int li
     m_output->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
     }
 
-const double    VISIBILITY_GOAL           = 40.0;
-const int       HSV_SATURATION_WEIGHT     = 4;
-const int       HSV_VALUE_WEIGHT          = 2;
+const double VISIBILITY_GOAL       = 40.0;
+const int    HSV_SATURATION_WEIGHT = 4;
+const int    HSV_VALUE_WEIGHT      = 2;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/01
@@ -1009,9 +992,9 @@ const int       HSV_VALUE_WEIGHT          = 2;
 static double colorVisibilityCheck(ColorDef fg, ColorDef bg)
     {
     // Compute luminosity...
-    double      red   = abs(fg.GetRed()   - bg.GetRed());
-    double      green = abs(fg.GetGreen() - bg.GetGreen());
-    double      blue  = abs(fg.GetBlue()  - bg.GetBlue());
+    double red   = abs(fg.GetRed()   - bg.GetRed());
+    double green = abs(fg.GetGreen() - bg.GetGreen());
+    double blue  = abs(fg.GetBlue()  - bg.GetBlue());
 
     return (0.30 * red) + (0.59 * green) + (0.11 * blue);
     }
@@ -1140,8 +1123,7 @@ ColorDef DgnViewport::MakeColorTransparency(ColorDef color, int transparency)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
     {
-    // Logic derived from QVCamera::calcContrast...
-    ColorDef     backgroundColorDef, inColorDef, outColorDef;
+    ColorDef backgroundColorDef, inColorDef, outColorDef;
 
     backgroundColorDef = GetBackgroundColor();
     inColorDef = inColor;
@@ -1174,11 +1156,11 @@ ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const // can be nullptr - if so, use center of view
+double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const 
     {
     DPoint3d    rootTestPt;
 
-    if (nullptr == rootPtP)
+    if (nullptr == rootPtP) // can be nullptr - if so, use center of view
         {
         DPoint3d    npcCenter;
 
@@ -1230,13 +1212,13 @@ static void limitWindowSize(ViewportStatus& error, double& value, ViewportStatus
     {
     if (value < DgnViewport::GetMinViewDelta())
         {
-        value  = DgnViewport::GetMinViewDelta();
-        error  = lowErr;
+        value = DgnViewport::GetMinViewDelta();
+        error = lowErr;
         }
     else if (value > DgnViewport::GetMaxViewDelta())
         {
-        value  = DgnViewport::GetMaxViewDelta();
-        error  = highErr;
+        value = DgnViewport::GetMaxViewDelta();
+        error = highErr;
         }
     }
 
@@ -1312,18 +1294,6 @@ ColorDef DgnViewport::GetContrastToBackgroundColor() const
     // should we use black or white
     bool    invert  = ((m_backgroundColor.GetRed() + m_backgroundColor.GetGreen() + m_backgroundColor.GetBlue()) > (255*3)/2);
     return  invert ? ColorDef::Black()  : ColorDef::White();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_GetViewName(WStringR name) const
-    {
-    name = L"";
-    if (!Is3dView())
-        return;
-
-    ViewController::GetStandardViewName(name, ViewController::IsStandardViewRotation(m_rotMatrix, true));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1504,7 +1474,6 @@ ColorDef DgnViewport::_GetWindowBgColor() const
     return (m_viewController.IsValid()) ? m_viewController->ResolveBGColor() : ColorDef::Black();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1521,6 +1490,5 @@ void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
         {
         m_progressiveDisplay.push_back(pdptr);
         }
-
     // *** TBD: Sort in priority order
     }

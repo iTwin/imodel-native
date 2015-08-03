@@ -48,15 +48,15 @@ protected:
     DgnElementIdSet m_alwaysDrawn;
     DgnElementIdSet m_neverDrawn;
 
-    void ComputeFps ();
+    void ComputeFps();
     DGNPLATFORM_EXPORT void EmptyQueryModel();
     void QueryModelExtents(DRange3dR, DgnViewportR);
 
     //! Populate the QueryModel with the results of the query.
-    void LoadElementsForUpdate (DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
+    void LoadElementsForUpdate(DgnViewportR viewport, DrawPurpose updateType, ICheckStopP checkStop, bool needNewQuery, bool waitForQueryToFinish, bool stopQueryOnAbort);
     void SaveSelectResults();
-    void StartSelectProcessing (DgnViewportR, DrawPurpose updateType);
-    DGNPLATFORM_EXPORT virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
+    void StartSelectProcessing(DgnViewportR, DrawPurpose updateType);
+    DGNPLATFORM_EXPORT virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     virtual void _FillModels() override {} // query models do not load elements in advance
     DGNPLATFORM_EXPORT virtual void _OnAttachedToViewport(DgnViewportR) override;
 
@@ -69,7 +69,7 @@ protected:
     //! call QueryViewController::_OnHealUpdate to let it decide if is necessary to repopulate the QueryModel.
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override PhysicalViewController::_OnUpdateComplete to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnHealUpdate (DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
+    DGNPLATFORM_EXPORT virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
 
     //! Called at the beginning of a full update to populate the QueryModel.
     //! @param[in] viewport    The viewport that will display the graphics
@@ -80,7 +80,7 @@ protected:
     //! @remarks An application may use this and _OnFullUpdate to decide when to display some indication such as a spinner to 
     //! let the user know that the update is in progress.  The application can override PhysicalViewController::_OnUpdateComplete
     //! to know when to stop the spinner.
-    DGNPLATFORM_EXPORT virtual void _OnFullUpdate (DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
+    DGNPLATFORM_EXPORT virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
 
     //! Called at the beginning of a dynamic update to populate the QueryModel.
     //! @param[in]  viewport    The viewport that will display the graphics
@@ -88,7 +88,7 @@ protected:
     //! @param[in]  info        Options
     //! @remarks  Although an application can override this method, the decision on whether or not to repopulate the QueryModel in a dynamic update is typically left to
     //! QueryViewController::_OnDynamicUpdate. It in turn defers the decision to _WantElementLoadStart.
-    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate (DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
+    DGNPLATFORM_EXPORT virtual void _OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
 
     //! QueryViewController uses this to determine if it should start another background query to repopulate the query model.
     //! QueryViewController calls this from _OnDynamicUpdate and when it detects that the background element query processing is idle during a dynamic update.
@@ -99,7 +99,7 @@ protected:
     //! @param[in] queryFrustum The frustum used in the last range query used to populate the QueryModel.
     //! @returns  Return true to start another round.
     //! @remarks It is very rare than an application needs to override this method.
-    DGNPLATFORM_EXPORT virtual bool _WantElementLoadStart (DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum);
+    DGNPLATFORM_EXPORT virtual bool _WantElementLoadStart(DgnViewportR viewport, double currentTime, double lastQueryTime, uint32_t maxElementsDrawnInDynamicUpdate, Frustum const& queryFrustum);
 
     //! Called when the visibility of a category is changed.
     DGNPLATFORM_EXPORT virtual void _OnCategoryChange(bool singleEnabled) override;
@@ -107,19 +107,19 @@ protected:
     //! Called when the display of a model is changed on or off
     //! @param modelId  The model to turn on or off.
     //! @param onOff    If true, elements in the model are candidates for display; else elements in the model are not displayed.
-    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay (DgnModelId modelId, bool onOff) override;
+    DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
     //! Draw the elements in the query model.
     //! @param context The context that is processing the graphics. Sometimes this is a ViewContext, when the output is a DgnViewport. Sometimes, this is a PickContext, when
     //! the purpose is to identify an element or snap location.
     //! @remarks It not normally necessary for apps to override this function.
-    DGNPLATFORM_EXPORT virtual void _DrawView (ViewContextR context) override;
+    DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR context) override;
 
     //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
     DGNPLATFORM_EXPORT void _VisitElements(ViewContextR) override;
 
     //! Return the default maximum number of elements to load. This is then scaled by the value returned from _GetMaxElementFactor.
-    virtual uint32_t _GetMaxElementsToLoad () {return 5000;}
+    virtual uint32_t _GetMaxElementsToLoad() {return 5000;}
 #endif
 
 protected:
@@ -139,9 +139,9 @@ protected:
 __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
        $SAMPLECODE_END
      */
-    DGNPLATFORM_EXPORT virtual Utf8String _GetRTreeMatchSql (DgnViewportR viewport);
+    DGNPLATFORM_EXPORT virtual Utf8String _GetRTreeMatchSql(DgnViewportR viewport);
 
-    DGNPLATFORM_EXPORT void BindModelAndCategory (BeSQLite::StatementR stmt) const;
+    DGNPLATFORM_EXPORT void BindModelAndCategory(BeSQLite::StatementR stmt) const;
 
     //! Compute the range of the elements and graphics in the QueryModel.
     //! @remarks This function may also load elements to determine the range.
@@ -149,18 +149,18 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
     //! @param[in]  viewport the viewport that will display the graphics
     //! @param[in]  params   options for computing the range.
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
-    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
     //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
     //! 0 means the "default" number of elements.
     virtual int32_t _GetMaxElementFactor() {return 0;}
 
     //! Return the size in pixels of the smallest element that should be displayed.
-    virtual double _GetMinimumSizePixels (DrawPurpose updateType) {return 0.1;}
+    virtual double _GetMinimumSizePixels(DrawPurpose updateType) {return 0.1;}
 
     //! Return the maximum number of bytes of memory that should be used to hold loaded element data. Element data may exceed this limit at times and is trimmed back at intervals.
     //! It is recommended that applications use this default implementation and instead control memory usage by overriding _GetMaxElementFactor
-    virtual uint64_t _GetMaxElementMemory () {return GetMaxElementMemory();}
+    virtual uint64_t _GetMaxElementMemory() {return GetMaxElementMemory();}
 
 public:
     //! Construct the view controller.                          
@@ -177,7 +177,7 @@ public:
     DGNPLATFORM_EXPORT uint64_t GetMaxElementMemory();
 
     //! Return the maximum number of elements to hold in the associated QueryModel.
-    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad ();
+    DGNPLATFORM_EXPORT uint32_t GetMaxElementsToLoad();
 
     //! Get the list of elements that are always drawn
     DgnElementIdSet const& GetAlwaysDrawn() {return m_alwaysDrawn;}
