@@ -146,7 +146,7 @@ namespace pcloud
 
 		/* node mutex for sync access, not used for POD Writer library to reduce dependencies */ 
 #ifndef POINTOOLS_POD_API
-		boost::try_mutex &mutex()  { return _mutex; }
+		inline boost::try_mutex &mutex()  { return _mutex; }
 #endif
 		/* extent of last editing progress as number of points */ 
 		inline uint numPointsEdited() const		{ return _numPointsEdited; }
@@ -433,6 +433,7 @@ namespace pcloud
 			int index = start_point;
 			ubyte *f_b=0, *f_e=0;
 			ubyte nullFilter = 0xff & ~POINT_SELECT_CODE;
+			ubyte pnt_layer = layers(0);
 			pcloud::DataChannel *geom = _channels[pcloud::PCloud_Geometry];
 			pcloud::DataChannel *layer = _channels[pcloud::PCloud_Filter];
 
@@ -476,7 +477,7 @@ namespace pcloud
 						pntc += offset;
 
 						T.transform(pntc, pntt);
-						R.point(pntt, index, nullFilter);	
+						R.point(pntt, index, pnt_layer);	
 						++i;
 						++index;
 					}
@@ -540,7 +541,7 @@ namespace pcloud
 						pntc += offset;
 
 						T.transform(pntc, pntt);
-						R.point(pntt, index, nullFilter);	
+						R.point(pntt, index, pnt_layer);	
 						++i;
 						++index;
 					}

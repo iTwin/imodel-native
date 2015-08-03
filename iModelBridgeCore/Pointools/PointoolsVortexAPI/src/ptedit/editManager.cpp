@@ -855,7 +855,10 @@ void PointEditManager::regenEditComplete() // NOT TESTED
 	setCurrentLayer( g_currentLayer, true );
 
 	pointsengine::unpauseEngine();
-}//
+}
+//-----------------------------------------------------------------------------
+//  Only regen those scenes that have not been processed at all yet
+//-----------------------------------------------------------------------------
 void	PointEditManager::regenEditUnprocessed()
 {
 	// check the state of every scene and process if needed
@@ -884,14 +887,19 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 
 	// scope should not effect this, will be restored by PreserveState
 	g_state.scope = 0;
-
-	if (scene)
-		setEditingScope( scene->cloud(0)->guid(), true );
+	g_state.setExecutionScope( scene );
 
 	// flag nodes first - note this cannot be done any other way since node state will be changing
 	StoreNodeStateAndPrepForRefresh statev;
-	TraverseScene::withVisitor(&statev);
-
+	
+	if ( scene )
+	{
+		TraverseScene::withVisitor(&statev, scene, false);
+	}
+	else
+	{
+		TraverseScene::withVisitor(&statev);
+	}
 	g_editApplyMode =  EditIntentRefresh | EditIntentFlagged | EditIncludeOOC;
 	m_currentEdit.execute(false);
 
@@ -899,19 +907,28 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 
 	// this is ok here, has a hack to set to full if EditIncludeOOC
 	SetEditPointToLODVisitor sep;
+
 	if (scene)
-		TraverseScene::withVisitor(&sep, scene);
+	{
+		TraverseScene::withVisitor(&sep, scene, false);
+	}
 	else 
+	{
 		TraverseScene::withVisitor(&sep, true);
+	}
 	
 	g_editApplyMode = EditNormal;
 
 	statev.writeMode();
 
 	if (scene)
-		TraverseScene::withVisitor(&statev, scene);
+	{
+		TraverseScene::withVisitor(&statev, scene, false);
+	}
 	else
+	{
 		TraverseScene::withVisitor(&statev, true);
+	}
 
 	//ClearFilterVisitor v;
 	//TraverseScene::withVisitor(&v);
@@ -921,6 +938,8 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 	setCurrentLayer( g_currentLayer, true );
 
 	updateSceneEditStateID( scene );
+
+	g_state.setExecutionScope( 0 );
 
 	pointsengine::unpauseEngine();
 }
@@ -1306,6 +1325,8 @@ void PointEditManager::layersFromUserChannel( pointsengine::UserChannel* userCha
 	{
 		m_layersFromUserChannel.setUserChannel(userChannel);
 		m_currentEdit.addOperation("LayersFromUserChannel");
+
+		updateSceneEditStateID( 0 );
 	}
 }
 /*****************************************************************************/

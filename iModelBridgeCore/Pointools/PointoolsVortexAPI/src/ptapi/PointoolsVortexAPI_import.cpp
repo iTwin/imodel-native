@@ -266,6 +266,7 @@ PTGETEDITWORKINGMODE ptGetEditWorkingMode = 0;
 
 PTCREATESELPOINTSQUERY ptCreateSelPointsQuery = 0;
 PTCREATEVISPOINTSQUERY ptCreateVisPointsQuery = 0;
+PTCREATEALLPOINTSQUERY ptCreateAllPointsQuery = 0;
 PTCREATEBOUNDINGBOXQUERY ptCreateBoundingBoxQuery = 0;
 PTCREATEORIENTEDBOUNDINGBOXQUERY ptCreateOrientedBoundingBoxQuery = 0;
 PTCREATEBOUNDINGSPHEREQUERY ptCreateBoundingSphereQuery = 0;
@@ -654,6 +655,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		/* Query */ 
 		ptCreateSelPointsQuery = (PTCREATESELPOINTSQUERY) GetAPIFunc("ptCreateSelPointsQuery");
 		ptCreateVisPointsQuery = (PTCREATEVISPOINTSQUERY) GetAPIFunc("ptCreateVisPointsQuery");
+		ptCreateAllPointsQuery = (PTCREATEALLPOINTSQUERY) GetAPIFunc("ptCreateAllPointsQuery");
 		ptCreateBoundingBoxQuery = (PTCREATEBOUNDINGBOXQUERY) GetAPIFunc("ptCreateBoundingBoxQuery");
 		ptCreateOrientedBoundingBoxQuery = (PTCREATEORIENTEDBOUNDINGBOXQUERY) GetAPIFunc("ptCreateOrientedBoundingBoxQuery");
 		ptCreateBoundingSphereQuery = (PTCREATEBOUNDINGSPHEREQUERY) GetAPIFunc("ptCreateBoundingSphereQuery");

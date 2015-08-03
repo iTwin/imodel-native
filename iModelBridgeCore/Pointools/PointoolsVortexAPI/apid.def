@@ -215,6 +215,7 @@ EXPORTS
 	
 	ptCreateSelPointsQuery
 	ptCreateVisPointsQuery
+	ptCreateAllPointsQuery
 	ptCreateBoundingBoxQuery
 	ptCreateOrientedBoundingBoxQuery
 	ptCreateBoundingSphereQuery

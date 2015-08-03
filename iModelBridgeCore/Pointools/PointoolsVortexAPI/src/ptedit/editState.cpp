@@ -47,6 +47,8 @@ GlobalState::GlobalState() : layer(1,1,0,1)
 	scopeIsScene = true;
 	scopeInstance = 0;
 
+	execSceneScope = 0;
+
 	OperationStack::addStateHandler( &h );
 }
 //

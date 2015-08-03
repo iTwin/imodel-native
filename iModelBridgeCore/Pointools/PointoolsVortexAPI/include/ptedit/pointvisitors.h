@@ -380,20 +380,37 @@ namespace ptedit
 				if (n->isLeaf())
 				{
 					pcloud::Voxel *v = const_cast<pcloud::Voxel*>(static_cast<const pcloud::Voxel*>(n));
+					const pcloud::DataChannel *layers = v->channel( pcloud::PCloud_Filter );
 
-					if (v->channel( pcloud::PCloud_Filter ))
+					if (layers)
 					{
-						CountPointsInLayerVisitor cp(_layers); // need this to have a separate count to scale up
+						uint voxel_count = 0;
 
-						pcloud::Voxel::LocalSpaceTransform lst;
-						VoxFiltering::iteratePoints( v, cp, lst );
-						
-						// scale up
-						uint voxel_count = cp.totalCount();
+						// explicitly code the iteration here, because the filter channel maybe more complete than the lod
+						// in the case that a channel was loaded
+						if (v->numPointsEdited()==0 && layers->size())
+						{
+							for (int i=0; i<layers->size();i++)
+							{
+								if (layers->data()[i] & _layers) 
+								{
+									++voxel_count;
+								}
+							}
+						}
+						else
+						{
+							CountPointsInLayerVisitor cp(_layers); // need this to have a separate count to scale up
 
-						if (v->numPointsEdited())
-							voxel_count *= (float)v->fullPointCount()/v->numPointsEdited();
+							pcloud::Voxel::LocalSpaceTransform lst;
+							VoxFiltering::iteratePoints( v, cp, lst );
 						
+							// scale up
+							voxel_count = cp.totalCount();
+
+							if (v->numPointsEdited())
+								voxel_count *= (float)v->fullPointCount()/v->numPointsEdited();
+						}
 						_count[0] += voxel_count;
 					}
 					else _count[0] += n->fullPointCount();	// should not happen, but hey

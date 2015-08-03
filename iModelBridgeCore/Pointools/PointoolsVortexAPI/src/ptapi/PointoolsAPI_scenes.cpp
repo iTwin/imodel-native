@@ -21,6 +21,8 @@
 
 #include <ptengine/queryScene.h>
 
+#include <pt/trace.h>
+
 using namespace pt;
 using namespace pointsengine;
 
@@ -84,6 +86,8 @@ const pcloud::PointCloud* constCloudFromHandle(PThandle cloud)
 //-----------------------------------------------------------------------------
 PTres		PTAPI	ptSetCloudTransform( PThandle cloud, const PTdouble *transform4x4, bool row_order )
 {
+	PTTRACE_FUNC
+
 	pcloud::PointCloud *pcloud = cloudFromHandle(cloud);
 	if (!pcloud)
 	{
@@ -103,6 +107,8 @@ PTres		PTAPI	ptSetCloudTransform( PThandle cloud, const PTdouble *transform4x4, 
 //-----------------------------------------------------------------------------
 PTres  PTAPI ptSetSceneTransform( PThandle scene, const PTdouble *transform4x4, bool row_order )
 {
+	PTTRACE_FUNC
+
 	pcloud::Scene *sc = sceneFromHandle( scene );
 	if (!scene)
 	{
@@ -230,6 +236,8 @@ PTint	PTAPI ptNumScenes()
 //-------------------------------------------------------------------------------
 PTbool	PTAPI ptSceneInfo(PThandle scene, PTstr name, PTint &clouds, PTuint &num_points, PTuint &spec, PTbool &loaded, PTbool &visible)
 {
+	PTTRACE_FUNC
+
 	const pcloud::Scene *sc = sceneFromHandle(scene);
 	if (sc)
 	{
@@ -264,6 +272,8 @@ PTbool	PTAPI ptSceneInfo(PThandle scene, PTstr name, PTint &clouds, PTuint &num_
 //-------------------------------------------------------------------------------
 PTres PTAPI ptUnloadScene( PThandle scene )
 {
+	PTTRACE_FUNC_P1( scene )
+
 	pcloud::Scene *sc = sceneFromHandle(scene);
 	if (!sc) 
 	{
@@ -277,6 +287,8 @@ PTres PTAPI ptUnloadScene( PThandle scene )
 //-------------------------------------------------------------------------------
 PTres PTAPI ptReloadScene( PThandle scene )
 {
+	PTTRACE_FUNC_P1( scene )
+
 	pcloud::Scene *sc = sceneFromHandle(scene);
 	if (!sc) 
 	{
@@ -411,6 +423,8 @@ struct ReadPoints
 //-------------------------------------------------------------------------------
 PTuint	PTAPI PTAPI ptGetSceneProxyPoints(PThandle scene, PTint num_points, PTfloat *pnts, PTubyte *col)
 {
+	PTTRACE_FUNC
+
 	debugAssertM(!col, L"Support for Colour in proxy points is not implemented");
 
 	const Scene *sc = scene ? sceneFromHandle(scene) : 0;
@@ -599,6 +613,8 @@ PTres	PTAPI ptCloudBoundsd(PThandle cloud, PTdouble *lower, PTdouble *upper)
 //-------------------------------------------------------------------------------
 PTres	PTAPI ptShowScene(PThandle scene, PTbool visible)
 {
+	PTTRACE_FUNC_P2( scene, visible )
+
 	pcloud::Scene *sc = sceneFromHandle(scene);
 	if (sc)
 	{
@@ -612,6 +628,8 @@ PTres	PTAPI ptShowScene(PThandle scene, PTbool visible)
 //-------------------------------------------------------------------------------
 PTres	PTAPI ptShowCloud(PThandle cloud, PTbool visible)
 {
+	PTTRACE_FUNC_P2( cloud, visible )
+
 	pcloud::PointCloud *pc = cloudFromHandle(cloud);
 	if (pc) 
 	{
@@ -625,6 +643,8 @@ PTres	PTAPI ptShowCloud(PThandle cloud, PTbool visible)
 //-------------------------------------------------------------------------------
 PTres	PTAPI ptRemoveScene(PTint scene)
 {
+	PTTRACE_FUNC_P1( scene )
+
 	pcloud::Scene*sc = sceneFromHandle(scene);
 	if (sc)
 	{
@@ -658,6 +678,8 @@ PTres	PTAPI ptRemoveScene(PTint scene)
 //-------------------------------------------------------------------------------
 PTvoid	PTAPI ptNormaliseCoordinateSystem(void)
 {
+	PTTRACE_FUNC
+
 	_project->optimizeCoordinateSpace();
 }
 PTvoid PTAPI ptProjectToWorldCoords( PTdouble *v )

@@ -55,7 +55,7 @@ extern double g_unitScale;
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSetSelectPointsMode( PTenum select_mode )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( select_mode )
 
 	switch(select_mode)
 	{
@@ -80,6 +80,8 @@ PTres	PTAPI ptSetSelectPointsMode( PTenum select_mode )
 //-----------------------------------------------------------------------------
 PTenum	PTAPI ptGetSelectPointsMode( void )
 {
+	PTTRACE_FUNC
+
 	switch(PointEditManager::instance()->editMode())
 	{
 	case SelectPoint:	return PT_EDIT_MODE_SELECT;
@@ -91,7 +93,7 @@ PTenum	PTAPI ptGetSelectPointsMode( void )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetEditWorkingMode( PTenum mode )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( mode )
 
 	switch ( mode )
 	{
@@ -128,6 +130,8 @@ PTenum	PTAPI ptGetEditWorkingMode( void )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptSetSelectionDrawColor( const PTubyte *col3 )
 {
+	PTTRACE_FUNC_P3( col3[0], col3[1], col3[2] )
+
 	RenderSettings::selectionColour( col3 );
 }
 //-----------------------------------------------------------------------------
@@ -141,7 +145,7 @@ PTvoid	PTAPI ptGetSelectionDrawColor( PTubyte *col3 )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSelectPointsByRect( PTint x_edge, PTint y_edge, PTint width, PTint height )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P4( x_edge, y_edge, width, height )
 	
 	_ptMakeVPContextCurrent();
 
@@ -159,7 +163,7 @@ PTvoid	PTAPI ptSelectPointsByRect( PTint x_edge, PTint y_edge, PTint width, PTin
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByFence( PTint num_vertices, const PTint *vertices )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P2( num_vertices, vertices )
 
 	PointEditManager::instance()->setUnits( g_unitScale );
 
@@ -189,7 +193,7 @@ PTres	PTAPI ptSelectPointsByFence( PTint num_vertices, const PTint *vertices )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByBox( const PTdouble *lower, const PTdouble *upper )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P6( lower[0], lower[1], lower[2], upper[0], upper[1], upper[2] )
 
 	if (!lower || !upper)
 		return setLastErrorCode( PTV_VOID_POINTER );
@@ -255,7 +259,7 @@ PTres	PTAPI ptSelectPointsByPlane( const PTdouble *origin, const PTdouble *norma
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsBySphere( const PTdouble *centre, PTdouble radius )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P4( centre[0], centre[1], centre[2], radius )
 
 	if (!centre)
 		return setLastErrorCode( PTV_VOID_POINTER );
@@ -275,7 +279,7 @@ PTres	PTAPI ptSelectPointsBySphere( const PTdouble *centre, PTdouble radius )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( sceneOrCloudHandle )
 
 	if (!sceneOrCloudHandle)
 	{
@@ -300,17 +304,23 @@ PTvoid PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle )
 //-----------------------------------------------------------------------------
 PTuint64 PTAPI _ptCountVisiblePoints( void )
 {
+	PTTRACE_FUNC
+
 	PTuint64 count = PointEditManager::instance()->countVisiblePoints();
 	return count;
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptInvertVisibility()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->invertVisibility();
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptIsolateSelected()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->isolateSelPoints();
 }
 //-----------------------------------------------------------------------------
@@ -403,6 +413,8 @@ const	PTstr PTAPI ptEditName( PTint index )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptDeleteAllEdits()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->removeAllEdits(); 
 }
 //-----------------------------------------------------------------------------
@@ -417,6 +429,8 @@ PTbool PTAPI ptDeleteEdit( const PTstr name )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptDeleteEditByIndex( PTint index )
 {
+	PTTRACE_FUNC_P1( index )
+
 	return ptDeleteEdit(PointEditManager::instance()->editName( index ));
 }
 //-----------------------------------------------------------------------------
@@ -437,6 +451,8 @@ PTvoid PTAPI _ptCreateEditFromDatatree( PTvoid* dt )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptLayerBounds( PTuint layer, PTfloat *lower3, PTfloat *upper3, bool approx_fast )
 {
+	PTTRACE_FUNC
+
 	pt::BoundingBoxD box;
 	if (PointEditManager::instance()->getLayerBoundingBox( layer, box, approx_fast ))
 	{
@@ -448,6 +464,8 @@ PTres	PTAPI ptLayerBounds( PTuint layer, PTfloat *lower3, PTfloat *upper3, bool 
 		upper3[1] = box.uy();
 		upper3[2] = box.uz();
 
+		PTTRACEOUT << " = " << lower3[0] << ", " << lower3[1] << ", " << lower3[2] << " to " << upper3[0] << ", " << upper3[1] << ", " << upper3[2] ;
+
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
 	return 	setLastErrorCode( PTV_INVALID_HANDLE );
@@ -458,17 +476,19 @@ PTres	PTAPI ptLayerBoundsd( PTuint layer, PTdouble *lower3, PTdouble *upper3, bo
 	pt::BoundingBoxD box;
 	if (PointEditManager::instance()->getLayerBoundingBox( layer, box, approx_fast ))
 	{
-		vector3d basepoint(Project3D::project().registration().matrix()(3,0), 
-			Project3D::project().registration().matrix()(3,1), 
-			Project3D::project().registration().matrix()(3,2));
+		//vector3d basepoint(Project3D::project().registration().matrix()(3,0), 
+		//	Project3D::project().registration().matrix()(3,1), 
+		//	Project3D::project().registration().matrix()(3,2));
 
-		lower3[0] = box.lx() - basepoint.x;
-		lower3[1] = box.ly() - basepoint.y;
-		lower3[2] = box.lz() - basepoint.z;
+		lower3[0] = box.lx();// - basepoint.x;
+		lower3[1] = box.ly();// - basepoint.y;
+		lower3[2] = box.lz();// - basepoint.z;
 
-		upper3[0] = box.ux() - basepoint.x;
-		upper3[1] = box.uy() - basepoint.y;
-		upper3[2] = box.uz() - basepoint.z;
+		upper3[0] = box.ux();// - basepoint.x;
+		upper3[1] = box.uy();// - basepoint.y;
+		upper3[2] = box.uz();// - basepoint.z;
+
+		PTTRACEOUT << " = " << lower3[0] << ", " << lower3[1] << ", " << lower3[2] << " to " << upper3[0] << ", " << upper3[1] << ", " << upper3[2] ;
 
 		return 	setLastErrorCode( PTV_SUCCESS );
 	}
@@ -538,7 +558,7 @@ PTvoid PTAPI ptCreateEditFromData( const PTubyte *data )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptSetCurrentLayer( PTuint layer )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( layer )
 
 	return PointEditManager::instance()->setCurrentLayer( layer );
 }
@@ -550,7 +570,7 @@ PTuint PTAPI ptGetCurrentLayer()
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptLockLayer( PTuint layer, PTbool lock )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P2( layer, (lock ? "true" : "false") )
 
 	return PointEditManager::instance()->lockLayer( layer, lock );
 }
@@ -562,7 +582,7 @@ PTbool PTAPI ptIsLayerLocked( PTuint layer )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptShowLayer( PTuint layer, PTbool show )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P2( layer, (show ? "true" : "false") )
 
 	return PointEditManager::instance()->showLayer( layer, show );
 }
@@ -579,7 +599,7 @@ PTbool PTAPI ptDoesLayerHavePoints( PTuint layer )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptClearPointsFromLayer( PTuint layer )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( layer )
 
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
@@ -593,7 +613,7 @@ PTvoid PTAPI ptResetLayers()
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptResetSceneEditing( PThandle scene )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( scene )
 
 	ptSetSelectionScope( scene );
 	ptUnhideAll();
@@ -604,35 +624,35 @@ PTres	PTAPI ptResetSceneEditing( PThandle scene )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptCopySelToCurrentLayer( PTbool deselect )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( deselect )
 
 	return PointEditManager::instance()->copySelToLayer( deselect );
 }
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptMoveSelToCurrentLayer( PTbool deselect )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( deselect )
 
 	return PointEditManager::instance()->moveSelToLayer( deselect );
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptSelectPointsInLayer( PTuint layer )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( layer )
 
 	PointEditManager::instance()->selectPointsInLayer( layer );
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptDeselectPointsInLayer( PTuint layer )
 { 
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( layer )
 
 	PointEditManager::instance()->deselectPointsInLayer( layer );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectCloud( PThandle cloud )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( cloud )
 
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
@@ -651,7 +671,7 @@ PTres	PTAPI ptSelectCloud( PThandle cloud )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeselectCloud( PThandle cloud )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( cloud )
 
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
@@ -668,7 +688,7 @@ PTres	PTAPI ptDeselectCloud( PThandle cloud )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectScene( PThandle scene )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( scene )
 
 	pcloud::Scene *c = sceneFromHandle( scene );
 
@@ -685,7 +705,7 @@ PTres	PTAPI ptSelectScene( PThandle scene )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeselectScene( PThandle scene )
 {
-	PTTRACE_FUNC
+	PTTRACE_FUNC_P1( scene )
 
 	pcloud::Scene *c = sceneFromHandle( scene );
 
@@ -702,13 +722,16 @@ PTres	PTAPI ptDeselectScene( PThandle scene )
 //-----------------------------------------------------------------------------
 PTbool   PTAPI ptSetLayerColor( PTuint layer, PTfloat *rgb3, PTfloat blend )
 {
-	PTTRACE_FUNC
-
 	if (!rgb3)
 	{
+		PTTRACE_FUNC
+
 		setLastErrorCode(PTV_VOID_POINTER);
 		return false;
 	}
+
+	PTTRACE_FUNC_P5( layer, rgb3[0], rgb3[1], rgb3[2], blend )
+
 	ptgl::Color c(rgb3[0], rgb3[1], rgb3[2], blend);
 
 	if ( layer < thePointLayersState().numLayers() )
@@ -752,8 +775,11 @@ PTvoid   PTAPI ptResetLayerColors( void )
 // provides a count of the number of points represented, ie. ignores LOD and approximates the full count
 PTuint64 PTAPI ptCountApproxPointsInLayer( PTuint layer )
 {
-	PTTRACE_FUNC
-
+	PTTRACE_FUNC_P1( layer )
+	
 	PTuint64 count = PointEditManager::instance()->countPointsInLayer( layer );
+	
+	PTTRACEOUT << "=" << count;
+
 	return count;
 }

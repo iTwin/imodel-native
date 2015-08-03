@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+#include <pt/trace.h>
+
 using namespace pointsengine;
 
 RenderContext			*g_currentRenderContext=0;
@@ -548,6 +550,8 @@ PTint PTAPI _ptAddViewportDeduceContext(PTint index, const PTstr name)
 //-------------------------------------------------------------------------------
 PTint	PTAPI ptAddViewport(PTint index, const PTstr name, PTenum contextType)
 {
+	PTTRACE_FUNC_P3(index, name, contextType)
+
 	if (index >= PT_MAX_VIEWPORTS)
 	{
 		/* find least recently used */ 
@@ -622,6 +626,8 @@ PTint	PTAPI ptAddViewport(PTint index, const PTstr name, PTenum contextType)
 //-------------------------------------------------------------------------------
 PTvoid	PTAPI ptRemoveViewport(PTint index)
 {
+	PTTRACE_FUNC_P1(index)
+
 	int next = -1;
 	/* check there is at least one viewport */ 
 	for (int i=0; i<PT_MAX_VIEWPORTS; i++)
@@ -653,6 +659,8 @@ PTvoid	PTAPI ptRemoveViewport(PTint index)
 //-------------------------------------------------------------------------------
 PTvoid	PTAPI ptEnableViewport(PTint index)
 {
+	PTTRACE_FUNC_P1(index)
+
 	_ptInitialiseViewports();
 
 	if (g_viewports[index])
@@ -665,6 +673,8 @@ PTvoid	PTAPI ptEnableViewport(PTint index)
 //-------------------------------------------------------------------------------
 PTvoid	PTAPI ptDisableViewport(PTint index)
 {
+	PTTRACE_FUNC_P1(index)
+
 	if (g_viewports[index])
 	{
 		g_viewports[index]->enabled = false;
@@ -697,6 +707,8 @@ PTbool	PTAPI ptIsCurrentViewportEnabled()
 //-------------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewport(PTint index) 
 {
+	PTTRACE_FUNC_P1(index)
+
 	if (index > PT_MAX_VIEWPORTS-1) return;
 
 	g_currentViewport = index;
@@ -733,6 +745,8 @@ PTint	PTAPI ptViewportIndexFromName( const PTstr name )
 //-------------------------------------------------------------------------------
 PTint	PTAPI ptSetViewportByName(const PTstr name)
 {
+	PTTRACE_FUNC_P1(name)
+
 	_ptInitialiseViewports();
 
 	if (g_viewports[g_currentViewport] && 
@@ -955,6 +969,8 @@ static float screenToActual(PTint sx, PTint sy, PTdouble *actual, PTfloat *depth
 //-----------------------------------------------------------------------------
 PTint	PTAPI ptFindNearestScreenPoint( PThandle scene, PTint sx, PTint sy, PTdouble *pnt )
 {
+	PTTRACE_FUNC_P3( scene, sx, sy )
+
 	pt::vector3d act;
 	float px = screenToActual(sx,sy, act);
 	
@@ -978,6 +994,8 @@ PTint	PTAPI ptFindNearestScreenPoint( PThandle scene, PTint sx, PTint sy, PTdoub
 //-----------------------------------------------------------------------------
 PTint	PTAPI ptFindNearestScreenPointWDepth( PThandle scene, PTint sx, PTint sy, PTfloat *depth4x4, PTdouble *pnt )
 {
+	PTTRACE_FUNC_P3( scene, sx, sy )
+
 	pt::vector3d act;
 	float px = screenToActual(sx,sy, act, depth4x4 );
 	
@@ -994,6 +1012,8 @@ PTint	PTAPI ptFindNearestScreenPointWDepth( PThandle scene, PTint sx, PTint sy, 
 //-----------------------------------------------------------------------------
 PTbool	PTAPI ptReadViewFromGL( void )
 {
+	PTTRACE_FUNC
+
 	_ptInitialiseViewports();
 
 	ptgl::Viewstore view(true);
@@ -1019,6 +1039,8 @@ PTbool	PTAPI ptReadViewFromDX( void )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewProjectionOrtho( PTdouble l, PTdouble r, PTdouble b, PTdouble t, PTdouble n, PTdouble f )
 {
+	PTTRACE_FUNC_P6( l,r,b,t,n,f )
+
 	_ptInitialiseViewports();
 
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
@@ -1034,6 +1056,8 @@ PTvoid	PTAPI ptSetViewProjectionOrtho( PTdouble l, PTdouble r, PTdouble b, PTdou
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewProjectionFrustum( PTdouble l, PTdouble r, PTdouble b, PTdouble t, PTdouble n, PTdouble f )
 {
+	PTTRACE_FUNC_P6( l,r,b,t,n,f )
+
 	_ptInitialiseViewports();
 
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
@@ -1049,6 +1073,8 @@ PTvoid	PTAPI ptSetViewProjectionFrustum( PTdouble l, PTdouble r, PTdouble b, PTd
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewProjectionMatrix( const PTdouble *matrix, bool row_major )
 {
+	PTTRACE_FUNC
+
 	_ptInitialiseViewports();
 
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
@@ -1064,6 +1090,8 @@ PTvoid	PTAPI ptSetViewProjectionMatrix( const PTdouble *matrix, bool row_major )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewProjectionPerspective( PTenum type, PTdouble fov, PTdouble aspect, PTdouble n, PTdouble f)
 {
+	PTTRACE_FUNC_P5( type, fov, aspect, n, f )
+
 	_ptInitialiseViewports();
 	
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
@@ -1094,6 +1122,8 @@ PTvoid	PTAPI ptSetViewProjectionPerspective( PTenum type, PTdouble fov, PTdouble
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewEyeLookAt( const PTdouble *eye, const PTdouble *target, const PTdouble *up )
 {
+	PTTRACE_FUNC 
+
 	_ptInitialiseViewports();
 
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
@@ -1135,6 +1165,8 @@ PTvoid	PTAPI ptSetViewEyeLookAt( const PTdouble *eye, const PTdouble *target, co
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewEyeMatrix( PTdouble *matrix, bool row_major )
 {
+	PTTRACE_FUNC 
+
 	_ptInitialiseViewports();
 
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
@@ -1150,6 +1182,8 @@ PTvoid	PTAPI ptSetViewEyeMatrix( PTdouble *matrix, bool row_major )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSetViewportSize( PTint left, PTint bottom, PTuint width, PTuint height )
 {
+	PTTRACE_FUNC_P4( left, bottom, width, height )
+
 	_ptInitialiseViewports();
 
 	int *vp = g_viewports[g_currentViewport]->viewParams.viewport;
@@ -1163,6 +1197,8 @@ PTvoid	PTAPI ptSetViewportSize( PTint left, PTint bottom, PTuint width, PTuint h
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptGetViewEyeMatrix( PTdouble *matrix )
 {
+	PTTRACE_FUNC 
+
 	_ptInitialiseViewports();
 	pt::ViewParams &viewp = g_viewports[g_currentViewport]->viewParams;
 

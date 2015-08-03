@@ -44,8 +44,11 @@ struct GlobalState
 
 	inline bool						inScope( const pcloud::PointCloud *cloud ) const
 	{
+
 		if (!cloud || !cloud->displayInfo().visible()) return false;		
 
+		if (execSceneScope && cloud->scene() != execSceneScope) return false;
+		
 		if (!scope) return true;
 
 		return	scopeIsScene ? inScope( cloud->scene() ) : 
@@ -58,6 +61,8 @@ struct GlobalState
 	{
 		if (!scene || !scene->displayInfo().visible()) return false;		
 
+		if (execSceneScope && execSceneScope != scene) return false;
+
 		if (!scope) return true;
 
 		if (!scopeIsScene) return true;	/* will get dismissed later on cloud check */ 
@@ -67,8 +72,13 @@ struct GlobalState
 			scene->getInstanceIndex() == scopeInstance 
 			) ? true : false;
 	}
-	pcloud::PointCloudGUID		scope;
-	bool						scopeIsScene;
+	void setExecutionScope( pcloud::Scene *scene )
+	{
+		execSceneScope = scene;
+	}
+
+	pcloud::PointCloudGUID		scope;				// scope that limits following edit operations 
+	bool						scopeIsScene;	
 	int							scopeInstance;
 
 	/* application state */ 
@@ -79,8 +89,8 @@ struct GlobalState
 	EditConstraint					*constraint;
 
 private:
-	LayerState		layer;
-
+	LayerState					layer;
+	pcloud::Scene*				execSceneScope;	// this scope is used to limit the entire execution - IT IS NOT WRITTEN IN THE STATE NODE
 };
 struct PreserveState
 {

@@ -497,6 +497,7 @@ PTbool	PTAPI ptGetPointAttribute( PThandle cloud, PThandle pntPartA, PThandle pn
 /* query : Warning Partial implementation only may assert */ 
 PThandle PTAPI ptCreateSelPointsQuery();
 PThandle PTAPI ptCreateVisPointsQuery();
+PThandle PTAPI ptCreateAllPointsQuery();
 PThandle PTAPI ptCreateFrustumPointsQuery();
 PThandle PTAPI ptCreatePlaneQuery( PTdouble planeX, PTdouble planeY, PTdouble planeZ, PTdouble planeK, PTdouble thickness );
 PThandle PTAPI ptCreatePolygonQuery( PTint numVertices, PTdouble *vertices, PTdouble thickness );

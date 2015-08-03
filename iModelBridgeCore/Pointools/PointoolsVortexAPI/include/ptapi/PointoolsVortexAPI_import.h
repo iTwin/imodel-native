@@ -541,6 +541,7 @@ typedef PTbool (__stdcall *PTMOVESELTOCURRENTLAYER)( PTbool deselect );
 /* points extraction */ 
 typedef PThandle (__stdcall * PTCREATESELPOINTSQUERY)(void);
 typedef PThandle (__stdcall * PTCREATEVISPOINTSQUERY)(void);
+typedef PThandle (__stdcall * PTCREATEALLPOINTSQUERY)(void);
 typedef PThandle (__stdcall * PTCREATEBOUNDINGBOXQUERY)( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, 
 														PTdouble maxy, PTdouble maxz );
 typedef PThandle (__stdcall * PTCREATEORIENTEDBOUNDINGBOXQUERY)( PTdouble minx, PTdouble miny, PTdouble minz, PTdouble maxx, 
@@ -933,6 +934,7 @@ extern PTGETPOINTATTRIBUTE ptGetPointAttribute;
 
 extern PTCREATESELPOINTSQUERY ptCreateSelPointsQuery;
 extern PTCREATEVISPOINTSQUERY ptCreateVisPointsQuery;
+extern PTCREATEALLPOINTSQUERY ptCreateAllPointsQuery;
 extern PTCREATEBOUNDINGBOXQUERY ptCreateBoundingBoxQuery;
 extern PTCREATEORIENTEDBOUNDINGBOXQUERY ptCreateOrientedBoundingBoxQuery;
 extern PTCREATEBOUNDINGSPHEREQUERY ptCreateBoundingSphereQuery;
