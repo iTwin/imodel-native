@@ -156,6 +156,7 @@ protected:
     friend struct  IndexedViewport;
     friend struct  PhysicalRedlineViewController;
     friend struct  IACSManager;
+    friend struct  ToolAdmin;
 
     DgnDbR         m_dgndb;
     ViewFlags      m_viewFlags;
@@ -218,6 +219,9 @@ protected:
     //!< Restore settings from the supplied Json object. These values were persisted in the database and in the undo stack
     //!< Note that if you override _RestoreFromSettings, you must call T_Super::_RestoreFromSettings!
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR);
+
+    //! Display locate circle and information about the current AccuSnap/auto-locate HitDetail.
+    DGNPLATFORM_EXPORT virtual void _DrawLocateCursor(DgnViewportR, DPoint3dCR, double aperture, bool isLocateCircleOn, HitDetailCP hit=nullptr);
 
     //! Decorators are not stored in the backing store and must therefore be drawn every frame. Overlay decorators are drawn with the z-buffer
     //! disabled and therefore always appear on top of elements in the view. Note that graphics drawn from this method are always drawn in a
