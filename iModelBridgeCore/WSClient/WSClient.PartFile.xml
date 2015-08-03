@@ -2,26 +2,30 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // WebServicesClient lib                                                  // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="WebServicesClient-Xliffs" />
         <SubPart PartName="WebServicesClient-Library" />
         <SubPart PartName="WebServicesClient-Bindings" />
         <SubPart PartName="WebServicesClient-Bindings-Android" />
+        <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
     <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
         <Bindings>
-            <PublicAPI Domain="WebServices"/>
+            <PublicAPI Domain="WebServices" />
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" 
+    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
         <SubPart PartName="PublishedApi" PartFile="MobileDgn" Repository="MobileDgn"/>
-        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesClient-PublicAPI" />
         <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient"/>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
     </Part>
 
@@ -48,13 +52,61 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Xliffs" BentleyBuildMakeFile="xliffs.mke">
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // WebServicesCache lib                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="WebServicesCache">
+        <SubPart PartName="WebServicesCache-PublicAPI" />
+        <SubPart PartName="WebServicesCache-Library" />
+        <SubPart PartName="WebServicesCache-Bindings" />
+        <SubPart PartName="WebServicesCache-Bindings-Android" />
+        <SubPart PartName="WebServicesCache-Schemas" />
+        <SubPart PartName="WSClient-Xliffs" />
+    </Part>
+
+    <Part Name="WebServicesCache-PublicAPI" BentleyBuildMakeFile="CachePrewire.mke">
         <Bindings>
-            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/WSError_en.xliff
-                Delivery/xliffs/Connect_en.xliff
-                Delivery/xliffs/BuddiError_en.xliff
-            </Files>
+            <PublicAPI Domain="WebServices" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
+     BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+        <SubPart PartName="WebServicesCache-PublicAPI" />
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
+    </Part>
+
+    <Part Name="WebServicesCache-Bindings" ExcludePlatforms="Android*">
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Bindings-Android" OnlyPlatforms="Android*">
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache.so</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Schemas" BentleyBuildMakeFile="CacheSchemasDelivery.mke">
+        <Bindings>
+            <Directory
+                SourceName="Delivery/ECSchemas/WSClient/Cache"
+                SubPartDirectory="ECSchemas/WSClient/Cache"
+                ProductDirectoryName="ECSchemas"
+                ProductSubDirectory="ECSchemas/WSClient/Cache" />
         </Bindings>
     </Part>
 
@@ -62,19 +114,28 @@
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
+    <Part Name="WSClient-Xliffs" BentleyBuildMakeFile="xliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/WebServicesCache_en.xliff
+                Delivery/xliffs/WebServicesClient_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
     <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
     <Part Name="L10N-WSClientXliffs-en" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/en/">
-        <SubPart PartName="WebServicesClient-Xliffs" />
+        <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
     <!-- Translated Xliffs are linked into the BuildContext here -->
     <Part Name="L10N-WSClientXliffs-cs" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=cs">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/WSError_cs.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/Connect_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/WebServicesCache_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/WebServicesClient_cs.xliff</Files>
         </Bindings>
     </Part>
 
@@ -82,8 +143,8 @@
     <Part Name="L10N-WSClientXliffs-de" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=de">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/WSError_de.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/Connect_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/WebServicesCache_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/WebServicesClient_de.xliff</Files>
         </Bindings>
     </Part>
 
@@ -91,8 +152,8 @@
     <Part Name="L10N-WSClientXliffs-es" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=es">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/WSError_es.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/Connect_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/WebServicesCache_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/WebServicesClient_es.xliff</Files>
         </Bindings>
     </Part>
 
@@ -100,8 +161,8 @@
     <Part Name="L10N-WSClientXliffs-fi" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fi">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/WSError_fi.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/Connect_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/WebServicesCache_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/WebServicesClient_fi.xliff</Files>
         </Bindings>
     </Part>
 
@@ -109,8 +170,8 @@
     <Part Name="L10N-WSClientXliffs-fr" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=fr">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/WSError_fr.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/Connect_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/WebServicesCache_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/WebServicesClient_fr.xliff</Files>
         </Bindings>
     </Part>
 
@@ -118,8 +179,8 @@
     <Part Name="L10N-WSClientXliffs-it" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=it">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/WSError_it.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/Connect_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/WebServicesCache_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/WebServicesClient_it.xliff</Files>
         </Bindings>
     </Part>
 
@@ -127,8 +188,8 @@
     <Part Name="L10N-WSClientXliffs-ja" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ja">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/WSError_ja.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/Connect_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/WebServicesCache_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/WebServicesClient_ja.xliff</Files>
         </Bindings>
     </Part>
 
@@ -136,8 +197,8 @@
     <Part Name="L10N-WSClientXliffs-ko" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ko">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/WSError_ko.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/Connect_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/WebServicesCache_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/WebServicesClient_ko.xliff</Files>
         </Bindings>
     </Part>
 
@@ -145,8 +206,8 @@
     <Part Name="L10N-WSClientXliffs-nl" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=nl">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/WSError_nl.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/Connect_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/WebServicesCache_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/WebServicesClient_nl.xliff</Files>
         </Bindings>
     </Part>
 
@@ -154,8 +215,8 @@
     <Part Name="L10N-WSClientXliffs-pl" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pl">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/WSError_pl.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/Connect_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/WebServicesCache_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/WebServicesClient_pl.xliff</Files>
         </Bindings>
     </Part>
 
@@ -163,8 +224,8 @@
     <Part Name="L10N-WSClientXliffs-pt" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=pt">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/WSError_pt.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/Connect_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/WebServicesCache_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/WebServicesClient_pt.xliff</Files>
         </Bindings>
     </Part>
 
@@ -172,8 +233,8 @@
     <Part Name="L10N-WSClientXliffs-ru" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=ru">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/WSError_ru.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/Connect_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/WebServicesCache_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/WebServicesClient_ru.xliff</Files>
         </Bindings>
     </Part>
 
@@ -181,8 +242,8 @@
     <Part Name="L10N-WSClientXliffs-sv" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=sv">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/WSError_sv.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/Connect_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/WebServicesCache_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/WebServicesClient_sv.xliff</Files>
         </Bindings>
     </Part>
 
@@ -190,8 +251,8 @@
     <Part Name="L10N-WSClientXliffs-tr" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=tr">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/WSError_tr.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/Connect_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/WebServicesCache_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/WebServicesClient_tr.xliff</Files>
         </Bindings>
     </Part>
 
@@ -199,8 +260,8 @@
     <Part Name="L10N-WSClientXliffs-zh-cn" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-cn">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/WSError_zh-cn.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/Connect_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/WebServicesCache_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/WebServicesClient_zh-cn.xliff</Files>
         </Bindings>
     </Part>
 
@@ -208,8 +269,8 @@
     <Part Name="L10N-WSClientXliffs-zh-tw" BentleyBuildMakeFile="l10n-WSClient.mke" BentleyBuildMakeOptions="-dL10N_LANGUAGE_TAG=zh-tw">
         <RequiredRepository>l10n-WSClient</RequiredRepository>
         <Bindings>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/Connect_zh-tw.xliff</Files>
-            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/WSError_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/WebServicesClient_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-WSClientXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/WebServicesCache_zh-tw.xliff</Files>
         </Bindings>
     </Part>
 
@@ -221,9 +282,9 @@
      BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
         <!-- Get the tested API -->
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
         <!-- Needed for published unit tests -->
         <SubPart PartName="WebServicesClient-PublishedAPI" />
+        <SubPart PartName="WebServicesCache-PublishedAPI" />
     </Part>
-
 </BuildContext>
-

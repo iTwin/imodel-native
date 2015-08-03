@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="DSCacheLegacySupportSchema" nameSpacePrefix="DSCLSS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
+    <ECRelationshipClass typeName="LegacyParentRelationship" description="Used for WSG 1.x when creating instances with parent" isDomainClass="True" strength="holding" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="bsm:AnyClass" />
+        </Source>
+        <Target cardinality="(1,N)" polymorphic="True">
+            <Class class="bsm:AnyClass" />
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

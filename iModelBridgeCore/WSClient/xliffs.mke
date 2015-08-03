@@ -1,23 +1,23 @@
-#----------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #
 #     $Source: xliffs.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
-#----------------------------------------------------------------------
+#------------------------------------------------------------------------------
 PolicyFile = $(SrcRoot)bsicommon/sharedmki/InternalSystemPolicy.mki
 %include mdl.mki
 
 ContextDeliveryDir  = $(OutputRootDir)BuildContexts/WSClient/Delivery/
 
-SQLANG_CHeader  = $(_MakeFilePath)Client/WSError.xliff.h
-SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/WSError_en.xliff
+SQLANG_Xliff = $(OutputRootDir)build/WSClient/xliffs/WebServicesCache_en.xliff
+SQLANG_CHeader =
+SQLANG_CHeader + $(_MakeFilePath)Cache/ICachingDataSource.xliff.h
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
 
-SQLANG_CHeader  = $(_MakeFilePath)Connect/Connect.xliff.h
-SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/Connect_en.xliff
-%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
-
-SQLANG_CHeader  = $(_MakeFilePath)Configuration/BuddiError.xliff.h
-SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/BuddiError_en.xliff
+SQLANG_Xliff = $(OutputRootDir)build/WSClient/xliffs/WebServicesClient_en.xliff
+SQLANG_CHeader =
+SQLANG_CHeader + $(_MakeFilePath)Configuration/BuddiError.xliff.h
+SQLANG_CHeader + $(_MakeFilePath)Connect/Connect.xliff.h
+SQLANG_CHeader + $(_MakeFilePath)Client/WSError.xliff.h
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki

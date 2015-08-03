@@ -19,11 +19,13 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
     L10N_STRING(FIELDAPPS_SingleSignOn)                  // =="Single sign-on"==
     L10N_STRING(FIELDAPPS_DontHaveAnAccount)             // =="Don't have an account yet?"==
     L10N_STRING(FIELDAPPS_SignUp)                        // =="Sign up"==
+    L10N_STRING(FIELDAPPS_SignUpSuggestion)              // =="Don't have a profile?"==
+    L10N_STRING(FIELDAPPS_SignUpSuggestionLink)          // =="Register"==
     L10N_STRING(FIELDAPPS_Email)                         // =="Email"==
     L10N_STRING(FIELDAPPS_Password)                      // =="Password"==
     L10N_STRING(FIELDAPPS_ForgotPassword)                // =="Forgot Password?"==
     L10N_STRING(FIELDAPPS_SignIn)                        // =="Sign in"==
-    L10N_STRING(FIELDAPPS_ProductDemo)                   // =="Product Demo"==
+    L10N_STRING(FIELDAPPS_ProductDemo)                   // =="Demo"==
     L10N_STRING(FIELDAPPS_EmailAndPasswordRequired)      // =="You must enter an email address and password."==
     L10N_STRING(FIELDAPPS_Error)                         // =="Error"==
     L10N_STRING(FIELDAPPS_SignInFailed)                  // =="Sign In Failed"==

@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="DataSourceSpecification" nameSpacePrefix="DSS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>DataSourceSpecification.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="AdHocPropertyContainerDefinition" description="Folows proposed Ad-Hoc design 8.11 (2013-11). All referenced properties should be string type except TypeProperty - it must be int enum" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>NameProperty</string>
+                    <string>DisplayLabelProperty</string>
+                    <string>ValueProperty</string>
+                    <string>TypeProperty</string>
+                    <string>UnitProperty</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="NameProperty" typeName="string" />
+        <ECProperty propertyName="DisplayLabelProperty" typeName="string" />
+        <ECProperty propertyName="ValueProperty" typeName="string" />
+        <ECProperty propertyName="TypeProperty" typeName="string" />
+        <ECProperty propertyName="UnitProperty" typeName="string" />
+    </ECClass>
+    <ECClass typeName="AdHocPropertySpecification" description="Folows proposed Ad-Hoc design 8.11 (2013-11). AdHocPropertyContainer - array of struct class custom attributed with AdHocPropertyContainerDefinition" isDomainClass="False" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>AdHocPropertyContainer</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="AdHocPropertyContainer" typeName="string" />
+    </ECClass>
+    <ECClass typeName="DocumentDependentProperties" description="Identifies document class" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>Version</string>
+                    <string>Name</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Version" typeName="string" />
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+    <ECClass typeName="HierarchyDefinition" description="Identifies classes that could be children of given class in data source navigation service" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <ClassReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAClass>
+                    <string>ChildClasses</string>
+                </PropertiesThatReferenceAClass>
+            </ClassReferenceProperties>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="ChildClasses" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="InstanceImageSpecification" description="Specify icon to use (&quot;Folder&quot;, &quot;Project&quot;, etc.) by class instance property value" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>PropertyName</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="PropertyName" typeName="string" displayLabel="Property Name" />
+    </ECClass>
+    <ECClass typeName="InstanceListDetailProperties" description="Ordered list of properties that could be optionaly displayed to user in instance list (in addition to instance label)" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>DetailProperties</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="DetailProperties" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+    <ECClass typeName="InstanceSortingOptions" displayLabel="Options of class item sorting" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>SortingProperty</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="SortingType" typeName="int">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <DisplayString>Do not apply sorting</DisplayString>
+                            <Value>0</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Natural alpha-numeric sorting by the instance label</DisplayString>
+                            <Value>1</Value>
+                        </ValueMap>
+                        <ValueMap>
+                            <DisplayString>Natural alpha-numeric sorting by a specified property</DisplayString>
+                            <Value>2</Value>
+                        </ValueMap>
+                    </ValueMap>
+                    <MustBeFromList>True</MustBeFromList>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SortingDirection" typeName="int">
+            <ECCustomAttributes>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <MustBeFromList>True</MustBeFromList>
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>Ascending sorting.</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>Descending sorting.</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SortingProperty" typeName="string" />
+    </ECClass>
+    <ECClass typeName="OrderedInstanceSortingOptions" displayLabel="Ordered options of class item sorting" isDomainClass="True" isCustomAttributeClass="True">
+        <ECArrayProperty propertyName="Options" typeName="InstanceSortingOptions" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+    </ECClass>
+    <ECClass typeName="RevisionStatusSpecification" description="Specify class int property that defines instance revision status" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>PropertyName</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ValuePlanned" typeName="int" />
+        <ECProperty propertyName="ValueNotApproved" typeName="int" />
+        <ECProperty propertyName="ValueApproved" typeName="int" />
+        <ECProperty propertyName="ValuePreviousRevision" typeName="int" />
+        <ECProperty propertyName="ValueObsolete" typeName="int" />
+        <ECProperty propertyName="PropertyName" typeName="string" />
+    </ECClass>
+    <ECClass typeName="SettingClass" description="Mark setting class for data source and property that defines setting value. Setting key is instance id" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>ValueProperty</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ValueProperty" typeName="string" />
+    </ECClass>
+    <ECClass typeName="UniquePropertiesPerParent" description="Specify properties in class that should be unique given one parent. Example - Documents in one Folder must have unique Name properties" isDomainClass="True" isCustomAttributeClass="True">
+        <ECCustomAttributes>
+            <PropertyReferenceProperties xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <PropertiesThatReferenceAProperty>
+                    <string>UniqueProperties</string>
+                </PropertiesThatReferenceAProperty>
+            </PropertyReferenceProperties>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="UniqueProperties" typeName="string" minOccurs="0" maxOccurs="unbounded" />
+    </ECClass>
+</ECSchema>

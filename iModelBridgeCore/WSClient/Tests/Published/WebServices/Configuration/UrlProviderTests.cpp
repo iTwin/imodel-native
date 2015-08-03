@@ -24,7 +24,8 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedURL_GetsURLFromBuddiWritesTo
     Utf8String url = "testUrl";
     MockLocalState localState;
 
-    EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return(""));
+    EXPECT_CALL(localState, GetValue(_, _))
+        .WillOnce(Return(Json::Value::null));
     EXPECT_CALL(localState, SaveValue(_, _, _)).Times(1);
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
@@ -107,7 +108,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     UrlProvider::CleanUpUrlCache();
     }
 
-TEST_F(UrlProviderTests, DISABLED_CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
+TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
     Utf8String url = "testUrl";

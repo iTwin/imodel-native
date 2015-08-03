@@ -37,9 +37,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI</NMakeBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI -c</NMakeCleanCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesClient b</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
@@ -54,6 +54,72 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Cache\CacheNavigationTask.cpp" />
+    <ClCompile Include="Cache\CachingDataSource.cpp" />
+    <ClCompile Include="Cache\CachingTaskBase.cpp" />
+    <ClCompile Include="Cache\ChangesGraph.cpp" />
+    <ClCompile Include="Cache\DownloadFilesTask.cpp" />
+    <ClCompile Include="Cache\Examples\CachingExample.cpp" />
+    <ClCompile Include="Cache\ICachingDataSource.cpp" />
+    <ClCompile Include="Cache\IQueryProvider.cpp" />
+    <ClCompile Include="Cache\NavigationCachingOptions.cpp" />
+    <ClCompile Include="Cache\Network\ResponseGuard.cpp" />
+    <ClCompile Include="Cache\Persistence\CachedObjectInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\CachedResponseKey.cpp" />
+    <ClCompile Include="Cache\Persistence\CacheEnvironment.cpp" />
+    <ClCompile Include="Cache\Persistence\CacheQueryHelper.cpp" />
+    <ClCompile Include="Cache\Persistence\ChangeManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Changes\ChangeInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Changes\ChangeInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\CacheSettings.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\DataSourceCacheOpenState.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\SchemaContext.cpp" />
+    <ClCompile Include="Cache\Persistence\Core\SchemaManager.cpp" />
+    <ClCompile Include="Cache\Persistence\DataReadOptions.cpp" />
+    <ClCompile Include="Cache\Persistence\DataSourceCache.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileCacheManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Files\FileInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Hierarchy\HierarchyManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Hierarchy\RootManager.cpp" />
+    <ClCompile Include="Cache\Persistence\IChangeManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\InstanceCacheHelper.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\NavigationBaseManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\ObjectInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\ObjectInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\RelationshipInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Instances\RelationshipInfoManager.cpp" />
+    <ClCompile Include="Cache\Persistence\RepositoryInfoStore.cpp" />
+    <ClCompile Include="Cache\Persistence\Responses\CachedResponseInfo.cpp" />
+    <ClCompile Include="Cache\Persistence\Responses\CachedResponseManager.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\RawWSObjectsReader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\Upgrader.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderBase.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.cpp" />
+    <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.cpp" />
+    <ClCompile Include="Cache\ServerQueryHelper.cpp" />
+    <ClCompile Include="Cache\SyncCachedDataTask.cpp" />
+    <ClCompile Include="Cache\SyncCachedInstancesSeperatelyTask.cpp" />
+    <ClCompile Include="Cache\SyncCachedInstancesTask.cpp" />
+    <ClCompile Include="Cache\SyncLocalChangesTask.cpp" />
+    <ClCompile Include="Cache\Transactions\BeSQLiteDbTransactionHandler.cpp" />
+    <ClCompile Include="Cache\Transactions\CacheTransaction.cpp" />
+    <ClCompile Include="Cache\Transactions\CacheTransactionManager.cpp" />
+    <ClCompile Include="Cache\Transactions\Transaction.cpp" />
+    <ClCompile Include="Cache\Util\ECCustomAttributeHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECDbAdapter.cpp" />
+    <ClCompile Include="Cache\Util\ECDbDebugInfo.cpp" />
+    <ClCompile Include="Cache\Util\ECDbHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECExpressionHelper.cpp" />
+    <ClCompile Include="Cache\Util\ECSqlStatementCache.cpp" />
+    <ClCompile Include="Cache\Util\ExtendedData.cpp" />
+    <ClCompile Include="Cache\Util\ExtendedDataAdapter.cpp" />
+    <ClCompile Include="Cache\Util\FileUtil.cpp" />
+    <ClCompile Include="Cache\Util\ISelectProvider.cpp" />
+    <ClCompile Include="Cache\Util\ObservableECDb.cpp" />
+    <ClCompile Include="Cache\Util\TempFile.cpp" />
+    <ClCompile Include="Cache\Util\ValueIncrementor.cpp" />
     <ClCompile Include="Client\ChunkedUploadRequest.cpp" />
     <ClCompile Include="Client\ClientConfiguration.cpp" />
     <ClCompile Include="Client\ClientConnection.cpp" />
@@ -95,9 +161,90 @@
     <ClCompile Include="Client\WSRepositoryClient.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Cache\CacheNavigationTask.h" />
+    <ClInclude Include="Cache\Logging.h" />
+    <ClInclude Include="Cache\CachingTaskBase.h" />
+    <ClInclude Include="Cache\ChangesGraph.h" />
+    <ClInclude Include="Cache\DownloadFilesTask.h" />
+    <ClInclude Include="Cache\Examples\CachingExample.h" />
+    <ClInclude Include="Cache\ICachingDataSource.xliff.h" />
+    <ClInclude Include="Cache\Network\ResponseGuard.h" />
+    <ClInclude Include="Cache\Persistence\Changes\ChangeInfo.h" />
+    <ClInclude Include="Cache\Persistence\Changes\ChangeInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\Core\CacheSchema.h" />
+    <ClInclude Include="Cache\Persistence\Core\CacheSettings.h" />
+    <ClInclude Include="Cache\Persistence\Core\DataSourceCacheOpenState.h" />
+    <ClInclude Include="Cache\Persistence\Core\ECDbFileInfoSchema.h" />
+    <ClInclude Include="Cache\Persistence\Core\SchemaContext.h" />
+    <ClInclude Include="Cache\Persistence\Core\SchemaManager.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileCacheManager.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileInfo.h" />
+    <ClInclude Include="Cache\Persistence\Files\FileInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\HierarchyManager.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\IDeleteHandler.h" />
+    <ClInclude Include="Cache\Persistence\Hierarchy\RootManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\InstanceCacheHelper.h" />
+    <ClInclude Include="Cache\Persistence\Instances\NavigationBaseManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\ObjectInfo.h" />
+    <ClInclude Include="Cache\Persistence\Instances\ObjectInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\Instances\RelationshipInfo.h" />
+    <ClInclude Include="Cache\Persistence\Instances\RelationshipInfoManager.h" />
+    <ClInclude Include="Cache\Persistence\RepositoryInfoStore.h" />
+    <ClInclude Include="Cache\Persistence\Responses\CachedResponseInfo.h" />
+    <ClInclude Include="Cache\Persistence\Responses\CachedResponseManager.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\RawWSObjectsReader.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\Upgrader.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderBase.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV3ToV4.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV4ToV5.h" />
+    <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV5ToCurrent.h" />
+    <ClInclude Include="Cache\Util\StringHelper.h" />
+    <ClInclude Include="Cache\SyncCachedDataTask.h" />
+    <ClInclude Include="Cache\SyncCachedInstancesSeperatelyTask.h" />
+    <ClInclude Include="Cache\SyncCachedInstancesTask.h" />
+    <ClInclude Include="Cache\SyncLocalChangesTask.h" />
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
     <ClInclude Include="Configuration\BuddiError.xliff.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\ICachingDataSource.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\IQueryProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\NavigationCachingOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CachedObjectInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CachedResponseKey.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CacheEnvironment.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\CacheQueryHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\ChangeManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\DataReadOptions.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\DataSourceCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\DataSourceCacheCommon.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IChangeManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IDataSourceCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Persistence\IRepositoryInfoStore.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\ServerQueryHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\CacheTransaction.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\CacheTransactionManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\ICacheTransactionManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\ITransactionHandler.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Transactions\Transaction.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECCustomAttributeHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECDbAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECDbDebugInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECDbHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECExpressionHelper.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECSqlAdapterCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECSqlStatementCache.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ExtendedData.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ExtendedDataAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\FileUtil.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\IECDbAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\IExtendedDataAdapter.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ISelectProvider.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ObservableECDb.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\TempFile.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\Util\ValueIncrementor.h" />
+    <ClInclude Include="PublicAPI\WebServices\Cache\WebServicesCache.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ClientInfo.h" />
     <ClInclude Include="Client\ClientInternal.h" />
     <ClInclude Include="Connect\AuthenticationData.h" />
@@ -145,15 +292,31 @@
     <ClInclude Include="PublicAPI\WebServices\WebServices.h" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="WSClient.PartFile.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheLegacySupportSchema.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.04.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.05.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\MetaSchema.02.00.ecschema.xml" />
+    <Xml Include="WSClient.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
+    <None Include="CacheLib.mke" />
+    <None Include="CacheLibPolicy.mki" />
+    <None Include="CachePrewire.mke" />
+    <None Include="Cache\Cache.mki" />
     <None Include="ClientLib.mke" />
     <None Include="ClientLibPolicy.mki" />
     <None Include="Client\Client.mki" />
     <None Include="Configuration\Configuration.mki" />
     <None Include="Connect\Connect.mki" />
     <None Include="ClientPrewire.mke" />
+    <None Include="CacheSchemasDelivery.mke" />
+    <None Include="l10n-WSClient.mke" />
     <None Include="Licensing\Licensing.mki" />
     <None Include="xliffs.mke" />
   </ItemGroup>

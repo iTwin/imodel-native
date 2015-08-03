@@ -23,6 +23,35 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestApplication.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnTestEnvironment.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnViewportHelpers.h" />
+    <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Cache\ChangeGraphTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\MockCachingDataSource.h" />
+    <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockChangeManager.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockDataSourceCache.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockRepositoryInfoStore.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\StubRepositoryInfoStore.h" />
+    <ClInclude Include="Published\WebServices\Cache\ServerQueryHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\MockTransactionHandler.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\StubCacheTransactionManager.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECDbAdapterTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECDbHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ISelectProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbSchemaChangeListener.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
@@ -124,6 +153,23 @@
     <ClCompile Include="NonPublished\Win7WindowManagerTests.cpp" />
     <ClCompile Include="Published\ApplicationTests.cpp" />
     <ClCompile Include="Published\BackstageTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECDbHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ISelectProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
@@ -253,9 +299,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI WSClientUnitTests BeGTestExe</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 reb WSClientUnitTests BeGTestExe -s</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
+    <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI WSClientUnitTests BeGTestExe -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\BeGTest\bin\begtest.exe</NMakeOutput>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
