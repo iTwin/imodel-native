@@ -128,9 +128,9 @@ struct IViewOutput : IRefCounted, IViewDraw
 
 protected:
     virtual void      _SetViewAttributes(ViewFlags viewFlags, ColorDef bgColor, bool usebgTexture, AntiAliasPref aaLines, AntiAliasPref aaText) = 0;
-    virtual DgnDisplayCoreTypes::DeviceContextP    _GetScreenDC () const = 0;
-    virtual StatusInt _AssignDC (DgnDisplayCoreTypes::DeviceContextP) = 0;
-    virtual void      _AddLights(bool    threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
+    virtual DgnDisplayCoreTypes::DeviceContextP    _GetScreenDC() const = 0;
+    virtual StatusInt _AssignDC(DgnDisplayCoreTypes::DeviceContextP) = 0;
+    virtual void      _AddLights(bool threeDview, RotMatrixCP rotMatrixP, DgnModelP model) = 0;
     virtual void      _AdjustBrightness(bool useFixedAdaptation, double brightness) = 0;
     virtual uint64_t  _GetLightStamp() = 0;
     virtual void      _DefineFrustum(DPoint3dCR frustPts, double fraction, bool is2d) = 0;
