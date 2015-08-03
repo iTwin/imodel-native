@@ -233,7 +233,7 @@ ImportedTerrain InroadsImporter::_ImportTerrain (WCharCP name) const
             BcDTMPtr dtm = BcDTM::Create ();
             dtm->SetCleanUpOptions (DTMCleanupFlags::All);
             dtm->SetTriangulationParameters (0.001, 0.001, 0, 100);
-            if (!m_callback || !m_callback->StartTerrain (name, L"", dtm))
+            if (!m_callback || m_callback->StartTerrain (name, L"", dtm))
                 {
                 ImporterArg arg;
                 arg.dtm = dtm.get();
