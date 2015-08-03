@@ -19,5 +19,5 @@
 
 #include <ECDb/ECRelationshipPath.h>
 #include <ECDb/ECJsonUtility.h>
-
+#include <ECDb/ECChangeSet.h>
 
