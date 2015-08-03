@@ -16,7 +16,12 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ValueIncrementor::ValueIncrementor(ECDb& db, ECSqlStatementCache& m_statementCache, ECPropertyCR ecProperty) :
+ValueIncrementor::ValueIncrementor
+(
+ECDb& db, 
+WebServices::ECSqlStatementCache& m_statementCache,
+ECPropertyCR ecProperty
+) :
 m_db(&db),
 m_statementCache(&m_statementCache),
 m_propertyClassId(ecProperty.GetClass().GetId()),
@@ -28,8 +33,7 @@ m_propertyName(ecProperty.GetName())
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ValueIncrementor::IncrementWithoutSaving(Utf8StringR valueOut)
     {
-    ECClassP propertyClass = nullptr;
-    m_db->GetEC().GetSchemaManager().GetECClass(propertyClass, m_propertyClassId);
+    ECClassCP propertyClass = m_db->Schemas().GetECClass(m_propertyClassId);
 
     Utf8PrintfString key("ValueIncrementor::IncrementWithoutSaving:%lld:%s", m_propertyClassId, m_propertyName.c_str());
     auto statement = m_statementCache->GetPreparedStatement(key, [&]

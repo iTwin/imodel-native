@@ -13,13 +13,13 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_EmptyChanges_ReturnsEmpty)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_EmptyChanges_ReturnsEmpty)
     {
     ChangeManager::Changes changes;
-    EXPECT_TRUE(ChangesGraph(changes).BuildChangeGroups().empty());
+    EXPECT_TRUE(ChangesGraph(changes).BuildCacheChangeGroups().empty());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithRelationship_ReturnsOneChangeGroup)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithRelationship_ReturnsOneChangeGroup)
     {
     auto keyA = StubECInstanceKey(1, 2);
     auto keyB = StubECInstanceKey(1, 3);
@@ -29,14 +29,14 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithRelationship_Returns
     changes.AddChange(ChangeManager::ObjectChange(keyA, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 1));
     changes.AddChange(ChangeManager::RelationshipChange(keyAB, keyA, keyB, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 2));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(1, groups.size());
     EXPECT_EQ(keyA, groups[0]->GetObjectChange().GetInstanceKey());
     EXPECT_EQ(keyAB, groups[0]->GetRelationshipChange().GetInstanceKey());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithFile_ReturnsOneChangeGroup)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithFile_ReturnsOneChangeGroup)
     {
     auto keyA = StubECInstanceKey(1, 2);
 
@@ -44,7 +44,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithFile_ReturnsOneChang
     changes.AddChange(ChangeManager::ObjectChange(keyA, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 1));
     changes.AddChange(ChangeManager::FileChange(keyA, IChangeManager::ChangeStatus::Modified, ChangeManager::SyncStatus::Ready, 2));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(1, groups.size());
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, groups[0]->GetObjectChange().GetChangeStatus());
@@ -53,7 +53,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithFile_ReturnsOneChang
     EXPECT_EQ(keyA, groups[0]->GetFileChange().GetInstanceKey());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_ModifiedObjectWithFile_ReturnsSeperateChangeGroups)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ModifiedObjectWithFile_ReturnsSeperateChangeGroups)
     {
     auto keyA = StubECInstanceKey(1, 2);
 
@@ -61,7 +61,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ModifiedObjectWithFile_ReturnsSeperat
     changes.AddChange(ChangeManager::ObjectChange(keyA, IChangeManager::ChangeStatus::Modified, ChangeManager::SyncStatus::Ready, 1));
     changes.AddChange(ChangeManager::FileChange(keyA, IChangeManager::ChangeStatus::Modified, ChangeManager::SyncStatus::Ready, 2));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(2, groups.size());
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, groups[0]->GetObjectChange().GetChangeStatus());
@@ -71,7 +71,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ModifiedObjectWithFile_ReturnsSeperat
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, groups[1]->GetFileChange().GetChangeStatus());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_ObjectsCreatedFromRelatedExistingToNew_OrderedFromTopToBottom)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ObjectsCreatedFromRelatedExistingToNew_OrderedFromTopToBottom)
     {
     ChangeManager::Changes changes;
 
@@ -86,7 +86,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ObjectsCreatedFromRelatedExistingToNe
     changes.AddChange(ChangeManager::RelationshipChange(keyAE, keyA, keyE, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 3));
     changes.AddChange(ChangeManager::RelationshipChange(keyAB, keyA, keyB, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 4));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(2, groups.size());
 
@@ -97,7 +97,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ObjectsCreatedFromRelatedExistingToNe
     EXPECT_EQ(keyAB, groups[1]->GetRelationshipChange().GetInstanceKey());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_ObjectsCreatedFromNewToRelatedExisting_OrderedFromBottomToTop)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ObjectsCreatedFromNewToRelatedExisting_OrderedFromBottomToTop)
     {
     auto keyA = StubECInstanceKey(1, 2);
     auto keyB = StubECInstanceKey(1, 3);
@@ -111,7 +111,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ObjectsCreatedFromNewToRelatedExistin
     changes.AddChange(ChangeManager::RelationshipChange(keyAB, keyA, keyB, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 3));
     changes.AddChange(ChangeManager::RelationshipChange(keyBE, keyB, keyE, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 4));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(3, groups.size());
 
@@ -123,7 +123,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ObjectsCreatedFromNewToRelatedExistin
     EXPECT_EQ(keyBE, groups[2]->GetRelationshipChange().GetInstanceKey());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_TwoSeperateObjectTreesCreated_SeperateGroupsForEach)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_TwoSeperateObjectTreesCreated_SeperateGroupsForEach)
     {
     auto keyA = StubECInstanceKey(1, 2);
     auto keyB = StubECInstanceKey(1, 3);
@@ -138,7 +138,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_TwoSeperateObjectTreesCreated_Seperat
     changes.AddChange(ChangeManager::RelationshipChange(keyAD, keyA, keyD, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 3));
     changes.AddChange(ChangeManager::RelationshipChange(keyBE, keyB, keyE, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 4));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(2, groups.size());
 
@@ -149,7 +149,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_TwoSeperateObjectTreesCreated_Seperat
     EXPECT_EQ(keyBE, groups[1]->GetRelationshipChange().GetInstanceKey());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectsWithCyclicRelationship_FirstObjectSyncedSeperately)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectsWithCyclicRelationship_FirstObjectSyncedSeperately)
     {
     auto keyA = StubECInstanceKey(1, 2);
     auto keyB = StubECInstanceKey(1, 3);
@@ -166,7 +166,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectsWithCyclicRelationship_
     changes.AddChange(ChangeManager::RelationshipChange(keyBC, keyB, keyC, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 5));
     changes.AddChange(ChangeManager::RelationshipChange(keyCA, keyC, keyA, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 6));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(4, groups.size());
 
@@ -181,7 +181,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectsWithCyclicRelationship_
     EXPECT_EQ(keyCA, groups[3]->GetRelationshipChange().GetInstanceKey());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithTwoRelationships_LastRelationshipInSeperateGroup)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_CreatedObjectWithTwoRelationships_LastRelationshipInSeperateGroup)
     {
     auto keyA = StubECInstanceKey(1, 2);
     auto keyB = StubECInstanceKey(1, 3);
@@ -194,7 +194,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithTwoRelationships_Las
     changes.AddChange(ChangeManager::RelationshipChange(keyAB, keyA, keyB, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 2));
     changes.AddChange(ChangeManager::RelationshipChange(keyAC, keyA, keyC, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 3));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(2, groups.size());
 
@@ -208,7 +208,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_CreatedObjectWithTwoRelationships_Las
     EXPECT_EQ(IChangeManager::ChangeStatus::Created, groups[1]->GetRelationshipChange().GetChangeStatus());
     }
 
-TEST_F(ChangeGraphTests, BuildChangeGroups_ModifiedObjectWithCreatedRelationship_SeperateGroups)
+TEST_F(ChangeGraphTests, BuildCacheChangeGroups_ModifiedObjectWithCreatedRelationship_SeperateGroups)
     {
     auto keyA = StubECInstanceKey(1, 2);
     auto keyB = StubECInstanceKey(1, 3);
@@ -218,7 +218,7 @@ TEST_F(ChangeGraphTests, BuildChangeGroups_ModifiedObjectWithCreatedRelationship
     changes.AddChange(ChangeManager::ObjectChange(keyA, IChangeManager::ChangeStatus::Modified, ChangeManager::SyncStatus::Ready, 1));
     changes.AddChange(ChangeManager::RelationshipChange(keyAB, keyA, keyB, IChangeManager::ChangeStatus::Created, ChangeManager::SyncStatus::Ready, 2));
 
-    auto groups = ChangesGraph(changes).BuildChangeGroups();
+    auto groups = ChangesGraph(changes).BuildCacheChangeGroups();
 
     ASSERT_EQ(2, groups.size());
 

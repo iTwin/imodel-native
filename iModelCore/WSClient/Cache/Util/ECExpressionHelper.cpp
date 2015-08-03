@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<ECPropertyCP> ECExpressionHelper::GetRequiredProperties (Utf8StringCR ecExpression, ECClassCR ecClass)
+bset<ECPropertyCP> ECExpressionHelper::GetRequiredProperties(Utf8StringCR ecExpression, ECClassCR ecClass)
     {
     bset<ECPropertyCP> properties;
 
@@ -26,18 +26,18 @@ bset<ECPropertyCP> ECExpressionHelper::GetRequiredProperties (Utf8StringCR ecExp
     Utf8String propertyAccessorExpression = R"(\bthis)" + propertyAccessorSubExpression;
 
     std::smatch match;
-    std::regex e (propertyAccessorExpression.c_str ());
+    std::regex e(propertyAccessorExpression.c_str());
 
-    std::string str (ecExpression.c_str ());
-    while (std::regex_search (str, match, e))
+    std::string str(ecExpression.c_str());
+    while (std::regex_search(str, match, e))
         {
-        Utf8String propertyName = match.str (0).substr (5).c_str ();
-        ECPropertyCP ecProperty = ecClass.GetPropertyP (propertyName.c_str ());
+        Utf8String propertyName = match.str(0).substr(5).c_str();
+        ECPropertyCP ecProperty = ecClass.GetPropertyP(propertyName.c_str());
         if (nullptr != ecProperty)
             {
-            properties.insert (ecProperty);
+            properties.insert(ecProperty);
             }
-        str = match.suffix ().str ();
+        str = match.suffix().str();
         }
 
     return properties;

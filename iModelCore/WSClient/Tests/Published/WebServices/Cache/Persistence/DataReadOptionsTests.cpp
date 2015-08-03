@@ -56,7 +56,7 @@ TEST_F(DataReadOptionsTests, SelectClass_CalledOnceWithECClass_ClassAddedToSelec
     DataReadOptions options;
 
     auto schema = StubSchema();
-    options.SelectClass(*schema->GetClassCP(L"TestClass"));
+    options.SelectClass(*schema->GetClassCP("TestClass"));
 
     EXPECT_EQ(1, options.GetSelected().size());
     EXPECT_EQ("TestSchema.TestClass", options.GetSelected()[0].GetClassKey());
@@ -109,7 +109,7 @@ TEST_F(DataReadOptionsTests, SelectClassAndProperty_CalledOnceWithECProperty_Cla
     DataReadOptions options;
 
     auto schema = StubSchema();
-    options.SelectClassAndProperty(*schema->GetClassCP(L"TestClass")->GetPropertyP(L"TestProperty"));
+    options.SelectClassAndProperty(*schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
 
     EXPECT_EQ(1, options.GetSelected().size());
     EXPECT_EQ("TestSchema.TestClass", options.GetSelected()[0].GetClassKey());
@@ -146,7 +146,7 @@ TEST_F(DataReadOptionsTests, SelectClassWithAllProperties_CalledWithECClass_AllP
     DataReadOptions options;
 
     auto schema = StubSchema();
-    options.SelectClassWithAllProperties(*schema->GetClassCP(L"TestClass"));
+    options.SelectClassWithAllProperties(*schema->GetClassCP("TestClass"));
 
     auto& selectedClass = options.GetSelected()[0];
     EXPECT_EQ("TestSchema.TestClass", selectedClass.GetClassKey());
@@ -183,7 +183,7 @@ TEST_F(DataReadOptionsTests, SelectClassWithNoProperties_CalledOnEmptyOptiosWith
     DataReadOptions options;
 
     auto schema = StubSchema();
-    options.SelectClassWithNoProperties(*schema->GetClassCP(L"TestClass"));
+    options.SelectClassWithNoProperties(*schema->GetClassCP("TestClass"));
 
     auto& selectedClass = options.GetSelected()[0];
     EXPECT_EQ("TestSchema.TestClass", selectedClass.GetClassKey());
@@ -241,7 +241,7 @@ TEST_F(DataReadOptionsTests, AddOrderByClassAndProperties_OrderingWithECClass_Ad
     properties.push_back(Utf8String("TestProperty"));
 
     DataReadOptions options;
-    options.AddOrderByClassAndProperties(*schema->GetClassCP(L"TestClass"), properties);
+    options.AddOrderByClassAndProperties(*schema->GetClassCP("TestClass"), properties);
 
     EXPECT_EQ(1, options.GetOrderBy().size());
     EXPECT_EQ("TestSchema.TestClass", options.GetOrderBy()[0].GetClassKey());
@@ -266,7 +266,7 @@ TEST_F(DataReadOptionsTests, GetSelectedClass_NoSelectedClassesAndECClassPassed_
     DataReadOptions options;
 
     auto schema = StubSchema("TestSchema");
-    auto selectedClass = options.GetSelectedClass(*schema->GetClassCP(L"TestClass"));
+    auto selectedClass = options.GetSelectedClass(*schema->GetClassCP("TestClass"));
     ASSERT_EQ(nullptr, selectedClass);
     }
 
@@ -276,7 +276,7 @@ TEST_F(DataReadOptionsTests, GetSelectedClass_SelectedECClassPassed_ReturnsSelec
     options.SelectClass("TestSchema.TestClass");
 
     auto schema = StubSchema("TestSchema");
-    auto selectedClass = options.GetSelectedClass(*schema->GetClassCP(L"TestClass"));
+    auto selectedClass = options.GetSelectedClass(*schema->GetClassCP("TestClass"));
     ASSERT_NE(nullptr, selectedClass);
     EXPECT_EQ("TestSchema.TestClass", selectedClass->GetClassKey());
     }
@@ -287,7 +287,7 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_ClassNotSelected_ReturnsNull)
     options.SelectClass("SomeSchema.SomeClass");
 
     auto schema = StubSchema("TestSchema");
-    auto properties = options.GetSelectProperties(*schema->GetClassCP(L"TestClass"));
+    auto properties = options.GetSelectProperties(*schema->GetClassCP("TestClass"));
 
     EXPECT_EQ(nullptr, properties);
     }
@@ -298,7 +298,7 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingAllClasses_ReturnsSele
     options.SelectAllClasses();
 
     auto schema = StubSchema("TestSchema");
-    auto properties = options.GetSelectProperties(*schema->GetClassCP(L"TestClass"));
+    auto properties = options.GetSelectProperties(*schema->GetClassCP("TestClass"));
 
     EXPECT_NE(nullptr, properties);
     EXPECT_TRUE(properties->GetSelectAll());
@@ -314,7 +314,7 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingAllClassesAndSpecificP
     options.SelectClassAndProperty("TestSchema.TestClass", "TestProperty");
 
     auto schema = StubSchema("TestSchema");
-    ECClassCR ecClass = *schema->GetClassCP(L"TestClass");
+    ECClassCR ecClass = *schema->GetClassCP("TestClass");
     auto properties = options.GetSelectProperties(ecClass);
 
     EXPECT_NE(nullptr, properties);
@@ -331,7 +331,7 @@ TEST_F(DataReadOptionsTests, GetSelectProperties_SelectingPropertyThatDoesNotExi
     options.SelectClassAndProperty("TestSchema.TestClass", "SomeProperty");
 
     auto schema = StubSchema("TestSchema");
-    auto properties = options.GetSelectProperties(*schema->GetClassCP(L"TestClass"));
+    auto properties = options.GetSelectProperties(*schema->GetClassCP("TestClass"));
 
     EXPECT_NE(nullptr, properties);
     EXPECT_FALSE(properties->GetSelectAll());
@@ -350,8 +350,8 @@ TEST_F(DataReadOptionsTests, GetSortPriority_TwoClassesInOrdering_ReturnsCorrect
     auto schema1 = StubSchema("TestSchema1");
     auto schema2 = StubSchema("TestSchema2");
 
-    auto priority1 = options.GetSortPriority(*schema1->GetClassCP(L"TestClass"));
-    auto priority2 = options.GetSortPriority(*schema2->GetClassCP(L"TestClass"));
+    auto priority1 = options.GetSortPriority(*schema1->GetClassCP("TestClass"));
+    auto priority2 = options.GetSortPriority(*schema2->GetClassCP("TestClass"));
 
     EXPECT_LT(priority2, priority1);
     }
@@ -361,7 +361,7 @@ TEST_F(DataReadOptionsTests, GetSortProperties_NoClassInOrdering_ReturnsEmpty)
     DataReadOptions options;
     auto schema = StubSchema("TestSchema");
 
-    auto properties = options.GetSortProperties(*schema->GetClassCP(L"TestClass"));
+    auto properties = options.GetSortProperties(*schema->GetClassCP("TestClass"));
     EXPECT_THAT(properties, IsEmpty());
     }
 
@@ -373,7 +373,7 @@ TEST_F(DataReadOptionsTests, GetSortProperties_ClassWithOrderProperties_ReturnsS
     options.AddOrderByClassAndProperties("TestSchema.TestClass", orderProperties);
 
     auto schema = StubSchema("TestSchema");
-    ECClassCR ecClass = *schema->GetClassCP(L"TestClass");
+    ECClassCR ecClass = *schema->GetClassCP("TestClass");
     auto properties = options.GetSortProperties(ecClass);
 
     EXPECT_THAT(properties, SizeIs(1));

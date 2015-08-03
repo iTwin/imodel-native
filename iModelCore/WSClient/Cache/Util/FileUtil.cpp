@@ -38,7 +38,7 @@ Utf8String FileUtil::TruncateFileName(Utf8StringCR fileName)
     {
 #if defined(ANDROID)
     // On Android, trim file name to NAME_MAX *bytes*
-    return TruncateFileNameUtf8 (fileName, NAME_MAX);
+    return TruncateFileNameUtf8(fileName, NAME_MAX);
 #else
 
 #if defined(__APPLE__)

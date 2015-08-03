@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 NavigationBaseManager::NavigationBaseManager
 (
 ECDbAdapterR dbAdapter,
-ECSqlStatementCache& statementCache
+WebServices::ECSqlStatementCache& statementCache
 ) :
 m_dbAdapter(&dbAdapter),
 m_statementCache(&statementCache),

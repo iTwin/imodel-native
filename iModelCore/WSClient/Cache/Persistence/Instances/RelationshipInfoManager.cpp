@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 RelationshipInfoManager::RelationshipInfoManager
 (
 ECDbAdapter& dbAdapter,
-ECSqlStatementCache& statementCache,
+WebServices::ECSqlStatementCache& statementCache,
 HierarchyManager& hierarchyManager
 ) :
 m_dbAdapter(&dbAdapter),
@@ -289,9 +289,9 @@ Utf8StringCR remoteId
         {
         IECInstancePtr infoECInstance = m_cachedRelationshipInfoClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-        infoECInstance->SetValue(WIDEN(CLASS_CachedRelationshipInfo_PROPERTY_RelClassId), ECValue(relationship.GetECClassId()));
-        infoECInstance->SetValue(WIDEN(CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId), ECValue(relationship.GetECInstanceId().GetValue()));
-        infoECInstance->SetValue(WIDEN(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId), ECValue(remoteId.c_str(), false));
+        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RelClassId, ECValue(relationship.GetECClassId()));
+        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RelInstanceId, ECValue(relationship.GetECInstanceId().GetValue()));
+        infoECInstance->SetValue(CLASS_CachedRelationshipInfo_PROPERTY_RemoteId, ECValue(remoteId.c_str(), false));
 
         ECInstanceKey infoKey;
         if (SUCCESS != m_infoECInstanceInserter.Get().Insert(infoKey, *infoECInstance))
@@ -480,8 +480,9 @@ BentleyStatus RelationshipInfoManager::DeleteRelationshipLeavingInfo(Relationshi
         return ERROR;
         }
 
-    ECPersistencePtr persistence = m_dbAdapter->GetECDb().GetEC().GetECPersistence(nullptr, *relClass);
-    if (persistence.IsNull() || DELETE_Success != persistence->Delete(ECInstanceId(info.GetRelationshipKey().GetECInstanceId())))
+    ECInstanceDeleter deleter(m_dbAdapter->GetECDb(), *relClass);
+
+    if (!deleter.IsValid() || SUCCESS != deleter.Delete(ECInstanceId(info.GetRelationshipKey().GetECInstanceId())))
         {
         return ERROR;
         }
@@ -510,6 +511,8 @@ BentleyStatus RelationshipInfoManager::DeleteCachedRelationship(const CachedRela
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RelationshipInfoManager::OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId)
     {
+#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0503 to 06
+
     // TODO: optimize when ECDb has API for knowing all instances that will be deleted - no need to delete seperately if it will be deleted.
 
     // Remove relationship that is held by CachedRelationshipInfo
@@ -545,6 +548,7 @@ BentleyStatus RelationshipInfoManager::OnBeforeDelete(ECN::ECClassCR ecClass, EC
             }
         return SUCCESS;
         }
+#endif
 
     return SUCCESS;
     }

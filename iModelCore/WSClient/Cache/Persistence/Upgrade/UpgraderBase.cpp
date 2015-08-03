@@ -26,7 +26,7 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
     {
     ECSchemaReadContextPtr schemaContext = SchemaContext::CreateReadContext();
 
-    SchemaKey cacheSchemaKey = SchemaKey(L"DSCacheSchema", versionMajor, versionMinor);
+    SchemaKey cacheSchemaKey = SchemaKey("DSCacheSchema", versionMajor, versionMinor);
     ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
     if (cacheSchema.IsNull())
         {
@@ -36,6 +36,6 @@ BentleyStatus UpgraderBase::UpgradeCacheSchema(int versionMajor, int versionMino
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*cacheSchema);
 
-    BentleyStatus status = m_adapter.GetECDb().GetEC().GetSchemaManager().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
+    BentleyStatus status = m_adapter.GetECDb().Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
     return status;
     }

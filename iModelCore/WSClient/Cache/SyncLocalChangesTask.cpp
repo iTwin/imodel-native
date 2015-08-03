@@ -65,13 +65,13 @@ void SyncLocalChangesTask::_OnExecute()
             }
         }
 
-    m_changeGroups = ChangesGraph(changesToSync).BuildChangeGroups();
+    m_changeGroups = ChangesGraph(changesToSync).BuildCacheChangeGroups();
     if (m_changeGroups.empty())
         {
         return;
         }
 
-    for (ChangeGroupPtr changeGroup : m_changeGroups)
+    for (CacheChangeGroupPtr changeGroup : m_changeGroups)
         {
         if (IChangeManager::ChangeStatus::NoChange != changeGroup->GetFileChange().GetChangeStatus())
             {
@@ -80,7 +80,7 @@ void SyncLocalChangesTask::_OnExecute()
             }
         }
 
-    SyncNextChangeGroup();
+    SyncNextCacheChangeGroup();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -112,7 +112,7 @@ void SyncLocalChangesTask::OnSyncDone()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::SyncNextChangeGroup()
+void SyncLocalChangesTask::SyncNextCacheChangeGroup()
     {
     if (IsTaskCanceled()) return;
 
@@ -123,20 +123,20 @@ void SyncLocalChangesTask::SyncNextChangeGroup()
         return;
         }
 
-    ChangeGroupPtr changeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
+    CacheChangeGroupPtr changeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
 
-    SyncChangeGroup(changeGroup)
+    SyncCacheChangeGroup(changeGroup)
         ->Then(m_ds->GetCacheAccessThread(), [=]
         {
         m_changeGroupIndexToSyncNext++;
-        SyncNextChangeGroup();
+        SyncNextCacheChangeGroup();
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> SyncLocalChangesTask::SyncChangeGroup(ChangeGroupPtr changeGroup)
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncCacheChangeGroup(CacheChangeGroupPtr changeGroup)
     {
     if (changeGroup->GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created ||
         changeGroup->GetRelationshipChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created)
@@ -168,7 +168,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncChangeGroup(ChangeGroupPtr changeGr
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup)
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(CacheChangeGroupPtr changeGroup)
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
@@ -262,7 +262,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
 
                             for (auto& pair : changedKeys)
                                 {
-                                SetUpdatedInstanceKeyInChangeGroups(pair.first, pair.second);
+                                SetUpdatedInstanceKeyInCacheChangeGroups(pair.first, pair.second);
                                 }
 
                             txn.Commit();
@@ -284,7 +284,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncCreation(ChangeGroupPtr changeGroup
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::HandleCreationError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel)
+void SyncLocalChangesTask::HandleCreationError(WSErrorCR error, CacheChangeGroupPtr changeGroup, Utf8StringCR objectLabel)
     {
     if (WSError::Status::ReceivedError == error.GetStatus())
         {
@@ -300,7 +300,7 @@ void SyncLocalChangesTask::HandleCreationError(WSErrorCR error, ChangeGroupPtr c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(ChangeGroupPtr changeGroup)
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(CacheChangeGroupPtr changeGroup)
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
@@ -345,7 +345,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(ChangeGroupPtr c
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr changeGroup)
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(CacheChangeGroupPtr changeGroup)
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
@@ -387,7 +387,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncFileModification(ChangeGroupPtr cha
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(ChangeGroupPtr changeGroup)
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(CacheChangeGroupPtr changeGroup)
     {
     return m_ds->GetCacheAccessThread()->ExecuteAsync([=]
         {
@@ -442,7 +442,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectDeletion(ChangeGroupPtr chang
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncLocalChangesTask::BuildSyncJson(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const
+BentleyStatus SyncLocalChangesTask::BuildSyncJson(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const
     {
     if (changeGroup.GetObjectChange().GetChangeStatus() == IChangeManager::ChangeStatus::Created)
         {
@@ -456,11 +456,10 @@ BentleyStatus SyncLocalChangesTask::BuildSyncJson(IDataSourceCache& cache, Chang
     return SUCCESS;
     }
 
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SyncLocalChangesTask::BuildSyncJsonForObjectCreation(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const
+BentleyStatus SyncLocalChangesTask::BuildSyncJsonForObjectCreation(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, JsonValueR syncJsonOut) const
     {
     JsonValueR instance = syncJsonOut["instance"];
 
@@ -667,7 +666,7 @@ void SyncLocalChangesTask::RemoveCalculatedProperties(JsonValueR propertiesJson,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::map<ECInstanceKey, Utf8String> SyncLocalChangesTask::ReadChangedRemoteIds(ChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const
+std::map<ECInstanceKey, Utf8String> SyncLocalChangesTask::ReadChangedRemoteIds(CacheChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const
     {
     std::map<ECInstanceKey, Utf8String> remoteIdMap;
 
@@ -721,7 +720,7 @@ ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR objectLa
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel)
+void SyncLocalChangesTask::RegisterFailedSync(IDataSourceCache& cache, CacheChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel)
     {
     if (changeGroup.GetObjectChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange ||
         changeGroup.GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
@@ -739,7 +738,7 @@ void SyncLocalChangesTask::RegisterFailedSync(IDataSourceCache& cache, ChangeGro
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey)
+void SyncLocalChangesTask::SetUpdatedInstanceKeyInCacheChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey)
     {
     if (!oldKey.IsValid() || !newKey.IsValid())
         {

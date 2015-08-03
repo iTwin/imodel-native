@@ -33,11 +33,11 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
     {
     ECSchemaReadContextPtr schemaContext = SchemaContext::CreateReadContext();
 
-    SchemaKey cacheSchemaKey = SchemaKey(WIDEN(SCHEMA_CacheSchema), 1, 5);
+    SchemaKey cacheSchemaKey = SchemaKey(SCHEMA_CacheSchema, 1, 5);
     ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
     BeAssert(cacheSchema.IsValid());
 
-    SchemaKey supportSchemaKey = SchemaKey(WIDEN(SCHEMA_CacheLegacySupportSchema), 1, 0);
+    SchemaKey supportSchemaKey = SchemaKey(SCHEMA_CacheLegacySupportSchema, 1, 0);
     ECSchemaPtr supportSchema = schemaContext->LocateSchema(supportSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
     BeAssert(supportSchema.IsValid());
 
@@ -111,7 +111,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
             }
         }
 
-    if (SUCCESS != m_db.GetEC().GetSchemaManager().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true)))
+    if (SUCCESS != m_db.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (true, true)))
         {
         BeAssert(false);
         return ERROR;

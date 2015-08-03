@@ -32,13 +32,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 +---------------+---------------+---------------+---------------+---------------+------*/
 std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(DataSourceCacheOpenState& state, Utf8CP context)
     {
-    if (!LOG.isSeverityEnabled(Bentley::NativeLogging::LOG_TRACE))
+    if (!LOG.isSeverityEnabled(BentleyApi::NativeLogging::LOG_TRACE))
         {
         return nullptr;
         }
 
     ECSchemaList schemas;
-    state.GetECDbAdapter().GetECDb().GetEC().GetSchemaManager().GetECSchemas(schemas);
+    state.GetECDbAdapter().GetECDb().Schemas().GetECSchemas(schemas);
     schemas.push_back(state.GetCacheSchema());
 
     return std::make_shared<ECDbDebugInfoHolder>(state.GetECDbAdapter().GetECDb(), schemas, "DataSourceCache debug information", context);
@@ -180,7 +180,7 @@ const ECDb::OpenParams& params
         }
 
     m_db.CloseDb();
-    if (BE_SQLITE_OK != m_db.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OPEN_ReadWrite)))
+    if (BE_SQLITE_OK != m_db.OpenBeSQLiteDb(cacheFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)))
         {
         return ERROR;
         }
@@ -827,7 +827,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ObjectIdCR objectId)
         return nullptr;
         }
 
-    instance->SetInstanceId(WString(objectId.remoteId.c_str(), true).c_str());
+    instance->SetInstanceId(objectId.remoteId.c_str());
     return instance;
     }
 
@@ -882,7 +882,7 @@ IECInstancePtr DataSourceCache::ReadInstance(ECInstanceKeyCR instanceKey)
         return nullptr;
         }
 
-    instance->SetInstanceId(WString(statement->GetValueText(0), true).c_str());
+    instance->SetInstanceId(statement->GetValueText(0));
     return instance;
     }
 
@@ -1795,8 +1795,8 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
     Utf8PrintfString key("DataSourceCache::ReadFileProperties:%lld", ecClass->GetId());
     auto statement = m_state->GetStatementCache().GetPreparedStatement(key, [&]
         {
-        Utf8String fileNamePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileName");
-        Utf8String fileSizePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileSize");
+        Utf8String fileNamePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, "FileDependentProperties", "FileName");
+        Utf8String fileSizePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, "FileDependentProperties", "FileSize");
 
         if (fileNamePropertyName.empty())
             {

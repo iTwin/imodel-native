@@ -70,7 +70,7 @@ TEST_F(DataSourceCacheTests, Open_ExistingDbWithNoDefaultTransaction_Success)
     BeFileName path = FSTest::StubFilePath();
 
     ECDb::CreateParams params;
-    params.SetStartDefaultTxn(DefaultTxn_No);
+    params.SetStartDefaultTxn(DefaultTxn::No);
 
     DataSourceCache cache;
     ASSERT_EQ(SUCCESS, cache.Create(path, StubCacheEnvironemnt(), params));
@@ -154,7 +154,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_CalledOnOtherConnection_CallsListener
     {
     BeFileName path = FSTest::StubFilePath();
     ECDb::CreateParams params;
-    params.SetStartDefaultTxn(DefaultTxn_No);
+    params.SetStartDefaultTxn(DefaultTxn::No);
 
     DataSourceCache cache1;
     DataSourceCache cache2;
@@ -1150,10 +1150,10 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingObjectId_ReturnsECInstanceWith
 
     auto instance = cache->ReadInstance(id);
     EXPECT_THAT(instance.IsNull(), false);
-    EXPECT_THAT(instance->GetInstanceId(), Eq(L"TestId"));
+    EXPECT_THAT(instance->GetInstanceId(), Eq("TestId"));
     ECValue value;
-    instance->GetValue(value, L"TestProperty");
-    EXPECT_THAT(value.GetString(), StrEq(L"TestValue"));
+    instance->GetValue(value, "TestProperty");
+    EXPECT_THAT(value.GetUtf8CP(), StrEq("TestValue"));
     }
 
 TEST_F(DataSourceCacheTests, ReadInstance_NavigationBaseInstanceKey_ReturnsNull)
@@ -1182,10 +1182,10 @@ TEST_F(DataSourceCacheTests, ReadInstance_ExistingInstanceKey_ReturnsECInstanceW
 
     auto instance = cache->ReadInstance(instanceKey);
     EXPECT_THAT(instance.IsNull(), false);
-    EXPECT_THAT(instance->GetInstanceId(), Eq(L"TestId"));
+    EXPECT_THAT(instance->GetInstanceId(), Eq("TestId"));
     ECValue value;
-    instance->GetValue(value, L"TestProperty");
-    EXPECT_THAT(value.GetString(), StrEq(L"TestValue"));
+    instance->GetValue(value, "TestProperty");
+    EXPECT_THAT(value.GetUtf8CP(), StrEq("TestValue"));
     }
 
 TEST_F(DataSourceCacheTests, ReadInstances_ExistingObjectIds_ReturnsInstances)

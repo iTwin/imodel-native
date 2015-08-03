@@ -18,37 +18,36 @@ CachingTaskBase::CachingTaskBase
 CachingDataSourcePtr cachingDataSource,
 ICancellationTokenPtr cancellationToken
 ) :
-PackagedAsyncTask<void> (nullptr),
-m_ds (cachingDataSource),
-m_errorCancellationToken (SimpleCancellationToken::Create ()),
-m_userProvidedCancellationToken (cancellationToken),
-m_cancellationToken (MergeCancellationToken::Create (m_userProvidedCancellationToken, m_errorCancellationToken))
-    {
-    }
+PackagedAsyncTask<void>(nullptr),
+m_ds(cachingDataSource),
+m_errorCancellationToken(SimpleCancellationToken::Create()),
+m_userProvidedCancellationToken(cancellationToken),
+m_cancellationToken(MergeCancellationToken::Create(m_userProvidedCancellationToken, m_errorCancellationToken))
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachingTaskBase::SetError (CachingDataSource::ErrorCR error)
+void CachingTaskBase::SetError(CachingDataSource::ErrorCR error)
     {
     m_error = error;
-    m_errorCancellationToken->SetCanceled ();
+    m_errorCancellationToken->SetCanceled();
 
-    _OnError (m_error);
+    _OnError(m_error);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CachingTaskBase::IsTaskCanceled () const
+bool CachingTaskBase::IsTaskCanceled() const
     {
-    return m_cancellationToken->IsCanceled ();
+    return m_cancellationToken->IsCanceled();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICancellationTokenPtr CachingTaskBase::GetCancellationToken () const
+ICancellationTokenPtr CachingTaskBase::GetCancellationToken() const
     {
     return m_cancellationToken;
     }
@@ -56,23 +55,23 @@ ICancellationTokenPtr CachingTaskBase::GetCancellationToken () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CachingTaskBase::IsSuccess ()
+bool CachingTaskBase::IsSuccess()
     {
-    return !m_cancellationToken->IsCanceled ();
+    return !m_cancellationToken->IsCanceled();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachingTaskBase::AddFailedObject (CacheTransactionCR txn, ObjectIdCR objectId, ICachingDataSource::ErrorCR error)
+void CachingTaskBase::AddFailedObject(CacheTransactionCR txn, ObjectIdCR objectId, ICachingDataSource::ErrorCR error)
     {
-    m_failedObjects.push_back ({objectId, txn.GetCache ().ReadInstanceLabel (objectId), error});
+    m_failedObjects.push_back({objectId, txn.GetCache().ReadInstanceLabel(objectId), error});
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachingDataSource::FailedObjects& CachingTaskBase::GetFailedObjects ()
+CachingDataSource::FailedObjects& CachingTaskBase::GetFailedObjects()
     {
     return m_failedObjects;
     }
@@ -80,22 +79,22 @@ CachingDataSource::FailedObjects& CachingTaskBase::GetFailedObjects ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CachingTaskBase::AddResult (const CachingDataSource::BatchResult& result)
+void CachingTaskBase::AddResult(const CachingDataSource::BatchResult& result)
     {
-    if (!result.IsSuccess ())
+    if (!result.IsSuccess())
         {
-        SetError (result.GetError ());
+        SetError(result.GetError());
         return;
         }
-    m_failedObjects.insert (m_failedObjects.end (), result.GetValue ().begin (), result.GetValue ().end ());
+    m_failedObjects.insert(m_failedObjects.end(), result.GetValue().begin(), result.GetValue().end());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachingDataSource::Error& CachingTaskBase::GetError ()
+CachingDataSource::Error& CachingTaskBase::GetError()
     {
-    if (m_userProvidedCancellationToken->IsCanceled ())
+    if (m_userProvidedCancellationToken->IsCanceled())
         {
         m_canceledError = CachingDataSource::Status::Canceled;
         return m_canceledError;
@@ -107,11 +106,11 @@ CachingDataSource::Error& CachingTaskBase::GetError ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachingDataSource::BatchResult CachingTaskBase::GetResult ()
+CachingDataSource::BatchResult CachingTaskBase::GetResult()
     {
-    if (!IsSuccess ())
+    if (!IsSuccess())
         {
-        return CachingDataSource::BatchResult::Error (GetError ());
+        return CachingDataSource::BatchResult::Error(GetError());
         }
-    return CachingDataSource::BatchResult::Success (m_failedObjects);
+    return CachingDataSource::BatchResult::Success(m_failedObjects);
     }

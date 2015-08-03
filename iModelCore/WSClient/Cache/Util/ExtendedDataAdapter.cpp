@@ -160,7 +160,7 @@ BentleyStatus ExtendedDataAdapter::ImportSchema()
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
 
-    if (SUCCESS != m_dbAdapter.GetECDb().GetEC().GetSchemaManager().ImportECSchemas(*cache))
+    if (SUCCESS != m_dbAdapter.GetECDb().Schemas().ImportECSchemas(*cache))
         {
         return ERROR;
         }

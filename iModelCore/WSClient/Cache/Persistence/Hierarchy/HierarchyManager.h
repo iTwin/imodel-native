@@ -24,15 +24,20 @@ struct ObjectInfoManager;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
 struct HierarchyManager : public ECDbDeleteHandler
+#else
+struct HierarchyManager
+#endif
     {
     private:
         ECDbAdapterR            m_dbAdapter;
         ECSqlStatementCache*    m_statementCache;
         ChangeInfoManager&      m_changeInfoManager;
 
-        std::vector<IDeleteHandler*> m_deleteHandlers;
-
+#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
+        std::vector<ECInstanceDeleter> m_deleteHandlers;
+#endif
     private:
         BentleyStatus DeleteRelationships(ECInstanceKeyCR source, const bvector<ECInstanceKey>& targets, ECRelationshipClassCP relationshipClass);
 
@@ -45,13 +50,17 @@ struct HierarchyManager : public ECDbDeleteHandler
             (
             ECDbAdapterR ecdbAdapter,
             ECSqlStatementCache& statementCache,
-            ChangeInfoManager& changeInfoManager,
-            std::vector<IDeleteHandler*> deleteHandlers
+            ChangeInfoManager& changeInfoManager
+#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
+            , std::vector<IDeleteHandler*> deleteHandlers
+#endif
             );
         ~HierarchyManager();
 
+#if defined (NEEDS_WORK_PORT_GRA06_ECDbDeleteHandler) // Port 0504 to 06
         //! ECDbDeleteHandler
         virtual void _OnBeforeDelete(ECN::ECClassCR ecClass, ECInstanceId ecInstanceId, ECDbR ecDb) override;
+#endif
 
         ECInstanceKey RelateInstances(ECInstanceKeyCR source, ECInstanceKeyCR target, ECRelationshipClassCP relationshipClass);
         BentleyStatus CopyRelationshipsBySource(ECInstanceKeyCR instanceFrom, ECInstanceKeyCR instanceTo, ECRelationshipClassCP relationshipClass);

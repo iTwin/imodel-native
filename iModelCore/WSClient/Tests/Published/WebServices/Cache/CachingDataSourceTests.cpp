@@ -470,8 +470,8 @@ TEST_F(CachingDataSourceTests, GetRepositorySchemaKeys_CacheContainsNonRepositor
         auto txn = ds->StartCacheTransaction();
         auto schemaKeys = ds->GetRepositorySchemaKeys(txn);
         EXPECT_THAT(schemaKeys, SizeIs(2));
-        EXPECT_THAT(schemaKeys, Contains(SchemaKey(L"A", 1, 0)));
-        EXPECT_THAT(schemaKeys, Contains(SchemaKey(L"B", 4, 2)));
+        EXPECT_THAT(schemaKeys, Contains(SchemaKey("A", 1, 0)));
+        EXPECT_THAT(schemaKeys, Contains(SchemaKey("B", 4, 2)));
         }
     }
 

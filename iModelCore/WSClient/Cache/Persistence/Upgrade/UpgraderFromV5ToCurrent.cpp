@@ -129,14 +129,14 @@ BentleyStatus UpgraderFromV5ToCurrent::CopySchema(DataSourceCache& newCache)
         {
         if (nullptr != ecClass->GetPropertyP(PROPERTY_RemoteId))
             {
-            if (ECObjectsStatus::ECOBJECTS_STATUS_Success != ecClass->RemoveProperty(WIDEN(PROPERTY_RemoteId)))
+            if (ECObjectsStatus::ECOBJECTS_STATUS_Success != ecClass->RemoveProperty(PROPERTY_RemoteId))
                 {
                 return ERROR;
                 }
             }
-        if (ecClass->GetCustomAttribute(L"SyncIDSpecification").IsValid())
+        if (ecClass->GetCustomAttribute("SyncIDSpecification").IsValid())
             {
-            if (!ecClass->RemoveCustomAttribute(L"SyncIDSpecification"))
+            if (!ecClass->RemoveCustomAttribute("SyncIDSpecification"))
                 {
                 return ERROR;
                 }
@@ -607,8 +607,8 @@ JsonValueR instanceInfo
         return ERROR;
         }
 
-    if (instanceClass->GetSchema().GetName().Equals(L"DSCacheSchema") &&
-        instanceClass->GetName().Equals(L"NavigationBase"))
+    if (instanceClass->GetSchema().GetName().Equals("DSCacheSchema") &&
+        instanceClass->GetName().Equals("NavigationBase"))
         {
         instance.objectId = ObjectId();
         }

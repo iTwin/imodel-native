@@ -239,6 +239,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param initialInstances - list of instances that should be used to start syncing
         //! @param initialQueries - list of queries that should be used to start syncing
         //! @param queryProviders - list of query providers to get queries for each instance that is being synced
+        //! @param onProgress
         //! @param cancellationToken
         //! @return task with completion result
         virtual AsyncTaskPtr<BatchResult> SyncCachedData
@@ -258,6 +259,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! @param persistenceNavigationTrees - Update all items under specified objects including files
         //! @param temporaryNavigationTrees - Update only previously cached items under specified object and don't update any files
         //! @param temporaryNavigationTreesServerSelectProvider - Selected properties will be used to retrieve from server for "Update only" temporary navigation trees.
+        //! @param onProgress
+        //! @param cancellationToken
         virtual AsyncTaskPtr<BatchResult> CacheNavigation
             (
             const bvector<ObjectId>& persistenceNavigationTrees,

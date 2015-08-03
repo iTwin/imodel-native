@@ -76,7 +76,7 @@ BentleyStatus UpgraderFromV4ToV5::Upgrade()
         return ERROR;
         }
 
-    ECSchemaPtr joinSchema = ECDbHelper::CopySchema(*originalJoinSchema, &m_adapter.GetECDb().GetEC().GetSchemaLocater());
+    ECSchemaPtr joinSchema = ECDbHelper::CopySchema(*originalJoinSchema, &m_adapter.GetECDb().GetSchemaLocater());
     if (joinSchema.IsNull())
         {
         return ERROR;
@@ -89,7 +89,7 @@ BentleyStatus UpgraderFromV4ToV5::Upgrade()
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     schemaCache->AddSchema(*joinSchema);
 
-    return m_adapter.GetECDb().GetEC().GetSchemaManager().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
+    return m_adapter.GetECDb().Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -127,7 +127,7 @@ bool UpgraderFromV4ToV5::IsDataSourceObjectClass(ECClassCP ecClass)
 ECRelationshipClassP CreateRelationshipHoldingClasses
 (
 ECSchemaR schema,
-WStringCR relationshipName,
+Utf8StringCR relationshipName,
 ECClassCP parentClass,
 const bvector<ECClassCP>& childClasses,
 StrengthType strength = StrengthType::STRENGTHTYPE_Holding
@@ -156,9 +156,9 @@ StrengthType strength = StrengthType::STRENGTHTYPE_Holding
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UpgraderFromV4ToV5::CreateWeakRootRelationship(ECSchemaR schema, ECSchemaCR cacheSchema, const bvector<ECClassCP>& childClasses)
     {
-    ECClassCP parentClass = cacheSchema.GetClassCP(L"Root");
-    ECRelationshipClassP relClass = CreateRelationshipHoldingClasses(schema, L"WeakRootRelationship", parentClass, childClasses, StrengthType::STRENGTHTYPE_Referencing);
-    relClass->GetTarget().AddClass(*cacheSchema.GetClassCP(L"NavigationBase"));
+    ECClassCP parentClass = cacheSchema.GetClassCP("Root");
+    ECRelationshipClassP relClass = CreateRelationshipHoldingClasses(schema, "WeakRootRelationship", parentClass, childClasses, StrengthType::STRENGTHTYPE_Referencing);
+    relClass->GetTarget().AddClass(*cacheSchema.GetClassCP("NavigationBase"));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -302,7 +302,8 @@ BentleyStatus UpgraderFromV4ToV5::UpdateInstances(const bvector<UpgradeInstance>
     {
     for (const UpgradeInstance& instance : instances)
         {
-        JsonUpdater updater(m_adapter.GetECDb(), *m_adapter.GetECClass(instance.ecClassId));
+        ECClassCP instanceClass = m_adapter.GetECClass(instance.ecClassId);
+        JsonUpdater updater(m_adapter.GetECDb(), *instanceClass);
         if (SUCCESS != updater.Update(instance.json))
             {
             return ERROR;
@@ -310,4 +311,3 @@ BentleyStatus UpgraderFromV4ToV5::UpdateInstances(const bvector<UpgradeInstance>
         }
     return SUCCESS;
     }
-

@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 RootManager::RootManager
 (
 ECDbAdapter& dbAdapter,
-ECSqlStatementCache& statementCache,
+WebServices::ECSqlStatementCache& statementCache,
 InstanceCacheHelper&  instanceHelper,
 HierarchyManager& hierarchyManager,
 ObjectInfoManager& objectInfoManager

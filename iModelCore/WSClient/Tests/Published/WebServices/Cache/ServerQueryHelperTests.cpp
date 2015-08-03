@@ -42,16 +42,16 @@ Utf8StringCR propertyName,
 Utf8StringCR ecExpression
 )
     {
-    ECClassP ecClass = schema->GetClassP(WString(className.c_str(), true).c_str());
+    ECClassP ecClass = schema->GetClassP(className.c_str());
 
-    SchemaKey beStandardsSchemaKey = SchemaKey(L"Bentley_Standard_CustomAttributes", 1, 0);
+    SchemaKey beStandardsSchemaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 0);
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr beStandardsSchema = context->LocateSchema(beStandardsSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
 
-    ECClassCP caClass = beStandardsSchema->GetClassCP(L"CalculatedECPropertySpecification");
+    ECClassCP caClass = beStandardsSchema->GetClassCP("CalculatedECPropertySpecification");
     IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    EXPECT_EQ(ECOBJECTS_STATUS_Success, caInstance->SetValue(L"ECExpression", ECValue(ecExpression.c_str())));
+    EXPECT_EQ(ECOBJECTS_STATUS_Success, caInstance->SetValue("ECExpression", ECValue(ecExpression.c_str())));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, schema->AddReferencedSchema(*beStandardsSchema));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, ecClass->GetPropertyP(propertyName.c_str())->SetCustomAttribute(*caInstance.get()));
     }
@@ -175,7 +175,7 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectAll_ReturnsE
     MockSelectProvider provider;
     EXPECT_CALL(provider, GetSelectProperties(_)).WillOnce(Return(properties));
 
-    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP(L"Table"));
+    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP("Table"));
     EXPECT_STREQ("", select.c_str());
     }
 #endif
@@ -188,7 +188,7 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsNull_ReturnsSelect
     MockSelectProvider provider;
     EXPECT_CALL(provider, GetSelectProperties(_)).WillOnce(Return(nullptr));
 
-    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP(L"Table"));
+    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP("Table"));
     EXPECT_STREQ("$id", select.c_str());
     }
 #endif
@@ -205,7 +205,7 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectNoProperties
     MockSelectProvider provider;
     EXPECT_CALL(provider, GetSelectProperties(_)).WillOnce(Return(properties));
 
-    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP(L"Table"));
+    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP("Table"));
     EXPECT_STREQ("$id", select.c_str());
     }
 #endif
@@ -216,13 +216,13 @@ TEST_F(ServerQueryHelperTests, GetSelect_SelectProviderReturnsSelectSpecificProp
     auto schema = GetTestSchema();
 
     auto properties = std::make_shared<ISelectProvider::SelectProperties>();
-    properties->AddProperty(schema->GetClassCP(L"Table")->GetPropertyP(L"Name"));
-    properties->AddProperty(schema->GetClassCP(L"Table")->GetPropertyP(L"Legs"));
+    properties->AddProperty(schema->GetClassCP("Table")->GetPropertyP("Name"));
+    properties->AddProperty(schema->GetClassCP("Table")->GetPropertyP("Legs"));
 
     MockSelectProvider provider;
     EXPECT_CALL(provider, GetSelectProperties(_)).WillOnce(Return(properties));
 
-    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP(L"Table"));
+    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP("Table"));
     EXPECT_THAT(select, AnyOf(Eq("Name,Legs"), Eq("Legs,Name")));
     }
 #endif
@@ -234,12 +234,12 @@ TEST_F(ServerQueryHelperTests, GetSelect_PropertyWithECExpression_IncludesRequir
     AddCalculatedECPropertySpecification(schema, "Table", "Name", R"( IIf (this.Legs, "Foo", "Boo") )");
 
     auto properties = std::make_shared<ISelectProvider::SelectProperties>();
-    properties->AddProperty(schema->GetClassCP(L"Table")->GetPropertyP(L"Name"));
+    properties->AddProperty(schema->GetClassCP("Table")->GetPropertyP("Name"));
 
     MockSelectProvider provider;
     EXPECT_CALL(provider, GetSelectProperties(_)).WillOnce(Return(properties));
 
-    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP(L"Table"));
+    auto select = ServerQueryHelper(provider).GetSelect(*schema->GetClassCP("Table"));
     EXPECT_THAT(select, AnyOf(Eq("Name,Legs"), Eq("Legs,Name")));
     }
 #endif
