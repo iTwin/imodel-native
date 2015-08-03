@@ -5,8 +5,6 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifdef COMMENT_OUT
-
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -1894,7 +1892,7 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
     EXPECT_EQ(14, testVector.size());
     for (size_t i = 0; i < testVector.size(); i++)
         {
-        Utf8Char expectedName[] = { 'a' + static_cast<Utf8Char> (i), 0 };
+        Utf8Char expectedName[] = {(Utf8Char) ('a' + static_cast<Utf8Char> (i)), 0 };
         EXPECT_EQ (0, testVector[i]->GetName().compare (expectedName)) << "Expected: " << expectedName << " Actual: " << testVector[i]->GetName().c_str();
         }
 
@@ -2419,5 +2417,3 @@ TEST_F(SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyProperties
     ASSERT_EQ(0, constraintClass2->GetKeys().size());
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
-
-#endif
