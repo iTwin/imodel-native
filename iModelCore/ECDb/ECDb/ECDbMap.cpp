@@ -136,6 +136,11 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
     
+    m_lightWeightMapCache.Reset ();
+    //This has to evaluated after map is saved
+    if (EvaluateDMLPolicyForEachClass () != BentleyStatus::SUCCESS)
+        return MapStatus::Error;
+
     std::set<ClassMap const*> classMaps;
     for (auto& key : m_classMapDictionary)
         {
@@ -198,9 +203,9 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
     if (AssertIfIsNotImportingSchema ())
         return MapStatus::Error;
 
-    StopWatch timer(true);
+    StopWatch timer (true);
 
-    m_lightWeightMapCache.Reset ();
+
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
     bvector<ECRelationshipClassCP> rootRelationships;
@@ -241,7 +246,7 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         if (status == MapStatus::Error)
             return status;
         }
-    
+
     if (!FinishTableDefinition ())
         return MapStatus::Error;
 
@@ -252,7 +257,7 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         if (status == MapStatus::Error)
             return status;
         }
-    
+
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (auto& key : m_classMapDictionary)
         {
@@ -261,16 +266,29 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
 
     if (!FinishTableDefinition ())
         return MapStatus::Error;
-
+     
     timer.Stop ();
     if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
+
         LOG.debugv ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
-            mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
+        mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
 
     return MapStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Affan.Khan         7/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMap::EvaluateDMLPolicyForEachClass ()
+    {
+    for (auto key : m_classMapDictionary)
+        {
+        key.second->EvaluateDMLPolicy ();
+        GetSQLManagerR ().GetMapStorageR ().UpdateDMLPolicy (key.second->GetId (), key.second->GetDMLPolicy ().ToInt());
+        }
 
+    return BentleyStatus::SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Casey.Mullen        11/2011
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -697,6 +715,7 @@ bool ECDbMap::FinishTableDefinition () const
         MappedTablePtr const& mappedTable = it->second;
         if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition() != SUCCESS)
             return false;
+
         }
     return true;
     }

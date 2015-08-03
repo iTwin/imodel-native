@@ -297,6 +297,52 @@ MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     return _OnInitialized ();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::_EvaluateDMLPolicy ()
+    {
+    DMLPolicy::Target selectTarget = DMLPolicy::Target::None;
+    DMLPolicy::Target insertTarget = DMLPolicy::Target::None;
+    DMLPolicy::Target updateTarget = DMLPolicy::Target::None;
+    DMLPolicy::Target deleteTarget = DMLPolicy::Target::None;
+
+    auto noOfPartitions = GetStorageDescription ().GetNonVirtualHorizontalPartitionIndices ().size ();
+    //auto isPersisted = GetTable ().GetPersistenceType () == PersistenceType::Persisted;
+    if (noOfPartitions == 0)
+        {
+        selectTarget = DMLPolicy::Target::View;
+        }
+    else if (noOfPartitions == 1)
+        {
+        selectTarget = DMLPolicy::Target::Table;
+        insertTarget = DMLPolicy::Target::Table;
+        updateTarget = DMLPolicy::Target::Table;
+        deleteTarget = DMLPolicy::Target::Table;
+        }
+    else
+        {
+        insertTarget = DMLPolicy::Target::Table;
+        selectTarget = DMLPolicy::Target::View;
+        updateTarget = DMLPolicy::Target::View;
+        deleteTarget = DMLPolicy::Target::View;
+        }
+
+    if (GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
+        {
+        insertTarget = DMLPolicy::Target::None;
+        updateTarget = DMLPolicy::Target::None;
+        deleteTarget = DMLPolicy::Target::None;
+        }
+
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Select, selectTarget);
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Insert, insertTarget);
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Update, updateTarget);
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Delete, deleteTarget);
+
+    return BentleyStatus::SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
@@ -832,7 +878,7 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
+        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, GetDMLPolicy().ToInt(), baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps ())
             {
             if (baseProperties.find (propertyMap) != baseProperties.end())
@@ -861,6 +907,7 @@ BentleyStatus ClassMap::_Load (std::set<ClassMap const*>& loadGraph, ECDbClassMa
     else
         SetTable (const_cast<ECDbSqlTable*>(&(pm.front ()->GetColumn ().GetTable ())));
 
+    this->m_crudPolicy = DMLPolicy::FromInt (mapInfo.GetDMLPolicy ());
 
     if (GetECInstanceIdPropertyMap () != nullptr)
         return BentleyStatus::ERROR;

@@ -38,6 +38,103 @@ public:
     };
 
 //=======================================================================================
+//! Describe ECSql CRUD policy
+// @bsiclass                                               Affan.Khan          07/2015
+//+===============+===============+===============+===============+===============+======
+struct DMLPolicy
+    {
+    enum class Target
+        {
+        View = 2,
+        Table = 1,
+        None = 0,
+        };
+    enum class Operation
+        {
+        Select = 1,
+        Insert = 2,
+        Update = 3,
+        Delete = 4
+        };
+    private:
+        std::map<Operation, Target> m_ops;
+    public:
+        DMLPolicy ()
+            {
+            Clear (Target::None);
+            }
+
+        DMLPolicy (DMLPolicy const& rhs)
+            :m_ops (rhs.m_ops)
+            {
+            }
+        ~DMLPolicy ()
+            {}
+        void Clear (Target defaultTarget)
+            {
+            m_ops.clear ();
+            m_ops[Operation::Insert] = defaultTarget;
+            m_ops[Operation::Update] = defaultTarget;
+            m_ops[Operation::Delete] = defaultTarget;
+            m_ops[Operation::Select] = defaultTarget;
+            }
+        void Set (Operation op, Target target)
+            {
+            this->operator[](op) = target;
+            }
+        Target Get (Operation op) const
+            {
+            return this->operator[](op);
+            }
+        bool SupportsOperation (Operation op) const { return Get (op) != Target::None; }
+        bool SupporstAnyOperation () const
+            {
+            return SupportsOperation (Operation::Delete) || SupportsOperation (Operation::Insert) || SupportsOperation (Operation::Select) || SupportsOperation (Operation::Update);
+            }
+        bool operator == (DMLPolicy const& rhs) const
+            {
+            for (auto const& pair : m_ops)
+                if (pair.second != rhs[pair.first])
+                    return false;
+
+            return true;
+            }
+        DMLPolicy& operator = (DMLPolicy const& rhs)
+            {
+            m_ops.clear ();
+            m_ops = rhs.m_ops;
+            return *this;
+            }
+        Target operator [](Operation op) const
+            {
+            return m_ops.find (op)->second;
+            }
+        Target& operator [](Operation op)
+            {
+            return m_ops[op];
+            }
+        uint16_t ToInt () const
+            {
+            //SSIIUUDD            
+            uint16_t out = 0;
+            out = out | (((uint16_t)Get (Operation::Select)) << 0);
+            out = out | (((uint16_t)Get (Operation::Insert)) << 2);
+            out = out | (((uint16_t)Get (Operation::Update)) << 4);
+            out = out | (((uint16_t)Get (Operation::Delete)) << 6);            
+            return out;
+            }
+        static DMLPolicy FromInt (uint16_t raw)
+            {
+            DMLPolicy out;
+            uint16_t mask = 0x2 | 0x1;
+            out.Set (Operation::Select, (Target)((raw & mask << 0) >> 0));
+            out.Set (Operation::Insert, (Target)((raw & mask << 2) >> 2));
+            out.Set (Operation::Update, (Target)((raw & mask << 4) >> 4));
+            out.Set (Operation::Delete, (Target)((raw & mask << 6) >> 6));
+            return out;
+            }
+    };
+//=======================================================================================
 //! Maps an ECClass to a DbTable
 //! @remarks This is the base interface for querying information for a class mapping.
 //! Populating a class map is not part of this, as that is limited to initialization code 
@@ -253,7 +350,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         bool                        m_isDirty;
         bvector<ClassIndexInfoPtr>  m_indexes;
         ECDbClassMapId              m_id;
-
+        DMLPolicy             m_crudPolicy;
     protected:
         ECN::ECClassCR              m_ecClass;
         ECN::ECClassId              m_parentMapClassId;
@@ -278,9 +375,9 @@ struct ClassMap : public IClassMap, RefCountedBase
 
         virtual MapStatus _InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
         virtual MapStatus _InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
-        virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
+        virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph); virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
+        virtual BentleyStatus _EvaluateDMLPolicy ();
         MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
         void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
         virtual PropertyMapCollection const& _GetPropertyMaps () const;
@@ -324,10 +421,13 @@ struct ClassMap : public IClassMap, RefCountedBase
     void SetId (ECDbClassMapId id) { m_id = id; }
     BentleyStatus Save (std::set<ClassMap const*>& savedGraph) { return _Save (savedGraph); }
     BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
+    DMLPolicy const& GetDMLPolicy () const { return m_crudPolicy; }
+    DMLPolicy&  GetDMLPolicyR () { return m_crudPolicy; }
 
     void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
+    BentleyStatus EvaluateDMLPolicy () { return  _EvaluateDMLPolicy (); }
     };
 
 
