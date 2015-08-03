@@ -41,10 +41,10 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
                     updatedInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
                     ECValue v;
                     v.SetLong(101);
-                    updatedInstance->SetValue(L"LongMember", v);
-                    instance->GetValue(v, L"BooleanMember");
-                    updatedInstance->SetValue(L"BooleanMember", ECValue(!(v.GetBoolean())));
-                    updatedInstance->SetValue(L"DoubleMember", ECValue(3.1415));
+                    updatedInstance->SetValue("LongMember", v);
+                    instance->GetValue(v, "BooleanMember");
+                    updatedInstance->SetValue("BooleanMember", ECValue(!(v.GetBoolean())));
+                    updatedInstance->SetValue("DoubleMember", ECValue(3.1415));
                     }
                 updatedInstance->SetInstanceId(instance->GetInstanceId().c_str());
 
@@ -79,7 +79,7 @@ struct ECInstanceUpdaterTests : ECInstanceAdaptersTestFixture
                     {
                     IECInstancePtr selectedInstance = dataAdapter.GetInstance ();
                     bool equal = ECDbTestUtility::CompareECInstances (*instance, *selectedInstance);
-                    ASSERT_TRUE (equal) << L"Updated instance from ecdb not as expected.";
+                    ASSERT_TRUE (equal) << "Updated instance from ecdb not as expected.";
                     }
                 }
             delete updater;
@@ -133,11 +133,11 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     auto testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
     ECValue v (1);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"I", v));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("I", v));
 
     v.Clear ();
     v.SetUtf8CP ("ECInstanceInserter");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"S", v));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("S", v));
 
 
     ECInstanceId testId;
@@ -160,7 +160,7 @@ TEST_F (ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     BeThreadUtilities::BeSleep (1000); //so that new last mod differs significantly from old last mod
     v.Clear ();
     v.SetInteger (2);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"I", v));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("I", v));
 
     ECInstanceUpdater updater (ecdb, *testClass);
     ASSERT_TRUE (updater.IsValid ());

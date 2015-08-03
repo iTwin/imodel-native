@@ -428,7 +428,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
 //---------------------------------------------------------------------------------------
 void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo (ECInstanceKeyInfo const& ecInstanceKeyInfo)
     {
-    BeAssert (ecInstanceKeyInfo.GetECClassId () > 0LL);
+    BeAssert(ecInstanceKeyInfo.GetECClassId() > ECClass::UNSET_ECCLASSID);
     m_ecInstanceKeyInfo = ecInstanceKeyInfo;
     }
 
@@ -440,8 +440,7 @@ void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo (ECInstanceKeyInfo const
 //---------------------------------------------------------------------------------------
 ECSqlUpdatePreparedStatement::ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext)
 : ECSqlNonSelectPreparedStatement (ECSqlType::Update, ecdb, statusContext)
-    {
-    }
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
@@ -454,14 +453,10 @@ ECSqlStepStatus ECSqlUpdatePreparedStatement::Step ()
     if (!IsNoopInSqlite ())
         {
         if (GetStepTasks ().ExecuteBeforeStepTaskList () == ECSqlStepStatus::Error)
-            {
             return ECSqlStepStatus::Error;
-            }
 
         if (!IsNothingToUpdate())
-            {
             status = DoStep();
-            }
         }
 
     return status;

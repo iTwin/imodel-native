@@ -162,7 +162,7 @@ public:
         //compiler generated copy ctor and copy assignment
 
         explicit ECInstanceKeyInfo ()
-            : m_ecClassId (-1LL), m_ecInstanceIdBinder (nullptr)
+            : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID), m_ecInstanceIdBinder(nullptr)
             {}
 
         ECInstanceKeyInfo (ECN::ECClassId ecClassId, ECSqlBinder& ecInstanceIdBinder)
@@ -173,7 +173,7 @@ public:
             : m_ecClassId (ecClassId), m_ecInstanceIdBinder (nullptr), m_userProvidedECInstanceId (userProvidedLiteral)
             {}
 
-        ECN::ECClassId GetECClassId () const { BeAssert (m_ecClassId > 0LL); return m_ecClassId; }
+        ECN::ECClassId GetECClassId() const { BeAssert(m_ecClassId > ECN::ECClass::UNSET_ECCLASSID); return m_ecClassId; }
 
         ECSqlBinder* GetECInstanceIdBinder () const { return m_ecInstanceIdBinder; }
         bool HasUserProvidedECInstanceId () const {return m_userProvidedECInstanceId.IsValid ();}

@@ -139,7 +139,7 @@ private:
 
     virtual ECSqlStatus _BindNull () override;
     virtual IECSqlStructBinder& _BindStruct () override;
-    virtual IECSqlBinder& _GetMember (WCharCP structMemberPropertyName) override;
+    virtual IECSqlBinder& _GetMember (Utf8CP structMemberPropertyName) override;
     virtual IECSqlBinder& _GetMember (ECN::ECPropertyId structMemberPropertyId) override;
 
     virtual IECSqlStructValue const& _GetStruct () const override;

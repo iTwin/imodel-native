@@ -66,6 +66,18 @@ enum class ECSqlStatus
     ProgrammerError //!< Indicates an internal error / bug in the ECSqlStatement API.
     };
 
+//=======================================================================================
+//! Options for how to specify the ECSchema when calling ECDbSchemaManager::GetECClass
+//! @ingroup ECDbGroup
+// @bsiclass                                                Muhammad.zaighum      10/2014
+//+===============+===============+===============+===============+===============+======
+enum class ResolveSchema
+    {
+    BySchemaName, //!< ECClass is qualified by schema name
+    BySchemaNamespacePrefix, //!< ECClass is qualified by schema namespace prefix
+    AutoDetect//!< Detect automatically whether ECClass is qualiried by schema name or namespace prefix
+    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 //__PUBLISH_SECTION_END__

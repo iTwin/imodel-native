@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/TestSchemaHelper.cpp $
+|  $Source: Tests/Performance/TestSchemaHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TestSchemaHelper.h"
@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //static member initialization
 Utf8CP const TestSchemaHelper::TESTSCHEMA_NAME = "ComplexTestSchema";
-WCharCP const TestSchemaHelper::TESTCLASS_NAME = L"PIPE_Extra";
+Utf8CP const TestSchemaHelper::TESTCLASS_NAME = "PIPE_Extra";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Krischan.Eberle          09/12

@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ECSqlStatementIterator.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -67,7 +67,7 @@ void ListDataWriter::OnPrimitive(ECSqlPropertyPath const& propertyPath, int rowI
         case ECN::PRIMITIVETYPE_Point3D:
             Console::WriteLine("(%2.1f, %2.1f, %2.1f)", value.GetPoint3D().x, value.GetPoint3D().y, value.GetPoint3D().z); return;
         case ECN::PRIMITIVETYPE_String:
-            Console::WriteLine("%s", Utf8String(value.GetString()).c_str()); return;
+            Console::WriteLine("%s", value.GetUtf8CP()); return;
         }
     Console::WriteLine("<unknow>");
     }
@@ -181,7 +181,7 @@ ECSqlStatus ECSqlStatementIterator::IteratePrimitve (IECSqlIteratorCallback& cal
             case ECN::PRIMITIVETYPE_Long: value.SetLong (ecsqlValue.GetInt64 ()); break;
             case ECN::PRIMITIVETYPE_Point2D: value.SetPoint2D (ecsqlValue.GetPoint2D ()); break;
             case ECN::PRIMITIVETYPE_Point3D: value.SetPoint3D (ecsqlValue.GetPoint3D ()); break;
-            case ECN::PRIMITIVETYPE_String: value.SetString (WString (ecsqlValue.GetText (), true).c_str (), true); break;
+            case ECN::PRIMITIVETYPE_String: value.SetUtf8CP (ecsqlValue.GetText ()); break;
             case ECN::PRIMITIVETYPE_IGeometry: break;
             }
         }

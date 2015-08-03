@@ -23,6 +23,7 @@ ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
 
+//#define ENABLE_TRIGGER_DEBUGGING
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -164,24 +165,6 @@ struct CompareIUtf8
         {
         return BeStringUtilities::Stricmp (s1.c_str (), s2.c_str ()) < 0;
         }
-    };
-
-//=======================================================================================
-// For case-sensitive WChar string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareWChar
-    {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (wcscmp(s1, s2) < 0);}
-    };
-
-//=======================================================================================
-// For case-insensitive WChar string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIWChar
-    {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (BeStringUtilities::Wcsicmp(s1, s2) < 0);}
     };
 
 #define ECDbDataColumn  0x0U

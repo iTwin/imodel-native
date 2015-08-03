@@ -149,7 +149,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy (IClassMap const& classMap, IsVal
         return ECDbPolicy::CreateNotSupported (notSupportedMessage.c_str ());
         }
 
-    BeAssert (!ecClass.GetSchema ().IsStandardSchema () || (!className.Equals (L"AnyClass") && !className.Equals (L"InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
+    BeAssert (!ecClass.GetSchema ().IsStandardSchema () || (!className.Equals ("AnyClass") && !className.Equals ("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
 
     //if policy for specific ECSQL type was requested, check that now
     if (assertion.UseECSqlTypeFilter ())

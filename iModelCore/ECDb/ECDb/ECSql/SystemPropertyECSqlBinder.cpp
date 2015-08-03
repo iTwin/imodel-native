@@ -216,7 +216,7 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText (Utf8CP value, IECSqlBinder::Ma
     if (onBindEventHandler != nullptr)
         {
         ECInstanceId id;
-        if (!ECInstanceIdHelper::FromString (id, WString (value, BentleyCharEncoding::Utf8).c_str ()))
+        if (!ECInstanceIdHelper::FromString (id, value))
             return GetStatusContext ().SetError (ECSqlStatus::UserError, "Binding string value to %s parameter failed. Value cannot be converted to an ECInstanceId.", SystemPropertyToString ());
 
         onBindEventHandler (id);

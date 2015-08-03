@@ -140,7 +140,7 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
         if (sourceContainsAnyClass && targetContainsAnyClass)
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "'%s' class is not related to by the relationship '%s' as both relationship endpoint contain 'AnyClass'.", Utf8String (toECClass.GetFullName ()).c_str (), Utf8String (relationshipClass->GetFullName ()).c_str ());
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "'%s' class is not related to by the relationship '%s' as both relationship endpoint contain 'AnyClass'.", toECClass.GetFullName(), relationshipClass->GetFullName());
 
         if (sourceContainsAnyClass)
             {
@@ -153,7 +153,7 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
             toEP.SetAnyClass (true);
             }
         else
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "'%s' class is not related to by the relationship '%s'", Utf8String (toECClass.GetFullName()).c_str (), Utf8String (relationshipClass->GetFullName()).c_str ());
+            return ctx.SetError (ECSqlStatus::InvalidECSql, "'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
         }
 
     bmap<ECClassId,ClassNameExp const*> fromClassExistsInSourceList;
@@ -193,21 +193,15 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
     //ECSQL_TODO: If possible remove child class from 'from class list'. If parent is added do not add child to it. 
 
     if (fromClassExistsInSourceList.empty() && fromClassExistsInTargetList.empty())
-        {
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", Utf8String (relationshipClass->GetFullName()).c_str ());
-        }
+        return ctx.SetError (ECSqlStatus::InvalidECSql, "No ECClass in the FROM and JOIN clauses matches the ends of the relationship '%s'.", relationshipClass->GetFullName());
 
     if (fromClassExistsInSourceList.size() > 1 || fromClassExistsInTargetList.size() > 1)
-        {
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", Utf8String (relationshipClass->GetFullName()).c_str ());
-        }
+        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         
     if (fromClassExistsInSourceList.size() == 1 && fromClassExistsInTargetList.size() == 1)
         {
         if (fromClassExistsInSourceList.begin()->first != fromClassExistsInTargetList.begin()->first)
-            {
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", Utf8String (relationshipClass->GetFullName()).c_str ());
-            }
+            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multiple classes in the FROM and JOIN clauses match an end of the relationship '%s'.", relationshipClass->GetFullName());
         }
 
     if (!fromClassExistsInSourceList.empty())
@@ -250,10 +244,10 @@ ECSqlStatus RelationshipJoinExp::ResolveRelationshipEnds (ECSqlParseContext& ctx
         }
 
     if (fromEP.GetLocation() == ClassLocation::NotResolved || fromEP.GetClassNameRef() == nullptr)
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find class on one of the ends of relationship %s", Utf8String (relationshipClass->GetFullName()).c_str ());
+        return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
 
     if (toEP.GetLocation() == ClassLocation::NotResolved || toEP.GetClassNameRef() == nullptr)
-        return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find class on one of the ends of relationship %s", Utf8String (relationshipClass->GetFullName()).c_str ());
+        return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find class on one of the ends of relationship %s", relationshipClass->GetFullName());
 
     m_resolvedFrom = fromEP;
     m_resolvedTo = toEP;

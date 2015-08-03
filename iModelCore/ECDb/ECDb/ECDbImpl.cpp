@@ -161,6 +161,8 @@ void ECDb::Impl::ClearECDbCache () const
 
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache ();
+
+    LOG.debug("Cleared ECDb cache.");
     }
 
 //--------------------------------------------------------------------------------------

@@ -64,7 +64,7 @@ void ECSqlParseContext::PopFinalizeParseArg ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className) 
     {
-    ECClassCP resolvedClass = m_ecdb.Schemas ().GetECClass (schemaNameOrPrefix.c_str (), className.c_str (), ECDbSchemaManager::ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas ().GetECClass (schemaNameOrPrefix.c_str (), className.c_str (), ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {
@@ -74,7 +74,7 @@ ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& 
             return SetError (ECSqlStatus::InvalidECSql, "ECClass '%s.%s' does not exist.", schemaNameOrPrefix.c_str (), className.c_str ());
         }
 
-    auto key = resolvedClass->GetSchema().GetName()  + L":" + resolvedClass->GetName();
+    auto key = resolvedClass->GetSchema().GetName()  + ":" + resolvedClass->GetName();
     auto search = m_classNameExpInfoList.find(key) ;
     if (search != m_classNameExpInfoList.end())
         {
@@ -144,7 +144,7 @@ void ECSqlParseContext::GetConstraintClasses (ClassListById& classes, ECRelation
         *containAnyClass = false;
     for(auto ecClass : constraintEnd.GetClasses())
         {
-        if (containAnyClass && !(*containAnyClass) && ecClass->GetName () == L"AnyClass" && ecClass->GetSchema ().GetName () == L"Bentley_Standard_Classes")
+        if (containAnyClass && !(*containAnyClass) && ecClass->GetName () == "AnyClass" && ecClass->GetSchema ().GetName () == "Bentley_Standard_Classes")
             *containAnyClass = true;
 
         if (classes.find(ecClass->GetId()) == classes.end())

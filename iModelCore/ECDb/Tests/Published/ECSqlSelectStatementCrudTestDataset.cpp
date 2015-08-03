@@ -19,8 +19,66 @@ ECSqlTestDataset ECSqlSelectTestDataset::AliasTests (int rowCountPerClass)
     {
     ECSqlTestDataset dataset;
     Utf8CP ecsql = "SELECT ECInstanceId, PStructProp A11 FROM ecsql.PSA";
-    //Utf8CP ecsql = "SELECT ECInstanceId, B A01, Bi A02, D A03, Dt A04, DtUtc A05, I A06, L A07, S A08, P2D A09, P3D A10, PStructProp A11, B_Array A12, Bi_Array A13, D_Array A14, Dt_Array A15, DtUtc_Array A16, I_Array A17, L_Array A18, S_Array A19, P2D_Array A20, P3D_Array A21, PStruct_Array  A22 FROM ecsql.PSA";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, /*23*/2);
+    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2);
+
+    //tests when class alias is same as a property name. This should work unless the property is a struct property
+    ecsql = "SELECT S.ECInstanceId FROM ecsql.PSA S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.S FROM ecsql.PSA S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S FROM ecsql.PSA S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S FROM ecsql.PSA";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.I FROM ecsql.PSA S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT I FROM ecsql.PSA S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S FROM (SELECT S FROM ecsql.PSA) S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.S FROM (SELECT S FROM ecsql.PSA) S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT I FROM (SELECT S, I FROM ecsql.PSA) S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.I FROM (SELECT S, I FROM ecsql.PSA) S";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.S FROM ecsql.PSA, (SELECT ECInstanceId, I, S FROM ecsql.PSA) S WHERE PSA.ECInstanceId=S.ECInstanceId";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.Bla FROM ecsql.PSA, (SELECT ECInstanceId, I, 3.14 AS Bla FROM ecsql.PSA) S WHERE PSA.ECInstanceId=S.ECInstanceId";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT S.S FROM ecsql.PSA, (SELECT I, S FROM ecsql.PSA) S WHERE PSA.ECInstanceId=S.ECInstanceId";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT PStructProp FROM ecsql.PSA PStructProp";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT PStructProp.ECInstanceId FROM ecsql.PSA PStructProp";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT PStructProp.s FROM ecsql.PSA PStructProp";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT PStructProp.I FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT PStructProp.PStructProp FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId";
+    ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
+
+    ecsql = "SELECT PStructProp.i FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId";
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
+
     return dataset;
     }
 

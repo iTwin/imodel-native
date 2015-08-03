@@ -47,7 +47,7 @@ private:
 
 public:
     //! Construct an empty/invalid ECInstanceKey
-    ECInstanceKey() : m_ecClassId(-1LL) {}
+    ECInstanceKey() : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID) {}
 
     //! Construct an ECInstanceKey
     ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
@@ -86,7 +86,7 @@ public:
     //! Test if this key is valid
     bool IsValid() const 
         { 
-        return (m_ecClassId > 0LL && m_ecInstanceId.IsValid()); 
+        return (m_ecClassId > ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid());
         }
     };
 
@@ -114,7 +114,7 @@ public:
     //! 
     //! Typical example:
     //!
-    //!     WChar idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    //!     Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     //!     bool success = ECInstanceIdHelper::ToString (idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     //!
     //! @remarks The string representation can be used as an ECN::IECInstance's InstanceId
@@ -125,14 +125,14 @@ public:
     //! @param[in] stringBufferLength Number of characters allocated in @p stringBuffer
     //! @param[in] ecInstanceId ECInstanceId to convert
     //! @return true in case of success, false if @p ecInstanceId is not valid or if @p stringBuffer is too small.
-    ECDB_EXPORT static bool ToString(WCharP stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId);
+    ECDB_EXPORT static bool ToString(Utf8P stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId);
 
     //! Converts the ECInstanceId string to an ECInstanceId.
     //! @remarks In order to parse correctly, the ECInstanceId string must contain an unsigned number in decimal format.
     //! @param[out] ecInstanceId resulting ECInstanceId
     //! @param[in] ecInstanceIdString ECInstanceId string to convert
     //! @return true in case of success, false otherwise
-    ECDB_EXPORT static bool FromString(ECInstanceId& ecInstanceId, WCharCP ecInstanceIdString);
+    ECDB_EXPORT static bool FromString(ECInstanceId& ecInstanceId, Utf8CP ecInstanceIdString);
     };
 
 //=======================================================================================

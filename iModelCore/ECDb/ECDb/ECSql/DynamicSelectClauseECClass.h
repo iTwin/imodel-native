@@ -20,8 +20,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct DynamicSelectClauseECClass
     {
 private:
-    static WCharCP const SCHEMANAME;
-    static WCharCP const CLASSNAME;
+    static Utf8CP const SCHEMANAME;
+    static Utf8CP const CLASSNAME;
 
     ECN::ECSchemaPtr m_schema;
     ECN::ECClassP m_class;
@@ -43,7 +43,7 @@ public:
 
     ECSqlStatus AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
     bool IsGeneratedProperty (ECN::ECPropertyCR selectClauseProperty) const;
-    static ECSqlStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR edb);
+    static BentleyStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR edb);
 
     };
 

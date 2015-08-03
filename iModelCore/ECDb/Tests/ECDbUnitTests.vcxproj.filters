@@ -49,13 +49,7 @@
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECSqlStatementTestFixture.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
-    <ClCompile Include="Performance\PerformanceAdapterTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
     <ClCompile Include="Published\ECSqlQueryAdapter_Tests.cpp">
@@ -190,8 +184,17 @@
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECDbMapCA_Tests.cpp">
-      <Filter>NonPublished\ECDb</Filter>
+    <ClCompile Include="Published\SchemaImportTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbMapCA_Tests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -269,6 +272,9 @@
     </ClInclude>
     <ClInclude Include="Performance\DbLogHelper.h">
       <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\SchemaImportTestFixture.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

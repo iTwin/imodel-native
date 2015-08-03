@@ -34,50 +34,39 @@ struct ECDbSystemSchemaHelper : NonCopyableClass
 public:
     static Utf8CP const ECDBSYSTEM_SCHEMANAME;
     static Utf8CP const ECINSTANCEID_PROPNAME;
-    static WCharCP const ECINSTANCEID_PROPNAME_W;
     static Utf8CP const SOURCEECINSTANCEID_PROPNAME;
-    static WCharCP const SOURCEECINSTANCEID_PROPNAME_W;
     static Utf8CP const SOURCEECCLASSID_PROPNAME;
-    static WCharCP const SOURCEECCLASSID_PROPNAME_W;
     static Utf8CP const TARGETECINSTANCEID_PROPNAME;
-    static WCharCP const TARGETECINSTANCEID_PROPNAME_W;
     static Utf8CP const TARGETECCLASSID_PROPNAME;
-    static WCharCP const TARGETECCLASSID_PROPNAME_W;
     static Utf8CP const ECPROPERTYPATHID_PROPNAME;
-    static WCharCP const ECPROPERTYPATHID_PROPNAME_W;
     static Utf8CP const ECARRAYINDEX_PROPNAME;
-    static WCharCP const ECARRAYINDEX_PROPNAME_W;
     static Utf8CP const PARENTECINSTANCEID_PROPNAME;
-    static WCharCP const PARENTECINSTANCEID_PROPNAME_W;
     //static Utf8CP const ECPROPERTYID_PROPNAME;
-    //static WCharCP const ECPROPERTYID_PROPNAME_W;
     static Utf8CP const OWNERECINSTANCEID_PROPNAME;
-    static WCharCP const OWNERECINSTANCEID_PROPNAME_W;
 
 private:
-    static WCharCP const ECSQLSYSTEMPROPERTIES_CLASSNAME;
+    static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;
 
     //static class
     ECDbSystemSchemaHelper ();
     ~ECDbSystemSchemaHelper ();
 
-    static ECN::ECClassCP GetECClass (ECN::ECSchemaCR ecdbSystemSchema, WCharCP className);
+    static ECN::ECClassCP GetECClass (ECN::ECSchemaCR ecdbSystemSchema, Utf8CP className);
     static ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, Utf8CP propertyName);
     static Utf8CP GetPropertyName (ECSqlSystemProperty kind);
-    static WCharCP GetPropertyNameW (ECSqlSystemProperty kind);
 
 public:
     //! Gets the ECSqlSystemPropertiesClass ECClass.
-    //! @param[in] schemaManager SchemaManager used to retrieve the ECDbSystem ECSchema.
+    //! @param[in] schemaManager SchemaManager used to retrieve the ECDb_System ECSchema.
     //! @return ECSqlSystemPropertiesClass class or nullptr in case of errors
     static ECN::ECClassCP GetECSqlSystemPropertiesClass (ECDbSchemaManagerCR schemaManager);
 
-    //! Gets the ECDbSystem ECSchema.
-    //! @param[in] schemaManager SchemaManager used to retrieve the ECDbSystem ECSchema.
-    //! @return ECDbSystem ECSchema or nullptr in case of errors
+    //! Gets the ECDb_System ECSchema.
+    //! @param[in] schemaManager SchemaManager used to retrieve the ECDb_System ECSchema.
+    //! @return ECDb_System ECSchema or nullptr in case of errors
     static ECN::ECSchemaCP GetSchema (ECDbSchemaManagerCR schemaManager);
 
-    //! Gets the system property of the specified kind from the ECDbSystem ECSchema.
+    //! Gets the system property of the specified kind from the ECDb_System ECSchema.
     //! @param[in] schemaManager SchemaManager used to retrieve the respective system property
     //! @return System property or nullptr in case of errors
     static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind);

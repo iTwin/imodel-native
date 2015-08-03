@@ -25,14 +25,12 @@ ECDbMapPersistenceTests.MappingStrategyTest
 #Have notified Krischan and Affan; ignoring so we can get PRG builds through.
 ECDbSchemas.DeigoRelationshipTest2
 ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
-
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
 
 # Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
-ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
@@ -41,6 +39,6 @@ ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
 ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
 ECSqlQueryAdapter.VerifyECSqlQueries
-#
+
 #for affan 6:35 PM 7/8/2015
 ECDbInstances.RelationshipStrengthBackwardHoldingForwardEmbedding

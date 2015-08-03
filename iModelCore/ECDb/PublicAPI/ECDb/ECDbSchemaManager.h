@@ -96,7 +96,7 @@ typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 //! 
 //!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext ();
 //!     ecSchemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
-//!     ECN::SchemaKey schemaKey (L"foo", 1, 0);
+//!     ECN::SchemaKey schemaKey ("foo", 1, 0);
 //!     ECN::ECSchemaPtr fooSchema = ECN::ECSchema::LocateSchema (schemaKey, *ecSchemaContext);
 //!     schemaManager.ImportECSchemas(ecSchemaContext->GetCache());
 //!
@@ -107,17 +107,7 @@ typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopyableClass
     {
 public:
-    //=======================================================================================
-    //! Options for resolving ECSchema in ECDbSchemaManager::GetECClass
-    // @bsiclass                                                Muhammad.zaighum      10/2014
-    //+===============+===============+===============+===============+===============+======
-    enum class ResolveSchema
-        {
-        BySchemaName, //!< Resolve class by schema name
-        BySchemaNamespacePrefix, //!< Resolve class by schema namespace prefix
-        AutoDetect//!< Detect automatically whether it is schema name or prefix
-        };
-    //=======================================================================================
+     //=======================================================================================
     //! Options for importing an ECSchema into an ECDb file.
     //! @see ECDbSchemaManager::ImportECSchemas
     // @bsiclass                                                Krischan.Eberle      04/2014
@@ -238,7 +228,7 @@ private:
     //! The list excludes ECSchemas that have already been imported into the ECDb file
     void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
     static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
-    static bool AssertOnDuplicateCopyOfSchema(const bvector<ECN::ECSchemaP>& schema);
+    static bool ContainsDuplicateSchemas(bvector<ECN::ECSchemaP> const& schema);
     
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
@@ -249,7 +239,7 @@ private:
     virtual ECN::ECSchemaPtr _LocateSchema (ECN::SchemaKeyR key, ECN::SchemaMatchType matchType, ECN::ECSchemaReadContextR schemaContext) override;
 
     //! Implementation of IECClassLocater
-    virtual ECN::ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) override;
+    virtual ECN::ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) override;
 
 public:
     ECDbSchemaManager (ECDbR ecdb, ECDbMapR map);
@@ -314,15 +304,19 @@ public:
     ECDB_EXPORT ECN::ECClassCP GetECClass (ECN::ECClassId ecClassId) const;
 
     //! Gets the ECClassId for the ECClass with the specified name.
+    //! @param[out] id ECClassId of the requested ECClass.
     //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
     //! @param[in] className Name of the class to be retrieved
     //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
-    //! @return The ECClassId of the specified ECClass or an invalid class id if not found
-    ECN::ECClassId GetECClassId (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const
-        {
-        auto ecClass = GetECClass (schemaNameOrPrefix, className, resolveSchema);
-        return ecClass != nullptr ? ecClass->GetId () : -1LL;
-        }
+    //! @return true, if the %ECDb file has an ECClass with the given name, false, if the ECClass does not exist in the %ECDb file
+    ECDB_EXPORT bool TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const;
+    
+    //! Gets the ECClassId for the ECClass with the specified name.
+    //! @param[in] schemaNameOrPrefix Name (not full name) or namespace prefix of the schema containing the class (@see @p resolveSchema)
+    //! @param[in] className Name of the class to be retrieved
+    //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
+    //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
+    ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id = ECN::ECClass::UNSET_ECCLASSID; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
 
     //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
     //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure
@@ -347,21 +341,21 @@ public:
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
     //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
     //! @param ecClass The ECClass in the duplicate ECSchema. Its Id will be set (as well as returned)
-    static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema (BeSQLite::Db& db, ECN::ECClassCR ecClass);
+    static ECN::ECClassId GetClassIdForECClassFromDuplicateECSchema(ECDbCR db, ECN::ECClassCR ecClass);
 
     //! For cases where we are working with an ECProperty in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECPropertyId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
     //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
     //! @param ecProperty. The ECProperty in the duplicate ECSchema. Its Id will be set (as well as returned)
-    static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema (BeSQLite::Db& db, ECN::ECPropertyCR ecProperty);
+    static ECN::ECPropertyId GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECN::ECPropertyCR ecProperty);
 
     //! For cases where we are working with an ECSchema in a referenced ECSchema that is a duplicate of one already persisted
     //! and therefore doesn't have the persistent ECSchemaId set. Generally, we would prefer that the primary ECSchema had
     //! been deserialized using the persisted copies of the referenced ECSchema, but we cannot ensure that is always the case
     //! @param db must be an ECDb, but left as Db because that is what the callers actually have... needs refactoring for Graphite02
     //! @param ecSchema. The duplicate ECSchema. Its Id will be set (as well as returned)
-    static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema (BeSQLite::Db& db, ECN::ECSchemaCR ecSchema);
+    static ECN::ECSchemaId GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECN::ECSchemaCR ecSchema);
 
     void ClearCache () const;
     ECDbCR GetECDb () const;

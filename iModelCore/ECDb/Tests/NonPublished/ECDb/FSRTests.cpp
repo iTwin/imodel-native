@@ -52,13 +52,13 @@ struct FSRTests : public ::testing::Test
         schemaDirectory.PopDir();
         schemaReadContext->AddSchemaPath(schemaDirectory);
         currentSchemaName.append(L".ecschema.xml");
-        WString schemaName;
+        Utf8String schemaName;
         uint32_t major, minor;
-        ECSchema::ParseSchemaFullName(schemaName, major, minor, currentSchemaName.GetFileNameWithoutExtension());
+        ECSchema::ParseSchemaFullName(schemaName, major, minor, Utf8String(currentSchemaName.GetFileNameWithoutExtension().c_str()));
         SchemaKey key = SchemaKey(schemaName.c_str(), major, minor);
         ecSchema = ECSchema::LocateSchema(key, *schemaReadContext);
         ASSERT_TRUE(ecSchema != NULL);
-        LOG.infov(L"Loaded schema %ls", currentSchemaName.GetName());
+        LOG.infov("Loaded schema %s", currentSchemaName.GetName());
         auto importSchemaStatus = m_db.Schemas().ImportECSchemas(schemaReadContext->GetCache(), ECDbSchemaManager::ImportOptions(true, true));
         ASSERT_EQ(SUCCESS, importSchemaStatus);
 
@@ -72,7 +72,7 @@ struct FSRTests : public ::testing::Test
         if ((BEXML_Success != xmlDom->SelectNode(instanceNode, "/", NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == instanceNode))
             {
             BeAssert(false);
-            LOG.errorv(L"Invalid ECInstanceXML: Missing a top-level instance node");
+            LOG.errorv("Invalid ECInstanceXML: Missing a top-level instance node");
             }
 
         if (BEXMLNODE_Document == instanceNode->GetType())

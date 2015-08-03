@@ -53,15 +53,6 @@ bool PropertyMapSystem::_IsSystemPropertyMap () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-MapStatus PropertyMapSystem::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
-    {
-    //System columns were already created
-    return MapStatus::Success;
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
 void PropertyMapSystem::_GetColumns (std::vector<ECDbSqlColumn const*>& columns) const
     {
     BeAssert (!m_column.expired ());
@@ -88,7 +79,7 @@ Utf8CP PropertyMapSystem::_GetColumnBaseName () const
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static
-WCharCP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = L"ECInstanceId";
+Utf8CP const PropertyMapECInstanceId::PROPERTYACCESSSTRING = "ECInstanceId";
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
@@ -132,9 +123,9 @@ bool PropertyMapECInstanceId::_IsECInstanceIdPropertyMap () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-WString PropertyMapECInstanceId::_ToString () const
+Utf8String PropertyMapECInstanceId::_ToString () const
     {
-    return WPrintfString (L"PropertyMapECInstanceId: Column name=%ls", WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str ());
+    return Utf8PrintfString ("PropertyMapECInstanceId: Column name=%s", GetColumn ().GetName ().c_str());
     }
 
 
@@ -227,18 +218,15 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
-    //if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName ().c_str ()) != BentleyStatus::SUCCESS)
-    //    return nullptr;
-
     return new PropertyMapSecondaryTableKey (*property, systemColumn, kind);
     }
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-WString PropertyMapSecondaryTableKey::_ToString () const
+Utf8String PropertyMapSecondaryTableKey::_ToString () const
  {
- return WPrintfString (L"PropertyMapSecondaryTableKey: Column name=%ls", WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str ());
+ return Utf8PrintfString ("PropertyMapSecondaryTableKey: Column name=%s", GetColumn ().GetName ().c_str());
  }
 
 
@@ -327,11 +315,10 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintECInstanceId::_ToNativeS
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-WString PropertyMapRelationshipConstraintECInstanceId::_ToString () const
+Utf8String PropertyMapRelationshipConstraintECInstanceId::_ToString () const
     {
-    return WPrintfString (L"PropertyMapRelationshipConstraintECInstanceId: Column name=%ls View column alias=%ls",
-        WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str (),
-        WString (GetViewColumnAlias (), BentleyCharEncoding::Utf8).c_str ());
+    return Utf8PrintfString ("PropertyMapRelationshipConstraintECInstanceId: Column name=%s View column alias=%s",
+        GetColumn ().GetName ().c_str(), GetViewColumnAlias ());
     }
 
 //******************************** PropertyMapRelationshipConstraintClassId ****************************************
@@ -427,12 +414,10 @@ NativeSqlBuilder::List PropertyMapRelationshipConstraintClassId::_ToNativeSql (U
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                08/2013
 //+---------------+---------------+---------------+---------------+---------------+-
-WString PropertyMapRelationshipConstraintClassId::_ToString () const
+Utf8String PropertyMapRelationshipConstraintClassId::_ToString () const
     {
-    return WPrintfString (L"PropertyMapRelationshipConstraintClassId: Column name=%ls View column alias=%ls Default constraint ECClassId=%lld",
-        WString (GetColumn ().GetName ().c_str(), BentleyCharEncoding::Utf8).c_str (),
-        WString (GetViewColumnAlias (), BentleyCharEncoding::Utf8).c_str (),
-        m_defaultConstraintClassId);
+    return Utf8PrintfString ("PropertyMapRelationshipConstraintClassId: Column name=%s View column alias=%s Default constraint ECClassId=%lld",
+        GetColumn ().GetName ().c_str(), GetViewColumnAlias (), m_defaultConstraintClassId);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

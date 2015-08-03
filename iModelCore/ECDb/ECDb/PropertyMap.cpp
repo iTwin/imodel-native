@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMap::PropertyMap (ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap) : m_ecProperty (ecProperty), m_propertyAccessString (propertyAccessString), m_parentPropertyMap (parentPropertyMap), m_propertyPathId (0), m_primaryTable (primaryTable)
+PropertyMap::PropertyMap (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap) : m_ecProperty (ecProperty), m_propertyAccessString (propertyAccessString), m_parentPropertyMap (parentPropertyMap), m_propertyPathId (0), m_primaryTable (primaryTable)
     {
     BeAssert (propertyAccessString);
     BeAssert (GetPrimaryTable () != nullptr);
@@ -57,7 +57,7 @@ bool PropertyMap::_IsUnmapped () const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECClassCR rootClass, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
     if (!ecProperty.HasId ())
         {
@@ -72,8 +72,8 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
     auto policy = ECDbPolicyManager::GetPropertyPolicy (ecProperty, IsValidInECSqlPolicyAssertion::Get ());
     if (!policy.IsSupported ())
         {
-        LOG.warningv (L"Did not map ECProperty '%ls.%ls'. %ls", rootClass.GetFullName (), propertyAccessString,
-            WString (policy.GetNotSupportedMessage (), BentleyCharEncoding::Utf8).c_str ());
+        LOG.warningv ("Did not map ECProperty '%s.%s'. %s", rootClass.GetFullName (), propertyAccessString,
+            policy.GetNotSupportedMessage ());
         return UnmappedPropertyMap::Create (ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
         }
 
@@ -145,7 +145,7 @@ bool PropertyMap::_IsSystemPropertyMap () const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
     {
     auto& children = GetChildren ();
     if (children.IsEmpty ())
@@ -153,60 +153,57 @@ DbResult PropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
         std::vector<ECDbSqlColumn const*> columns;
         GetColumns (columns);
         if (columns.size () == 0)
-            return BE_SQLITE_DONE;
+            return SUCCESS;
 
         if (columns.size () > 1)
             {
             BeAssert (false && "Overide this funtion for multicolumn mapping");
-            return BE_SQLITE_ERROR;
+            return ERROR;
             }
 
         auto mapInfo = classMapInfo.CreatePropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str (), *columns.at (0));
         if (mapInfo != nullptr)
             m_propertyPathId = mapInfo->GetPropertyPath ().GetId ();
         else
-            return BE_SQLITE_ERROR;
+            return ERROR;
 
-        return BE_SQLITE_DONE;
+        return SUCCESS;
         }
 
     for (auto& child : children)
         {
-        auto r = child->Save (classMapInfo);
-        if (r != BE_SQLITE_DONE)
-            return r;
+        if (SUCCESS != child->Save (classMapInfo))
+            return ERROR;
         }
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::_Load (ECDbClassMapInfo const& classMapInfo)
+BentleyStatus PropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
     {
     auto& children = GetChildren ();
     if (children.IsEmpty ())
         {
         BeAssert (false && "This funtion must be overriden in derived class");
-        return BE_SQLITE_ERROR;
-        }
-   // classMapInfo.GetMapStorage ().FindPropertyPath ("")
-    for (auto child : children)
-        {
- 
-        auto r = const_cast<PropertyMap*>(child)->Load (classMapInfo);
-        if (r != BE_SQLITE_DONE)
-            return r;
+        return ERROR;
         }
 
-    return BE_SQLITE_DONE;
+    for (auto child : children)
+        {
+        if (SUCCESS != const_cast<PropertyMap*>(child)->Load (classMapInfo))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMap::Save(ECDbClassMapInfo & classMapInfo) const
     {
     return _Save (classMapInfo);
     }
@@ -222,15 +219,15 @@ ECPropertyCR PropertyMap::GetProperty() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PropertyMap::_ToString() const
+Utf8String PropertyMap::_ToString() const
     {
-    return WPrintfString(L"PropertyMap: ecProperty=%ls.%ls (%ls)", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str(), m_ecProperty.GetTypeName().c_str());
+    return Utf8PrintfString("PropertyMap: ecProperty=%s.%s (%s)", m_ecProperty.GetClass().GetFullName(), m_ecProperty.GetName().c_str(), m_ecProperty.GetTypeName().c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-WCharCP PropertyMap::GetPropertyAccessString() const
+Utf8CP PropertyMap::GetPropertyAccessString() const
     {
     return m_propertyAccessString.c_str();
     }
@@ -291,7 +288,7 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     return _FindOrCreateColumnsInTable(classMap, classMapInfo);
     }
@@ -299,7 +296,7 @@ MapStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInf
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PropertyMap::ToString() const
+Utf8String PropertyMap::ToString() const
     {
     return _ToString();
     }
@@ -307,10 +304,10 @@ WString PropertyMap::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     // Base implementation does nothing, but is implemented so PropertyMap can serve as a placeholder
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -381,7 +378,7 @@ void PropertyMapCollection::AddPropertyMap (PropertyMapPtr const& propertyMap)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyMapCollection::AddPropertyMap (WCharCP propertyAccessString, PropertyMapPtr const& propertyMap)
+void PropertyMapCollection::AddPropertyMap (Utf8CP propertyAccessString, PropertyMapPtr const& propertyMap)
     {
     m_dictionary[propertyAccessString] = propertyMap;
     m_orderedCollection.push_back (propertyMap.get ());
@@ -406,7 +403,7 @@ size_t PropertyMapCollection::Size () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMap (PropertyMapCP& propertyMap, WCharCP propertyAccessString, bool recursive) const
+bool PropertyMapCollection::TryGetPropertyMap (PropertyMapCP& propertyMap, Utf8CP propertyAccessString, bool recursive) const
     {
     propertyMap = nullptr;
 
@@ -421,7 +418,7 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapCP& propertyMap, WChar
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, WCharCP propertyAccessString, bool recursive) const
+bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, Utf8CP propertyAccessString, bool recursive) const
     {
     propertyMap = nullptr;
     bool found = TryGetPropertyMapNonRecursively (propertyMap, propertyAccessString);
@@ -431,23 +428,23 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, WCha
     BeAssert (recursive && !found);
 
     //recurse into access string and look up prop map for first member in access string
-    bvector<WString> tokens;
-    BeStringUtilities::Split(propertyAccessString, L".", NULL, tokens);
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(propertyAccessString, ".", NULL, tokens);
 
-    bvector<WString>::const_iterator tokenIt = tokens.begin ();
-    bvector<WString>::const_iterator tokenEndIt = tokens.end ();
+    bvector<Utf8String>::const_iterator tokenIt = tokens.begin ();
+    bvector<Utf8String>::const_iterator tokenEndIt = tokens.end ();
     return TryGetPropertyMap (propertyMap, tokenIt, tokenEndIt);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, bvector<WString>::const_iterator& accessStringTokenIterator, bvector<WString>::const_iterator& accessStringTokenEndIterator) const
+bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, bvector<Utf8String>::const_iterator& accessStringTokenIterator, bvector<Utf8String>::const_iterator& accessStringTokenEndIterator) const
     {
     if (accessStringTokenIterator == accessStringTokenEndIterator)
         return false;
 
-    WStringCR currentAccessItem = *accessStringTokenIterator;
+    Utf8StringCR currentAccessItem = *accessStringTokenIterator;
 
     PropertyMapPtr currentAccessPropMap = nullptr;
     bool found = TryGetPropertyMapNonRecursively (currentAccessPropMap, currentAccessItem.c_str ());
@@ -469,7 +466,7 @@ bool PropertyMapCollection::TryGetPropertyMap (PropertyMapPtr& propertyMap, bvec
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyMapCollection::TryGetPropertyMapNonRecursively (PropertyMapPtr& propertyMap, WCharCP propertyAccessString) const
+bool PropertyMapCollection::TryGetPropertyMapNonRecursively (PropertyMapPtr& propertyMap, Utf8CP propertyAccessString) const
     {
     propertyMap = nullptr;
     auto it = m_dictionary.find (propertyAccessString);
@@ -537,7 +534,7 @@ PropertyMapCollection::const_iterator PropertyMapCollection::end () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-UnmappedPropertyMap::UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+UnmappedPropertyMap::UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     : PropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap)
     {
     }
@@ -545,7 +542,7 @@ UnmappedPropertyMap::UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, WCharCP 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapPtr UnmappedPropertyMap::Create (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapPtr UnmappedPropertyMap::Create (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
     return new UnmappedPropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
     }
@@ -553,10 +550,10 @@ PropertyMapPtr UnmappedPropertyMap::Create (ECN::ECPropertyCR ecProperty, WCharC
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-WString UnmappedPropertyMap::_ToString () const
+Utf8String UnmappedPropertyMap::_ToString () const
     {
-    WString str;
-    str.Sprintf (L"UnmappedPropertyMap: ecProperty=%ls.%ls", GetProperty ().GetClass ().GetFullName (), GetProperty ().GetName ().c_str ());
+    Utf8String str;
+    str.Sprintf ("UnmappedPropertyMap: ecProperty=%s.%s", GetProperty ().GetClass ().GetFullName (), GetProperty ().GetName ().c_str ());
     return str;
     }
 
@@ -566,7 +563,7 @@ WString UnmappedPropertyMap::_ToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-PropertyMapToInLineStruct::PropertyMapToInLineStruct (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapToInLineStruct::PropertyMapToInLineStruct (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     : PropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap)
     {
     }
@@ -574,7 +571,7 @@ PropertyMapToInLineStruct::PropertyMapToInLineStruct (ECN::ECPropertyCR ecProper
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan      09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP PropertyMapToInLineStruct::GetPropertyMap (WCharCP propertyName) const
+PropertyMapCP PropertyMapToInLineStruct::GetPropertyMap (Utf8CP propertyName) const
     {
 
     for(auto childPropMap : m_children)
@@ -584,12 +581,12 @@ PropertyMapCP PropertyMapToInLineStruct::GetPropertyMap (WCharCP propertyName) c
             return childPropMap;
         }
 
-    WString accessString = propertyName;
-    auto n = accessString.find(L".");
-    if (n != WString::npos)
+    Utf8String accessString = propertyName;
+    auto n = accessString.find(".");
+    if (n != Utf8String::npos)
         {
-        WString first = accessString.substr(0, n);
-        WString rest = accessString.substr(n + 1);
+        Utf8String first = accessString.substr(0, n);
+        Utf8String rest = accessString.substr(n + 1);
         PropertyMapCP propertyMap = nullptr;
         for(auto childPropMap : m_children)
             {
@@ -639,8 +636,8 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
     for(auto property : structProperty->GetType().GetProperties(true))
         {       
         //forClassMap.GetClass().GetDefaultStandaloneEnabler()->GetPropertyIndex(
-        WString accessString = GetPropertyAccessString();
-        accessString.append(L".");
+        Utf8String accessString = GetPropertyAccessString();
+        accessString.append(".");
         accessString.append(property->GetName());
         PropertyMapPtr propertyMap = PropertyMap::CreateAndEvaluateMapping (*property, map, rootClass, accessString.c_str (), GetPrimaryTable(), this);
         if (propertyMap.IsValid())
@@ -656,23 +653,22 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
-        auto status = const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo);
-        if (status != MapStatus::Success)
-            return status;
+        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo))
+            return ERROR;
         }
 
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-PropertyMapToInLineStructPtr PropertyMapToInLineStruct::Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapToInLineStructPtr PropertyMapToInLineStruct::Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
     PRECONDITION (prop.GetIsStruct() && "Expecting a ECStruct type property", nullptr);
     auto newPropertyMap = new PropertyMapToInLineStruct (prop, propertyAccessString, primaryTable, parentPropertyMap);
@@ -685,15 +681,15 @@ PropertyMapToInLineStructPtr PropertyMapToInLineStruct::Create (ECN::ECPropertyC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     11/2013
 //---------------------------------------------------------------------------------------
-WString PropertyMapToInLineStruct::_ToString() const 
+Utf8String PropertyMapToInLineStruct::_ToString() const 
     {
-    WString str;
-    str.Sprintf (L"PropertyMapToInlineStruct: ecProperty=%ls.%ls\n", GetProperty().GetClass().GetFullName(), 
+    Utf8String str;
+    str.Sprintf ("PropertyMapToInlineStruct: ecProperty=%s.%s\n", GetProperty().GetClass().GetFullName(), 
         GetProperty().GetName().c_str());
-    str.append (L" Child property maps:\n");
+    str.append (" Child property maps:\n");
     for (auto childPropMap : m_children)
         {
-        str.append (L"\t").append (childPropMap->ToString ().c_str ()).append (L"\n");
+        str.append ("\t").append (childPropMap->ToString ().c_str ()).append ("\n");
         }
 
     return str;
@@ -702,7 +698,7 @@ WString PropertyMapToInLineStruct::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapToTable::PropertyMapToTable (ECPropertyCR ecProperty, ECClassCR structElementType, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapToTable::PropertyMapToTable (ECPropertyCR ecProperty, ECClassCR structElementType, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
 : PropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap), m_structElementType (structElementType) 
     { 
     }
@@ -710,48 +706,48 @@ PropertyMapToTable::PropertyMapToTable (ECPropertyCR ecProperty, ECClassCR struc
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapToTable::_Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMapToTable::_Save (ECDbClassMapInfo & classMapInfo) const
     {
     auto& manager = classMapInfo.GetMapStorageR ();
     auto propertyId = GetRoot ().GetProperty ().GetId ();
-    auto accessString = Utf8String (GetPropertyAccessString ());
-    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString.c_str ());
+    auto accessString = GetPropertyAccessString ();
+    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString);
     if (propertyPath == nullptr)
-        propertyPath = manager.CreatePropertyPath (propertyId, accessString.c_str ());
+        propertyPath = manager.CreatePropertyPath (propertyId, accessString);
 
     if (propertyPath == nullptr)
         {
         BeAssert (false && "Failed to create propertyPath");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_propertyPathId = propertyPath->GetId ();
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapToTable::_Load (ECDbClassMapInfo const& classMapInfo) 
+BentleyStatus PropertyMapToTable::_Load(ECDbClassMapInfo const& classMapInfo)
     {
     auto& manager = classMapInfo.GetMapStorage ();
     auto propertyId = GetRoot ().GetProperty ().GetId ();
-    auto accessString = Utf8String (GetPropertyAccessString ());
-    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString.c_str ());
+    auto accessString = GetPropertyAccessString ();
+    ECDbPropertyPath const* propertyPath = manager.FindPropertyPath (propertyId, accessString);
     if (propertyPath == nullptr)
         {
         BeAssert (false && "Failed to find propertyPath");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_propertyPathId = propertyPath->GetId ();
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
+PropertyMapToTablePtr PropertyMapToTable::Create (ECPropertyCR ecProperty, ECDbMapCR ecDbMap, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
     {
     ECClassCP tableECType = nullptr;
     ArrayECPropertyCP arrayProperty = ecProperty.GetAsArrayProperty();
@@ -787,18 +783,18 @@ void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
-    return MapStatus::Success; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
+    return SUCCESS; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
     }
         
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     11/2013
 //---------------------------------------------------------------------------------------
-WString PropertyMapToTable::_ToString() const 
+Utf8String PropertyMapToTable::_ToString() const 
     {
-    WString str;
-    str.Sprintf (L"PropertyMapToTable: ecProperty=%ls.%ls\r\n", GetProperty().GetClass().GetFullName(), 
+    Utf8String str;
+    str.Sprintf ("PropertyMapToTable: ecProperty=%s.%s\r\n", GetProperty().GetClass().GetFullName(), 
         GetProperty().GetName().c_str());
 
     return str;
@@ -808,7 +804,7 @@ WString PropertyMapToTable::_ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PropertyMapToColumn::PropertyMapToColumn (ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
+PropertyMapToColumn::PropertyMapToColumn (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
 : PropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap), m_columnInfo (columnInfo), m_primitiveProperty (ecProperty.GetAsPrimitiveProperty ()), m_column (nullptr)
     {
     }
@@ -824,7 +820,7 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
+BentleyStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
@@ -833,7 +829,7 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap ,
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
     m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -859,16 +855,16 @@ Utf8CP PropertyMapToColumn::_GetColumnBaseName() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PropertyMapToColumn::_ToString() const
+Utf8String PropertyMapToColumn::_ToString() const
     {
-    return WPrintfString(L"PropertyMapToColumn: ecProperty=%ls.%ls, columnName=%ls", GetProperty().GetClass().GetFullName(), 
-        GetProperty().GetName().c_str(), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
+    return Utf8PrintfString("PropertyMapToColumn: ecProperty=%s.%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
+        GetProperty().GetName().c_str(), m_columnInfo.GetName());
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
+PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap)
 : PropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap), m_columnInfo (columnInfo), m_xColumn (nullptr), m_yColumn (nullptr), m_zColumn (nullptr)
     {
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
@@ -890,25 +886,25 @@ PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, WCharCP propertyAcc
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
     {
     BeAssert (m_xColumn != nullptr);
     BeAssert (m_yColumn != nullptr);
 
     auto rootPropertyId = GetRoot ().GetProperty ().GetId ();
-    auto accessString = Utf8String (GetPropertyAccessString ());
+    Utf8String accessString = GetPropertyAccessString ();
     auto pm = classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".X").c_str (), *m_xColumn);
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to create propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Y").c_str (), *m_yColumn);
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to create propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     if (m_is3d)
@@ -918,16 +914,16 @@ DbResult PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
         if (pm == nullptr)
             {
             BeAssert (false && "Failed to create propertymap");
-            return BE_SQLITE_ERROR;
+            return ERROR;
             }
         }
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
+BentleyStatus PropertyMapPoint::_Load(ECDbClassMapInfo const& classMapInfo)
     {
     BeAssert (m_xColumn == nullptr);
     BeAssert (m_yColumn == nullptr);
@@ -939,7 +935,7 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to load propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_xColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
@@ -947,7 +943,7 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to load propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_yColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
@@ -958,31 +954,31 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
         if (pm == nullptr)
             {
             BeAssert (false && "Failed to load propertymap");
-            return BE_SQLITE_ERROR;
+            return ERROR;
             }
 
         m_zColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
         }
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PropertyMapPoint::_ToString() const
+Utf8String PropertyMapPoint::_ToString() const
     {
     if (m_is3d)
-        return WPrintfString(L"PropertyMapPoint (3d): ecProperty=%ls.%ls, columnName=%ls_X, _Y, _Z", GetProperty().GetClass().GetFullName(), 
-            GetProperty().GetName().c_str(), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
+        return Utf8PrintfString("PropertyMapPoint (3d): ecProperty=%s.%s, columnName=%s_X, _Y, _Z", GetProperty().GetClass().GetFullName(), 
+            GetProperty().GetName().c_str(), m_columnInfo.GetName());
     else
-        return WPrintfString(L"PropertyMapPoint (2d): ecProperty=%ls.%ls, columnName=%ls_X, _Y", GetProperty().GetClass().GetFullName(), 
-            GetProperty().GetName().c_str(), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
+        return Utf8PrintfString("PropertyMapPoint (2d): ecProperty=%s.%s, columnName=%s_X, _Y", GetProperty().GetClass().GetFullName(), 
+            GetProperty().GetName().c_str(), m_columnInfo.GetName());
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 
@@ -999,12 +995,12 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  Cla
     yColumnName.append("_Y");
     m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
     if (!m_is3d)
-        return MapStatus::Success;
+        return SUCCESS;
 
     Utf8String zColumnName(columnName);
     zColumnName.append("_Z");
     m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1033,7 +1029,7 @@ Utf8CP PropertyMapPoint::_GetColumnBaseName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-PropertyMapArrayOfPrimitives::PropertyMapArrayOfPrimitives (ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap)
+PropertyMapArrayOfPrimitives::PropertyMapArrayOfPrimitives (ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap)
     : PropertyMapToColumn (ecProperty, propertyAccessString, primaryTable, columnInfo, parentPropertyMap)
     {
     BeAssert (columnInfo.GetColumnType() == PRIMITIVETYPE_Binary); 
@@ -1048,13 +1044,13 @@ PropertyMapArrayOfPrimitives::PropertyMapArrayOfPrimitives (ECPropertyCR ecPrope
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PropertyMapArrayOfPrimitives::_ToString() const
+Utf8String PropertyMapArrayOfPrimitives::_ToString() const
     {
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert (arrayProperty);
     PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
-    return WPrintfString(L"PropertyMapArrayOfPrimitives: ecProperty=%ls.%ls, type=%ls, columnName=%ls", GetProperty().GetClass().GetFullName(), 
-        GetProperty().GetName().c_str(), ECDbMap::GetPrimitiveTypeName(primitiveType), WString (m_columnInfo.GetName(), BentleyCharEncoding::Utf8).c_str ());
+    return Utf8PrintfString("PropertyMapArrayOfPrimitives: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
+        GetProperty().GetName().c_str(), ECDbMap::GetPrimitiveTypeName(primitiveType), m_columnInfo.GetName());
     }
 
         

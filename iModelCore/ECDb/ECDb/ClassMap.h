@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 struct NativeSqlBuilder;
-
+struct StorageDescription;
 //=======================================================================================
 //! Represents the SQLite view to which an ECClass is mapped by a ClassMap
 //! ECDb does not create a persistent database view, but just generates SQLite SELECT
@@ -35,67 +35,6 @@ public:
     virtual ~ClassDbView () {}
 
     BentleyStatus Generate (NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& preparedContext) const;
-    };
-
-//=======================================================================================
-//! Hold detail about how table partition is described for this class
-// @bsiclass                                               Affan.Khan           05/2015
-//+===============+===============+===============+===============+===============+======
-struct HorizontalPartition : NonCopyableClass
-    {
-private:
-    ECDbSqlTable const* m_table;
-    std::vector<ECN::ECClassId> m_partitionClassIds;
-    std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
-    bool m_hasInversedPartitionClassIds;
-
-public:
-    explicit HorizontalPartition(ECDbSqlTable const& table) : m_table(&table), m_hasInversedPartitionClassIds (false) {}
-    ~HorizontalPartition () {}
-    HorizontalPartition(HorizontalPartition&& rhs);
-    HorizontalPartition& operator=(HorizontalPartition&& rhs);
-
-    ECDbSqlTable const& GetTable () const { return *m_table; }
-    std::vector<ECN::ECClassId> const& GetClassIds() const { return m_partitionClassIds; }
-
-    void AddClassId(ECN::ECClassId classId) { m_partitionClassIds.push_back(classId); }
-    void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
-
-    bool NeedsClassIdFilter() const;
-    void AppendECClassIdFilterSql (NativeSqlBuilder&) const;
-    };
-
-struct IClassMap;
-
-//=======================================================================================
-//! Represents storage description for a given class map and its derived classes for polymorphic queries
-// @bsiclass                                               Affan.Khan           05/2015
-//+===============+===============+===============+===============+===============+======
-struct StorageDescription : NonCopyableClass
-    {
-private:      
-    ECN::ECClassId m_classId;
-    std::vector<HorizontalPartition> m_horizontalPartitions;
-    std::vector<size_t> m_nonVirtualHorizontalPartitionIndices;
-    size_t m_rootHorizontalPartitionIndex;
-
-    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0) {}
-
-    size_t AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
-public:
-    ~StorageDescription (){}
-    StorageDescription(StorageDescription&&);
-    StorageDescription& operator=(StorageDescription&&);
-
-    HorizontalPartition const* GetHorizontalPartition(size_t index) const;
-    HorizontalPartition* GetHorizontalPartitionP(size_t index);
-    std::vector<HorizontalPartition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
-    HorizontalPartition const& GetRootHorizontalPartition() const { return *GetHorizontalPartition(m_rootHorizontalPartitionIndex); }
-    std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices() const { return m_nonVirtualHorizontalPartitionIndices; }
-    ECN::ECClassId GetClassId () const { return m_classId; }
-
-    static std::unique_ptr<StorageDescription> Create (IClassMap const& classMap);
-
     };
 
 //=======================================================================================
@@ -131,7 +70,6 @@ public:
     
 
 private:
-    mutable std::unique_ptr<StorageDescription> m_storageDescription;
 
     virtual IClassMap const& _GetView (View classView) const = 0;
     virtual Type _GetClassMapType () const = 0;
@@ -148,7 +86,7 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    PropertyMapCP GetPropertyMap (WCharCP propertyName) const;
+    PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
     //! @return Collection of property maps of this class map
@@ -198,6 +136,7 @@ public:
 
         return secondaryTables;
         }
+
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
@@ -312,7 +251,6 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSqlTable*               m_table;
         ECDbMapStrategy             m_mapStrategy;
         bool                        m_isDirty;
-        bvector<ClassIndexInfoPtr>  m_indexes;
         ECDbClassMapId              m_id;
 
     protected:
@@ -321,15 +259,11 @@ struct ClassMap : public IClassMap, RefCountedBase
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
     private:
-        MapStatus ProcessIndices (ClassMapInfo const& classMapInfo);
-        void ProcessStandardKeySpecifications (ClassMapInfo const& mapInfo);
-        void SetUserProvidedIndex (bvector<ClassIndexInfoPtr> const& indexes)
-            {
-            m_indexes = indexes;
-            }
+        BentleyStatus ProcessStandardKeySpecifications(ClassMapInfo const&);
+
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
-        ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAccessString);
+        ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, Utf8CP propertyAccessString);
 
         virtual MapStatus _OnInitialized ();
         virtual Type _GetClassMapType () const override;
@@ -380,13 +314,14 @@ struct ClassMap : public IClassMap, RefCountedBase
     PropertyMapCP GetECInstanceIdPropertyMap () const;
     bool TryGetECInstanceIdPropertyMap (PropertyMapPtr& ecIstanceIdPropertyMap) const;
     
+    BentleyStatus CreateUserProvidedIndices(ClassMapInfo const&) const;
+
     bool IsDirty () const { return m_isDirty; }
     ECDbClassMapId GetId () const { return m_id; }
     void SetId (ECDbClassMapId id) { m_id = id; }
     BentleyStatus Save (std::set<ClassMap const*>& savedGraph) { return _Save (savedGraph); }
     BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
 
-    void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
     };

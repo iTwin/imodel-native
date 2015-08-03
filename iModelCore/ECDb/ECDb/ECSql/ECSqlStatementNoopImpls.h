@@ -98,7 +98,7 @@ private:
         }
 
     // IECSqlStructBinder
-    virtual IECSqlBinder& _GetMember (WCharCP structMemberPropertyName) override
+    virtual IECSqlBinder& _GetMember (Utf8CP structMemberPropertyName) override
         {
         return *this;
         }

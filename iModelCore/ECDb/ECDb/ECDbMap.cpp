@@ -60,34 +60,34 @@ ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType prim
     switch(primitiveType)
         {
         case PRIMITIVETYPE_Binary:
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBinary");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfBinary");
             break;
         case PRIMITIVETYPE_Boolean:                
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBoolean");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfBoolean");
             break;
         case PRIMITIVETYPE_DateTime:                  
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfDateTime");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfDateTime");
             break;
         case PRIMITIVETYPE_Double:                    
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfDouble");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfDouble");
             break;
         case PRIMITIVETYPE_Integer:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfInteger");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfInteger");
             break;
         case PRIMITIVETYPE_Long:                      
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfLong");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfLong");
             break;
         case PRIMITIVETYPE_Point2D:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfPoint2d");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfPoint2d");
             break;
         case PRIMITIVETYPE_Point3D:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfPoint3d");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfPoint3d");
             break;
         case PRIMITIVETYPE_String:                    
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfString");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfString");
             break;
         case PRIMITIVETYPE_IGeometry:
-            ecMapClass = ecdbSystemSchema->GetClassCP(L"ArrayOfGeometry");
+            ecMapClass = ecdbSystemSchema->GetClassCP("ArrayOfGeometry");
             break;
         default:
             BeAssert(0 && "Cannot map primitive type");
@@ -126,7 +126,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    if (BE_SQLITE_DONE != Save ())
+    if (SUCCESS != Save ())
         {
         ClearCache ();
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
@@ -144,7 +144,6 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         }
 
     SqlGenerator viewGen (*this);
-    GetLightWeightMapCacheR ().Load (true);
     if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {
         BeAssert ( false && "failed to create view infrastructure");
@@ -196,10 +195,12 @@ RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelati
 //---------------------------------------------------------------------------------------
 MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
     {
-    StopWatch timer (L"", true);
     if (AssertIfIsNotImportingSchema ())
         return MapStatus::Error;
 
+    StopWatch timer(true);
+
+    m_lightWeightMapCache.Reset ();
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
     bvector<ECRelationshipClassCP> rootRelationships;
@@ -253,17 +254,19 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         }
     
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (auto& key : m_classMapDictionary)
+    for (std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
         {
-        key.second->CreateIndices ();
+        if (SUCCESS != kvpair.first->CreateUserProvidedIndices(*kvpair.second))
+            return MapStatus::Error;
         }
 
     if (!FinishTableDefinition ())
         return MapStatus::Error;
 
     timer.Stop ();
-    LOG.infov ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to db in %.4f seconds",
-        mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
+    if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
+        LOG.debugv ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
+            mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
 
     return MapStatus::Success;
     }
@@ -292,7 +295,7 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
         {
         if (MapStatus::Error == AddClassMap (classMapPtr))
             {
-            LOG.errorv (L"Failed to add map for class %ls", ecClass.GetFullName ());
+            LOG.errorv ("Failed to add map for class %s", ecClass.GetFullName ());
             return nullptr;
             }
 
@@ -316,7 +319,7 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
         {
         if (0 == ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass))
             {
-            LOG.errorv(L"ECClass %ls does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
+            LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
             BeAssert(false);
             return MapStatus::Error;
             }
@@ -371,7 +374,7 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
     ECClassCR ecClass = classMap->GetClass();
     if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
         {
-        LOG.errorv (L"Attempted to add a second ClassMap for ECClass %ls", ecClass.GetFullName());
+        LOG.errorv ("Attempted to add a second ClassMap for ECClass %s", ecClass.GetFullName());
         BeAssert(false && "Attempted to add a second ClassMap for the same ECClass");
         return MapStatus::Error;
         }
@@ -485,9 +488,9 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
-    auto table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
-    auto ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
-    if (table)
+    ECDbSqlTable* table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
+    OwnerType ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
+    if (table != nullptr)
         {
 
         //if virtuality and empty table handling mismatches, change the table to the stronger
@@ -541,7 +544,10 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         if (mapToSecondaryTable)
             return nullptr;
 
-        table = GetSQLManagerR ().GetDbSchemaR ().CreateTableUsingExistingTableDefinition (GetECDbR (), tableName);
+        table = GetSQLManagerR ().GetDbSchemaR ().CreateTableForExistingTableMapStrategy (GetECDbR (), tableName);
+        if (table == nullptr)
+            return nullptr;
+
         if (!Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             {
             auto editMode = table->GetEditHandle ().CanEdit ();
@@ -551,7 +557,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
             auto systemColumn = table->FindColumnP (primaryKeyColumnName);
             if (systemColumn == nullptr)
                 {
-                BeAssert (false && "Failed to find user provided primary key column");
+                LOG.errorv("Table '%s' specified in ClassMap custom attribute together with ExistingTable MapStrategy doesn't have a primary key.", tableName);
                 return nullptr;
                 }
 
@@ -598,21 +604,21 @@ MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTabl
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
+Utf8CP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
         // the values are intended only for logging and debugging purposes
-        case PRIMITIVETYPE_String  : return L"String";
-        case PRIMITIVETYPE_Integer : return L"Integer(32)";
-        case PRIMITIVETYPE_Long    : return L"Long(64)";
-        case PRIMITIVETYPE_Double  : return L"Double";
-        case PRIMITIVETYPE_DateTime: return L"DateTime";
-        case PRIMITIVETYPE_Binary  : return L"Binary";
-        case PRIMITIVETYPE_Boolean : return L"Boolean";
-        case PRIMITIVETYPE_Point2D : return L"Point2D";
-        case PRIMITIVETYPE_Point3D : return L"Point3D";
-        default:                     return L"<unknown>";
+        case PRIMITIVETYPE_String  : return "String";
+        case PRIMITIVETYPE_Integer : return "Integer(32)";
+        case PRIMITIVETYPE_Long    : return "Long(64)";
+        case PRIMITIVETYPE_Double  : return "Double";
+        case PRIMITIVETYPE_DateTime: return "DateTime";
+        case PRIMITIVETYPE_Binary  : return "Binary";
+        case PRIMITIVETYPE_Boolean : return "Boolean";
+        case PRIMITIVETYPE_Point2D : return "Point2D";
+        case PRIMITIVETYPE_Point3D : return "Point3D";
+        default:                     return "<unknown>";
         }
     }
 
@@ -630,7 +636,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
 
     BeMutexHolder lock (m_criticalSection);
     m_ecdb.GetStatementCache ().Empty ();
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     
     int nCreated = 0;
     int nUpdated = 0;
@@ -671,7 +677,8 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
         }
 
     timer.Stop();
-    LOG.infov("Created %d tables, Skipped %d and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
 
     return SUCCESS;
     }
@@ -779,20 +786,21 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbMap::ClearCache ()
     {
-    BeMutexHolder aGurad (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
     GetSQLManagerR ().Reset ();
+    m_lightWeightMapCache.Reset ();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Save map
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbMap::Save()
+BentleyStatus ECDbMap::Save()
     {
-    BeMutexHolder aGurad (m_criticalSection);
-    StopWatch stopWatch("", true);
+    BeMutexHolder lock(m_criticalSection);
+    StopWatch stopWatch(true);
     int i = 0;
     std::set<ClassMap const*> doneList;
     for (auto it =  m_classMapDictionary.begin(); it != m_classMapDictionary.end(); it++)
@@ -802,20 +810,20 @@ DbResult ECDbMap::Save()
         if (classMap->IsDirty())
             {
             i++;
-            auto r = classMap->Save (doneList);
-            if (r != BentleyStatus::SUCCESS)
+            if (SUCCESS != classMap->Save (doneList))
                 {
                 LOG.errorv ("Failed to save ECDbMap for ECClass %s. db error: %s", Utf8String (ecClass.GetFullName ()).c_str (), GetECDbR ().GetLastError ());
-                return BE_SQLITE_ERROR;
+                return ERROR;
                 }
             }
         }
 
     stopWatch.Stop();
     GetSQLManagerR ().Save ();
-    LOG.infov (L"Saving EC to db mappings took %.4lf seconds to save %d classes", stopWatch.GetElapsedSeconds (), i);
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv ("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds () * 1000.0);
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 
@@ -1073,13 +1081,11 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
 //--------------------------------------------------------------------------------------
 ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
     {
-    if (m_anyClass == 0LL)
+    if (m_anyClass == ECClass::UNSET_ECCLASSID)
         {
         auto stmt = m_map.GetECDbR ().GetCachedStatement ("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
         if (stmt->Step () == BE_SQLITE_ROW)
-            {
             m_anyClass = stmt->GetValueInt64 (0);
-            }
         }
 
     return m_anyClass;
@@ -1155,12 +1161,13 @@ void ECDbMap::LightWeightMapCache::Reset ()
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_tablesByClassIdIsLoaded = false;
 
-    m_anyClass = 0LL;
+    m_anyClass = ECClass::UNSET_ECCLASSID;
     m_relationshipEndsByClassId.clear ();
     m_tablesByClassId.clear ();
     m_classIdsByTable.clear ();
     m_anyClassRelationships.clear ();
     m_anyClassReplacements.clear ();
+    m_storageDescriptions.clear ();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1169,6 +1176,23 @@ ECDbMap::LightWeightMapCache::LightWeightMapCache (ECDbMapCR map)
 : m_map (map)
     {
     Reset ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+StorageDescription const& ECDbMap::LightWeightMapCache::GetStorageDescription (ECN::ECClassId id)  const
+    {
+    auto itor = m_storageDescriptions.find (id);
+    if (itor == m_storageDescriptions.end ())
+        {
+        auto des = StorageDescription::Create (id, *this);
+        auto desP = des.get ();
+        m_storageDescriptions[id] = std::move (des);
+        return *desP;
+        }
+
+    return *(itor->second.get ());
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

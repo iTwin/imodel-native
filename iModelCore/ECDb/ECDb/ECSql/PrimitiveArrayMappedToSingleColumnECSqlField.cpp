@@ -41,8 +41,8 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_Init (ECSqlStatusCont
     auto enabler = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler ();
     if (!enabler)
         {
-        BeAssert (false && "ECEnabler for primitive array ECDbSystem class is nullptr.");
-        return SetError (ECSqlStatus::ProgrammerError, "ECEnabler for primitive array ECDbSystem class is nullptr.");
+        BeAssert (false && "ECEnabler for primitive array ECDb_System class is nullptr.");
+        return SetError (ECSqlStatus::ProgrammerError, "ECEnabler for primitive array ECDb_System class is nullptr.");
         }
 
     bool isEmptyArray = arrayBlob == nullptr;
