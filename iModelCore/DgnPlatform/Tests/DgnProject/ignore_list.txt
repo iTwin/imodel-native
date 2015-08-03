@@ -39,4 +39,3 @@ DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressi
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
 
-ComponentModelTest.SimulateDeveloperAndClient           # Sam - fails in Firebug build
