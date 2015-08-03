@@ -122,7 +122,7 @@ bool InstanceNodesOfSpecificClassesSpecification::GetShowEmptyGroups (void) cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InstanceNodesOfSpecificClassesSpecification::SetShowEmptyGroups (bool value) { m_showEmptyGroups; }
+void InstanceNodesOfSpecificClassesSpecification::SetShowEmptyGroups (bool value) { m_showEmptyGroups = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
