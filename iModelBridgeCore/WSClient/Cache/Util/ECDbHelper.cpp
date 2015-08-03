@@ -71,7 +71,7 @@ ECInstanceId ECDbHelper::ECInstanceIdFromECInstance(IECInstanceCR ecInstance)
 ECInstanceId ECDbHelper::ECInstanceIdFromString(Utf8CP ecIdString)
     {
     ECInstanceId instanceId;
-    ECInstanceIdHelper::FromString(instanceId, WString(ecIdString, true).c_str());
+    ECInstanceIdHelper::FromString(instanceId, ecIdString);
     return instanceId;
     }
 
@@ -80,7 +80,7 @@ ECInstanceId ECDbHelper::ECInstanceIdFromString(Utf8CP ecIdString)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ECDbHelper::StringFromECInstanceId(ECInstanceId ecInstanceId)
     {
-    WChar str[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    Utf8Char str[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     ECInstanceIdHelper::ToString(str, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     return Utf8String(str);
     }
@@ -141,7 +141,7 @@ void ECDbHelper::ParseECClassKey(Utf8StringCR classKey, Utf8StringR schemaNameOu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassCP ECDbHelper::GetRelationshipClass(ECSchemaCP schema, WCharCP className)
+ECRelationshipClassCP ECDbHelper::GetRelationshipClass(ECSchemaCP schema, Utf8CP className)
     {
     ECClassCP relEcClass = schema->GetClassCP(className);
     if (NULL == relEcClass)

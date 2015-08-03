@@ -33,7 +33,7 @@ m_version(0)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CacheSettings::ReadLegacyVersion()
     {
-    ECClassP settingsClass = m_dbAdapter.GetECClass(LEGACY_CLASS_CacheSettings);
+    ECClassCP settingsClass = m_dbAdapter.GetECClass(LEGACY_CLASS_CacheSettings);
     if (nullptr == settingsClass)
         {
         return ERROR;

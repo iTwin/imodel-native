@@ -126,7 +126,7 @@ BentleyStatus Upgrader::SetUpgradeFinishedFlag(BeFileNameCR cacheFilePath)
     {
     Db db;
 
-    if (DbResult::BE_SQLITE_OK != db.OpenBeSQLiteDb(cacheFilePath, Db::OpenParams(ECDb::OpenMode::OPEN_ReadWrite)) ||
+    if (DbResult::BE_SQLITE_OK != db.OpenBeSQLiteDb(cacheFilePath, Db::OpenParams(ECDb::OpenMode::ReadWrite)) ||
         DbResult::BE_SQLITE_OK != db.SavePropertyString(PropertySpec("UpgradeFinished", "Upgrader"), "") ||
         DbResult::BE_SQLITE_OK != db.SaveChanges())
         {
@@ -143,7 +143,7 @@ bool Upgrader::GetUpgradeFinishedFlag(BeFileNameCR cacheFilePath)
     {
     Db db;
 
-    if (DbResult::BE_SQLITE_OK != db.OpenBeSQLiteDb(cacheFilePath, Db::OpenParams(ECDb::OpenMode::OPEN_Readonly)))
+    if (DbResult::BE_SQLITE_OK != db.OpenBeSQLiteDb(cacheFilePath, Db::OpenParams(ECDb::OpenMode::Readonly)))
         {
         return false;
         }

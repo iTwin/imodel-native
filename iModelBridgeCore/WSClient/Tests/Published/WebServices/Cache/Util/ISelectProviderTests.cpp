@@ -19,7 +19,7 @@ TEST_F(ISelectProviderTests, GetSelectProperties_AnyClass_SelectAll)
     {
     auto schema = StubSchema();
 
-    auto select = ISelectProvider().GetSelectProperties(*schema->GetClassCP(L"TestClass"));
+    auto select = ISelectProvider().GetSelectProperties(*schema->GetClassCP("TestClass"));
 
     ASSERT_THAT(select, Not(nullptr));
     EXPECT_THAT(select->GetSelectInstanceId(), true);
@@ -31,13 +31,13 @@ TEST_F(ISelectProviderTests, GetSelectProperties_AnyClass_SelectAll)
 TEST_F(ISelectProviderTests, GetSortPriority_AnyClass_Zero)
     {
     auto schema = StubSchema();
-    ASSERT_THAT(ISelectProvider().GetSortPriority(*schema->GetClassCP(L"TestClass")), 0);
+    ASSERT_THAT(ISelectProvider().GetSortPriority(*schema->GetClassCP("TestClass")), 0);
     }
 
 TEST_F(ISelectProviderTests, GetSortProperties_AnyClass_Empty)
     {
     auto schema = StubSchema();
-    ASSERT_THAT(ISelectProvider().GetSortProperties(*schema->GetClassCP(L"TestClass")), IsEmpty());
+    ASSERT_THAT(ISelectProvider().GetSortProperties(*schema->GetClassCP("TestClass")), IsEmpty());
     }
 
 TEST_F(ISelectProviderTests, SelectProperties_Ctor_Default_SelectAllWithid)
@@ -56,7 +56,7 @@ TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_True_RemovesPropertie
 
     ISelectProvider::SelectProperties select;
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(1));
 
     select.SetSelectAll(true);
@@ -70,7 +70,7 @@ TEST_F(ISelectProviderTests, SelectProperties_SetSelectAll_False_LeavesPropertie
 
     ISelectProvider::SelectProperties select;
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(1));
 
     select.SetSelectAll(false);
@@ -104,8 +104,8 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_DuplicateProperties_Do
 
     ISelectProvider::SelectProperties select;
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty"));
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(1));
     }
 
@@ -125,7 +125,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_ValidProperty_SelectAl
     ISelectProvider::SelectProperties select;
     EXPECT_THAT(select.GetSelectAll(), true);
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     EXPECT_THAT(select.GetSelectAll(), false);
     }
 
@@ -158,7 +158,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddExtendedProperty_DuplicatePrope
 TEST_F(ISelectProviderTests, SortProperty_Ctor_Default_ReturnsAscendingTrue)
     {
     auto schema = StubSchema();
-    auto classProperty = schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty");
+    auto classProperty = schema->GetClassCP("TestClass")->GetPropertyP("TestProperty");
 
     ISelectProvider::SortProperty sort(*classProperty);
     EXPECT_THAT(sort.GetSortAscending(), true);
@@ -167,7 +167,7 @@ TEST_F(ISelectProviderTests, SortProperty_Ctor_Default_ReturnsAscendingTrue)
 TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingFalse_ReturnsAscendingFalse)
     {
     auto schema = StubSchema();
-    auto classProperty = schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty");
+    auto classProperty = schema->GetClassCP("TestClass")->GetPropertyP("TestProperty");
 
     ISelectProvider::SortProperty sort(*classProperty, false);
     EXPECT_THAT(sort.GetSortAscending(), false);
@@ -176,7 +176,7 @@ TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingFalse_ReturnsAscendingFa
 TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingTrue_ReturnsAscendingTrue)
     {
     auto schema = StubSchema();
-    auto classProperty = schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty");
+    auto classProperty = schema->GetClassCP("TestClass")->GetPropertyP("TestProperty");
 
     ISelectProvider::SortProperty sort(*classProperty, true);
     EXPECT_THAT(sort.GetSortAscending(), true);
@@ -185,7 +185,7 @@ TEST_F(ISelectProviderTests, SortProperty_Ctor_AscendingTrue_ReturnsAscendingTru
 TEST_F(ISelectProviderTests, SortProperty_Ctor_Default_ReturnsSameProperty)
     {
     auto schema = StubSchema();
-    auto classProperty = schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty");
+    auto classProperty = schema->GetClassCP("TestClass")->GetPropertyP("TestProperty");
 
     ISelectProvider::SortProperty sort(*classProperty, true);
     EXPECT_THAT(&sort.GetProperty(), classProperty);

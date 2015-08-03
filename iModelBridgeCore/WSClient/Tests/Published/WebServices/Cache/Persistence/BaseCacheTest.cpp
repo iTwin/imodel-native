@@ -150,7 +150,6 @@ std::shared_ptr<DataSourceCache> BaseCacheTest::GetTestCache()
 
     s_reusableCache = std::make_shared<DataSourceCache>();
 
-
     BeFileName cachePath(":memory:");
 
     cachePath = FSTest::GetTempDir().AppendToPath(L"testCache.ecdb");

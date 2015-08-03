@@ -28,7 +28,7 @@ std::shared_ptr<ObservableECDb> GetTestECDb()
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    EXPECT_EQ(SUCCESS, db->GetEC().GetSchemaManager().ImportECSchemas(*cache));
+    EXPECT_EQ(SUCCESS, db->Schemas().ImportECSchemas(*cache));
     EXPECT_EQ(SUCCESS, ExtendedDataAdapter(*db).ImportSchema());
 
     return db;

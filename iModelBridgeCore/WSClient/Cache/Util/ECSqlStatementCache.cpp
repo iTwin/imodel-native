@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatementCache::ECSqlStatementCache(ObservableECDb& ecDb) :
+WebServices::ECSqlStatementCache::ECSqlStatementCache(ObservableECDb& ecDb) :
 m_ecDb(&ecDb)
     {
     m_ecDb->RegisterSchemaChangeListener(this);
@@ -22,7 +22,7 @@ m_ecDb(&ecDb)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSqlStatementCache::~ECSqlStatementCache()
+WebServices::ECSqlStatementCache::~ECSqlStatementCache()
     {
     m_ecDb->UnRegisterSchemaChangeListener(this);
     }
@@ -30,7 +30,7 @@ ECSqlStatementCache::~ECSqlStatementCache()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlStatementCache::OnSchemaChanged()
+void WebServices::ECSqlStatementCache::OnSchemaChanged()
     {
     Clear();
     }
@@ -38,7 +38,7 @@ void ECSqlStatementCache::OnSchemaChanged()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ECSqlStatement> ECSqlStatementCache::GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback)
+std::shared_ptr<ECSqlStatement> WebServices::ECSqlStatementCache::GetPreparedStatement(Utf8String key, CreateECSqlCallbackCR createECSqlCallback)
     {
     std::shared_ptr<ECSqlStatement> statement;
 
@@ -75,7 +75,7 @@ std::shared_ptr<ECSqlStatement> ECSqlStatementCache::GetPreparedStatement(Utf8St
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSqlStatementCache::Clear()
+void WebServices::ECSqlStatementCache::Clear()
     {
     m_cache.clear();
     }

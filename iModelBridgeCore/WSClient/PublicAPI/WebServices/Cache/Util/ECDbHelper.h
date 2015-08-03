@@ -20,9 +20,6 @@ USING_NAMESPACE_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
-#define WIDEN_(x)  L ## x
-#define WIDEN(x)   WIDEN_(x)
-
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma   02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -43,7 +40,7 @@ struct ECDbHelper
         WSCACHE_EXPORT static Utf8String ECClassKeyFromClass (ECClassCR ecClass);
         WSCACHE_EXPORT static void ParseECClassKey (Utf8StringCR classKey, Utf8StringR schemaNameOut, Utf8StringR classNameOut);
 
-        WSCACHE_EXPORT static ECRelationshipClassCP GetRelationshipClass (ECSchemaCP schema, WCharCP className);
+        WSCACHE_EXPORT static ECRelationshipClassCP GetRelationshipClass (ECSchemaCP schema, Utf8CP className);
 
         //! Convert date to ISO string if date is UTC, else assert and return empty
         WSCACHE_EXPORT static Utf8String UtcDateToString (DateTimeCR utcDate);
@@ -57,7 +54,7 @@ struct ECDbHelper
         WSCACHE_EXPORT static ECInstanceKeyMultiMapPair ToPair (ECInstanceKeyCR key);
         //! ECInstanceKeyMultiMap util
         WSCACHE_EXPORT static void Erase (ECInstanceKeyMultiMap& map, ECInstanceKeyCR key);
-        //! Convert ECInstanceKeyMultiMap iterators to comma seperated ECInstanceId list
+        //! Convert ECInstanceKeyMultiMap iterators to comma separated ECInstanceId list
         WSCACHE_EXPORT static Utf8String ToECInstanceIdList 
             (
             ECInstanceKeyMultiMap::const_iterator from,

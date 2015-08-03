@@ -26,7 +26,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct ChangeInfoManager
     {
     private:
-        ECSqlStatementCache*                m_statementCache;
+        WebServices::ECSqlStatementCache*   m_statementCache;
         ObjectInfoManager*                  m_objectInfoManager;
         RelationshipInfoManager*            m_relationshipInfoManager;
         FileInfoManager*                    m_fileInfoManager;

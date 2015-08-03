@@ -15,15 +15,15 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue ECCustomAttributeHelper::GetValue (IECCustomAttributeContainerCP caContainer, WCharCP caName, WCharCP caPropertyName)
+ECValue ECCustomAttributeHelper::GetValue(IECCustomAttributeContainerCP caContainer, Utf8CP caName, Utf8CP caPropertyName)
     {
     ECValue value;
     if (nullptr != caContainer)
         {
-        IECInstancePtr attribute = caContainer->GetCustomAttribute (caName);
+        IECInstancePtr attribute = caContainer->GetCustomAttribute(caName);
         if (!attribute.IsNull())
             {
-            attribute->GetValue (value, caPropertyName);
+            attribute->GetValue(value, caPropertyName);
             }
         }
     return value;
@@ -32,9 +32,9 @@ ECValue ECCustomAttributeHelper::GetValue (IECCustomAttributeContainerCP caConta
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-int32_t ECCustomAttributeHelper::GetInteger (IECCustomAttributeContainerCP caContainer, WCharCP caName, WCharCP caPropertyName, int32_t defaultValue)
+int32_t ECCustomAttributeHelper::GetInteger(IECCustomAttributeContainerCP caContainer, Utf8CP caName, Utf8CP caPropertyName, int32_t defaultValue)
     {
-    ECValue value = GetValue (caContainer, caName, caPropertyName);
+    ECValue value = GetValue(caContainer, caName, caPropertyName);
     if (value.IsNull())
         {
         return defaultValue;
@@ -45,9 +45,9 @@ int32_t ECCustomAttributeHelper::GetInteger (IECCustomAttributeContainerCP caCon
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECCustomAttributeHelper::GetBool (IECCustomAttributeContainerCP caContainer, WCharCP caName, WCharCP caPropertyName, bool defaultValue)
+bool ECCustomAttributeHelper::GetBool(IECCustomAttributeContainerCP caContainer, Utf8CP caName, Utf8CP caPropertyName, bool defaultValue)
     {
-    ECValue value = GetValue (caContainer, caName, caPropertyName);
+    ECValue value = GetValue(caContainer, caName, caPropertyName);
     if (value.IsNull())
         {
         return defaultValue;
@@ -58,10 +58,10 @@ bool ECCustomAttributeHelper::GetBool (IECCustomAttributeContainerCP caContainer
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECCustomAttributeHelper::GetString (IECCustomAttributeContainerCP caContainer, WCharCP caName, WCharCP caPropertyName)
+Utf8String ECCustomAttributeHelper::GetString(IECCustomAttributeContainerCP caContainer, Utf8CP caName, Utf8CP caPropertyName)
     {
     Utf8String stringValue;
-    ECValue value = GetValue (caContainer, caName, caPropertyName);
+    ECValue value = GetValue(caContainer, caName, caPropertyName);
     if (!value.IsNull())
         {
         stringValue = value.GetUtf8CP();
@@ -72,7 +72,7 @@ Utf8String ECCustomAttributeHelper::GetString (IECCustomAttributeContainerCP caC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> ECCustomAttributeHelper::GetStringArray (IECCustomAttributeContainerCP caContainer, WCharCP caName, WCharCP caPropertyName)
+bvector<Utf8String> ECCustomAttributeHelper::GetStringArray(IECCustomAttributeContainerCP caContainer, Utf8CP caName, Utf8CP caPropertyName)
     {
     bvector<Utf8String> values;
 
@@ -80,21 +80,21 @@ bvector<Utf8String> ECCustomAttributeHelper::GetStringArray (IECCustomAttributeC
     ECValue arrayValue;
     if (nullptr != caContainer)
         {
-        attribute = caContainer->GetCustomAttribute (caName);
+        attribute = caContainer->GetCustomAttribute(caName);
         if (!attribute.IsNull())
             {
-            attribute->GetValue (arrayValue, caPropertyName);
+            attribute->GetValue(arrayValue, caPropertyName);
             }
         }
 
     if (!arrayValue.IsNull())
         {
-        for (uint32_t i=0; i < arrayValue.GetArrayInfo().GetCount(); i++)
+        for (uint32_t i = 0; i < arrayValue.GetArrayInfo().GetCount(); i++)
             {
             ECValue itemValue;
-            attribute->GetValue (itemValue, caPropertyName, i);
+            attribute->GetValue(itemValue, caPropertyName, i);
 
-            values.push_back (itemValue.GetUtf8CP());
+            values.push_back(itemValue.GetUtf8CP());
             }
         }
 
@@ -104,17 +104,17 @@ bvector<Utf8String> ECCustomAttributeHelper::GetStringArray (IECCustomAttributeC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECCustomAttributeHelper::ValidatePropertyName (ECClassCP ecClass, Utf8StringR propertyName)
+void ECCustomAttributeHelper::ValidatePropertyName(ECClassCP ecClass, Utf8StringR propertyName)
     {
     if (propertyName.empty())
         {
         return;
         }
-    if (ecClass->GetPropertyP (propertyName.c_str()) == nullptr)
+    if (ecClass->GetPropertyP(propertyName.c_str()) == nullptr)
         {
-        BeDebugLog (Utf8PrintfString ("Custom attribute defines property name \"%s\" that does not exist in class \"%s\"",
-                                      propertyName.c_str(), Utf8String (ecClass->GetName()).c_str()).c_str());
-        BeAssert (false);
+        BeDebugLog(Utf8PrintfString("Custom attribute defines property name \"%s\" that does not exist in class \"%s\"",
+            propertyName.c_str(), Utf8String(ecClass->GetName()).c_str()).c_str());
+        BeAssert(false);
         propertyName.clear();
         }
     }
@@ -122,28 +122,28 @@ void ECCustomAttributeHelper::ValidatePropertyName (ECClassCP ecClass, Utf8Strin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ECCustomAttributeHelper::GetPropertyName (ECClassCP ecClass, WCharCP caName, WCharCP caPropertyName)
+Utf8String ECCustomAttributeHelper::GetPropertyName(ECClassCP ecClass, Utf8CP caName, Utf8CP caPropertyName)
     {
-    Utf8String propertyName = GetString (ecClass, caName, caPropertyName);
-    ValidatePropertyName (ecClass, propertyName);
+    Utf8String propertyName = GetString(ecClass, caName, caPropertyName);
+    ValidatePropertyName(ecClass, propertyName);
     return propertyName;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> ECCustomAttributeHelper::GetPropertyNameArray (ECClassCP ecClass, WCharCP caName, WCharCP caPropertyName)
+bvector<Utf8String> ECCustomAttributeHelper::GetPropertyNameArray(ECClassCP ecClass, Utf8CP caName, Utf8CP caPropertyName)
     {
     bvector<Utf8String> properties;
 
-    bvector<Utf8String> values = GetStringArray (ecClass, caName, caPropertyName);
+    bvector<Utf8String> values = GetStringArray(ecClass, caName, caPropertyName);
     for (Utf8StringR propertyName : values)
         {
-        ValidatePropertyName (ecClass, propertyName);
+        ValidatePropertyName(ecClass, propertyName);
 
         if (!propertyName.empty())
             {
-            properties.push_back (propertyName);
+            properties.push_back(propertyName);
             }
         }
 
@@ -153,21 +153,20 @@ bvector<Utf8String> ECCustomAttributeHelper::GetPropertyNameArray (ECClassCP ecC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<Utf8String> ECCustomAttributeHelper::GetPropertyNameSet (ECClassCP ecClass, WCharCP caName, WCharCP caPropertyName)
+bset<Utf8String> ECCustomAttributeHelper::GetPropertyNameSet(ECClassCP ecClass, Utf8CP caName, Utf8CP caPropertyName)
     {
     bset<Utf8String> properties;
 
-    bvector<Utf8String> values = GetStringArray (ecClass, caName, caPropertyName);
+    bvector<Utf8String> values = GetStringArray(ecClass, caName, caPropertyName);
     for (Utf8StringR propertyName : values)
         {
-        ValidatePropertyName (ecClass, propertyName);
+        ValidatePropertyName(ecClass, propertyName);
 
         if (!propertyName.empty())
             {
-            properties.insert (propertyName);
+            properties.insert(propertyName);
             }
         }
 
     return properties;
     }
-

@@ -42,22 +42,22 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         WSCACHE_EXPORT ObservableECDb& GetECDb () override;
         WSCACHE_EXPORT ECInstanceFinder& GetECInstanceFinder () override;
 
-        WSCACHE_EXPORT ECSchemaP GetECSchema (Utf8StringCR schemaName) override;
+        WSCACHE_EXPORT ECSchemaCP GetECSchema (Utf8StringCR schemaName) override;
         WSCACHE_EXPORT bool HasECSchema (Utf8StringCR schemaName) override;
 
-        WSCACHE_EXPORT ECClassP GetECClass (Utf8StringCR classKey) override;
-        WSCACHE_EXPORT ECClassP GetECClass (ECClassId classId) override;
-        WSCACHE_EXPORT ECClassP GetECClass (Utf8StringCR schemaName, Utf8StringCR className) override;
-        WSCACHE_EXPORT ECClassP GetECClass (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT ECClassP GetECClass (ObjectIdCR objectId) override;
+        WSCACHE_EXPORT ECClassCP GetECClass (Utf8StringCR classKey) override;
+        WSCACHE_EXPORT ECClassCP GetECClass (ECClassId classId) override;
+        WSCACHE_EXPORT ECClassCP GetECClass (Utf8StringCR schemaName, Utf8StringCR className) override;
+        WSCACHE_EXPORT ECClassCP GetECClass (ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ECClassCP GetECClass (ObjectIdCR objectId) override;
 
         WSCACHE_EXPORT bvector<ECClassCP> GetECClasses (const ECInstanceKeyMultiMap& instanceMultiMap) override;
 
-        WSCACHE_EXPORT ECRelationshipClassP GetECRelationshipClass (Utf8StringCR classKey) override;
-        WSCACHE_EXPORT ECRelationshipClassP GetECRelationshipClass (ECClassId classId) override;
-        WSCACHE_EXPORT ECRelationshipClassP GetECRelationshipClass (Utf8StringCR schemaName, Utf8StringCR className) override;
-        WSCACHE_EXPORT ECRelationshipClassP GetECRelationshipClass (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT ECRelationshipClassP GetECRelationshipClass (ObjectIdCR objectId) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (Utf8StringCR classKey) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (ECClassId classId) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (Utf8StringCR schemaName, Utf8StringCR className) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetECRelationshipClass (ObjectIdCR objectId) override;
 
         WSCACHE_EXPORT bvector<ECRelationshipClassCP> FindRelationshipClasses (ECClassId sourceClassId, ECClassId targetClassId) override;
         WSCACHE_EXPORT bvector<ECRelationshipClassCP> FindRelationshipClassesWithSource (ECClassId sourceClassId, Utf8String schemaName) override;

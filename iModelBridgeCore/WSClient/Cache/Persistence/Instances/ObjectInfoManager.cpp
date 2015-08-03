@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ObjectInfoManager::ObjectInfoManager
 (
 ECDbAdapter& dbAdapter,
-ECSqlStatementCache& statementCache,
+WebServices::ECSqlStatementCache& statementCache,
 HierarchyManager& hierarchyManager
 ) :
 m_dbAdapter(&dbAdapter),

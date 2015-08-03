@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 CachedResponseManager::CachedResponseManager
 (
 ECDbAdapter& dbAdapter,
-ECSqlStatementCache& statementCache,
+WebServices::ECSqlStatementCache& statementCache,
 HierarchyManager& hierarchyManager,
 RelationshipInfoManager& relationshipInfoManager,
 ObjectInfoManager& objectInfoManager

@@ -33,7 +33,8 @@ struct ValueIncrementor
     public:
         //! Construct new unique name manager
         //! @param db
-        //! @param property - property of type "long". First found instance of this property class is used to save last increment
+        //! @param statementCache
+        //! @param ecProperty - property of type "long". First found instance of this property class is used to save last increment
         WSCACHE_EXPORT ValueIncrementor (ECDb& db, ECSqlStatementCache& statementCache, ECPropertyCR ecProperty);
 
         //! @param[out] valueOut - new numeric value

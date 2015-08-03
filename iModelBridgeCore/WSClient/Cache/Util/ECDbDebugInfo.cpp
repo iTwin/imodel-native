@@ -25,8 +25,8 @@ m_dbAdapter(ecDb)
 bool ShouldSkipSchemaClasses(ECSchemaCP schema)
     {
     return
-        schema->GetName().Equals(L"Bentley_Standard_Classes") ||
-        schema->GetName().Equals(L"ECDbSystem");
+        schema->GetName().Equals("Bentley_Standard_Classes") ||
+        schema->GetName().Equals("ECDbSystem");
     }
 
 /*--------------------------------------------------------------------------------------+

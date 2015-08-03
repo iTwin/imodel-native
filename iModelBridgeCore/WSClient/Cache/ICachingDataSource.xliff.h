@@ -11,14 +11,12 @@
 #include <MobileDgn/MobileDgnL10N.h>
 
 //=======================================================================================
-// @bsiclass                                      
+// @bsiclass
 //=======================================================================================
-MOBILEDGN_TRANSLATABLE_STRINGS_START (ICachingDataSourceL10N, ICachingDataSource)
-    {
-    ERRORMESSAGE_InternalCache,          // =="Internal cache error"==
-    ERRORMESSAGE_DataNotCached,          // =="Data not cached error"==
-    ERRORMESSAGE_FunctionalityNotSupported,  // =="Requested functionality is not supported for this server version."==
-    };
+MOBILEDGN_TRANSLATABLE_STRINGS_START(ICachingDataSourceL10N, ICachingDataSource)
+L10N_STRING(ERRORMESSAGE_InternalCache)                 // =="Internal cache error"==
+L10N_STRING(ERRORMESSAGE_DataNotCached)                 // =="Data not cached error"==
+L10N_STRING(ERRORMESSAGE_FunctionalityNotSupported)     // =="Requested functionality is not supported for this server version."==
 MOBILEDGN_TRANSLATABLE_STRINGS_END
 
-#define ICachingDataSourceLocalizedString(K) ICachingDataSourceL10N::GetString(ICachingDataSourceL10N::K, #K)
+#define ICachingDataSourceLocalizedString(K) ICachingDataSourceL10N::GetString(ICachingDataSourceL10N::K())

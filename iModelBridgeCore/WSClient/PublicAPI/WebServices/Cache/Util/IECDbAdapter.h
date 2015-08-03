@@ -38,49 +38,49 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             };
 
         //! Get direct access to ECDb
-        virtual ObservableECDb& GetECDb () = 0;
+        virtual ObservableECDb& GetECDb() = 0;
 
         //! Get reusable ECInstanceFinder. Reusing same finder allows speeding up relationship traversion.
-        virtual ECInstanceFinder& GetECInstanceFinder () = 0;
+        virtual ECInstanceFinder& GetECInstanceFinder() = 0;
 
         // Load whole schema. Large schemas take time to load so consider loading seperate classes instead.
-        virtual ECSchemaP GetECSchema (Utf8StringCR schemaName) = 0;
+        virtual ECSchemaCP GetECSchema(Utf8StringCR schemaName) = 0;
         // Check if ECDb has schema without loading it.
-        virtual bool HasECSchema (Utf8StringCR schemaName) = 0;
+        virtual bool HasECSchema(Utf8StringCR schemaName) = 0;
 
-        virtual ECClassP GetECClass (Utf8StringCR classKey) = 0;
-        virtual ECClassP GetECClass (ECClassId classId) = 0;
-        virtual ECClassP GetECClass (Utf8StringCR schemaName, Utf8StringCR className) = 0;
-        virtual ECClassP GetECClass (ECInstanceKeyCR instanceKey) = 0;
-        virtual ECClassP GetECClass (ObjectIdCR objectId) = 0;
+        virtual ECClassCP GetECClass(Utf8StringCR classKey) = 0;
+        virtual ECClassCP GetECClass(ECClassId classId) = 0;
+        virtual ECClassCP GetECClass(Utf8StringCR schemaName, Utf8StringCR className) = 0;
+        virtual ECClassCP GetECClass(ECInstanceKeyCR instanceKey) = 0;
+        virtual ECClassCP GetECClass(ObjectIdCR objectId) = 0;
 
-        virtual bvector<ECClassCP> GetECClasses (const ECInstanceKeyMultiMap& instanceMultiMap) = 0;
+        virtual bvector<ECClassCP> GetECClasses(const ECInstanceKeyMultiMap& instanceMultiMap) = 0;
 
-        virtual ECRelationshipClassP GetECRelationshipClass (Utf8StringCR classKey) = 0;
-        virtual ECRelationshipClassP GetECRelationshipClass (ECClassId classId) = 0;
-        virtual ECRelationshipClassP GetECRelationshipClass (Utf8StringCR schemaName, Utf8StringCR className) = 0;
-        virtual ECRelationshipClassP GetECRelationshipClass (ECInstanceKeyCR instanceKey) = 0;
-        virtual ECRelationshipClassP GetECRelationshipClass (ObjectIdCR objectId) = 0;
+        virtual ECRelationshipClassCP GetECRelationshipClass(Utf8StringCR classKey) = 0;
+        virtual ECRelationshipClassCP GetECRelationshipClass(ECClassId classId) = 0;
+        virtual ECRelationshipClassCP GetECRelationshipClass(Utf8StringCR schemaName, Utf8StringCR className) = 0;
+        virtual ECRelationshipClassCP GetECRelationshipClass(ECInstanceKeyCR instanceKey) = 0;
+        virtual ECRelationshipClassCP GetECRelationshipClass(ObjectIdCR objectId) = 0;
 
         //! Find relationship classes by end classes polymorphically
-        virtual bvector<ECRelationshipClassCP> FindRelationshipClasses (ECClassId sourceClassId, ECClassId targetClassId) = 0;
+        virtual bvector<ECRelationshipClassCP> FindRelationshipClasses(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
-        virtual bvector<ECRelationshipClassCP> FindRelationshipClassesWithSource (ECClassId sourceClassId, Utf8String schemaName) = 0;
-        virtual bvector<ECRelationshipClassCP> FindRelationshipClassesInSchema (ECClassId sourceClassId, ECClassId targetClassId, Utf8String schemaName) = 0;
+        virtual bvector<ECRelationshipClassCP> FindRelationshipClassesWithSource(ECClassId sourceClassId, Utf8String schemaName) = 0;
+        virtual bvector<ECRelationshipClassCP> FindRelationshipClassesInSchema(ECClassId sourceClassId, ECClassId targetClassId, Utf8String schemaName) = 0;
 
         //! Find relationship class that matches source exactly and target polymorphically. Will return null if found more or none.
-        virtual ECRelationshipClassCP FindRelationshipClassWithSource (ECClassId sourceClassId, ECClassId targetClassId) = 0;
-        
+        virtual ECRelationshipClassCP FindRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId) = 0;
+
         //! Find relationship class that matches target exactly and source polymorphically. Will return null if found more or none.
-        virtual ECRelationshipClassCP FindRelationshipClassWithTarget (ECClassId sourceClassId, ECClassId targetClassId) = 0;
+        virtual ECRelationshipClassCP FindRelationshipClassWithTarget(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
-        virtual ECInstanceKey GetInstanceKeyFromJsonInstance (JsonValueCR ecInstanceJson) = 0;
+        virtual ECInstanceKey GetInstanceKeyFromJsonInstance(JsonValueCR ecInstanceJson) = 0;
 
-        virtual BentleyStatus PrepareStatement (ECSqlStatement& statement, ECSqlBuilderCR builder) = 0;
-        virtual BentleyStatus PrepareStatement (ECSqlStatement& statement, Utf8StringCR ecsql) = 0;
+        virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, ECSqlBuilderCR builder) = 0;
+        virtual BentleyStatus PrepareStatement(ECSqlStatement& statement, Utf8StringCR ecsql) = 0;
 
         //! Selects as few properties as possible to acomplish valid query
-        virtual BentleyStatus BindParameters (ECSqlStatement& statement, const bvector<Utf8String>& parameters, IECSqlBinder::MakeCopy makeCopy) = 0;
+        virtual BentleyStatus BindParameters(ECSqlStatement& statement, const bvector<Utf8String>& parameters, IECSqlBinder::MakeCopy makeCopy) = 0;
         virtual BentleyStatus ExtractJsonInstanceArrayFromStatement
             (
             ECSqlStatement& statement,
@@ -88,7 +88,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             JsonValueR jsonInstancesArrayOut,
             ICancellationTokenPtr cancellationToken = nullptr
             ) = 0;
-        virtual BentleyStatus ExtractJsonInstanceFromStatement (ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstanceOut) = 0;
+        virtual BentleyStatus ExtractJsonInstanceFromStatement(ECSqlStatement& statement, ECClassCP ecClass, JsonValueR jsonInstanceOut) = 0;
         virtual BentleyStatus ExtractECIdsFromStatement
             (
             ECSqlStatement& statement,
@@ -106,30 +106,30 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             ICancellationTokenPtr cancellationToken = nullptr
             ) = 0;
 
-        virtual int  CountClassInstances (ECClassCP ecClass) = 0;
-        virtual ECInstanceId FindInstance (ECClassCP ecClass, Utf8CP whereQuery = nullptr) = 0;
-        virtual bset<ECInstanceId> FindInstances (ECClassCP ecClass, Utf8CP whereQuery = nullptr) = 0;
+        virtual int  CountClassInstances(ECClassCP ecClass) = 0;
+        virtual ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereQuery = nullptr) = 0;
+        virtual bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereQuery = nullptr) = 0;
 
-        virtual BentleyStatus GetJsonInstance (JsonValueR objectOut, ECInstanceKeyCR instanceKey) = 0;
-        virtual BentleyStatus GetJsonInstance (JsonValueR objectOut, ECClassCP ecClass, ECInstanceId ecId) = 0;
-        virtual BentleyStatus GetJsonInstance (JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, Utf8CP select = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECInstanceKeyCR instanceKey) = 0;
+        virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, ECInstanceId ecId) = 0;
+        virtual BentleyStatus GetJsonInstance(JsonValueR objectOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, Utf8CP select = nullptr) = 0;
 
-        virtual BentleyStatus GetJsonInstances (JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, ICancellationTokenPtr cancellationToken = nullptr) = 0;
-        virtual BentleyStatus GetJsonInstances (JsonValueR arrayOut, ECClassCP ecClass, ECSqlStatement& statement, ICancellationTokenPtr cancellationToken = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, Utf8CP whereQuery = nullptr, ICancellationTokenPtr cancellationToken = nullptr) = 0;
+        virtual BentleyStatus GetJsonInstances(JsonValueR arrayOut, ECClassCP ecClass, ECSqlStatement& statement, ICancellationTokenPtr cancellationToken = nullptr) = 0;
 
-        virtual ECInstanceKey RelateInstances (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
+        virtual ECInstanceKey RelateInstances(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
 
-        virtual BentleyStatus GetRelatedTargetIds (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECClassCP targetClass, bvector<ECInstanceId>& ecIdsOut) = 0;
-        virtual BentleyStatus GetRelatedSourceIds (ECRelationshipClassCP relClass, ECClassCP sourceClass, bvector<ECInstanceId>& idsOut, ECInstanceKeyCR target) = 0;
-        virtual BentleyStatus GetJsonRelatedSources (JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP sourceClass, ECInstanceKeyCR target) = 0;
-        virtual BentleyStatus GetJsonRelatedTargets (JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP targetClass, ECInstanceKeyCR source, Utf8CP orderBy = nullptr) = 0;
+        virtual BentleyStatus GetRelatedTargetIds(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECClassCP targetClass, bvector<ECInstanceId>& ecIdsOut) = 0;
+        virtual BentleyStatus GetRelatedSourceIds(ECRelationshipClassCP relClass, ECClassCP sourceClass, bvector<ECInstanceId>& idsOut, ECInstanceKeyCR target) = 0;
+        virtual BentleyStatus GetJsonRelatedSources(JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP sourceClass, ECInstanceKeyCR target) = 0;
+        virtual BentleyStatus GetJsonRelatedTargets(JsonValueR arrayOut, ECRelationshipClassCP relClass, ECClassCP targetClass, ECInstanceKeyCR source, Utf8CP orderBy = nullptr) = 0;
 
-        virtual BentleyStatus GetRelatedTargetKeys (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyMultiMap& keysOut) = 0;
+        virtual BentleyStatus GetRelatedTargetKeys(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyMultiMap& keysOut) = 0;
 
-        virtual ECInstanceKey FindRelationship (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
-        virtual bool HasRelationship (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
+        virtual ECInstanceKey FindRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
+        virtual bool HasRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
 
-        virtual BentleyStatus DeleteRelationship (ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
+        virtual BentleyStatus DeleteRelationship(ECRelationshipClassCP relClass, ECInstanceKeyCR source, ECInstanceKeyCR target) = 0;
     };
 
 typedef IECDbAdapter& IECDbAdapterR;

@@ -21,7 +21,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 FileCacheManager::FileCacheManager
 (
 ECDbAdapter& dbAdapter,
-ECSqlStatementCache& statementCache,
+WebServices::ECSqlStatementCache& statementCache,
 CacheEnvironmentCR environment,
 FileInfoManager& fileInfoManager
 ) :

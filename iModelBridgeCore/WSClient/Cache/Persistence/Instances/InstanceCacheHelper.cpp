@@ -252,15 +252,15 @@ BentleyStatus InstanceCacheHelper::CacheNewInstance(ObjectInfoR infoInOut, Rapid
         return ERROR;
         }
 
-    ECInstanceKey ecInstanceKey;
-    ECClassCP ecClass = m_dbAdapter.GetECClass(infoInOut.GetCachedInstanceKey());
-    if (SUCCESS != m_inserters.Get(*ecClass).Insert(ecInstanceKey, properties))
+    ECInstanceKey newInstanceKey;
+    JsonInserter inserter(m_dbAdapter.GetECDb(), *instanceClass);
+
+    if (SUCCESS != inserter.Insert(newInstanceKey, properties))
         {
         BeAssert("Failed to cache instance. Check schema");
         return ERROR;
         }
-
-    infoInOut.SetCachedInstanceId(ecInstanceKey.GetECInstanceId());
+    infoInOut.SetCachedInstanceId(newInstanceKey.GetECInstanceId());
 
     if (SUCCESS != m_objectInfoManager.InsertInfo(infoInOut))
         {

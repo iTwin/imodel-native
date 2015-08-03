@@ -13,6 +13,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_WSCACHE))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_WSCACHE))
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -20,7 +20,7 @@ ECInstanceKeyCR instanceKey,
 bool isPersistent
 ) const
     {
-    return bvector<IQueryProvider::Query> ();
+    return bvector<IQueryProvider::Query>();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -39,26 +39,24 @@ bool isPersistent
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IQueryProvider::Query::Query () :
-key ({}, {}),
-syncRecursively (false)
-    {
-    };
+IQueryProvider::Query::Query() :
+key({}, {}),
+syncRecursively(false)
+    {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-IQueryProvider::Query::Query (CachedResponseKey key, WSQueryPtr query, bool syncRecursively) :
-key (key),
-query (query),
-syncRecursively (syncRecursively)
-    {
-    };
+IQueryProvider::Query::Query(CachedResponseKey key, WSQueryPtr query, bool syncRecursively) :
+key(key),
+query(query),
+syncRecursively(syncRecursively)
+    {};
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IQueryProvider::Query::IsValid () const
+bool IQueryProvider::Query::IsValid() const
     {
-    return key.IsValid () && nullptr != query;
+    return key.IsValid() && nullptr != query;
     };

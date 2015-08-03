@@ -44,11 +44,11 @@ struct DownloadFilesTask : public CachingTaskBase
         uint64_t                        m_lastTimeReported;
 
     private:
-        virtual void _OnExecute ();
+        virtual void _OnExecute();
 
-        void ContinueDownloadingFiles ();
-        AsyncTaskPtr<void> DownloadFile (DownloadFileProperties& file);
-        void ProgressCalback (double bytesDownloaded, double bytesTotal, DownloadFileProperties& file);
+        void ContinueDownloadingFiles();
+        AsyncTaskPtr<void> DownloadFile(DownloadFileProperties& file);
+        void ProgressCalback(double bytesDownloaded, double bytesTotal, DownloadFileProperties& file);
 
     public:
         DownloadFilesTask

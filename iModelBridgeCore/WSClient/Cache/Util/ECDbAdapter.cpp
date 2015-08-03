@@ -10,7 +10,6 @@
 #include <WebServices/Cache/Util/ECDbHelper.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2013
@@ -66,14 +65,9 @@ ECInstanceFinder& ECDbAdapter::GetECInstanceFinder()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaP ECDbAdapter::GetECSchema(Utf8StringCR schemaName)
+ECSchemaCP ECDbAdapter::GetECSchema(Utf8StringCR schemaName)
     {
-    ECSchemaP ecSchema = nullptr;
-    if (SUCCESS != m_ecDb->GetEC().GetSchemaManager().GetECSchema(ecSchema, schemaName.c_str()))
-        {
-        return nullptr;
-        }
-    return ecSchema;
+    return m_ecDb->Schemas().GetECSchema(schemaName.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -81,28 +75,21 @@ ECSchemaP ECDbAdapter::GetECSchema(Utf8StringCR schemaName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbAdapter::HasECSchema(Utf8StringCR schemaName)
     {
-    ECSchemaP ecSchema = nullptr;
-    m_ecDb->GetEC().GetSchemaManager().GetECSchema(ecSchema, schemaName.c_str(), false);
-    return nullptr != ecSchema;
+    return nullptr != GetECSchema(schemaName);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECDbAdapter::GetECClass(Utf8StringCR schemaName, Utf8StringCR className)
+ECClassCP ECDbAdapter::GetECClass(Utf8StringCR schemaName, Utf8StringCR className)
     {
-    ECClassP ecClass = nullptr;
-    if (SUCCESS != m_ecDb->GetEC().GetSchemaManager().GetECClass(ecClass, schemaName.c_str(), className.c_str()))
-        {
-        return nullptr;
-        }
-    return ecClass;
+    return m_ecDb->Schemas().GetECClass(schemaName.c_str(), className.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECDbAdapter::GetECClass(Utf8StringCR classKey)
+ECClassCP ECDbAdapter::GetECClass(Utf8StringCR classKey)
     {
     Utf8String className;
     Utf8String schemaName;
@@ -115,20 +102,15 @@ ECClassP ECDbAdapter::GetECClass(Utf8StringCR classKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECDbAdapter::GetECClass(ECClassId classId)
+ECClassCP ECDbAdapter::GetECClass(ECClassId classId)
     {
-    ECClassP ecClass = nullptr;
-    if (SUCCESS != m_ecDb->GetEC().GetSchemaManager().GetECClass(ecClass, classId))
-        {
-        return nullptr;
-        }
-    return ecClass;
+    return m_ecDb->Schemas().GetECClass(classId);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECDbAdapter::GetECClass(ECInstanceKeyCR instanceKey)
+ECClassCP ECDbAdapter::GetECClass(ECInstanceKeyCR instanceKey)
     {
     return GetECClass(instanceKey.GetECClassId());
     }
@@ -136,7 +118,7 @@ ECClassP ECDbAdapter::GetECClass(ECInstanceKeyCR instanceKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassP ECDbAdapter::GetECClass(ObjectIdCR objectId)
+ECClassCP ECDbAdapter::GetECClass(ObjectIdCR objectId)
     {
     return GetECClass(objectId.schemaName, objectId.className);
     }
@@ -160,46 +142,46 @@ bvector<ECClassCP> ECDbAdapter::GetECClasses(const ECInstanceKeyMultiMap& instan
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(Utf8StringCR classKey)
+ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(Utf8StringCR classKey)
     {
-    ECClassP ecClass = GetECClass(classKey);
+    ECClassCP ecClass = GetECClass(classKey);
     if (nullptr == ecClass)
         {
         return nullptr;
         }
-    return ecClass->GetRelationshipClassP();
+    return ecClass->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(ECClassId classId)
+ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(ECClassId classId)
     {
-    ECClassP ecClass = GetECClass(classId);
+    ECClassCP ecClass = GetECClass(classId);
     if (nullptr == ecClass)
         {
         return nullptr;
         }
-    return ecClass->GetRelationshipClassP();
+    return ecClass->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(Utf8StringCR schemaName, Utf8StringCR className)
+ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(Utf8StringCR schemaName, Utf8StringCR className)
     {
-    ECClassP ecClass = GetECClass(schemaName, className);
+    ECClassCP ecClass = GetECClass(schemaName, className);
     if (nullptr == ecClass)
         {
         return nullptr;
         }
-    return ecClass->GetRelationshipClassP();
+    return ecClass->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(ECInstanceKeyCR instanceKey)
+ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(ECInstanceKeyCR instanceKey)
     {
     return GetECRelationshipClass(instanceKey.GetECClassId());
     }
@@ -207,14 +189,14 @@ ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(ECInstanceKeyCR instanc
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(ObjectIdCR objectId)
+ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(ObjectIdCR objectId)
     {
-    ECClassP ecClass = GetECClass(objectId);
+    ECClassCP ecClass = GetECClass(objectId);
     if (nullptr == ecClass)
         {
         return nullptr;
         }
-    return ecClass->GetRelationshipClassP();
+    return ecClass->GetRelationshipClassCP();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -227,23 +209,23 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
     if (nullptr == m_findRelationshipClassesStatement)
         {
         // SQL supplied by Affan Khan
-        Utf8CP sql = R"(WITH RECURSIVE 
-           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel) AS 
-           ( 
-           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0 
-               FROM ec_RelationshipConstraint RC 
-                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] 
-           UNION 
-           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1 
-               FROM RelationshipConstraintClasses RCC 
-                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId 
+        Utf8CP sql = R"(WITH RECURSIVE
+           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel) AS
+           (
+           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0
+               FROM ec_RelationshipConstraint RC
+                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd]
+           UNION
+           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1
+               FROM RelationshipConstraintClasses RCC
+                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId
                WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC 
-           ) 
+               ORDER BY 2 DESC
+           )
         SELECT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId   
-                WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ?                
+           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
+                WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ?
                       AND TRG.ECRelationshipEnd = 1 AND TRG.RelationECClassId = ? )";
 
         m_findRelationshipClassesStatement = std::make_shared<Statement>();
@@ -282,22 +264,22 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
 
     if (nullptr == m_findRelationshipClassesWithSourceStatement)
         {
-        Utf8CP sql = R"(WITH RECURSIVE 
+        Utf8CP sql = R"(WITH RECURSIVE
            RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel, SchemaName) AS
-           ( 
+           (
            SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0, ES.Name
-               FROM ec_RelationshipConstraint RC 
+               FROM ec_RelationshipConstraint RC
                    INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-           UNION 
+           UNION
            SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1, ES.Name
-               FROM RelationshipConstraintClasses RCC 
+               FROM RelationshipConstraintClasses RCC
                    INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
                WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC 
-           ) 
+               ORDER BY 2 DESC
+           )
         SELECT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId   
+           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
                 WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ? OR TRG.RelationECClassId = ?
                       AND TRG.ECRelationshipEnd = 1 AND SRC.SchemaName = ?)";
 
@@ -318,7 +300,7 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
 
     m_findRelationshipClassesWithSourceStatement->BindInt64(1, sourceClassId);
     m_findRelationshipClassesWithSourceStatement->BindInt64(2, sourceClassId);
-    m_findRelationshipClassesWithSourceStatement->BindText(3, schemaName, Statement::MAKE_COPY_Yes);
+    m_findRelationshipClassesWithSourceStatement->BindText(3, schemaName, Statement::MakeCopy::Yes);
 
     BeSQLite::DbResult status;
     while (BeSQLite::DbResult::BE_SQLITE_ROW == (status = m_findRelationshipClassesWithSourceStatement->Step()))
@@ -337,20 +319,20 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
         {
         Utf8CP sql = R"(WITH RECURSIVE
            RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel, SchemaName) AS
-           ( 
+           (
            SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0, ES.Name
-               FROM ec_RelationshipConstraint RC 
+               FROM ec_RelationshipConstraint RC
                    INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-           UNION 
+           UNION
            SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1, ES.Name
-               FROM RelationshipConstraintClasses RCC 
+               FROM RelationshipConstraintClasses RCC
                    INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
                WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC 
-           ) 
+               ORDER BY 2 DESC
+           )
         SELECT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId   
+           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
                 WHERE SRC.ECRelationshipEnd = 0 AND TRG.ECRelationshipEnd = 1
                       AND ((SRC.RelationECClassId = ? AND TRG.RelationECClassId = ?)
                           OR (TRG.RelationECClassId = ? AND SRC.RelationECClassId = ?))
@@ -375,7 +357,7 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
     m_findRelationshipClassesInSchemaStatement->BindInt64(2, targetClassId);
     m_findRelationshipClassesInSchemaStatement->BindInt64(3, sourceClassId);
     m_findRelationshipClassesInSchemaStatement->BindInt64(4, targetClassId);
-    m_findRelationshipClassesInSchemaStatement->BindText(5, schemaName, Statement::MAKE_COPY_Yes); //TODO: Temporarily hard-coded schema
+    m_findRelationshipClassesInSchemaStatement->BindText(5, schemaName, Statement::MakeCopy::Yes); //TODO: Temporarily hard-coded schema
 
     BeSQLite::DbResult status;
     while (BeSQLite::DbResult::BE_SQLITE_ROW == (status = m_findRelationshipClassesInSchemaStatement->Step()))
@@ -794,7 +776,7 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
         return ECInstanceKey(relClass->GetId(), ECInstanceId());
         }
 
-    // EC Preffered way for checking existing relationship (don't rely on INSERT_ConstraintViolation)    
+    // EC Preffered way for checking existing relationship (don't rely on INSERT_ConstraintViolation)
     ECInstanceKey relationshipKey = FindRelationship(relClass, source, target);
     if (relationshipKey.IsValid())
         {
@@ -882,12 +864,14 @@ BentleyStatus ECDbAdapter::DeleteRelationship(ECRelationshipClassCP relClass, EC
         {
         return ERROR;
         }
-    ECPersistencePtr persistence = m_ecDb->GetEC().GetECPersistence(nullptr, *relClass);
+#if defined (NEEDS_WORK_PORT_GRA06) // Port 0504 to 06,
+    ECPersistencePtr persistence = m_ecDb->GetECPersistence(nullptr, *relClass);
     if (persistence.IsNull() ||
         DELETE_Success != persistence->Delete(relationship.GetECInstanceId()))
         {
         return ERROR;
         }
+#endif
     return SUCCESS;
     }
 

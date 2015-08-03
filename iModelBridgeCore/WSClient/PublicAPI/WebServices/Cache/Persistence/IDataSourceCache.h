@@ -243,8 +243,9 @@ struct EXPORT_VTABLE_ATTRIBUTE IDataSourceCache
         //! Returns cached file path or empty path if not found
         virtual BeFileName ReadFilePath (ECInstanceKeyCR instanceKey) = 0;
         //! Read main file properties from cached instance.
-        //! @param@ fileName[out] will be filled with file name or instance label if found.
-        //! @param@ fileSize[out] will be filled with file size property value or 0 if not found.
+        //! @param instanceKey
+        //! @param[out] fileName will be filled with file name or instance label if found.
+        //! @param[out] fileSize will be filled with file size property value or 0 if not found.
         virtual BentleyStatus ReadFileProperties (ECInstanceKeyCR instanceKey, Utf8StringR fileName, uint64_t& fileSize) = 0;
 
         virtual bool IsResponseCached (CachedResponseKeyCR responseKey) = 0;

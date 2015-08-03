@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 ChangeInfoManager::ChangeInfoManager
 (
 ECDbAdapter& dbAdapter,
-ECSqlStatementCache& statementCache,
+WebServices::ECSqlStatementCache& statementCache,
 ObjectInfoManager& objectInfoManager,
 RelationshipInfoManager& relationshipInfoManager,
 FileInfoManager& fileInfoManager
