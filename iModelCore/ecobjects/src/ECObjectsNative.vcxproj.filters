@@ -33,6 +33,9 @@
     <Filter Include="ECUnits\Source Files">
       <UniqueIdentifier>{3118501a-d447-465a-9b9f-7d593da60f89}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ECPresentation\PresentationRules">
+      <UniqueIdentifier>{54e0538e-e89c-4dab-bf78-1fb3d45d780f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DesignByContract.cpp">
@@ -142,6 +145,87 @@
     </ClCompile>
     <ClCompile Include="SchemaLocalizedStrings.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\AllInstanceNodesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\AllRelatedInstanceNodesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\CheckBoxRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ChildNodeRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ChildNodeSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\CommonTools.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ContentInstancesOfSpecificClassesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ContentRelatedInstancesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ContentRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ContentSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\CustomNodeSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\DisplayRelatedItemsSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\GroupingRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ImageIdOverride.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\InstanceNodesOfSpecificClassesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\LabelOverride.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\LocalizationResourceKeyDefinition.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\PresentationRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\PresentationRuleSet.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\RelatedInstanceNodesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\RelatedPropertiesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\RenameNodeRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\SearchResultInstanceNodesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\SelectedNodeInstancesSpecification.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\SortingRule.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp">
+      <Filter>ECPresentation\PresentationRules</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
