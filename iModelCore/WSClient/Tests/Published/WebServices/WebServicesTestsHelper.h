@@ -14,9 +14,51 @@
 #include <WebServices/Client/ObjectId.h>
 #include "Connect/StubLocalState.h"
 #include "Configuration/StubBuddiClient.h"
+#include "../StubInstances.h"
 
-USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+#define EXPECT_CONTAINS(container, value)                                       \
+    EXPECT_FALSE(std::find(container.begin(), container.end(), value) == container.end())
+
+#define EXPECT_NCONTAIN(container, value)                                       \
+    EXPECT_TRUE(std::find(container.begin(), container.end(), value) == container.end())
+
+#define EXPECT_BETWEEN(smallerValue, value, biggerValue)                        \
+    EXPECT_LE(smallerValue, value);                                             \
+    EXPECT_GE(biggerValue, value);
+
+template<typename T>
+bvector<T> StubBVector(T element)
+    {
+    bvector<T> vector;
+    vector.push_back(element);
+    return vector;
+    }
+
+template<typename T>
+bvector<T> StubBVector(std::initializer_list<T> list)
+    {
+    bvector<T> vector(list.begin(), list.end());
+    return vector;
+    }
+
+template<typename T>
+bset<T> StubBSet(std::initializer_list<T> list)
+    {
+    bset<T> set(list.begin(), list.end());
+    return set;
+    }
+
+template<typename A, typename B>
+bpair<A, B> StubBPair(A a, B b)
+    {
+    return bpair<A, B>(a, b);
+    }
 
 HttpResponse StubHttpResponse (ConnectionStatus status = ConnectionStatus::CouldNotConnect);
 HttpResponse StubHttpResponse (HttpStatus httpStatus, Utf8StringCR body = "", const std::map<Utf8String, Utf8String>& headers = std::map<Utf8String, Utf8String> ());

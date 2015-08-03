@@ -111,6 +111,35 @@
     <ClInclude Include="Published\WebServices\Configuration\UrlProviderTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
     <ClInclude Include="Published\WebServices\Configuration\StubBuddiClient.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\BaseCacheTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockChangeManager.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockDataSourceCache.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\MockRepositoryInfoStore.h" />
+    <ClInclude Include="Published\WebServices\Cache\Persistence\StubRepositoryInfoStore.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\MockTransactionHandler.h" />
+    <ClInclude Include="Published\WebServices\Cache\Transactions\StubCacheTransactionManager.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECDbAdapterTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECDbHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ISelectProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockECDbSchemaChangeListener.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockExtendedDataAdapter.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\MockSelectProvider.h" />
+    <ClInclude Include="Published\WebServices\Cache\BaseCachingDataSourceTest.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceErrorTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingDataSourceTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\CachingTestsHelper.h" />
+    <ClInclude Include="Published\WebServices\Cache\ChangeGraphTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\MockCachingDataSource.h" />
+    <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
+    <ClInclude Include="Published\WebServices\Cache\ServerQueryHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -250,6 +279,23 @@
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\BaseCacheTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\CacheQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\ChangeManagerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataReadOptionsTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECDbHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ISelectProviderTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\BaseCachingDataSourceTest.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceErrorTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingDataSourceTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\CachingTestsHelper.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

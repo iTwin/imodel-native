@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="DSCacheSchema" nameSpacePrefix="DSC" version="1.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>DSCache.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="Settings" isDomainClass="True">
+        <ECProperty propertyName="CacheFormatVersion" typeName="int" />
+        <ECProperty propertyName="DataSourceSchemaName" typeName="string" />
+        <ECProperty propertyName="DataSourceSchemaETag" typeName="string" />
+    </ECClass>
+    <ECClass typeName="Root" isDomainClass="True">
+        <ECProperty propertyName="Name" typeName="string" />
+        <ECProperty propertyName="Persistance" typeName="int" />
+    </ECClass>
+    <ECClass typeName="NavigationBase" isDomainClass="True">
+        <ECProperty propertyName="DataSourceCache_RemoteId" typeName="string" />
+    </ECClass>
+    <ECClass typeName="CacheInfoStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="CacheTag" typeName="string" />
+        <ECProperty propertyName="CacheDate" typeName="dateTime" >
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.05">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ChangeInfoStruct" isStruct="True" isDomainClass="False">
+        <ECProperty propertyName="ChangeStatus" typeName="int" />
+        <ECProperty propertyName="SyncStatus" typeName="int" />
+        <ECProperty propertyName="Date" typeName="dateTime" >
+            <ECCustomAttributes>
+                <DateTimeInfo xmlns="Bentley_Standard_CustomAttributes.01.05">
+                    <DateTimeKind>Utc</DateTimeKind>
+                </DateTimeInfo>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="FileCacheInfo" isDomainClass="True">
+        <ECProperty propertyName="LastCachedFileIndex" typeName="long" />
+    </ECClass>
+    <ECClass typeName="CachedFileInfo" isDomainClass="True">
+        <ECProperty propertyName="IsPersistant" typeName="boolean" />
+        <ECProperty propertyName="LocalPath" typeName="string" />
+        <ECStructProperty propertyName="CacheInfo" typeName="CacheInfoStruct" />
+        <ECStructProperty propertyName="ChangeInfo" typeName="ChangeInfoStruct" />
+    </ECClass>
+    <ECClass typeName="CachedInstanceInfo" isDomainClass="True">
+        <ECStructProperty propertyName="ChildrenInfo" typeName="CacheInfoStruct" />
+        <ECStructProperty propertyName="InstanceInfo" typeName="CacheInfoStruct" />
+        <ECProperty propertyName="InstanceState" typeName="int" />
+        <ECStructProperty propertyName="ChangeInfo" typeName="ChangeInfoStruct" />
+    </ECClass>
+</ECSchema>

@@ -1,11 +1,10 @@
-
-#---------------------------------------------------------------------------------------+
+#------------------------------------------------------------------------------
 #
 #     $Source: l10n-WSClient.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
-#---------------------------------------------------------------------------------------+
+#------------------------------------------------------------------------------
 PolicyFile = $(InternalSystemPolicy)
 %include mdl.mki
 
@@ -15,8 +14,8 @@ PolicyFile = $(InternalSystemPolicy)
 
 xliffDir = $(SrcRoot)l10n/l10n-WSClient/$(L10N_LANGUAGE_TAG)/
 
-$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/Connect_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)Connect_$(L10N_LANGUAGE_TAG).xliff
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/WebServicesCache_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)WebServicesCache_$(L10N_LANGUAGE_TAG).xliff
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/WSError_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)WSError_$(L10N_LANGUAGE_TAG).xliff
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/WebServicesClient_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)WebServicesClient_$(L10N_LANGUAGE_TAG).xliff
     $(LinkFirstDepToFirstTarget)
