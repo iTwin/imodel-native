@@ -57,14 +57,12 @@ DbResult DgnDb::CreateDgnDbTables()
                                      "Permissions INT,"
                                      "CONSTRAINT names UNIQUE(Domain,Name)");
 
-    CreateTable(DGN_TABLE_Txns, "SessionId BLOB NOT NULL," // Note: *cannot* have a primary key! This table is not change-tracked.
-                           "TxnId INTEGER NOT NULL,"
+    CreateTable(DGN_TABLE_Txns, "Id INTEGER PRIMARY KEY NOT NULL," 
                            "Deleted BOOL,"
+                           "Grouped BOOL,"
                            "Operation CHAR NOT NULL,"
                            "Time TIMESTAMP DEFAULT(julianday('now')),"
                            "Change BLOB");
-
-    ExecuteSql("CREATE INDEX txn_session ON " DGN_TABLE_Txns "(SessionId,TxnId)");
 
     Fonts().DbFontMap().CreateFontTable();
 
