@@ -43,7 +43,7 @@ $(dgnScriptContextGen)DgnPlatform/DgnScriptContextImpl.h : $(dgnScriptContextDir
 # ---------------------------------------------------------------------------------------------------------------
 $(dgnScriptContextGen)DgnObjectModelJsCallbacks.cpp : $(dgnScriptContextTsDir)DgnObjectModel.d.ts $(dgnScriptContextTsDir)DgnObjectModelJsCallbacksTemplate.cpp $(dgnScriptContextTsDir)DgnObjectModelJsProjectionsTemplate.h $(dgnScriptContextDir)DgnScriptContextImpl.h
     $(msg)
-    $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
+    python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
         --declarationPath "$(dgnScriptContextTsDir)DgnObjectModel.d.ts" \
         --nativeOutputTemplatePath "$(dgnScriptContextTsDir)DgnObjectModelJsCallbacksTemplate.cpp" \
         --nativeOutputHeaderTemplatePath "$(dgnScriptContextTsDir)DgnObjectModelJsProjectionsTemplate.h" \
@@ -65,22 +65,19 @@ tsSourceFiles = $(dgnScriptContextGen)DgnObjectModel.ts $(dgnScriptContextTsDir)
 # The rule below *also* outputs $(dgnScriptContextGen)DgnObjectModel.d.ts
 # I didn't list that as an output, because ~time won't update it
 
+%if !defined(NDEBUG)
+    DEBUG_PARMS = --sourceMap --mapRoot $(dgnScriptContextGen)
+%endif
+
+
 $(dgnScriptContextGen)DgnObjectModel.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 \
-                                          --noImplicitAny \
-                                          --removeComments \
-                                          --declaration \
-                                          %if !defined(NDEBUG)
-                                          --sourceMap \
-                                          --mapRoot $(dgnScriptContextGen) \
-                                          %endif
-                                          --out $(dgnScriptContextGen)DgnObjectModel.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptContextGen)DgnObjectModel.js
     ~time
 
 $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp : $(dgnScriptContextGen)DgnObjectModel.js
     $(msg)
-    $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__OBJECTMODELJSSOURCE__=$(dgnScriptContextGen)DgnObjectModel.js" \
+    python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__OBJECTMODELJSSOURCE__=$(dgnScriptContextGen)DgnObjectModel.js" \
                                           --nativeSourceFile $(dgnScriptContextDir)ts/DgnScriptContextBootstrapper.cpp \
                                           --outputPath $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp
     ~time
