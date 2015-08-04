@@ -1041,6 +1041,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
         FB::BRepDataBuilder builder (fbb);
 
         builder.add_entityTransform ((FB::Transform*) &entity.GetEntityTransform());
+        builder.add_brepType ((FB::BRepType) entity.GetEntityType()); // Allow possibility of checking type w/o expensive restore of brep...
         builder.add_entityData (entityData);
 
         if (nullptr != attachments)
@@ -1481,6 +1482,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
 
     auto ppfb = flatbuffers::GetRoot<FB::BRepData>(egOp.m_data);
 
+    // NOTE: It's possible to check ppfb->brepType() to avoid calling restore in order to check type...
     if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._RestoreEntityFromMemory (entity, ppfb->entityData()->Data(), ppfb->entityData()->Length(), *((TransformCP) ppfb->entityTransform())))
         return false;
 
@@ -2800,6 +2802,13 @@ void ElementGeometryCollection::Iterator::ToNext()
             m_totalDataSize = m_saveTotalDataSize;;
 
             m_partGeometry = nullptr;
+
+            if (m_dataOffset >= m_totalDataSize)
+                {
+                m_data = nullptr;
+                m_dataOffset = 0;
+                return;
+                }
             }
 
         uint32_t        opCode = *((uint32_t *) (m_data));

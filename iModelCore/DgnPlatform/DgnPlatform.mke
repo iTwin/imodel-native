@@ -95,6 +95,8 @@ o = $(coreObjs)
 #----------------------------------------------------------------------
 %include $(dgnScriptContextDir)GenerateTypeScript.mki
 
+cIncs + -I$(dgnScriptContextGen)
+
 #----------------------------------------------------------------------
 #   Make sure that DgnPlatformInternal.pch is up-to-date.
 #----------------------------------------------------------------------
@@ -320,6 +322,8 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 $(o)DgnScriptContext$(oext) : $(dgnScriptContextDir)DgnScriptContext.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
 
 $(o)DgnScriptContextBootstrap$(oext) : $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp ${MultiCompileDepends}
+
+$(o)DgnObjectModelJsCallbacks$(oext) : $(dgnScriptContextGen)DgnObjectModelJsCallbacks.cpp $(dgnScriptContextGen)DgnPlatform/DgnObjectModelJsProjections.h ${MultiCompileDepends}
 
 %else
 
