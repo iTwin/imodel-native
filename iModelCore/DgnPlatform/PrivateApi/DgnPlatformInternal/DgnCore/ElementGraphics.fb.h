@@ -88,6 +88,20 @@ inline const char **EnumNamesGeometryClass() {
 
 inline const char *EnumNameGeometryClass(GeometryClass e) { return EnumNamesGeometryClass()[e]; }
 
+enum BRepType {
+  BRepType_Solid = 0,
+  BRepType_Sheet = 1,
+  BRepType_Wire = 2,
+  BRepType_Minimal = 3
+};
+
+inline const char **EnumNamesBRepType() {
+  static const char *names[] = { "Solid", "Sheet", "Wire", "Minimal", nullptr };
+  return names;
+}
+
+inline const char *EnumNameBRepType(BRepType e) { return EnumNamesBRepType()[e]; }
+
 MANUALLY_ALIGNED_STRUCT(8) DPoint3d {
  private:
   double x_;
@@ -347,43 +361,48 @@ inline flatbuffers::Offset<ArcPrimitive> CreateArcPrimitive(flatbuffers::FlatBuf
 
 struct BRepData : private flatbuffers::Table {
   const Transform *entityTransform() const { return GetStruct<const Transform *>(4); }
-  const flatbuffers::Vector<uint8_t> *entityData() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(6); }
-  const flatbuffers::Vector<const FaceSymbology *> *symbology() const { return GetPointer<const flatbuffers::Vector<const FaceSymbology *> *>(8); }
-  const flatbuffers::Vector<const FaceSymbologyIndex *> *symbologyIndex() const { return GetPointer<const flatbuffers::Vector<const FaceSymbologyIndex *> *>(10); }
+  BRepType brepType() const { return static_cast<BRepType>(GetField<int8_t>(6, 0)); }
+  const flatbuffers::Vector<uint8_t> *entityData() const { return GetPointer<const flatbuffers::Vector<uint8_t> *>(8); }
+  const flatbuffers::Vector<const FaceSymbology *> *symbology() const { return GetPointer<const flatbuffers::Vector<const FaceSymbology *> *>(10); }
+  const flatbuffers::Vector<const FaceSymbologyIndex *> *symbologyIndex() const { return GetPointer<const flatbuffers::Vector<const FaceSymbologyIndex *> *>(12); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<Transform>(verifier, 4 /* entityTransform */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* entityData */) &&
+           VerifyField<int8_t>(verifier, 6 /* brepType */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* entityData */) &&
            verifier.Verify(entityData()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* symbology */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* symbology */) &&
            verifier.Verify(symbology()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* symbologyIndex */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 12 /* symbologyIndex */) &&
            verifier.Verify(symbologyIndex()) &&
            verifier.EndTable();
   }
   bool has_entityTransform() const { return CheckField(4); }
-  bool has_entityData() const { return CheckField(6); }
-  bool has_symbology() const { return CheckField(8); }
-  bool has_symbologyIndex() const { return CheckField(10); }
+  bool has_brepType() const { return CheckField(6); }
+  bool has_entityData() const { return CheckField(8); }
+  bool has_symbology() const { return CheckField(10); }
+  bool has_symbologyIndex() const { return CheckField(12); }
 };
 
 struct BRepDataBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
   void add_entityTransform(const Transform *entityTransform) { fbb_.AddStruct(4, entityTransform); }
-  void add_entityData(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityData) { fbb_.AddOffset(6, entityData); }
-  void add_symbology(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> symbology) { fbb_.AddOffset(8, symbology); }
-  void add_symbologyIndex(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbologyIndex *>> symbologyIndex) { fbb_.AddOffset(10, symbologyIndex); }
+  void add_brepType(BRepType brepType) { fbb_.AddElement<int8_t>(6, static_cast<int8_t>(brepType), 0); }
+  void add_entityData(flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityData) { fbb_.AddOffset(8, entityData); }
+  void add_symbology(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> symbology) { fbb_.AddOffset(10, symbology); }
+  void add_symbologyIndex(flatbuffers::Offset<flatbuffers::Vector<const FaceSymbologyIndex *>> symbologyIndex) { fbb_.AddOffset(12, symbologyIndex); }
   BRepDataBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   BRepDataBuilder &operator=(const BRepDataBuilder &);
   flatbuffers::Offset<BRepData> Finish() {
-    auto o = flatbuffers::Offset<BRepData>(fbb_.EndTable(start_, 4));
+    auto o = flatbuffers::Offset<BRepData>(fbb_.EndTable(start_, 5));
     return o;
   }
 };
 
 inline flatbuffers::Offset<BRepData> CreateBRepData(flatbuffers::FlatBufferBuilder &_fbb,
    const Transform *entityTransform = 0,
+   BRepType brepType = BRepType_Solid,
    flatbuffers::Offset<flatbuffers::Vector<uint8_t>> entityData = 0,
    flatbuffers::Offset<flatbuffers::Vector<const FaceSymbology *>> symbology = 0,
    flatbuffers::Offset<flatbuffers::Vector<const FaceSymbologyIndex *>> symbologyIndex = 0) {
@@ -392,6 +411,7 @@ inline flatbuffers::Offset<BRepData> CreateBRepData(flatbuffers::FlatBufferBuild
   builder_.add_symbology(symbology);
   builder_.add_entityData(entityData);
   builder_.add_entityTransform(entityTransform);
+  builder_.add_brepType(brepType);
   return builder_.Finish();
 }
 
