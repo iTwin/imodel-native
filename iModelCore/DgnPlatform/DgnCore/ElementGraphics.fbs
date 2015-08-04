@@ -12,6 +12,7 @@ enum GradientMode : byte {None, Linear, Curved, Cylindrical, Spherical, Hemisphe
 enum BoundaryType : byte {None, Open, Closed}
 enum FillDisplay : byte {None, ByView, Always, Blanking}
 enum GeometryClass : byte {Primary, Construction, Dimension, Pattern}
+enum BRepType : byte {Solid, Sheet, Wire, Minimal}
 
 //=======================================================================================
 // @bsiclass                                                    
@@ -63,6 +64,7 @@ table ArcPrimitive
 table BRepData
     {
     entityTransform:Transform;
+    brepType:BRepType;
     entityData:[ubyte];
     symbology:[FaceSymbology];
     symbologyIndex:[FaceSymbologyIndex];
