@@ -520,9 +520,9 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
     if (0 < zipSize)
         {
         if (1 == snappy.GetCurrChunk())
-            stmt.BindBlob(1, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
+            stmt.BindBlob(stmtcolidx, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
         else
-            stmt.BindZeroBlob(1, zipSize); // more than one chunk in geom stream
+            stmt.BindZeroBlob(stmtcolidx, zipSize); // more than one chunk in geom stream
         }
 
     if (BE_SQLITE_DONE != stmt.Step())
