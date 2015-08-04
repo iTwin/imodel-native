@@ -520,9 +520,9 @@ DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8C
     if (0 < zipSize)
         {
         if (1 == snappy.GetCurrChunk())
-            stmt.BindBlob(1, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
+            stmt.BindBlob(stmtcolidx, snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
         else
-            stmt.BindZeroBlob(1, zipSize); // more than one chunk in geom stream
+            stmt.BindZeroBlob(stmtcolidx, zipSize); // more than one chunk in geom stream
         }
 
     if (BE_SQLITE_DONE != stmt.Step())
@@ -689,9 +689,18 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
+    {
+    m_categoryId = importer.RemapCategory(m_categoryId);
+    m_classId = importer.RemapClassId(m_classId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params, DgnElementImporter* importer) const
+DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
     {
     // Perform input params validation. Code must be different and element id should be invalid...
     if (nullptr != params)
@@ -713,11 +722,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
             }
         }
 
-    DgnCategoryId categoryId = GetCategoryId();
-    if (nullptr != importer)                                // Support for copying between DgnDbs
-        categoryId = importer->RemapCategory(categoryId);
-
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), categoryId, nullptr, nullptr, DgnElementId()));
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, nullptr, DgnElementId()));
 
     if (!cloneElem.IsValid())
         {
@@ -732,9 +737,30 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
-    // *** TBD: Copy my Aspects (other than ElementGeom -- GeometricElement subclass already does that!?!)
+    return cloneElem;
+    }
 
-    // *** TBD: Copy my Children?
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnElement::CreateParams const& params, DgnImportContext& importer) const
+    {
+    DgnElementPtr cloneElem = GetElementHandler().Create(params);
+
+    if (!cloneElem.IsValid())
+        {
+        if (nullptr != stat)
+            *stat = DgnDbStatus::BadRequest;
+
+        return nullptr;
+        }
+
+    cloneElem->_CopyFrom(*this);
+
+    cloneElem->_RemapIds(importer);
+
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
 
     return cloneElem;
     }
@@ -747,17 +773,22 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    if (&m_dgndb != &other.m_dgndb)
-        {
-        BeAssert(false);
-        return;
-        }
+    // Copying between DgnDbs is allowed. Caller must do ID remapping.
 
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
     m_lastModTime = other.m_lastModTime;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_RemapIds(DgnImportContext& importer)
+    {
+    m_categoryId = importer.RemapCategory(m_categoryId);
+    m_parentId   = importer.FindElementId(m_parentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -770,6 +801,56 @@ void GeometricElement::_CopyFrom(DgnElementCR other)
     GeometricElementCP otherGeom = other.ToGeometricElement();
     if (otherGeom)
         SaveGeomStream(&otherGeom->m_geom);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_RemapIds(DgnImportContext& importer)
+    {
+    T_Super::_RemapIds(importer);
+    ElementGeomIO::Import(m_geom, m_geom, importer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnImportContext& importer) const
+    {
+    CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId(), GetCategoryId());
+    if (importer.IsBetweenDbs())
+        {
+        // Caller probably wants to preserve these when copying between Dbs. We never preserve them when copying within a Db.
+        parms.m_label = GetLabel();
+        parms.m_code = GetCode();
+
+        parms.RelocateToDestinationDb(importer);
+        }
+    return parms;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnElement::CreateParams const& params, DgnImportContext& importer) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
+
+    DgnElementPtr cc = _CloneForImport(stat, params, importer);       // (also calls _ImportFrom)
+    if (!cc.IsValid())
+        return DgnElementCPtr();
+
+    // *** TBD: Deep copy Aspects
+
+    // *** TBD: Copy my Children
+
+    DgnElementCPtr ccp = cc->Insert(stat);
+    if (!ccp.IsValid())
+        return ccp;
+
+    importer.AddElementId(GetElementId(), ccp->GetElementId());
+    return ccp;
     }
 
 /*---------------------------------------------------------------------------------**//**

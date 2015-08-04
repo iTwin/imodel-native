@@ -41,49 +41,6 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         }
     };
 
-//=======================================================================================
-//! Holds ID remapping tables
-//=======================================================================================
-struct DgnRemapTables
-{
-protected:
-    bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
-    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
-
-    template<typename T>
-    T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
-
-public:
-    DgnRemapTables& Get(DgnDbR);
-
-    DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
-    void Add(DgnCategoryId sourceId, DgnCategoryId targetId) {m_categoryId[sourceId] = targetId;}
-
-    DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
-    void Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {m_subcategoryId[sourceId] = targetId;}
-
-};
-
-//=======================================================================================
-//! Helps models and elements copy themselves between DgnDbs
-//=======================================================================================
-struct DgnElementImporter
-{
-private:
-    DgnDbR          m_sourceDb;
-    DgnDbR          m_destDb;
-    DgnRemapTables  m_remap;
-
-public:
-    DgnElementImporter(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) {;}
-
-    DgnDbR GetSourceDb() const {return m_sourceDb;}
-    DgnDbR GetDestinationDb() const {return m_destDb;}
-
-    DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
-    DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId);
-};
-
 /** @addtogroup DgnModelGroup DgnModels
 @ref PAGE_ModelOverview
 */
@@ -312,6 +269,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), Solver solver=Solver(), DgnModelId id=DgnModelId()) :
             m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props), m_solver(solver) {}
+
+        DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
 
 private:
@@ -598,35 +557,43 @@ public:
     //! a const iterator to the end of the loaded elements for this DgnModel.
     const_iterator end() const {return m_elements.end();}
 
-    //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb.
+    //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _Clone(DgnDbStatus* stat, DgnModel::CreateParams const& params) const;
+
+    //! Generate the CreateParams to use for _CloneForImport
+    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
+    //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
+    DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+
+    //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb from \a sourceModel.
+    //! This base class implemenation copies all elements in the source model, along with their aspects.
     //! @param sourceModel The model to copy
+    //! @param importer     Used by elements when copying between DgnDbs.
     //! @return non-zero if the copy failed
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _CopyContentsFrom(DgnModelCR sourceModel);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
-    //! Make a copy of this model -- but not its elements -- for use in the specified DgnDb.
-    //! The caller will follow up with a call to _CopyContentsFrom on the new model.
-    //! The returned model may or may not have been inserted. The caller must check.
-    //! The default implementation just gets this model's handler and asks it to create a new instance, based on the name and properties of this model.
-    //! @param targetDb   The destination Db
-    //! @return The copy 
-    DGNPLATFORM_EXPORT virtual DgnModelPtr _Clone(DgnDbR targetDb) const;
-
-    //! Copy \a sourceModel into \a destDb. 
-    //! The model itself is copied and inserted in the destination DgnDb.
-    //! All of the elements in the model and all of their aspects are copied and inserted.
-    //! All ECRelationships <em>between elements in the model</em> are copied and inserted. ECRelationships between elements in the model and elements outside the model are \em not copied.
+    //! Make a copy of the specified model, including all of the contents of the model. The destination may be a different DgnDb.
+    //! This is just a convenience method that calls Clone, Insert, and then _CopyContentsFrom.
+    //! Note that ECRelationships between elements in the model and elements outside the model are \em not copied.
     //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
-    //! @param destDb   The destination Db
+    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //! @param params       Must specify the destination DgnDb.
+    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
     //! @param sourceModel The model to copy
     //! @return the copied model, already inserted into the destination Db.
-    DGNPLATFORM_EXPORT static DgnModelPtr InsertCopyOfModel(DgnDbR destDb, DgnModelCR sourceModel);
+    DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, CreateParams const& params, DgnModelCR sourceModel, DgnImportContext& importer);
 
-    //! Copy \a sourceModel into \a destDb.
-    //! @param destDb   The destination Db
-    //! @param sourceModel The model to copy
+    //! Make a copy of the specified model, including all of the contents of the model. The destination may be a different DgnDb.
+    //! This is just a convenience method that calls Clone, Insert, and then _CopyContentsFrom.
+    //! Note that ECRelationships between elements in the model and elements outside the model are \em not copied.
+    //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
+    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //! @param sourceModel  The model to copy
+    //! @param params       Must specify the destination DgnDb.
+    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
     //! @return the copied model
     template<typename T>
-    static RefCountedPtr<T> Copy(DgnDbR destDb, T const& sourceModel) {return dynamic_cast<T*>(InsertCopyOfModel(destDb, sourceModel).get());}
+    static RefCountedPtr<T> Import(DgnDbStatus* stat, CreateParams const& params, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, params, sourceModel, importer).get());}
 
 };
 
@@ -906,16 +873,6 @@ public:
     //! @return non-zero error status if the ECSchema could not be imported; DgnDbStatus::DuplicateName if an ECSchema by the same name already exists.
     //! @see GenerateECClass
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR targetDb, BeFileNameCR schemaFile);
-
-    //! Copy the specified component model into \a destDb.
-    //! The model itself is copied and inserted in the destination DgnDb.
-    //! All of the elements in the model and all of their Aspects are copied and inserted.
-    //! All ECRelationships <em>between elements in the model</em> are copied and inserted. ECRelationships between elements in the model and elements outside the model are \em not copied.
-    //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
-    //! @param destDb   The destination Db
-    //! @param sourceModel The model to copy
-    //! @return the copied model, already inserted into the destination Db.
-    DGNPLATFORM_EXPORT static ComponentModelPtr Copy(DgnDbR destDb, ComponentModel const& sourceModel) {return T_Super::Copy<ComponentModel>(destDb, sourceModel);}
 };
 
 //=======================================================================================

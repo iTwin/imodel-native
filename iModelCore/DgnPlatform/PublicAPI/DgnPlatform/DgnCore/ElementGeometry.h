@@ -267,6 +267,13 @@ struct Collection
 
     }; // Collection
 
+    //! Remap embedded IDs. The dest and source GeomStreams can be the same.
+    //! @param dest     The output GeomStream
+    //! @param source   The input GeomStream
+    //! @param remapper  The ID remapper
+    static DgnDbStatus Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& remapper);
+
+
 }; // ElementGeomIO
 
 //=======================================================================================

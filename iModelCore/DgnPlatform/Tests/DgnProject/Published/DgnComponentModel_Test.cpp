@@ -351,7 +351,10 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     // ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
     ASSERT_TRUE( componentModel.IsValid() );
 
-    ComponentModelPtr cmCopy = ComponentModel::Copy(*m_clientDb, *componentModel);
+    DgnImportContext importer(*m_componentDb, *m_clientDb);
+
+    DgnDbStatus status;
+    ComponentModelPtr cmCopy = DgnModel::Import(&status, componentModel->GetCreateParamsForImport(importer), *componentModel, importer);
     
     ASSERT_TRUE( cmCopy.IsValid() );
 
@@ -393,9 +396,9 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     //  -------------------------------------------------------
     //  ComponentModel - Solve for the given parameter values
     //  -------------------------------------------------------
-    OpenComponentDb(Db::OpenMode::ReadWrite);   // Note that we must open CM read-write, since we'll be updating it.
-        
-    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);
+    // *** WIP_COMPONENT_MODEL -- get txn mark
+
+    ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
     ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(parms) );
@@ -424,8 +427,7 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     if (solutionAlreadyExists)
         ASSERT_EQ( solutionId.GetValue(), existingSid.GetValue() );
 
-    componentModel = nullptr;
-    CloseComponentDb();
+    // *** WIP_COMPONENT_MODEL -- roll back to mark
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1184,16 +1184,17 @@ EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componen
     if (builder->SetGeomStream(geom) != BSISUCCESS)
         return EC::ECInstanceId();
         
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " (ComponentModelId,Parameters) VALUES(?,?)");
-    stmt->BindId(1, componentModel.GetModelId());
-    stmt->BindText(2, solutionCode, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
+    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " (ComponentModelId,Parameters) VALUES(?,?)");
+    istmt->BindId(1, componentModel.GetModelId());
+    istmt->BindText(2, solutionCode, Statement::MakeCopy::No);
+    if (BE_SQLITE_DONE != istmt->Step())
         return EC::ECInstanceId();
+    istmt = nullptr;
 
     EC::ECInstanceId sid = EC::ECInstanceId(GetDgnDb().GetLastInsertRowId());
 
-    CachedStatementPtr gstmt = GetDgnDb().GetCachedStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " SET Geom=? WHERE(Id=?)");
-    stmt->BindId(2, sid);
+    CachedStatementPtr gstmt = GetDgnDb().GetCachedStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " SET Geom=? WHERE Id=?");
+    gstmt->BindId(2, sid);
     geom.WriteGeomStreamAndStep(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution), "Geom", sid.GetValue(), *gstmt, 1);
     return sid;
     }
@@ -1229,63 +1230,120 @@ PhysicalElementPtr DgnComponentSolutions::CreateSolutionInstance(DgnModelR desti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::_Clone(DgnDbR targetDb) const
+void DgnModel::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     {
-    DgnModelId modelId = targetDb.Models().QueryModelId(GetModelName());
-    if (modelId.IsValid())
-        return nullptr;
-
-    return GetModelHandler().Create(CreateParams(targetDb, GetClassId(), GetModelName(), GetProperties(), GetSolver()));
+    m_classId = importer.RemapClassId(m_classId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_CopyContentsFrom(DgnModelCR sourceModel)
+DgnModel::CreateParams DgnModel::GetCreateParamsForImport(DgnImportContext& importer) const
     {
-    DgnElements& elements = m_dgndb.Elements();
-    DgnElements& categories = m_dgndb.Categories();
-    DgnRemapTables remap;
+    CreateParams parms(importer.GetDestinationDb(), GetClassId(), GetModelName(), GetProperties(), GetSolver());
+    if (importer.IsBetweenDbs())
+        {
+        // Caller probably wants to preserve these when copying between Dbs. We *never* preserve them when copying within a Db.
+        parms.m_name = GetModelName();
 
-    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+        parms.RelocateToDestinationDb(importer);
+        }
+    return parms;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DgnModel::_Clone(DgnDbStatus* stat, DgnModel::CreateParams const& params) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
+    DgnModelPtr model = GetModelHandler().Create(params);
+    if (!model.IsValid())
+        return nullptr;
+
+    Json::Value propJson(Json::objectValue);
+    _ToPropertiesJson(propJson);
+    model->_FromPropertiesJson(propJson);
+    return model;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+    {
+    BeAssert(&GetDgnDb() == &importer.GetDestinationDb());
+    BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
+
+    Statement stmt(sourceModel.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnElementCPtr el = elements.GetElement(stmt.GetValueId<DgnElementId>(0));
-        DgnCategoryId catid = categories.Import(remap, sourceModel.GetDgnDb(), el->GetCategoryId());
-        DgnElement::CreateParams ccparms(GetDgnDb(), GetModelId(), el->GetElementClassId(), catid);
+        DgnElementCPtr el = sourceModel.GetDgnDb().Elements().GetElement(stmt.GetValueId<DgnElementId>(0));
+        DgnElement::CreateParams ccparms = el->GetCreateParamsForImport(importer);
         DgnDbStatus status;
-        DgnElementPtr cc = el->Clone(&status, &ccparms);
+        DgnElementCPtr cc = el->Import(&status, ccparms, importer);
         if (!cc.IsValid() || (DgnDbStatus::Success != status))
             {
             // *** TBD: Record failure somehow
             continue;
             }
-        cc->Insert(&status);
         if (DgnDbStatus::Success != status)
             {
             // *** TBD: Record failure somehow
             continue;
             }
         }
+
+    // *** TBD: Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
+    //              Note: this requires domain-specific knowledge of what ECRelationships exist.
+    //              Examples from Dgn domain include ElementDrivesElement
+    
+    // *** TBD: Copy ECRelationships where element in this model uses a shared resource that is deep-copied.
+    //              Examples from Dgn domain include ElementGeomUsesParts, ElementUsesStyles
+
+    // *** TBD: ElementHasLinks -- should we deep-copy links?
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::InsertCopyOfModel(DgnDbR destDb, DgnModelCR sourceModel)
+DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, CreateParams const& paramsIn, DgnModelCR sourceModel, DgnImportContext& importer)
     {
-    DgnModelPtr newModel = sourceModel._Clone(destDb);
-    if (!newModel.IsValid())
-        return nullptr;
-    if (!newModel->GetModelId().IsValid())
+    DgnDbStatus _stat;
+    DgnDbStatus& stat = (nullptr != statIn)? *statIn: _stat;
+
+    BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
+    BeAssert(&paramsIn.m_dgndb == &importer.GetDestinationDb());
+
+    CreateParams params = paramsIn;
+
+    if (params.m_name.empty())
+        params.m_name = sourceModel.GetModelName();
+
+    if (params.m_dgndb.Models().QueryModelId(params.m_name.c_str()).IsValid()) // Is the name already used in destination?
         {
-        if (newModel->Insert() != DgnDbStatus::Success)
-            return nullptr;
+        stat = DgnDbStatus::DuplicateName;
+        return nullptr;
         }
-    if (newModel->_CopyContentsFrom(sourceModel) != DgnDbStatus::Success)
+
+    DgnModelPtr newModel = sourceModel._Clone(&stat, params);
+    if (!newModel.IsValid())
+        {
+        stat = DgnDbStatus::BadRequest;
+        return nullptr;
+        }
+
+    if ((stat = newModel->Insert()) != DgnDbStatus::Success)
         return nullptr;
 
+    if ((stat = newModel->_ImportContentsFrom(sourceModel, importer)) != DgnDbStatus::Success)
+        return nullptr;
+
+    stat = DgnDbStatus::Success;
     return newModel;
     }
 

@@ -275,3 +275,38 @@ DgnGeomPartPtr DgnGeomPart::Create(Utf8CP code)
     {
     return new DgnGeomPart(code);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnGeomPartId DgnImportContext::RemapGeomPartId(DgnGeomPartId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+
+    DgnGeomPartId dest = m_remap.Find(source);
+    if (dest.IsValid())
+        return dest;
+
+    DgnGeomPartPtr sourceGeomPart = GetSourceDb().GeomParts().LoadGeomPart(source);
+    if (!sourceGeomPart.IsValid())
+        return DgnGeomPartId();
+
+#ifdef WIP_GEOM_PART_COPYING // *** We can't rely on a GeomPart's code as an identifier. First, it's optional. Second, there's no unique constraint on it.
+    dest = GetDestinationDb().GeomParts().QueryGeomPartId(sourceGeomPart->GetCode());
+#endif
+    if (!dest.IsValid())
+        {
+        DgnGeomPartPtr destGeomPart = DgnGeomPart::Create();
+        ElementGeomIO::Import(destGeomPart->GetGeomStreamR(), sourceGeomPart->GetGeomStream(), *this);
+
+        if (BSISUCCESS != GetDestinationDb().GeomParts().InsertGeomPart(*destGeomPart))
+            {
+            BeAssert(false);
+            return DgnGeomPartId();
+            }
+        dest = destGeomPart->GetId();
+        }
+
+    return m_remap.Add(source, dest);
+    }

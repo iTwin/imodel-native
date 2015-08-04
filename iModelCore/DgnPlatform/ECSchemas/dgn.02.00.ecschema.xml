@@ -14,9 +14,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
 
-    <ECClass typeName="ComponentModelSoulution" isDomainClass="True" >
+    <ECClass typeName="ComponentModelSolution" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
+                <!-- NEEDS WORK: I want the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -36,7 +37,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ComponentModelSoulution" />
+            <Class class="ComponentModelSolution" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="Element" />

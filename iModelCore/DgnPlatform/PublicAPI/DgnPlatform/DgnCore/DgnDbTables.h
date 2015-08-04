@@ -484,7 +484,8 @@ public:
     //! @return the Id of the SubCategory.
     static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
 
-    DgnDbStatus Import(DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
+    DgnCategoryId Import(DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
+    DgnSubCategoryId Import(DgnRemapTables& remap, DgnCategoryId destCategoryId, DgnDbR sourceDb, DgnSubCategoryId sourceSubCategoryId);
 
 };
 
