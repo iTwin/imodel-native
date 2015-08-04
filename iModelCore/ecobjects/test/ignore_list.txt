@@ -19,8 +19,9 @@ UnitsTest.Formatting    # Fails on Android
 UnitsTest.Conversions   # Takes WAY too long to run every time
 
 SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
-PropertyOverrideTests.* 			#Notified Colin
+PropertyOverrideTests.* #Notified Colin
 
+CGBinarySerializationTests.WriterTest # notified Earlin and Carole
 SchemaDeserializationTest.ExpectSuccessWhenRoundtripUsingString # Failing after merge from 0504 to 06
 
 #----------------------------------------------------------------------------------------
