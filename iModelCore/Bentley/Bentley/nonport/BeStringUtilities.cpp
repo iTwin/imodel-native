@@ -1705,13 +1705,40 @@ int BeStringUtilities::Vsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharC
     return Bevsnwprintf(buffer, numCharsInBuffer, format, args);
     }
 
+#ifdef _MSC_VER
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     08/2015
+//---------------------------------------------------------------------------------------
+static _locale_t getEnUsLocale()
+    {
+    // Microsoft does not support UTF-8 for the format string.
+    // While you'd be correct in thinking the specifier characters it cares about are ASCII, it also validates that you have a valid locale string, meaning it doesn't end in an invalid locale multi-byte sequence.
+    // Thus, a valid UTF-8 string can trigger the invalid parameter handler (i.e. crash by default) if its last byte happens to be a locale multi-byte lead byte (thus leaving a dangling invalid locale multi-byte sequence).
+    // This applies to both the format string, and any %s parameters.
+    // Note that you cannot pick apart or re-create va_list objects on-the-fly, so by the time we're in this function, we don't have the ability to remap to wprintf, which in theory is what Microsoft wants.
+    // The best workaround I've come up with is to force the en_US locale. I believe apps do NOT need actual custom formatting per locale via printf, and en_US is a single-byte locale, thus side-stepping the multi-byte check.
+    // In a future branch, we should investigate third-party libraries to better correct this scenario.
+    
+    static bool s_isCreated = false;
+    static _locale_t s_enUsLocale;
+
+    if (!s_isCreated)
+        {
+        s_enUsLocale = _create_locale(LC_CTYPE, "en-US");
+        s_isCreated = true;
+        }
+    
+    return s_enUsLocale;
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 int BentleyApi::BeUtf8StringGuessLength(CharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
-    return _vscprintf(fmt, ap);
+    return _vscprintf_l(fmt, getEnUsLocale(), ap);
 #else
     return FORMAT_RESULT_BUFFER_GUESS;
 #endif
@@ -1742,7 +1769,11 @@ int BentleyApi::BeUtf8StringSprintf(Utf8String& outStr, CharCP fmt, va_list ap, 
 
     ScopedArray<Utf8Char> buffer(initialLengthGuess+1);
 
-    auto result = vsnprintf(buffer.GetData(), initialLengthGuess+1, fmt, ap);
+#ifdef _MSC_VER
+        auto result = _vsnprintf_l(buffer.GetData(), initialLengthGuess + 1, fmt, getEnUsLocale(), ap);
+#else
+        auto result = vsnprintf(buffer.GetData(), initialLengthGuess + 1, fmt, ap);
+#endif
 
     if (result < 0)
         return result;
