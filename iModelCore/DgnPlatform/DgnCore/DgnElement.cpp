@@ -397,31 +397,7 @@ DgnDbStatus GeometricElement::_LoadFromDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    auto& pool = GetDgnDb().Elements();
-    SnappyFromBlob& snappy = pool.GetSnappyFrom();
-
-    if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue()))
-        return DgnDbStatus::Success; // this element has no geometry
-
-    GeomBlobHeader header(snappy);
-    if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
-        {
-        BeAssert(false);
-        return DgnDbStatus::ReadError;
-        }
-
-    m_geom.ReserveMemory(header.m_size);
-
-    uint32_t actuallyRead;
-    snappy.ReadAndFinish(m_geom.GetDataR(), m_geom.GetSize(), actuallyRead);
-
-    if (actuallyRead != m_geom.GetSize())
-        {
-        BeAssert(false);
-        return DgnDbStatus::ReadError;
-        }
-
-    return DgnDbStatus::Success;
+    return m_geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -528,16 +504,16 @@ DgnDbStatus GeometricElement::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
+DgnDbStatus GeomStream::WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, Statement& stmt, int stmtcolidx) const
     {
     SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
 
     snappy.Init();
-    if (0 < m_geom.GetSize())
+    if (0 < GetSize())
         {
-        GeomBlobHeader header(m_geom);
+        GeomBlobHeader header(*this);
         snappy.Write((ByteCP) &header, sizeof(header));
-        snappy.Write(m_geom.GetData(), m_geom.GetSize());
+        snappy.Write(GetData(), GetSize());
         }
 
     uint32_t zipSize = snappy.GetCompressedSize();
@@ -555,8 +531,48 @@ DgnDbStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
     if (1 == snappy.GetCurrChunk())
         return DgnDbStatus::Success;
 
-    StatusInt status = snappy.SaveToRow(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
+    StatusInt status = snappy.SaveToRow(dgnDb, table, colname, rowId);
     return SUCCESS != status ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeomStream::ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId)
+    {
+    auto& pool = dgnDb.Elements();
+    SnappyFromBlob& snappy = pool.GetSnappyFrom();
+
+    if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), table, colname, rowId))
+        return DgnDbStatus::Success; // this row has no geometry
+
+    GeomBlobHeader header(snappy);
+    if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
+        {
+        BeAssert(false);
+        return DgnDbStatus::ReadError;
+        }
+
+    ReserveMemory(header.m_size);
+
+    uint32_t actuallyRead;
+    snappy.ReadAndFinish(GetDataR(), GetSize(), actuallyRead);
+
+    if (actuallyRead != GetSize())
+        {
+        BeAssert(false);
+        return DgnDbStatus::ReadError;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
+    {
+    return m_geom.WriteGeomStreamAndStep(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue(), stmt, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**

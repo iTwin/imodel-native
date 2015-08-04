@@ -803,6 +803,9 @@ public:
     //! @param[in] data the data to save
     //! @param[in] size number of bytes in data
     DGNPLATFORM_EXPORT void SaveData(uint8_t const* data, uint32_t size);
+
+    DgnDbStatus WriteGeomStreamAndStep(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId, BeSQLite::Statement& stmt, int stmtcolidx) const;
+    DgnDbStatus ReadGeomStream(DgnDbR dgnDb, Utf8CP table, Utf8CP colname, uint64_t rowId);
 };
 
 //=======================================================================================
