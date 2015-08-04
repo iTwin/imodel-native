@@ -681,7 +681,7 @@ bool TxnManager::PrepareForUndo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowPreviousSessions allowPrevious)
+DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrevious)
     {
     if (!PrepareForUndo())
         return DgnDbStatus::NothingToUndo;
@@ -701,7 +701,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowPreviousSessions allowP
         first = prev;
         }
 
-    if ((allowPrevious != AllowPreviousSessions::Yes) && first<GetSessionStartId())
+    if ((allowPrevious != AllowCrossSessions::Yes) && first<GetSessionStartId())
         first = GetSessionStartId();
 
     if (first == last)
@@ -731,7 +731,7 @@ DgnDbStatus TxnManager::ReverseAll(bool prompt)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Reinstate ("redo") a range of transactions. Also returns the string that identifies what was reinstated.
+* Reinstate ("redo") a range of transactions. Also returns the description of the last reinstated Txn.
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
@@ -741,7 +741,7 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     if (HasChanges())
         m_dgndb.AbandonChanges();
 
-    TxnId last  = QueryPreviousTxnId(revTxn.GetLast());
+    TxnId last = QueryPreviousTxnId(revTxn.GetLast());
     for (TxnId curr=revTxn.GetFirst(); curr.IsValid() && curr <= last; curr=QueryNextTxnId(curr))
         ApplyChanges(curr, TxnAction::Reinstate);
 
