@@ -2800,6 +2800,13 @@ void ElementGeometryCollection::Iterator::ToNext()
             m_totalDataSize = m_saveTotalDataSize;;
 
             m_partGeometry = nullptr;
+
+            if (m_dataOffset >= m_totalDataSize)
+                {
+                m_data = nullptr;
+                m_dataOffset = 0;
+                return;
+                }
             }
 
         uint32_t        opCode = *((uint32_t *) (m_data));
