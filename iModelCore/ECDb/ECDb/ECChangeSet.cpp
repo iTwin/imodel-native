@@ -622,21 +622,20 @@ void ECChangeSet::FinalizeChangeSetTableStatements()
 void ECChangeSet::RecordInChangeSetTable(ECChange const& ecChange)
     {
     /*
-    * Struct arrays are the only known case where a previous
-    * change to the change table can be overridden by a later change. 
+    * Note: Struct arrays are the only known case where a previous
+    * change to the change table can be overridden by a later change.
     * 
-    * Logic follows...
-    *
-    * Insert/Update/Delete existing entry in change set table
+    * Here's the logic to consolidate new changes with the ones 
+    * previously found: 
     * 
-    * not-found    + new:*       = <InsertEntry>
+    * not-found    + new:*       = Insert new entry
     * 
-    * found:UPDATE + new:INSERT  = <UpdateEntry to INSERT>
-    * found:UPDATE + new:DELETE  = <UpdateEntry to DELETE>
+    * found:UPDATE + new:INSERT  = Update existing entry to INSERT
+    * found:UPDATE + new:DELETE  = Update existing entry to DELETE
     * 
-    * found:UPDATE + new:UPDATE  = unchanged
-    * found:INSERT + new:UPDATE  = unchanged
-    * found:DELETE + new:UPDATE  = unchanged
+    * found:UPDATE + new:UPDATE  = Keep existing entry
+    * found:INSERT + new:UPDATE  = Keep existing entry
+    * found:DELETE + new:UPDATE  = Keep existing entry
     *  
     * <all other cases can never happen>
     */
