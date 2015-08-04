@@ -610,9 +610,9 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
         undoStr->assign(GetTxnDescription(txnRange.GetFirst()) + fmtString);
         }
 
-    m_curr = txnRange.GetFirst(); // we reuse txnids
+    m_curr = txnRange.GetFirst(); // we reuse TxnIds
 
-    // save in undone txn log
+    // save in reversed Txns list
     m_reversedTxn.push_back(txnRange);
     }
 

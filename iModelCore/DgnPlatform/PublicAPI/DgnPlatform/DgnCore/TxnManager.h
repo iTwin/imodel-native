@@ -179,8 +179,8 @@ struct TxnManager : BeSQLite::ChangeTracker
     //! The primary key for the DGN_TABLE_Txns table. The value is comprised of two parts:
     //! the SessionId stored in the high 4 bytes and a counter in the low 4 bytes. Later Txns stored in the
     //! table will always have higher TxnIds than earlier ones, though the values of TxnId may not be sequential.
-    //! The methods TxnManager::QueryNextTxnId and TxnManager::QueryPreviousTxnId may be used to iterate forward 
-    //! and backwards through committted Txns in the table.
+    //! The methods TxnManager::QueryNextTxnId and TxnManager::QueryPreviousTxnId may be used to iterate forward
+    //! and backwards through committed Txns in the table.
     // @bsiclass                                                    Keith.Bentley   08/15
     //=======================================================================================
     struct TxnId
