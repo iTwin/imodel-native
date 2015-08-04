@@ -37,15 +37,15 @@ ECClass::ECClass (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::~ECClass ()
     {
-    RemoveBaseClasses ();
-    RemoveDerivedClasses ();
-
     m_propertyList.clear();
     
     for (PropertyMap::iterator entry=m_propertyMap.begin(); entry != m_propertyMap.end(); ++entry)
         delete entry->second;
     
     m_propertyMap.clear();
+
+    RemoveBaseClasses ();
+    RemoveDerivedClasses ();
 
     m_defaultStandaloneEnabler = NULL;
     }
@@ -994,7 +994,7 @@ ECObjectsStatus ECClass::RemoveBaseClass (ECClassCR baseClass)
 
     InvalidateDefaultStandaloneEnabler();
 
-    for (ECPropertyP baseProperty : baseClass.GetProperties(true))
+    for (ECPropertyP baseProperty : baseClass.GetProperties())
         OnBaseClassPropertyRemoved (*baseProperty);
 
     return ECOBJECTS_STATUS_Success;

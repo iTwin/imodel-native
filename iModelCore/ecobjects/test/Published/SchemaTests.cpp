@@ -1523,34 +1523,6 @@ TEST_F(ClassTest, AddAndRemoveBaseClass)
     EXPECT_EQ(ECOBJECTS_STATUS_ClassNotFound, class1->RemoveBaseClass(*baseClass1));
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            08/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ClassTest, RemoveBaseClassWithProperties)
-    {
-    // show error messages but do not assert.
-    ECSchema::SetErrorHandling (true, false);
-
-    
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    schemaContext->AddSchemaPath(seedPath.c_str());
-
-    //The "InvalidReference" schema contains a reference to BaseSchema.01.01.  This schema 
-    //does not exist.  1.0 exists, but the minor version numbers are incompatible.
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath( L"BaseSchema.01.00.ecschema.xml").c_str(), *schemaContext);  
-    EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);
-
-    ECClassP ruled = schema->GetClassP("RULED_SURFACE");
-    ECClassP stroked = schema->GetClassP("STROKED_SURFACE");
-    ruled->RemoveBaseClass(*stroked);
-
-    ECPropertyP num = ruled->GetPropertyP("NUM_BND");
-    ASSERT_TRUE(NULL != num);
-
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/

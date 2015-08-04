@@ -5,49 +5,4 @@
       <ECProperty propertyName="Name" typeName="string" displayLabel="Name" />
    </ECClass>
 
-    <ECClass typeName="GRAPHICS" isDomainClass="True">
-    </ECClass>
-
-    <ECClass typeName="STROKED_CURVE" isDomainClass="True">
-        <BaseClass>GRAPHICS</BaseClass>
-    </ECClass>
-    
-    <ECClass typeName="STROKED_SURFACE" isDomainClass="True">
-        <BaseClass>STROKED_CURVE</BaseClass>
-        <ECProperty propertyName="NUM_BND" typeName="int" />
-    </ECClass>
-
-    <ECClass typeName="RULED_SURFACE" isDomainClass="True">
-        <BaseClass>STROKED_SURFACE</BaseClass>
-        <ECProperty propertyName="NUM_BND" typeName="int" />
-    </ECClass>
-
-    <ECClass typeName="OBJECT_SET" isDomainClass="True">
-        <BaseClass>LOGICAL_GROUP</BaseClass>
-        <ECProperty propertyName="UPDATE_TIME" typeName="dateTime" />
-        <ECProperty propertyName="NAME" typeName="string" />
-        <ECProperty propertyName="SELECTION_CLAUSE" typeName="string" />
-        <ECArrayProperty propertyName="ATTRIBUTES" typeName="int" minOccurs="0" maxOccurs="10" />
-    </ECClass>
-
-    <ECClass typeName="LOGICAL_GROUP" isDomainClass="True">
-        <BaseClass>GROUP</BaseClass>
-        <ECStructProperty propertyName="MATRIX" typeName="bjca:JDTransform3d" />
-        <ECProperty propertyName="DISPLAY_PRIORITY" typeName="int" />
-        <ECArrayProperty propertyName="ATTRIBUTES" typeName="int" minOccurs="0" maxOccurs="10" />
-    </ECClass>
-
-    <ECClass typeName="GROUP" isDomainClass="True">
-        <BaseClass>GRAPHICS</BaseClass>
-        <ECProperty propertyName="NAME" typeName="string" />
-    </ECClass>
-
-    <ECClass typeName="JSPACE_OBJECT" isDomainClass="True" />
-    <ECClass typeName="GRAPHICS" isDomainClass="True">
-        <BaseClass>JSPACE_OBJECT</BaseClass>
-        <ECArrayProperty propertyName="ATTRIBUTES" typeName="int" minOccurs="0" maxOccurs="10" />
-        <ECStructProperty propertyName="RANGE" typeName="bjca:JDRange3d" />
-        <ECProperty propertyName="LEVEL_NAME" typeName="string" />
-    </ECClass>
-
 </ECSchema>
