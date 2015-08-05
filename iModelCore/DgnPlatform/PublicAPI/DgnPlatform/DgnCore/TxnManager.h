@@ -47,6 +47,7 @@ enum class TxnAction
     Merge       //!< merging a ChangeSet made by a foreign repository.
 };
 
+//=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
 //! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   10/07
@@ -175,9 +176,11 @@ struct TxnManager : BeSQLite::ChangeTracker
     };
 
     //=======================================================================================
-    //! The primary key for rows in the DGN_TABLE_Txns table. The value is comprised of two parts:
+    //! The primary key for the DGN_TABLE_Txns table. The value is comprised of two parts:
     //! the SessionId stored in the high 4 bytes and a counter in the low 4 bytes. Later Txns stored in the
     //! table will always have higher TxnIds than earlier ones, though the values of TxnId may not be sequential.
+    //! The methods TxnManager::QueryNextTxnId and TxnManager::QueryPreviousTxnId may be used to iterate forward
+    //! and backwards through committed Txns in the table.
     // @bsiclass                                                    Keith.Bentley   08/15
     //=======================================================================================
     struct TxnId
@@ -191,11 +194,8 @@ struct TxnManager : BeSQLite::ChangeTracker
         TxnId(uint64_t val=(uint64_t) -1) {m_id.m_64 = val;}
         TxnId(SessionId session, uint32_t txn) {m_id.m_32[1]=session.GetValue(); m_id.m_32[0]=txn;}
         uint64_t GetValue() const {return m_id.m_64;}
-        //! Get the SessionId from this TxnId
-        SessionId GetSession() const {return SessionId(m_id.m_32[1]);}
-
+        SessionId GetSession() const {return SessionId(m_id.m_32[1]);}//!< Get the SessionId from this TxnId
         bool IsValid() const {return GetSession().IsValid();}
-
         bool operator==(TxnId const& rhs) const {return m_id.m_64==rhs.m_id.m_64;}
         bool operator<(TxnId const& rhs) const  {return m_id.m_64<rhs.m_id.m_64;}
         bool operator<=(TxnId const& rhs) const {return m_id.m_64<=rhs.m_id.m_64;}
@@ -344,13 +344,13 @@ public:
     //! @return The previous TxnId. Will be invalid if currentTxnId is the first one.
     //! @note The TxnId may be from a previous session.
     //! @note The TxnIds are not necessarily sequential.
-    DGNPLATFORM_EXPORT TxnId QueryPreviousTxnId(TxnId) const;
+    DGNPLATFORM_EXPORT TxnId QueryPreviousTxnId(TxnId currentTxnId) const;
 
     //! Given a TxnId, query for TxnId of the next committed Txn, if any.
     //! @param[in] currentTxnId The current TxnId.
     //! @return The next TxnId. Will be invalid if currentTxnId is the last one.
     //! @note The TxnIds are not necessarily sequential.
-    DGNPLATFORM_EXPORT TxnId QueryNextTxnId(TxnId) const;
+    DGNPLATFORM_EXPORT TxnId QueryNextTxnId(TxnId currentTxnId) const;
 
     //! Query if there are currently any reversible (undoable) changes
     //! @return true if there are currently any reversible (undoable) changes.
@@ -360,22 +360,24 @@ public:
     //! @return True if there are currently any reinstate-able (redoable) changes
     bool IsRedoPossible() {return !m_reversedTxn.empty();}
 
-    enum class AllowPreviousSessions {Yes=1, No=0};
+    enum class AllowCrossSessions {Yes=1, No=0};
     //! Reverse (undo) the most recent operation(s).
-    //! @param[in] numActions the number of operations to reverse. If numActions is greater than 1, the entire set of operations will
-    //! @param[in] allowPreviousSessions if No, don't reverse any Txns from previous sessions
+    //! @param[in] numOperations the number of operations to reverse. If this is greater than 1, the entire set of operations will
     //! be reinstated together when/if ReinstateTxn is called.
+    //! @param[in] crossSessions if No, don't reverse any Txns older than the beginning of the current session.
     //! @note If there are any outstanding uncommitted changes, they are reversed.
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numActions, AllowPreviousSessions allowPreviousSessions=AllowPreviousSessions::No);
+    //! @note The term "operation" is used rather than Txn, since multiple Txns can be grouped together via BeginMultiTxnOperation. So,
+    //! even if numOperations is 1, multiple Txns may be reversed if they were grouped together when they were made.
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numOperations, AllowCrossSessions crossSessions=AllowCrossSessions::No);
 
     //! Reverse the most recent operation.
     DgnDbStatus ReverseSingleTxn() {return ReverseTxns(1);}
 
-    //! Reverse all element changes back to the beginning of the session.
-    //! @param[in] prompt display a dialog warning the user of the severity of this action and giving an opportunity to cancel.
+    //! Reverse all changes back to the beginning of the session.
+    //! @param[in] prompt display a warning the user, and give an opportunity to cancel.
     DGNPLATFORM_EXPORT DgnDbStatus ReverseAll(bool prompt);
 
-    //! Reverse all element changes back to a previously saved TxnId.
+    //! Reverse all changes back to a previously saved TxnId.
     //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
     //! @return DgnDbStatus::Success if the transactions were reversed, error status otherwise.
     //! @see  GetCurrentTxnId CancelTo
@@ -393,7 +395,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
     //@}
 
-    //! Get the DgnDb of this Txns
+    //! Get the DgnDb for this TxnManager
     DgnDbR GetDgnDb() {return m_dgndb;}
 };
 
