@@ -61,13 +61,18 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     {
-    enum Column : int {SessionId=1,TxnId=2,Deleted=3,Operation=4,Change=5};
-    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(SessionId,TxnId,Deleted,Operation,Change) VALUES(?,?,?,?,?)");
+    enum Column : int {Id=1,Deleted=2,Grouped=3,Operation=4,Change=5};
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(Id,Deleted,Grouped,Operation,Change) VALUES(?,?,?,?,?)");
 
-    stmt->BindGuid(Column::SessionId, m_curr.m_sessionId);
-    stmt->BindInt(Column::TxnId,  m_curr.m_txnId);
+    stmt->BindInt64(Column::Id, m_curr.GetValue());
     stmt->BindInt(Column::Deleted,  false);
-    stmt->BindText(Column::Operation, operation ? operation : m_curr.m_description.c_str(), Statement::MakeCopy::No);
+    if (nullptr != operation)
+        stmt->BindText(Column::Operation, operation, Statement::MakeCopy::No);
+
+    // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
+    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr < m_multiTxnOp.back()));
+
+    m_curr.Increment(); // increment txn id before we exit
 
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
@@ -95,47 +100,48 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* truncate all changes in the TXN_Change table starting at TxnId and higher (note: entries for TxnId are removed).
-* @bsimethod                                    Keith.Bentley                   07/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::TruncateChanges(TxnId id)
-    {
-    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE SessionId=? AND TxnId>=?");
-    stmt->BindGuid(1, m_curr.m_sessionId);
-    stmt->BindInt(2, id.GetValue());
-    stmt->Step();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Read the entry information at the given rowid (does not read the changeset itself)
+* Read the description of a Txn
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
+Utf8String TxnManager::GetTxnDescription(TxnId rowid)
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT SessionId,TxnId,Operation FROM " DGN_TABLE_Txns " WHERE rowid=?");
-    stmt->BindInt64(1, rowid);
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Operation FROM " DGN_TABLE_Txns " WHERE Id=?");
+    stmt->BindInt64(1, rowid.GetValue());
+
     auto rc = stmt->Step();
-    if (rc != BE_SQLITE_ROW)
-        return  rc;
-
-    entry.m_sessionId = stmt->GetValueGuid(0);
-    entry.m_txnId = TxnId(stmt->GetValueInt(1));
-    entry.m_description = stmt->GetValueText(2);
-    return BE_SQLITE_ROW;
+    return rc != BE_SQLITE_ROW ? "" : stmt->GetValueText(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
+bool TxnManager::IsMultiTxnMember(TxnId rowid)
+    {
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Grouped FROM " DGN_TABLE_Txns " WHERE Id=?");
+    stmt->BindInt64(1, rowid.GetValue());
+
+    auto rc = stmt->Step();
+    return rc != BE_SQLITE_ROW ? false : TO_BOOL(stmt->GetValueInt(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     {
     m_inDynamics        = false;
     m_propagateChanges  = true;
     m_action = TxnAction::None;
 
-    m_curr.m_txnId = TxnId(0);
-
     m_dgndb.SetChangeTracker(this);
+
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "SELECT MAX(Id) FROM " DGN_TABLE_Txns);
+    DbResult result = stmt.Step();
+    BeAssert(result == BE_SQLITE_ROW);
+
+    TxnId last = stmt.GetValueInt(0); // this is where we left off last session
+    m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
 
     // whenever we open a Briefcase for write access, enable tracking
     if (!m_dgndb.IsReadonly() && m_dgndb.IsBriefcase())
@@ -186,35 +192,27 @@ dgn_TxnTable::ElementDep& TxnManager::ElementDependencies() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Get the rowid of the first entry for a supplied TxnId
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnRowId TxnManager::FirstRow(TxnId id)
+TxnManager::TxnId TxnManager::QueryPreviousTxnId(TxnId curr) const
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT ROWID FROM " DGN_TABLE_Txns " WHERE SessionId=? AND TxnId=? ORDER BY TxnId LIMIT 1");
-    stmt->BindGuid(1, m_curr.m_sessionId);
-    stmt->BindInt(2, id.GetValue());
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Id FROM " DGN_TABLE_Txns " WHERE Id<? ORDER BY Id DESC LIMIT 1");
+    stmt->BindInt64(1, curr.GetValue());
 
     auto rc = stmt->Step();
-    UNUSED_VARIABLE(rc);
-    BeAssert(rc==BE_SQLITE_ROW);
-    return (rc==BE_SQLITE_ROW) ? TxnRowId(stmt->GetValueInt64(0)) : TxnRowId();
+    return (rc != BE_SQLITE_ROW) ? TxnId() : TxnId(stmt->GetValueInt64(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Get the rowid of the last entry for a supplied TxnId
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnRowId TxnManager::LastRow(TxnId id)
+TxnManager::TxnId TxnManager::QueryNextTxnId(TxnId curr) const
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT ROWID FROM " DGN_TABLE_Txns " WHERE SessionId=? AND TxnId=? ORDER BY TxnId DESC LIMIT 1");
-    stmt->BindGuid(1, m_curr.m_sessionId);
-    stmt->BindInt(2, id.GetValue());
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Id FROM " DGN_TABLE_Txns " WHERE Id>? ORDER BY Id LIMIT 1");
+    stmt->BindInt64(1, curr.GetValue());
 
     auto rc = stmt->Step();
-    UNUSED_VARIABLE(rc);
-    BeAssert(rc==BE_SQLITE_ROW);
-    return (rc==BE_SQLITE_ROW) ? TxnRowId(stmt->GetValueInt64(0)) : TxnRowId();
+    return (rc != BE_SQLITE_ROW) ? TxnId() : TxnId(stmt->GetValueInt64(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,7 +220,7 @@ TxnRowId TxnManager::LastRow(TxnId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::BeginMultiTxnOperation()
     {
-    m_multiTxnOp.push_back(GetCurrTxnId());
+    m_multiTxnOp.push_back(GetCurrentTxnId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,9 +240,9 @@ void TxnManager::EndMultiTxnOperation()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnId TxnManager::GetMultiTxnOperationStart()
+TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
     {
-    return m_multiTxnOp.empty() ? TxnId(0) : m_multiTxnOp.back();
+    return m_multiTxnOp.empty() ? GetSessionStartId() : m_multiTxnOp.back();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -277,6 +275,9 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
     // They all start with the string defined by DGNELEMENT_VTABLE_3dRTree
     if (0 == strncmp(DGN_VTABLE_RTree3d, tableName, sizeof(DGN_VTABLE_RTree3d)-1))
+        return  TrackChangesForTable::No;
+
+    if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
         return  TrackChangesForTable::No;
 
     return TrackChangesForTable::Yes;
@@ -394,9 +395,6 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     {
     DeleteReversedTxns(); // these Txns are no longer reachable.
 
-    TxnId startPos = GetCurrTxnId(); // in case we have to roll back
-    UNUSED_VARIABLE(startPos);
-
     // Create changeset from modified tables. We'll use this changeset to drive indirect changes.
     UndoChangeSet changeset;
     auto rc = changeset.FromChangeTrack(*this);
@@ -432,8 +430,6 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     T_HOST.GetTxnAdmin()._OnCommit(*this);
 
     SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
-    if (m_multiTxnOp.empty())
-        m_curr.m_txnId.Next(); // only increment the TxnId if we're not doing a multi-step operation
 
     OnEndValidate();
     return OnCommitStatus::Continue;
@@ -543,9 +539,9 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
 * If the TxnDirection is backwards, invert the changeset.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnAction action)
+void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnId rowId, TxnAction action)
     {
-    if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId))
+    if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId.GetValue()))
         {
         BeAssert(false);
         return;
@@ -576,7 +572,7 @@ void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnActi
 * and then apply the changeset to the DgnDb.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ApplyChanges(TxnRowId rowId, TxnAction action)
+void TxnManager::ApplyChanges(TxnId rowId, TxnAction action)
     {
     UndoChangeSet changeset;
     ReadChangeSet(changeset, rowId, action);
@@ -586,9 +582,9 @@ void TxnManager::ApplyChanges(TxnRowId rowId, TxnAction action)
         return;
 
     // Mark this row as deleted/undeleted depending on which way we just applied the changes.
-    CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE rowid=?");
+    CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE Id=?");
     stmt->BindInt(1, action==TxnAction::Reverse);
-    stmt->BindInt64(2, rowId);
+    stmt->BindInt64(2, rowId.GetValue());
     rc = stmt->Step();
     BeAssert(rc==BE_SQLITE_DONE);
     }
@@ -596,15 +592,12 @@ void TxnManager::ApplyChanges(TxnRowId rowId, TxnAction action)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool multiStep)
+void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr)
     {
     if (HasChanges())
         m_dgndb.AbandonChanges();
 
-    TxnRowId last  = LastRow(TxnId(txnRange.GetLast()-1));
-    TxnRowId first = FirstRow(txnRange.GetFirst());
-
-    for (TxnRowId curr=last; curr.IsValid() && curr >= first; curr.Prev())
+    for (TxnId curr=QueryPreviousTxnId(txnRange.GetLast()); curr.IsValid() && curr >= txnRange.GetFirst(); curr=QueryPreviousTxnId(curr))
         ApplyChanges(curr, TxnAction::Reverse);
 
     BeAssert(!HasChanges());
@@ -613,59 +606,53 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
 
     if (undoStr)
         {
-        ChangeEntry entry;
-        ReadEntry(first, entry);
         Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::Undone());
-        undoStr->assign(entry.m_description + fmtString);
+        undoStr->assign(GetTxnDescription(txnRange.GetFirst()) + fmtString);
         }
 
-    m_curr.m_txnId = txnRange.GetFirst(); // we reuse txnids
+    m_curr = txnRange.GetFirst(); // we reuse TxnIds
 
-    // save in undone txn log
-    RevTxn revTxn(txnRange, multiStep);
-    m_reversedTxn.push_back(revTxn);
+    // save in reversed Txns list
+    m_reversedTxn.push_back(txnRange);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseToPos(TxnId pos)
+DgnDbStatus TxnManager::ReverseTo(TxnId pos)
     {
-    if (!PrepareForUndo())
+    if (!PrepareForUndo() || !pos.IsValid())
         return DgnDbStatus::NothingToUndo;
 
-    TxnId last = GetCurrTxnId();
-    if (pos > last)
+    TxnId last = GetCurrentTxnId();
+    if (pos >= last)
         return DgnDbStatus::NothingToUndo;
 
     TxnRange range(pos, last);
-    return ReverseActions(range, true, false);
+    return ReverseActions(range, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::CancelToPos(TxnId pos)
+DgnDbStatus TxnManager::CancelTo(TxnId pos)
     {
-    if (!PrepareForUndo())
-        return DgnDbStatus::NothingToUndo;
-
-    DgnDbStatus status = ReverseToPos(pos);
+    DgnDbStatus status = ReverseTo(pos);
     if (DgnDbStatus::Success == status)
         DeleteReversedTxns();
 
-    return  status;
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg)
+DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool showMsg)
     {
     Utf8String undoStr;
-    ReverseTxnRange(txnRange, &undoStr, multiStep);     // do the actual undo now.
+    ReverseTxnRange(txnRange, &undoStr);     // do the actual undo now.
 
-    while (GetCurrTxnId() < GetMultiTxnOperationStart())
+    while (GetCurrentTxnId() < GetMultiTxnOperationStart())
         EndMultiTxnOperation();
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reverse);
@@ -694,75 +681,89 @@ bool TxnManager::PrepareForUndo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReverseTxns(int numActions)
+DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowPrevious)
     {
     if (!PrepareForUndo())
-        return DgnDbStatus::NothingToRedo;
+        return DgnDbStatus::NothingToUndo;
 
-    TxnId last = GetCurrTxnId();
-    TxnId first(last - numActions);
+    TxnId last = GetCurrentTxnId();
+    TxnId first = last;
+
+    while (numActions > 0)
+        {
+        TxnId prev = QueryPreviousTxnId(first);
+        if (!prev.IsValid())
+            break;
+
+        if (!IsMultiTxnMember(prev))
+            --numActions;
+
+        first = prev;
+        }
+
+    if ((allowPrevious != AllowCrossSessions::Yes) && first<GetSessionStartId())
+        first = GetSessionStartId();
+
+    if (first == last)
+        return DgnDbStatus::NothingToUndo;
 
     TxnRange range(first, last);
-    return ReverseActions(range, numActions>1, true);
+    return ReverseActions(range, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * reverse (undo) all previous transactions
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseAll(bool prompt)
+DgnDbStatus TxnManager::ReverseAll(bool prompt)
     {
     if (!PrepareForUndo())
-        return;
+        return DgnDbStatus::NothingToUndo;
 
     if (prompt && !T_HOST.GetTxnAdmin()._OnPromptReverseAll())
         {
         T_HOST.GetTxnAdmin()._RestartTool();
-        return;
+        return DgnDbStatus::NothingToUndo;
         }
 
-    TxnRange range(TxnId(0), GetCurrTxnId());
-    ReverseActions(range, true, true);
+    TxnRange range(GetSessionStartId(), GetCurrentTxnId());
+    return ReverseActions(range, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Reinstate ("redo") a range of transactions. Also returns the string that identifies what was reinstated.
+* Reinstate ("redo") a range of transactions. Also returns the description of the last reinstated Txn.
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     {
-    BeAssert(m_curr.m_txnId == revTxn.GetFirst());
+    BeAssert(m_curr == revTxn.GetFirst());
 
     if (HasChanges())
         m_dgndb.AbandonChanges();
 
-    TxnRowId last  = LastRow(TxnId(revTxn.GetLast()-1));
-    TxnRowId first = FirstRow(revTxn.GetFirst());
-
-    for (TxnRowId curr=first; curr.IsValid() && curr <= last; curr.Next())
+    TxnId last = QueryPreviousTxnId(revTxn.GetLast());
+    for (TxnId curr=revTxn.GetFirst(); curr.IsValid() && curr <= last; curr=QueryNextTxnId(curr))
         ApplyChanges(curr, TxnAction::Reinstate);
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     if (redoStr)
         {
-        ChangeEntry entry;
-        ReadEntry(first, entry);
         Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::Redone());
-        redoStr->assign(entry.m_description + fmtString);
+        redoStr->assign(GetTxnDescription(revTxn.GetFirst()) + fmtString);
         }
 
-    m_curr.m_txnId = revTxn.GetLast();
+    m_curr = revTxn.GetLast();
     m_reversedTxn.pop_back();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::ReinstateActions(RevTxn& revTxn)
+DgnDbStatus TxnManager::ReinstateActions(TxnRange& revTxn)
     {
     Utf8String redoStr;
-    ReinstateTxn(revTxn.m_range, &redoStr);     // do the actual redo now.
+    ReinstateTxn(revTxn, &redoStr);     // do the actual redo now.
 
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reinstate);
 
@@ -782,7 +783,7 @@ DgnDbStatus TxnManager::ReinstateTxn()
         }
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
-    RevTxn*  revTxn = &m_reversedTxn.back();
+    TxnRange*  revTxn = &m_reversedTxn.back();
     return  ReinstateActions(*revTxn);
     }
 
@@ -794,9 +795,7 @@ Utf8String TxnManager::GetUndoString()
     if (!IsUndoPossible())
         return "";
 
-    TxnRowId row = FirstRow(TxnId(GetCurrTxnId()-1));
-    ChangeEntry entry;
-    return ReadEntry(row, entry)==BE_SQLITE_ROW ? entry.m_description : "";
+    return GetTxnDescription(QueryPreviousTxnId(GetCurrentTxnId()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -807,13 +806,8 @@ Utf8String TxnManager::GetRedoString()
     if (!IsRedoPossible())
         return "";
 
-    RevTxn*  revTxn = &m_reversedTxn.back();
-    if (revTxn->m_multiTxn)
-        return "";
-
-    TxnRowId row = FirstRow(revTxn->m_range.GetFirst());
-    ChangeEntry entry;
-    return ReadEntry(row, entry)==BE_SQLITE_ROW ? entry.m_description : "";
+    TxnRange*  revTxn = &m_reversedTxn.back();
+    return GetTxnDescription(revTxn->GetFirst());
     }
 
 /*---------------------------------------------------------------------------------**//**

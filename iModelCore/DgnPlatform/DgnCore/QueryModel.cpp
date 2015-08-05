@@ -47,7 +47,7 @@ void QueryModel::SaveQueryResults()
     {
     if (m_selector.GetState() != Selector::State::Completed)
         {
-        BeAssert(false);    // this should only be called if we know there is a query available.
+        BeAssert(false); // this should only be called if we know there is a query available.
         return;
         }
 
@@ -59,11 +59,11 @@ void QueryModel::SaveQueryResults()
     m_currQueryResults = m_selector.m_results; // move the object from query thread to this thread.
     m_selector.m_results = 0;
 
-    //  First add everything from the list used for drawing.
+    // First add everything from the list used for drawing.
     for (auto const& result : m_currQueryResults->m_elements)
         _OnLoadedElement(*result);
 
-    //  Now add everything that is in the secondary list but not the first.
+    // Now add everything that is in the secondary list but not the first.
     for (auto const& result : m_currQueryResults->m_closeElements)
         _OnLoadedElement(*result);
     }

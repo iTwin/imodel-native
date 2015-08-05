@@ -32,7 +32,9 @@ static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
     BeTest::GetHost().GetOutputRoot(fullOutputFileName);
     fullOutputFileName.AppendToPath(outputFileName);
 
-    BeAssert ( BeFileNameStatus::Success == BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName) );
+    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
+        return BeFileName();
+
     return fullOutputFileName;
     }
 
@@ -43,7 +45,7 @@ static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
     {
     DbResult result = BE_SQLITE_OK;
     db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
-    ASSERT_TRUE( db.IsValid() );
+    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
     ASSERT_EQ( BE_SQLITE_OK , result );
     db->Txns().EnableTracking(true);
     }
@@ -230,6 +232,7 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
         builder.SetGeomStreamAndPlacement(element); \
         model.InsertElement(element); \
+        element.Dispose();\
         var element2 = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin2 = BentleyApi.Dgn.JsDPoint3d.Create(10,12,13);\
         var angles2 = BentleyApi.Dgn.JsYawPitchRollAngles.Create(0,0,0);\
@@ -237,6 +240,7 @@ void ComponentModelTest::Developer_CreateCMs()
         builder2.AppendBox(params['X'], params['Y'], params['Z']); \
         builder2.SetGeomStreamAndPlacement(element2); \
         model.InsertElement(element2); \
+        element2.Dispose();\
         return 0;\
     } \
     function gadgetSolver(model, params) { \
@@ -248,6 +252,7 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
         model.InsertElement(element); \
+        element.Dispose();\
         return 0;\
     } \
     BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \
@@ -413,7 +418,7 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     //  -------------------------------------------------------
     //  ComponentModel - Capture (or look up) the solution geometry
     //  -------------------------------------------------------
-    BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
+    ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     DgnModelId ccId = m_clientDb->Models().QueryModelId(componentName);
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
@@ -436,7 +441,7 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, EC::ECInstanceId solutionId)
     {
-    BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
+    ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
@@ -456,7 +461,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
     {
-    BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
+    ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     EC::ECInstanceId solutionId;
     Client_SolveAndCapture(solutionId, componentName, parms, solutionAlreadyExists);

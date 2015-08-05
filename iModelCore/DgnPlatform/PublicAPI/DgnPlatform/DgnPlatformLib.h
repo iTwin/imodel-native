@@ -508,9 +508,9 @@ public:
             //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
             virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
 
-            virtual void _DrawInVp (HitDetailCP, DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
+            virtual void _DrawInVp(HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
 
-            DGNPLATFORM_EXPORT virtual void _GetInfoString (HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
+            DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
 
             //! Gets the directory that holds the sprite definition files.
             virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
@@ -585,12 +585,12 @@ public:
             //! Return a CurveVector representation for a sheet body with a single planar face.
             //! @param[in] in The solid kernel entity.
             //! @return The CurveVectorPtr for the face geometry, or invalid if input entity was not a sheet body with a single planar face.
-            virtual CurveVectorPtr _PlanarSheetBodyToCurveVector (ISolidKernelEntityCR in) const {return nullptr;}
+            virtual CurveVectorPtr _PlanarSheetBodyToCurveVector(ISolidKernelEntityCR in) const {return nullptr;}
 
             //! Return a CurveVector representation for a wire body.
             //! @param[in] in The solid kernel entity.
             //! @return The CurveVectorPtr for the edge geometry, or invalid if input entity was not a wire body.
-            virtual CurveVectorPtr _WireBodyToCurveVector (ISolidKernelEntityCR in) const {return nullptr;}
+            virtual CurveVectorPtr _WireBodyToCurveVector(ISolidKernelEntityCR in) const {return nullptr;}
 
             //! Output a cut section through an ISolidKernelEntity to the supplied view context.
             //! @param[in] in The solid kernel entity to display a section cut through.

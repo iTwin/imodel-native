@@ -181,19 +181,19 @@ public:
     //! to it is released. There is no way to hold a pointer to a "closed project".
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
-    DGNPLATFORM_EXPORT DgnModels& Models() const;             //!< The DgnModels of this DgnDb
-    DGNPLATFORM_EXPORT DgnElements& Elements() const;         //!< The DgnElements of this DgnDb
-    DGNPLATFORM_EXPORT DgnViews& Views() const;               //!< The DgnViews for this DgnDb
-    DGNPLATFORM_EXPORT DgnCategories& Categories() const;     //!< The DgnCategories for this DgnDb
-    DGNPLATFORM_EXPORT DgnUnits& Units() const;               //!< The units for this DgnDb
-    DGNPLATFORM_EXPORT DgnColors& Colors() const;             //!< The named colors for this DgnDb
-    DGNPLATFORM_EXPORT DgnStyles& Styles() const;             //!< The styles for this DgnDb
-    DGNPLATFORM_EXPORT DgnGeomParts& GeomParts() const;       //!< The the geometry parts for this DgnDb
-    DGNPLATFORM_EXPORT DgnFonts& Fonts() const;               //!< The fonts for this DgnDb
-    DGNPLATFORM_EXPORT DgnLinks& Links() const;               //!< The DgnLinks for this DgnDb
-    DGNPLATFORM_EXPORT DgnDomains& Domains() const;           //!< The DgnDomains associated with this DgnDb.
+    DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
+    DgnElements& Elements() const{return const_cast<DgnElements&>(m_elements);}          //!< The DgnElements of this DgnDb
+    DgnViews& Views() const {return const_cast<DgnViews&>(m_views);}                     //!< The DgnViews for this DgnDb
+    DgnCategories& Categories() const {return const_cast<DgnCategories&>(m_categories);} //!< The DgnCategories for this DgnDb
+    DgnUnits& Units() const {return const_cast<DgnUnits&>(m_units);}                     //!< The units for this DgnDb
+    DgnColors& Colors() const {return const_cast<DgnColors&>(m_colors);}                 //!< The named colors for this DgnDb
+    DgnStyles& Styles() const {return const_cast<DgnStyles&>(m_styles);}                 //!< The styles for this DgnDb
+    DgnGeomParts& GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}     //!< The the geometry parts for this DgnDb
+    DgnFonts& Fonts() const {return const_cast<DgnFonts&>(m_fonts); }                    //!< The fonts for this DgnDb
+    DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
+    DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
+    DgnMaterials& Materials() const {return const_cast<DgnMaterials&>(m_materials);}     //!< The materials for this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
-    DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< The materials for this DgnDb
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

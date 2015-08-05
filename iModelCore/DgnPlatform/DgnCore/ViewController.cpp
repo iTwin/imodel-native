@@ -916,16 +916,6 @@ void PhysicalViewController::TransformBy(TransformCR trans)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_SetDelta(DVec3dCR delta)     {m_delta = delta;}
-void PhysicalViewController::_SetOrigin(DPoint3dCR origin) {m_origin = origin;}
-void PhysicalViewController::_SetRotation(RotMatrixCR rot) {m_rotation = rot;}
-DPoint3d PhysicalViewController::_GetOrigin() const {return m_origin;}
-DVec3d PhysicalViewController::_GetDelta() const {return m_delta;}
-RotMatrix PhysicalViewController::_GetRotation() const {return m_rotation;}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PhysicalViewController::SetTargetModel(DgnModelP target)
@@ -967,43 +957,6 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
         return ClipVector::Create();
     return sectionView->GetInsideForwardClipVector();
     }
-
-#if defined(NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetFlatteningMatrix(double zdelta) const
-    {
-    auto drawing = GetSectionDrawing();
-    if (drawing == nullptr)
-        return Transform::FromIdentity();
-
-    return drawing->GetFlatteningMatrix(zdelta);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetFlatteningMatrixIf2D(ViewContextR context, double zdelta) const
-    {
-    if (!context.GetViewport() || context.GetViewport()->Is3dView())
-        return Transform::FromIdentity();
-
-    return GetFlatteningMatrix(zdelta);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetTransformToWorld() const
-    {
-    auto drawing = GetSectionDrawing();
-    if (drawing == nullptr)
-        return Transform::FromIdentity();
-
-    return drawing->GetTransformToWorld();
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
@@ -1579,6 +1532,7 @@ DPoint3d CameraViewController::_GetTargetPoint() const
     return  target;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
@@ -1877,6 +1831,123 @@ void ViewController2d::_SaveToSettings(JsonValueR settings) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Show the surface normal or edge tangent for geometry under the cursor.
+* @bsimethod                                                    Brien.Bastings  07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawLocateHitDetail(DgnViewportR vp, double aperture, HitDetailCR hit)
+    {
+    if (!vp.Is3dView())
+        return; // Currently not worth drawing just the edge tangent in 2d...
+
+    IViewDrawP  output = vp.GetIViewDraw();
+    ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue());// Invert hilite color for good contrast...
+
+    if (!hit.GetGeomDetail().IsValidSurfaceHit())
+        {
+        if (hit.GetHitType() > HitDetailType::Hit)
+            return; // Don't display when snapped, AccuSnap will flash edge/segment geometry...
+
+        color.SetAlpha(100);
+        vp.SetSymbologyRgb(color, color, 5, 0);
+        output->DrawPointString3d(1, &hit.GetHitPoint(), nullptr);
+
+        if (nullptr == hit.GetGeomDetail().GetCurvePrimitive() || (hit.GetGeomDetail().GetGeomType() < HitGeomType::Segment))
+            return;
+
+        double      param = hit.GetGeomDetail().GetCloseParam();
+        DVec3d      tangent;
+        DPoint3d    pt;
+
+        if (!hit.GetGeomDetail().GetCurvePrimitive()->FractionToPoint(param, pt, tangent))
+            return;
+
+        double      size = (1.5 * aperture * vp.GetPixelSizeAtPoint(&pt));
+        DSegment3d  segment;
+
+        tangent.Normalize();
+        segment.point[0].SumOf(pt, tangent, size);
+        segment.point[1].SumOf(pt, tangent, -size);
+
+        color.SetAlpha(175);
+        vp.SetSymbologyRgb(color, color, 2, 0);
+        output->DrawLineString3d(2, segment.point, nullptr);
+        return;
+        }
+
+    DPoint3d    pt = hit.GetHitPoint();
+    double      radius = (2.0 * aperture) * vp.GetPixelSizeAtPoint(&pt);
+    DVec3d      normal = hit.GetGeomDetail().GetSurfaceNormal();
+    RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
+    DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
+
+    color.SetAlpha(200);
+    output->SetSymbology(color, color, 1, 0);
+    output->DrawArc3d(ellipse, true, true, nullptr);
+    output->DrawArc3d(ellipse, false, false, nullptr);
+
+    double      length = (0.6 * radius);
+    DSegment3d  segment;
+
+    normal.Normalize(ellipse.vector0);
+    segment.point[0].SumOf(pt, normal, length);
+    segment.point[1].SumOf(pt, normal, -length);
+    output->DrawLineString3d(2, segment.point, nullptr);
+
+    normal.Normalize(ellipse.vector90);
+    segment.point[0].SumOf(pt, normal, length);
+    segment.point[1].SumOf(pt, normal, -length);
+    output->DrawLineString3d(2, segment.point, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* draw a filled and outlined circle to represent the size of the location tolerance in the current view.
+* @bsimethod                                                    Keith.Bentley   03/03
++---------------+---------------+---------------+---------------+---------------+------*/
+static void drawLocateCircle(DgnViewportR vp, double aperture, DPoint3dCR pt)
+    {
+    IViewDrawP  output = vp.GetIViewDraw();
+
+    output->SetToViewCoords(true);
+
+    double      radius = (aperture / 2.0) + .5;
+    DPoint3d    center;
+    DEllipse3d  ellipse, ellipse2;
+
+    vp.WorldToView(&center, &pt, 1);
+    ellipse.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius, radius, 0.0, msGeomConst_2pi, 0.0);
+    ellipse2.InitFromDGNFields2d((DPoint2dCR) center, 0.0, radius+1, radius+1, 0.0, msGeomConst_2pi, 0.0);
+
+    ColorDef    white = ColorDef::White();
+    ColorDef    black = ColorDef::Black();
+
+    white.SetAlpha(165);
+    output->SetSymbology(white, white, 1, 0);
+    output->DrawArc2d(ellipse, true, true, 0.0, NULL);
+
+    black.SetAlpha(100);
+    output->SetSymbology(black, black, 1, 0);
+    output->DrawArc2d(ellipse2, false, false, 0.0, NULL);
+
+    white.SetAlpha(20);
+    output->SetSymbology(white, white, 1, 0);
+    output->DrawArc2d(ellipse, false, false, 0.0, NULL);
+
+    output->SetToViewCoords(false);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::_DrawLocateCursor(DgnViewportR vp, DPoint3dCR pt, double aperture, bool isLocateCircleOn, HitDetailCP hit)
+    {
+    if (nullptr != hit)
+        drawLocateHitDetail(vp, aperture, *hit);
+
+    if (isLocateCircleOn)
+        drawLocateCircle(vp, aperture, pt);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
@@ -1913,6 +1984,9 @@ void ViewController::_DrawView(ViewContextR context)
         context.VisitDgnModel(m_dgndb.Models().GetModel(modelId).get());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley  10/06
++---------------+---------------+---------------+---------------+---------------+------*/
 void ViewController::_VisitElements(ViewContextR context)
     {
     _DrawView(context);

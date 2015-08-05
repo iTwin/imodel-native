@@ -310,10 +310,10 @@ public:
 
     //! Register a Handler for an ECClass within this DgnDomain.
     //! @param[in] handler the Handler to register.
-    //! @param[in] replace if true, handler should replace the current handler and will fail if a handler for this class is NOT already registered.
+    //! @param[in] replace if true, handler should replace the current Handler and will fail if a Handler for this class is NOT already registered.
     //! If false, fails if a Handler for this class IS already registered.
     //! @note Before a Handler is registered, all of its superclass Handlers must also be registered (that is, Handlers must be
-    //! registered in class hierarchy order.)
+    //! registered in class hierarchy order: base classes before subclasses.)
     DGNPLATFORM_EXPORT DgnDbStatus RegisterHandler(Handler& handler, bool replace=false);
 
     //! Register a table handler with this DgnDomain.
@@ -328,8 +328,7 @@ public:
 //=======================================================================================
 //! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific
 //! DgnClassId lookups.
-//! @see DgnDb::Domains
-//! @see DgnDomain
+//! @see DgnDb::Domains, DgnDomain
 //! @ingroup DgnDomainGroup
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================

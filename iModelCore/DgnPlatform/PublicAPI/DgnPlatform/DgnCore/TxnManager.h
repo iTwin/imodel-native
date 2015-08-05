@@ -48,44 +48,6 @@ enum class TxnAction
 };
 
 //=======================================================================================
-//! A 32 bit value to identify the group of changes that form a single Txn.
-//! @ingroup TxnMgr
-// @bsiclass                                                      Keith.Bentley   02/04
-//=======================================================================================
-struct TxnId
-{
-    int32_t m_value;
-
-public:
-    TxnId()  {m_value = -1;}
-    explicit TxnId(int32_t val) {m_value = val;}
-    void Init() {m_value = 0;}
-    void Next() {++m_value;}
-    void Prev() {--m_value;}
-    bool IsValid() const {return -1 != m_value;}
-    int32_t GetValue() const {return m_value;}
-    operator int32_t() const {return m_value;}
-};
-
-//=======================================================================================
-//! A rowid in the DGN_TABLE_Txns table.
-// @bsiclass                                                    Keith.Bentley   06/15
-//=======================================================================================
-struct TxnRowId
-{
-    int64_t m_value;
-
-public:
-    TxnRowId() {m_value = -1;}
-    explicit TxnRowId(int64_t val) {m_value = val;}
-    void Next() {++m_value;}
-    void Prev() {--m_value;}
-    bool IsValid() const {return -1 != m_value;}
-    int64_t GetValue() const {return m_value;}
-    operator int64_t() const {return m_value;}
-};
-
-//=======================================================================================
 //! Interface to be implemented to monitor changes to a DgnDb.
 //! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   10/07
@@ -169,41 +131,13 @@ struct TxnTable : RefCountedBase
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
-//! The first and last TxnId that forms a single operation.
-// @bsiclass                                                      Keith.Bentley   02/04
-//=======================================================================================
-class TxnRange
-{
-    TxnId m_first;
-    TxnId m_last;
-
-public:
-    TxnRange(TxnId first, TxnId last) : m_first(first), m_last(last) {}
-
-    TxnId GetFirst() {return m_first;}
-    TxnId GetLast() {return m_last;}
-};
-
-//=======================================================================================
-//! To reinstate a reversed operation, we need to know the first and last TxnId.
-//! @private
-// @bsiclass                                                      Keith.Bentley   02/04
-//=======================================================================================
-struct RevTxn
-{
-    TxnRange    m_range;
-    bool        m_multiTxn;
-    RevTxn(TxnRange& range, bool multiTxn) : m_range(range) {m_multiTxn = multiTxn;}
-};
-
-//=======================================================================================
 //! This class implements the DgnDb::Txns() object. It is a BeSQLite::ChangeTracker.
 //! It handles:
 //!    - validating Txns on Db::SaveChanges
 //!    - notifying TxnTables of changes
 //!    - change propagation.
 //!    - Reversing (undo) and Reinstating (redo) Txns
-//!    - combining multi-step Txns into a single reversible "operation"
+//!    - combining multi-step Txns into a single reversible "operation". See BeginMultiTxnOperation
 //!    - change merging
 // @bsiclass
 //=======================================================================================
@@ -225,13 +159,63 @@ struct TxnManager : BeSQLite::ChangeTracker
         Utf8CP GetDescription() const {return m_description.c_str();}//!< A human-readable, localized description of the error
     };
 
-private:
-    struct ChangeEntry
+    //=======================================================================================
+    //! An identifier stored in the high 4 bytes of a TxnId. All TxnIds for a given session will have the same SessionId.
+    //! Every time the TxnManager is initialized against a DgnDb, the SessionId is incremented to be one greater than the
+    //! previous highest SessionId.
+    // @bsiclass                                                    Keith.Bentley   08/15
+    //=======================================================================================
+    struct SessionId
     {
-        BeGuid      m_sessionId;
-        TxnId       m_txnId;
-        Utf8String  m_description;
-        Utf8String  m_mark;
+    private:
+        uint32_t m_value;
+    public:
+        explicit SessionId(uint32_t val=(uint32_t) -1) : m_value(val) {}
+        uint32_t GetValue() const {return m_value;}
+        bool IsValid() const {return ((uint32_t) -1) != m_value;}
+    };
+
+    //=======================================================================================
+    //! The primary key for the DGN_TABLE_Txns table. The value is comprised of two parts:
+    //! the SessionId stored in the high 4 bytes and a counter in the low 4 bytes. Later Txns stored in the
+    //! table will always have higher TxnIds than earlier ones, though the values of TxnId may not be sequential.
+    //! The methods TxnManager::QueryNextTxnId and TxnManager::QueryPreviousTxnId may be used to iterate forward
+    //! and backwards through committed Txns in the table.
+    // @bsiclass                                                    Keith.Bentley   08/15
+    //=======================================================================================
+    struct TxnId
+    {
+        friend struct TxnManager;
+    private:
+        union{uint64_t m_64; uint32_t m_32[2];} m_id;
+        void Increment() {++m_id.m_32[0];}
+
+    public:
+        TxnId(uint64_t val=(uint64_t) -1) {m_id.m_64 = val;}
+        TxnId(SessionId session, uint32_t txn) {m_id.m_32[1]=session.GetValue(); m_id.m_32[0]=txn;}
+        uint64_t GetValue() const {return m_id.m_64;}
+        SessionId GetSession() const {return SessionId(m_id.m_32[1]);}//!< Get the SessionId from this TxnId
+        bool IsValid() const {return GetSession().IsValid();}
+        bool operator==(TxnId const& rhs) const {return m_id.m_64==rhs.m_id.m_64;}
+        bool operator<(TxnId const& rhs) const  {return m_id.m_64<rhs.m_id.m_64;}
+        bool operator<=(TxnId const& rhs) const {return m_id.m_64<=rhs.m_id.m_64;}
+        bool operator>(TxnId const& rhs) const  {return m_id.m_64>rhs.m_id.m_64;}
+        bool operator>=(TxnId const& rhs) const {return m_id.m_64>=rhs.m_id.m_64;}
+    };
+
+private:
+    //=======================================================================================
+    // @bsiclass                                                    Keith.Bentley   08/15
+    //=======================================================================================
+    struct TxnRange
+    {
+    private:
+        TxnId m_first;
+        TxnId m_last;
+    public:
+        TxnRange(TxnId first, TxnId last) : m_first(first), m_last(last) {}
+        TxnId GetFirst() {return m_first;}
+        TxnId GetLast() {return m_last;}
     };
 
     struct UndoChangeSet : BeSQLite::ChangeSet
@@ -246,38 +230,35 @@ private:
     DgnDbR          m_dgndb;
     T_TxnTablesByName m_tablesByName;
     T_TxnTables     m_tables;
-    ChangeEntry     m_curr;
+    TxnId           m_curr;
     TxnAction       m_action;
-    bvector<TxnId>  m_multiTxnOp;
-    bvector<RevTxn> m_reversedTxn;
+    bvector<TxnId> m_multiTxnOp;
+    bvector<TxnRange> m_reversedTxn;
     bool            m_inDynamics;
     bool            m_propagateChanges;
     BeSQLite::StatementCache m_stmts;
     BeSQLite::SnappyFromBlob m_snappyFrom;
     BeSQLite::SnappyToBlob   m_snappyTo;
-    bvector<ValidationError> m_validationErrors; 
+    bvector<ValidationError> m_validationErrors;
 
     void AddChangeSet(BeSQLite::ChangeSet&);
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
     BeSQLite::DbResult SaveCurrentChange(BeSQLite::ChangeSet& changeset, Utf8CP operation);
-    BeSQLite::DbResult ReadEntry(TxnRowId rowid, ChangeEntry& entry);
-    void ReadChangeSet(UndoChangeSet&, TxnRowId rowid, TxnAction);
-    TxnRowId FirstRow(TxnId id);
-    TxnRowId LastRow(TxnId id);
-    void TruncateChanges(TxnId id);
-    void ReverseTxnRange(TxnRange& txnRange, Utf8StringP, bool);
+    void ReadChangeSet(UndoChangeSet&, TxnId rowid, TxnAction);
+    void ReverseTxnRange(TxnRange& txnRange, Utf8StringP);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
-    void ApplyChanges(TxnRowId, TxnAction);
+    void ApplyChanges(TxnId, TxnAction);
     void OnChangesetApplied(BeSQLite::ChangeSet& changeset, TxnAction);
     OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
-    DgnDbStatus ReinstateActions(RevTxn& revTxn);
+    DgnDbStatus ReinstateActions(TxnRange& revTxn);
     bool PrepareForUndo();
-    DgnDbStatus ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg);
+    DgnDbStatus ReverseActions(TxnRange& txnRange, bool showMsg);
     BentleyStatus PropagateChanges();
     void DeleteReversedTxns();
     TxnTable* FindTxnTable(Utf8CP tableName) const;
     BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
+    bool IsMultiTxnMember(TxnId rowid);
 
 public:
     void OnBeginValidate(); //!< @private
@@ -310,7 +291,10 @@ public:
     //! Get the dgn_TxnTable::ElementDep TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
 
-    //! Get a description of the operation that would be reversed by calling ReverseTxns.
+    //! Get the description of a previously committed Txn, given its TxnId.
+    DGNPLATFORM_EXPORT Utf8String GetTxnDescription(TxnId txnId);
+
+    //! Get a description of the operation that would be reversed by calling ReverseTxns(1).
     //! This is useful for showing the operation that would be undone, for example in a pull-down menu.
     DGNPLATFORM_EXPORT Utf8String GetUndoString();
 
@@ -343,42 +327,66 @@ public:
     //! otherwise it will always return TxnAction::None
     TxnAction GetCurrentAction() const {return m_action;}
 
+    //! Get the TxnId of the current Txn.
+    //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
+    //! @see   ReverseTo CancelTo
+    TxnId GetCurrentTxnId() {return m_curr;}
+
+    //! Get the current SessionId.
+    SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
+
+    //! Get the TxnId of the first Txn for this session (though it may not be committed yet.)
+    //! All TxnIds with a value lower than this are from a previous session.
+    TxnId GetSessionStartId() const {return TxnId(m_curr.GetSession(), 0);}
+
+    //! Given a TxnId, query for TxnId of the immediately previous committed Txn, if any.
+    //! @param[in] currentTxnId The current TxnId.
+    //! @return The previous TxnId. Will be invalid if currentTxnId is the first one.
+    //! @note The TxnId may be from a previous session.
+    //! @note The TxnIds are not necessarily sequential.
+    DGNPLATFORM_EXPORT TxnId QueryPreviousTxnId(TxnId currentTxnId) const;
+
+    //! Given a TxnId, query for TxnId of the next committed Txn, if any.
+    //! @param[in] currentTxnId The current TxnId.
+    //! @return The next TxnId. Will be invalid if currentTxnId is the last one.
+    //! @note The TxnIds are not necessarily sequential.
+    DGNPLATFORM_EXPORT TxnId QueryNextTxnId(TxnId currentTxnId) const;
+
     //! Query if there are currently any reversible (undoable) changes
-    //! @return true if there are currently any reversible (undoable) changes
-    bool IsUndoPossible() {return 0 < GetCurrTxnId();}
+    //! @return true if there are currently any reversible (undoable) changes.
+    bool IsUndoPossible() {return GetSessionStartId() < GetCurrentTxnId();}
 
     //! Query if there are currently any reinstateable (redoable) changes
-    //! @return True if there are currently any reinstateable (redoable) changes
+    //! @return True if there are currently any reinstate-able (redoable) changes
     bool IsRedoPossible() {return !m_reversedTxn.empty();}
 
+    enum class AllowCrossSessions {Yes=1, No=0};
     //! Reverse (undo) the most recent operation(s).
-    //! @param[in] numActions the number of operations to reverse. If numActions is greater than 1, the entire set of operations will
+    //! @param[in] numOperations the number of operations to reverse. If this is greater than 1, the entire set of operations will
     //! be reinstated together when/if ReinstateTxn is called.
+    //! @param[in] crossSessions if No, don't reverse any Txns older than the beginning of the current session.
     //! @note If there are any outstanding uncommitted changes, they are reversed.
-     DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numActions);
+    //! @note The term "operation" is used rather than Txn, since multiple Txns can be grouped together via BeginMultiTxnOperation. So,
+    //! even if numOperations is 1, multiple Txns may be reversed if they were grouped together when they were made.
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numOperations, AllowCrossSessions crossSessions=AllowCrossSessions::No);
 
     //! Reverse the most recent operation.
     DgnDbStatus ReverseSingleTxn() {return ReverseTxns(1);}
 
-    //! Reverse all element changes back to the beginning of the session.
-    //! @param[in] prompt display a dialog warning the user of the severity of this action and giving an opportunity to cancel.
-    DGNPLATFORM_EXPORT void ReverseAll(bool prompt);
+    //! Reverse all changes back to the beginning of the session.
+    //! @param[in] prompt display a warning the user, and give an opportunity to cancel.
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseAll(bool prompt);
 
-    //! Reverse all element changes back to a previously saved TxnPos.
-    //! @param[in] pos a TxnPos obtained from a previous call to GetCurrTxnPos.
+    //! Reverse all changes back to a previously saved TxnId.
+    //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
     //! @return DgnDbStatus::Success if the transactions were reversed, error status otherwise.
-    //! @see  GetCurrTxnPos CancelToPos
-    DGNPLATFORM_EXPORT DgnDbStatus ReverseToPos(TxnId pos);
+    //! @see  GetCurrentTxnId CancelTo
+    DGNPLATFORM_EXPORT DgnDbStatus ReverseTo(TxnId txnId);
 
-    //! Get the Id of the most recently commited transaction.
-    //! @return the current TxnPos. This value can be saved and later used to reverse changes that happen after this time.
-    //! @see   ReverseToPos CancelToPos
-    TxnId GetCurrTxnId() {return m_curr.m_txnId;}
-
-    //! Reverse and then cancel (make non-reinstatable) all changes back to a previous TxnPos.
-    //! @param[in] pos a TxnPos obtained from a previous call to GetCurrTxnPos.
+    //! Reverse and then cancel (make non-reinstatable) all changes back to a previous TxnId.
+    //! @param[in] txnId a TxnId obtained from a previous call to GetCurrentTxnId.
     //! @return DgnDbStatus::Success if the transactions were reversed and cleared, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus CancelToPos(TxnId pos);
+    DGNPLATFORM_EXPORT DgnDbStatus CancelTo(TxnId txnId);
 
     //! Reinstate the most recently reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.
@@ -387,7 +395,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
     //@}
 
-    //! Get the DgnDb of this Txns
+    //! Get the DgnDb for this TxnManager
     DgnDbR GetDgnDb() {return m_dgndb;}
 };
 
@@ -462,7 +470,7 @@ namespace dgn_TxnTable
         void _OnValidated() override;
         void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
         void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
-    
+
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
     };
 

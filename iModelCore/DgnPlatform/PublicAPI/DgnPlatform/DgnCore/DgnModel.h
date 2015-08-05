@@ -881,7 +881,7 @@ public:
 // @bsiclass                                                    Sam.Wilson  05/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2d : DgnModel2d
-    {
+{
     DEFINE_T_SUPER(DgnModel2d)
 
 protected:
@@ -891,7 +891,7 @@ protected:
 
 public:
     explicit GraphicsModel2d(CreateParams const& params, DPoint2dCR origin=DPoint2d::FromZero()) : T_Super(params, origin) {}
-    };
+};
 
 //=======================================================================================
 //! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
@@ -933,12 +933,12 @@ public:
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
-    {
+{
     DEFINE_T_SUPER(PlanarPhysicalModel)
 
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
-    };
+};
 
 //=======================================================================================
 //! A sheet model is a GraphicsModel2d that has the following characteristics:
@@ -948,7 +948,7 @@ public:
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
-    {
+{
     DEFINE_T_SUPER(GraphicsModel2d)
 
     struct CreateParams : GraphicsModel2d::CreateParams
@@ -989,7 +989,7 @@ public:
 
     //! Get the sheet size, in meters
     DPoint2d GetSize() const {return m_size;}
-    };
+};
 
 #define MODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
         private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\

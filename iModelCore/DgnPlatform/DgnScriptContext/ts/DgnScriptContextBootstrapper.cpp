@@ -13,6 +13,6 @@
 //---------------------------------------------------------------------------------------
 Utf8CP dgnScriptContext_GetBootstrappingSource()
     {
-    static Utf8CP source = __OBJECTMODELJSSOURCE__;
+    static Utf8Char source[] = __OBJECTMODELJSSOURCE__;
     return source;
     }

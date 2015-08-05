@@ -141,7 +141,7 @@ TEST(DgnScriptContextTest, Test1)
         {
         int sres;
         DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
-        ASSERT_EQ( DgnDbStatus::Success , xstatus ) << "Haven't registered the EGA yet";
+        ASSERT_EQ( DgnDbStatus::Success , xstatus );
         ASSERT_EQ( 0 , sres );
 
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);

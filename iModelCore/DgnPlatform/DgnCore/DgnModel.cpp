@@ -386,7 +386,7 @@ DgnDbStatus DgnModel::Update()
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
 
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=?, Solver=? WHERE Id=?");
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=?,Solver=? WHERE Id=?");
     stmt.BindText(1, val, Statement::MakeCopy::No);
     if (m_solver.IsValid())
         stmt.BindText(2, m_solver.ToJson(), Statement::MakeCopy::Yes);
