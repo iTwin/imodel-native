@@ -395,10 +395,10 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
     //@}
 
-    //! Get the ECChangeSet from all transactions starting with the specified TxnId. 
+    //! Get a summary of changes from all transactions starting with the specified TxnId. 
     //! @remarks Errors out if there are any uncommited changes in the current transaction. i.e., @ref HasChanges() has to 
     //! return false. Call @ref BeSQLite::Db::SaveChanges() or @ref BeSQLite::Db::AbandonChanges() before calling this method. 
-    DGNPLATFORM_EXPORT DgnDbStatus GetECChangeSet(BeSQLite::EC::ECChangeSet& ecChangeSet, TxnId startTxnId);
+    DGNPLATFORM_EXPORT DgnDbStatus GetChangeSummary(BeSQLite::EC::ECChangeSummary& ecChangeSummary, TxnId startTxnId);
 
     //! Get the DgnDb for this TxnManager
     DgnDbR GetDgnDb() {return m_dgndb;}
