@@ -5,8 +5,9 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+# Allow third-party code to have warnings.
 NO_DEFAULT_CLANG_WARNINGS = 1
+NOSTRICT = 1
 
 PolicyFile = $(SrcRoot)util/gtest/GTestPolicy.mki
 %include mdl.mki
