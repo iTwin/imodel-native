@@ -24,6 +24,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="ComponentModelId" typeName="long"/>
         <ECProperty propertyName="Parameters" typeName="string"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
+        <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
 
     <ECRelationshipClass typeName="ElementInstancesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">

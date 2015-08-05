@@ -1065,13 +1065,14 @@ EC::ECInstanceId DgnComponentSolutions::QuerySolutionId(DgnModelId cmid, Utf8Str
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnComponentSolutions::Query(Solution& sln, EC::ECInstanceId sid)
     {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(Id=?)");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(Id=?)");
     stmt->BindId(1, sid);
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::NotFound;
     sln.m_id = sid;
     sln.m_componentModelId = stmt->GetValueId<DgnModelId>(0);
     sln.m_parameters = stmt->GetValueText(1);
+    sln.m_range = *(ElementAlignedBox3d*)stmt->GetValueBlob(2);
     return DgnDbStatus::Success;
     }
 
@@ -1151,6 +1152,12 @@ EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componen
             }
         }
     
+    if(builders.empty())
+        {
+        BeDataAssert(false && "A component model contains no elements in the component's category.");
+        return EC::ECInstanceId();
+        }
+
     //  Create a GeomPart for each SubCategory
     bvector<bpair<DgnSubCategoryId,DgnGeomPartId>> subcatAndGeoms;
     for (auto const& entry : builders)
@@ -1181,12 +1188,19 @@ EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componen
 
 
     GeomStream  geom;
-    if (builder->SetGeomStream(geom) != BSISUCCESS)
+    if (builder->GetGeomStream(geom) != BSISUCCESS)
         return EC::ECInstanceId();
+
+    Placement3d placement;
+    if (builder->GetPlacement(placement) != BSISUCCESS)
+        return EC::ECInstanceId();
+
+    ElementAlignedBox3d box = placement.GetElementBox();
         
-    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " (ComponentModelId,Parameters) VALUES(?,?)");
+    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " (ComponentModelId,Parameters,Range) VALUES(?,?,?)");
     istmt->BindId(1, componentModel.GetModelId());
     istmt->BindText(2, solutionCode, Statement::MakeCopy::No);
+    istmt->BindBlob(3, &box, sizeof(box), Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != istmt->Step())
         return EC::ECInstanceId();
     istmt = nullptr;
@@ -1218,11 +1232,10 @@ PhysicalElementPtr DgnComponentSolutions::CreateSolutionInstance(DgnModelR desti
     GeomStream geom;
     sln.QueryGeomStream(geom, GetDgnDb());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(destinationModel, cmCategoryId, origin, angles);
-    builder->SetGeomStream(geom);
-
     PhysicalElementPtr instance = PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), destinationModel.GetModelId(), cmClassId, cmCategoryId));
-    builder->SetGeomStreamAndPlacement(*instance);
+    Placement3d placement(origin, angles, sln.m_range);
+    instance->SetPlacement(placement);
+    instance->GetGeomStreamR().SaveData (geom.GetData(), geom.GetSize());
 
     return instance;
     }
@@ -1277,7 +1290,7 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
     BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
 
     Statement stmt(sourceModel.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
-    stmt.BindId(1, m_modelId);
+    stmt.BindId(1, sourceModel.GetModelId());
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementCPtr el = sourceModel.GetDgnDb().Elements().GetElement(stmt.GetValueId<DgnElementId>(0));

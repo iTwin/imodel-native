@@ -1630,6 +1630,7 @@ public:
         BeSQLite::EC::ECInstanceId m_id;
         DgnModelId  m_componentModelId;
         Utf8String m_parameters;
+        ElementAlignedBox3d m_range;
         DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
         };
 

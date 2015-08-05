@@ -3125,9 +3125,23 @@ static bool is3dGeometryType (ElementGeometry::GeometryType geomType)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/2015
+* @bsimethod                                                    Sam.Wilson      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ElementGeometryBuilder::SetGeomStream (GeomStreamR geom)
+BentleyStatus ElementGeometryBuilder::GetPlacement (Placement3dR placement)
+    {
+    if (!m_is3d)
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+    placement = m_placement3d;
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ElementGeometryBuilder::GetGeomStream (GeomStreamR geom)
     {
     if (0 == m_writer.m_buffer.size())
         return ERROR;

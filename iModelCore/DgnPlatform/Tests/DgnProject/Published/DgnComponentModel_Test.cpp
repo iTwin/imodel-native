@@ -139,6 +139,7 @@ void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_CreateTargetModel(Utf8CP targetModelName);
 void Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
 void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, EC::ECInstanceId);
 void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
@@ -476,24 +477,49 @@ void ComponentModelTest::SimulateDeveloper()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code)
+    {
+    PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, modelName);
+    ASSERT_TRUE( targetModel.IsValid() );
+    DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
+    DgnCategoryId catid = m_clientDb->Categories().QueryHighestId();
+    auto el = DgnElement::Create(DgnElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid, code));
+    ASSERT_TRUE( el.IsValid() );
+    ASSERT_TRUE( el->Insert().IsValid() );
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Simulate a client who receives a ComponentModel and then places instances of solutions to it.
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::SimulateClient()
     {
-    GenerateCMSchema(); // Note: either the component developer or the client could generate the ECSchema.
-
     OpenClientDb(Db::OpenMode::ReadWrite);
+
+    // vvvvvvvvvv BEGIN SCHEMA CHANGE vvvvvvvvvvvv
+
+    GenerateCMSchema(); // Note: either the component developer or the client could generate the ECSchema.
 
     //  Once per schema, import the schema
     ASSERT_EQ( DgnDbStatus::Success , ComponentModel::ImportSchema(*m_clientDb, m_componentSchemaFileName) );
+
+    m_clientDb->SaveChanges();
+
+    // ^^^^^^^^^^ END SCHEMA CHANGE ^^^^^^^^^^^^
+
+    //  Create the target model in the client. (Do this first, so that the first imported CM's will get a model id other than 1. Hopefully, that will help us catch more bugs.)
+    Client_CreateTargetModel("Instances");
+
+    //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
+    for (int i=0; i<10; ++i)
+        Client_InsertNonInstanceElement("Instances");
 
     //  Once per component, import the component model
     Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
     // Now start placing instances of Widgets
-    Client_CreateTargetModel("Instances");
-    
     Json::Value wsln1(Json::objectValue);
     wsln1["X"] = 10;
     wsln1["Y"] = 11;
@@ -507,6 +533,10 @@ void ComponentModelTest::SimulateClient()
     Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
     Client_CheckComponentInstance(w2, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
     
+    //  Add a few unrelated elements to the target model. That way, the first placed CM instance will get an element id other than 1. Hopefully, that will help us catch more bugs.
+    for (int i=0; i<5; ++i)
+        Client_InsertNonInstanceElement("Instances");
+
     Json::Value wsln3 = wsln1;
     wsln3["X"] = 100;
     DgnElementId w3;
