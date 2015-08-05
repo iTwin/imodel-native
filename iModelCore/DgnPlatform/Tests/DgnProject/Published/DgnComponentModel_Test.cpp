@@ -32,7 +32,9 @@ static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
     BeTest::GetHost().GetOutputRoot(fullOutputFileName);
     fullOutputFileName.AppendToPath(outputFileName);
 
-    BeAssert ( BeFileNameStatus::Success == BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName) );
+    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
+        return BeFileName();
+
     return fullOutputFileName;
     }
 
@@ -417,7 +419,7 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl,
     //  -------------------------------------------------------
     //  ComponentProxyModel - Capture (or look up) the solution geometry
     //  -------------------------------------------------------
-    BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
+    ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     ComponentProxyModelPtr proxy = ComponentProxyModel::Get(*m_clientDb, *componentModel);
     ASSERT_TRUE( proxy.IsValid() ) << "We should have imported the CM and created a proxy in a previous step";
@@ -440,7 +442,7 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl,
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, PhysicalElementCR solutionEl)
     {
-    BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
+    ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
@@ -459,7 +461,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
     {
-    BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
+    ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalElementCPtr solutionEl;
     Client_SolveAndCapture(solutionEl, componentName, parms, solutionAlreadyExists);
