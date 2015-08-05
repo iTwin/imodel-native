@@ -103,7 +103,6 @@ static void checkGeomStream(GeometricElementCR gel, ElementGeometry::GeometryTyp
     }
     
 /*---------------------------------------------------------------------------------**//**
-* Create a 3D component definition model
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void checkSlabDimensions(GeometricElementCR el, double expectedX, double expectedY, double expectedZ)
@@ -113,6 +112,19 @@ static void checkSlabDimensions(GeometricElementCR el, double expectedX, double 
     ASSERT_EQ( expectedX, box.m_baseX );
     ASSERT_EQ( expectedY, box.m_baseY );
     ASSERT_EQ( expectedZ, box.m_topOrigin.Distance(box.m_baseOrigin) );
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const& allowedClasses)
+    {
+    Statement statement(model.GetDgnDb(), "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    statement.BindId(1, model.GetModelId());
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        ASSERT_TRUE( allowedClasses.find(statement.GetValueId<DgnClassId>(0)) != allowedClasses.end() );
+        }
     }
 
 /*=================================================================================**//**
@@ -231,15 +243,17 @@ void ComponentModelTest::Developer_CreateCMs()
         var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
         builder.SetGeomStreamAndPlacement(element); \
-        model.InsertElement(element); \
-        element.Dispose();\
+        element.Insert(); \
         var element2 = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin2 = BentleyApi.Dgn.JsDPoint3d.Create(10,12,13);\
         var angles2 = BentleyApi.Dgn.JsYawPitchRollAngles.Create(0,0,0);\
         var builder2 = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element2, origin2, angles2); \
         builder2.AppendBox(params['X'], params['Y'], params['Z']); \
         builder2.SetGeomStreamAndPlacement(element2); \
-        model.InsertElement(element2); \
+        element2.Insert(); \
+        element.SetParent(element2);\
+        element.Update();\
+        element.Dispose();\
         element2.Dispose();\
         return 0;\
     } \
@@ -251,7 +265,7 @@ void ComponentModelTest::Developer_CreateCMs()
         var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
-        model.InsertElement(element); \
+        element.Insert(); \
         element.Dispose();\
         return 0;\
     } \
@@ -364,6 +378,17 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     
     ASSERT_TRUE( cmCopy.IsValid() );
 
+    ASSERT_EQ( countElementsInModel(*componentModel), countElementsInModel(*cmCopy) ); // at least make sure the copy has the same number of elements.
+
+    // Original ComponentModel and the copy should contain only PhysicalElements (in this test)
+    bset<DgnClassId> cmModelElementClasses;
+    cmModelElementClasses.insert(DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
+    checkElementClassesInModel(*componentModel, cmModelElementClasses);
+
+    bset<DgnClassId> cmCopyModelElementClasses;
+    cmCopyModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
+    checkElementClassesInModel(*cmCopy, cmCopyModelElementClasses);
+
     m_clientDb->SaveChanges();
 
     //  Verify that we can look up an existing cmCopy
@@ -454,6 +479,13 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     ieid = instance->GetElementId();
 
     ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
+
+    // Make sure that no component model elements are accidentally copied into the instances model
+    bset<DgnClassId> targetModelElementClasses;
+    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
+    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Widget")));
+    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Gadget")));
+    checkElementClassesInModel(*targetModel, targetModelElementClasses);
     }
 
 /*---------------------------------------------------------------------------------**//**

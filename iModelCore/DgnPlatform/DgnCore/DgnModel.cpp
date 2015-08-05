@@ -1275,6 +1275,8 @@ DgnModelPtr DgnModel::_Clone(DgnDbStatus* stat, DgnModel::CreateParams const& pa
     if (!model.IsValid())
         return nullptr;
 
+    // telling the output model to read its properties from the props of the input model takes care of most model members
+    //  It's rare, then, that a subclass will have to override _Clone.
     Json::Value propJson(Json::objectValue);
     _ToPropertiesJson(propJson);
     model->_FromPropertiesJson(propJson);
@@ -1282,21 +1284,29 @@ DgnModelPtr DgnModel::_Clone(DgnDbStatus* stat, DgnModel::CreateParams const& pa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* NB: We must import parents first, then children, so that parentids can be remapped without multiple passes.
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
     {
     BeAssert(&GetDgnDb() == &importer.GetDestinationDb());
     BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
+
+    bmap<DgnElementId, DgnElementId> needsParentFixup;
 
     Statement stmt(sourceModel.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, sourceModel.GetModelId());
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementCPtr el = sourceModel.GetDgnDb().Elements().GetElement(stmt.GetValueId<DgnElementId>(0));
-        DgnElement::CreateParams ccparms = el->GetCreateParamsForImport(importer);
+
+        if (!_ShouldImportElement(*el))
+            continue;
+
+        DgnElementId waspid = el->GetParentId();
+
         DgnDbStatus status;
-        DgnElementCPtr cc = el->Import(&status, ccparms, importer);
+        DgnElementCPtr cc = el->Import(&status, el->GetCreateParamsForImport(importer), importer);
         if (!cc.IsValid() || (DgnDbStatus::Success != status))
             {
             // *** TBD: Record failure somehow
@@ -1307,16 +1317,93 @@ DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportConte
             // *** TBD: Record failure somehow
             continue;
             }
+
+        if (waspid.IsValid() && !cc->GetParentId().IsValid())
+            needsParentFixup[cc->GetElementId()] = waspid;
         }
 
+    for (auto entry : needsParentFixup)
+        {
+        DgnElementPtr cc = GetDgnDb().Elements().GetForEdit<DgnElement>(entry.first);
+        cc->SetParentId(importer.FindElementId(entry.second));
+        cc->Update();
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+    {
+    Statement stmt(sourceModel.GetDgnDb(), "SELECT ele.Id FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " item JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " ele ON (item.ElementId=ele.Id) WHERE ele.ModelId=?");
+    stmt.BindId(1, sourceModel.GetModelId());
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DgnElementCPtr sourceEl = sourceModel.GetDgnDb().Elements().GetElement(stmt.GetValueId<DgnElementId>(0));
+        DgnElement::Item const* sourceitem = DgnElement::Item::GetItem(*sourceEl);
+        if (nullptr == sourceitem)
+            {
+            BeDataAssert(false && "Can't load item in items table");
+            continue;
+            }
+
+        DgnElementId ccelid = importer.FindElementId(sourceEl->GetElementId());
+
+        DgnElementPtr ccel = GetDgnDb().Elements().GetForEdit<DgnElement>(ccelid);
+        if (!ccel.IsValid())
+            continue;       // I guess the source element wasn't copied.
+
+        RefCountedPtr<DgnElement::Item> ccitem = dynamic_cast<DgnElement::Item*>(sourceitem->_Clone(*sourceEl).get());
+        if (!ccitem.IsValid())
+            {
+            // *** TBD: Record failure somehow
+            continue;
+            }
+
+        DgnElement::Item::SetItem(*ccel, *ccitem);
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+    {
+    #ifdef WIP_TBD
     // *** TBD: Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     //              Note: this requires domain-specific knowledge of what ECRelationships exist.
     //              Examples from Dgn domain include ElementDrivesElement
-    
+
     // *** TBD: Copy ECRelationships where element in this model uses a shared resource that is deep-copied.
     //              Examples from Dgn domain include ElementGeomUsesParts, ElementUsesStyles
 
     // *** TBD: ElementHasLinks -- should we deep-copy links?
+    #endif
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer)
+    {
+    BeAssert(&GetDgnDb() == &importer.GetDestinationDb());
+    BeAssert(&sourceModel.GetDgnDb() == &importer.GetSourceDb());
+
+    DgnDbStatus status;
+     
+    if (DgnDbStatus::Success != (status = _ImportElementsFrom(sourceModel, importer)))
+        return status;
+
+    if (DgnDbStatus::Success != (status = _ImportElementAspectsFrom(sourceModel, importer)))
+        return status;
+
+    if (DgnDbStatus::Success != (status = _ImportECRelationshipsFrom(sourceModel, importer)))
+        return status;
 
     return DgnDbStatus::Success;
     }

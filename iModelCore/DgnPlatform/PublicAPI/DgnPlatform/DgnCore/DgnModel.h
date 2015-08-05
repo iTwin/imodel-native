@@ -414,6 +414,40 @@ protected:
     virtual void _AddGraphicsToScene(ViewContextR) {}
     void ReadProperties();
 
+    //! The sublcass should import elements from the source model into this model. 
+    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportECRelationshipsFrom after calling this method.
+    //! @note It should be rare for a subclass to override _ImportElementsFrom. The base class implementation copies all elements in the model,
+    //! and it fixes up all parent-child pointers. A subclass can override _ShouldImportElementFrom in order to exclude individual elements.
+    //! @see _ShouldImportElementFrom
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportElementsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+    
+    virtual bool _ShouldImportElement(DgnElementCR sourceElement) {return true;}
+
+    //! The sublcass should import ECRelationships from the source model into this model. 
+    //! Import is done in phases. This method will be called by the import framework after all elements have been imported and before ECRelationships are imported.
+    //! A subclass implementation of _ImportElementAspectsFrom should copy only the ElementAspect subclasses that are defined by the 
+    //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the ElementAspects defined in the base Dgn schema, including
+    //! ElementItem.
+    //! @note The implementation should start by calling the superclass implementation.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+
+    //! The sublcass should import ECRelationships from the source model into this model. 
+    //! Import is done in phases. This method will be called by the import framework after all elements and aspects have been imported.
+    //! This method will be called after all elements (and aspects) have been imported.
+    //! <p>
+    //! A subclass implementation of _ImportECRelationshipsFrom should copy only the relationship subclasses that are defined by the 
+    //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
+    //! base Dgn schema, including ElementDrivesElement, ElementGeomUsesParts, ElementGroupHasMembers, and ElementUsesStyles.
+    //! <p>
+    //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
+    //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
+    //! ECRelationships that start/end outside the model can only be copied if the foreign endpoint is also copied. 
+    //! If endpoint elements must be deep-copyed, however, that must be done in _ImportElementsFrom, not in this function. That is because
+    //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
+    //! prior to the phase where ECRelationships are copied.
+    //! @note The implementation should start by calling the superclass implementation.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+
 public:
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
@@ -558,6 +592,14 @@ public:
     const_iterator end() const {return m_elements.end();}
 
     //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
+    //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 
+    //! invoke the subclass handler to create an instance of the subclass. The base class implementation will also
+    //! cause the new model object to read its properties from the this (source) model's properties. That will 
+    //! take of populating most if not all subclass members.
+    //! @return the copy of the model
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the clone fails.
+    //! @param[in] params       The parameters to use when creating a new model object.
+    //! @see GetCreateParamsForImport
     DGNPLATFORM_EXPORT DgnModelPtr virtual _Clone(DgnDbStatus* stat, DgnModel::CreateParams const& params) const;
 
     //! Generate the CreateParams to use for _CloneForImport
@@ -566,14 +608,20 @@ public:
     DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
 
     //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb from \a sourceModel.
-    //! This base class implemenation copies all elements in the source model, along with their aspects.
+    //! This base class implemenation calls the following methods, in order:
+    //!     -# _ImportElementsFrom
+    //!     -# _ImportElementAspectsFrom
+    //!     -# _ImportECRelationshipsFrom
     //! @param sourceModel The model to copy
     //! @param importer     Used by elements when copying between DgnDbs.
     //! @return non-zero if the copy failed
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
     //! Make a copy of the specified model, including all of the contents of the model. The destination may be a different DgnDb.
-    //! This is just a convenience method that calls Clone, Insert, and then _CopyContentsFrom.
+    //! This is just a convenience method that calls the follow methods, in order:
+    //!     -# _CloneForImport
+    //!     -# Insert
+    //!     -# _CopyContentsFrom
     //! Note that ECRelationships between elements in the model and elements outside the model are \em not copied.
     //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.

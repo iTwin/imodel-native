@@ -230,7 +230,7 @@ public:
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
 
-        //! The subclass must override this method in order to insert an empty instance into the Db and associates it with the host element.
+        //! The subclass must override this method in order to insert an empty instance into the Db and associate it with the host element.
         //! @param el   The host element
         //! @note The caller will call _UpdateProperties immediately after calling this method.
         virtual DgnDbStatus _InsertInstance(DgnElementCR el) = 0;
@@ -256,6 +256,12 @@ public:
 
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
+
+        DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _Clone(DgnElementCR sourceEl) const;
+
+        //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
+
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.

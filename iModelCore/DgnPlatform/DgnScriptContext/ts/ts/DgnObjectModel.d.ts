@@ -25,6 +25,9 @@ declare module BentleyApi.Dgn {
     //! A wrapper for BentleyApi::Dgn::DgnElement. There is no constructor. The user must call DgnModel::Create to create a new one.
     class JsDgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         GetElementId(): Bentley_Utf8String;
+        Insert(): cxx_int32_t;
+        Update(): cxx_int32_t;
+        SetParent(parent: cxx_pointer<JsDgnElement>): void;
         Dispose(): void;
     }
 
@@ -34,7 +37,6 @@ declare module BentleyApi.Dgn {
     class JsDgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         GetModelId(): Bentley_Utf8String;
         CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): JsDgnElementP;
-        InsertElement(element: JsDgnElementP): void;
         DeleteAllElements(): void;
         Dispose(): void;
     }

@@ -693,6 +693,7 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
     {
+    m_modelId = importer.FindModelId(m_modelId);
     m_categoryId = importer.RemapCategory(m_categoryId);
     m_classId = importer.RemapClassId(m_classId);
     }
@@ -1240,7 +1241,32 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
     return DropMe::Yes; // this scheduled change has been processed, so remove it.
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_Clone(DgnElementCR el) const
+    {
+    DgnClassId classid = GetECClassId(el.GetDgnDb());
+    if (!el.GetElementId().IsValid() || !classid.IsValid())
+        return nullptr;
 
+    dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
+    if (nullptr == handler)
+        return nullptr;
+
+    RefCountedPtr<DgnElement::Aspect> aspect = handler->_CreateInstance().get();
+    if (!aspect.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != aspect->_LoadProperties(el))
+        return nullptr;
+
+    return aspect;
+    }
+
+/*=================================================================================**//**
+* @bsimethod                                    Sam.Wilson      06/15
++===============+===============+===============+===============+===============+======*/
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
 {
