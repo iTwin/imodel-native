@@ -149,7 +149,7 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     DbResult result = stmt.Step();
     BeAssert(result == BE_SQLITE_ROW);
 
-    TxnId last = stmt.GetValueInt(0); // this is where we left off last session
+    TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
 
     // whenever we open a Briefcase for write access, enable tracking
