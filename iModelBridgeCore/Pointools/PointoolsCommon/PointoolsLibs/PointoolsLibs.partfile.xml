@@ -46,10 +46,11 @@
   <Part Name="PointoolsLibsCommon_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <!-- <SubPart PartName="Boost_1_4_3_VS2012" Repository="PointoolsLibs"/>   -->
     <SubPart PartName="Boost_1_5_7_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="GL_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="GLEW_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="OpenGLExt"   PartFile="opengl" Repository="libsrc-opengl"/>
+    <SubPart PartName="GLEW_VS2012" PartFile="opengl" Repository="libsrc-opengl" LibType="static"/>
     <SubPart PartName="ttl" PartFile="ttl" Repository="libsrc-ttl"/>
     <SubPart PartName="wildmagic_VS2012" PartFile="wildmagic" Repository="libsrc-geometrictools"/>
+    <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
   </Part>
 
   
@@ -98,18 +99,13 @@
 
   <Part Name="PointoolsLibsVortex_VS2012">
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="GLUI_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="FastDelegate_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="FastDelegate" PartFile="FastDelegate" Repository="libsrc-FastDelegate"/>
+    <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
     <SubPart PartName="SCZ_Compress_VS2012" PartFile="scz_compress" Repository="libsrc-scz_compress"/>
   </Part>
 
-  <Part Name="FreeGlut_VS2012" BMakeFile="PointoolsLibsVortex/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\Freeglut.dll
-      </Assemblies>
-    </Bindings>
+  <Part Name="FreeGlut_VS2012">
+    <SubPart PartName="FreeGlut_VS2012" PartFile="opengl" Repository="libsrc-opengl"/>
   </Part>
 
   <Part Name="GLUI_VS2012" BMakeFile="PointoolsLibsVortex/GLUI/GLUI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
@@ -136,9 +132,9 @@
 
   <Part Name="PointoolsLibsIO_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="GNOME_LIBXML2_2_9_1_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="BeLibxml2_VS2012" PartFile="BeLibxml2" Repository="libsrc-libxml2" LibType="static"/>
     <SubPart PartName="PublicAPI" PartFile="BeIconv" Repository="Libsrc-Iconv"/>
-    <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
     <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="libLAS_VS2012" PartFile="liblas" Repository="libsrc-libLAS" />
     <SubPart PartName="Format_TopconCodec_VS2012" Repository="PointoolsLibs"/>
