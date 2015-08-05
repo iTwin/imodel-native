@@ -72,8 +72,6 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
     stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr < m_multiTxnOp.back()));
 
-    m_curr.Increment(); // increment txn id before we exit
-
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
     m_snappyTo.Write((ByteCP) &header, sizeof(header));
@@ -90,13 +88,24 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 
     auto rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
+        {
+        BeAssert(false);
         return rc;
+        }
+
+    m_curr.Increment();
 
     if (1 == m_snappyTo.GetCurrChunk())
         return BE_SQLITE_DONE;
 
     StatusInt status = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", m_dgndb.GetLastInsertRowId());
-    return (SUCCESS != status) ? BE_SQLITE_ERROR : BE_SQLITE_DONE;
+    if (SUCCESS != status)
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    return BE_SQLITE_DONE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,7 +149,7 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20)
     DbResult result = stmt.Step();
     BeAssert(result == BE_SQLITE_ROW);
 
-    TxnId last = stmt.GetValueInt(0); // this is where we left off last session
+    TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
 
     // whenever we open a Briefcase for write access, enable tracking
@@ -429,7 +438,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
     T_HOST.GetTxnAdmin()._OnCommit(*this);
 
-    SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
+    DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
+    if (result != BE_SQLITE_DONE)
+        return OnCommitStatus::Abort;
 
     OnEndValidate();
     return OnCommitStatus::Continue;
@@ -823,6 +834,61 @@ void TxnManager::DeleteReversedTxns()
     m_reversedTxn.clear();
     CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1");
     stmt->Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TxnManager::GetECChangeSet(ECChangeSet& ecChangeSet, TxnId startTxnId)
+    {
+    BeAssert(&ecChangeSet.GetDb() == &m_dgndb);
+
+    TxnId endTxnId = GetCurrentTxnId();
+    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
+        {
+        BeAssert(false && "Invalid starting transaction");
+        return DgnDbStatus::BadArg;
+        }
+
+    if (HasChanges())
+        {
+        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
+        return DgnDbStatus::TransactionActive;
+        }
+
+    DbResult result;
+    
+    TxnId nextTxnId;
+    ChangeGroup changeGroup;
+    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId))
+        {
+        BeAssert(currTxnId.IsValid());
+
+        UndoChangeSet sqlChangeSet;
+        ReadChangeSet(sqlChangeSet, currTxnId, TxnAction::None);
+
+        result = changeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
+        if (result != BE_SQLITE_OK)
+            {
+            BeAssert(false && "Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()");
+            return DgnDbStatus::SQLiteError;
+            }
+        }
+
+    UndoChangeSet mergedSqlChangeSet;
+    result = mergedSqlChangeSet.FromChangeGroup(changeGroup);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Failed to merge SqlChangeSet-s into a single SqlChangeSet");
+        return DgnDbStatus::SQLiteError;
+        }
+
+    ecChangeSet.Free();
+    BentleyStatus status = ecChangeSet.FromSqlChangeSet(mergedSqlChangeSet);
+    BeAssert(status == SUCCESS);
+    UNUSED_VARIABLE(status);
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

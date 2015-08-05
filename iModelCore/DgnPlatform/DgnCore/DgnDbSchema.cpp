@@ -60,7 +60,7 @@ DbResult DgnDb::CreateDgnDbTables()
     CreateTable(DGN_TABLE_Txns, "Id INTEGER PRIMARY KEY NOT NULL," 
                            "Deleted BOOL,"
                            "Grouped BOOL,"
-                           "Operation CHAR NOT NULL,"
+                           "Operation CHAR,"
                            "Time TIMESTAMP DEFAULT(julianday('now')),"
                            "Change BLOB");
 
