@@ -981,7 +981,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 int64_t   value;
                 
-                BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%lld", &value);
+                BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%" PRId64, &value);
 
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
@@ -1046,7 +1046,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 m_lexer->Advance();
                 int64_t ticks;
-                if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP(), "%lld", &ticks))
+                if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP(), "%" PRId64, &ticks))
                     return GetErrorNode ("DateTimeLiteralExpected");
 
                 result = Node::CreateDateTimeLiteral (ticks);
