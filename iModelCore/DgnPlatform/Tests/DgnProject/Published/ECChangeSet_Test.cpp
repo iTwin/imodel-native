@@ -301,7 +301,7 @@ TEST_F(ECChangeSetTestFixture, ElementChangesFromCurrentTransaction)
 
     ECChangeSet ecChangeSet(*m_testDb);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
     InsertModel();
     InsertCategory();
     InsertElement();
@@ -327,7 +327,7 @@ TEST_F(ECChangeSetTestFixture, ElementChangesFromCurrentTransaction)
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
     ModifyElement();
     GetECChangeSetFromCurrentTransaction(ecChangeSet);
     
@@ -372,7 +372,7 @@ TEST_F(ECChangeSetTestFixture, ElementChangesFromSavedTransactions)
     InsertCategory();
     InsertElement();
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -395,7 +395,7 @@ TEST_F(ECChangeSetTestFixture, ElementChangesFromSavedTransactions)
 
     ModifyElement();
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -418,7 +418,7 @@ TEST_F(ECChangeSetTestFixture, ElementChangesFromSavedTransactions)
 
     DeleteElement();
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -505,7 +505,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromCurrentTransaction)
     ASSERT_EQ(1, ecChangeSet.MakeIterator().QueryCount());
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     Statement stmt;
     DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_ArrayOfAnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
@@ -525,7 +525,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromCurrentTransaction)
     ASSERT_EQ(1, ecChangeSet.MakeIterator().QueryCount());
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     stmt.Finalize();
     result = stmt.Prepare(*m_testDb, "DELETE FROM sc_ArrayOfAnglesStruct WHERE ECArrayIndex=2");
@@ -545,7 +545,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromCurrentTransaction)
     ASSERT_EQ(1, ecChangeSet.MakeIterator().QueryCount());
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
     
     ECClassCP ecClass = ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
     ASSERT_TRUE(ecClass != nullptr);
@@ -570,7 +570,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromCurrentTransaction)
     ASSERT_EQ(1, ecChangeSet.MakeIterator().QueryCount());
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     ecSqlStmt.Finalize();
     ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, "INSERT INTO StartupCompany.AnglesStruct (Alpha,Beta,Theta) VALUES(1.1,2.2,3.3)");
@@ -619,7 +619,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromSavedTransactions)
     BentleyStatus status = ImportECInstance(instanceKey, *instance, *m_testDb);
     ASSERT_TRUE(SUCCESS == status);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -639,7 +639,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromSavedTransactions)
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -659,7 +659,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromSavedTransactions)
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
     
@@ -684,7 +684,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromSavedTransactions)
     ECSqlStepStatus stepStatus = ecSqlStmt.Step();
     ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -703,7 +703,7 @@ TEST_F(ECChangeSetTestFixture, StructArrayChangesFromSavedTransactions)
     stepStatus = ecSqlStmt.Step(structInstanceKey);
     ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     GetECChangeSetFromSavedTransactions(ecChangeSet);
 
@@ -791,7 +791,7 @@ TEST_F(ECChangeSetTestFixture, RelationshipChangesFromCurrentTransaction)
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -830,7 +830,7 @@ TEST_F(ECChangeSetTestFixture, RelationshipChangesFromCurrentTransaction)
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
     ASSERT_TRUE(ECChangeSetHasChange(ecChangeSet, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     /* 
     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
@@ -941,7 +941,7 @@ TEST_F(ECChangeSetTestFixture, RelationshipChangesFromSavedTransaction)
     stepStatus = statement.Step(hardwareKey2);
     ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     ECChangeSet ecChangeSet(*m_testDb);
     GetECChangeSetFromSavedTransactions(ecChangeSet);
@@ -986,7 +986,7 @@ TEST_F(ECChangeSetTestFixture, RelationshipChangesFromSavedTransaction)
     stepStatus = statement.Step(employeeHardwareKey);
     ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     ecChangeSet.Free();
     GetECChangeSetFromSavedTransactions(ecChangeSet);
@@ -1044,7 +1044,7 @@ TEST_F(ECChangeSetTestFixture, RelationshipChangesFromSavedTransaction)
     stepStatus = statement.Step(employeeCompanyKey2);
     ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
 
-    m_testDb->SaveChanges("Test");
+    m_testDb->SaveChanges();
 
     ecChangeSet.Free();
     GetECChangeSetFromSavedTransactions(ecChangeSet);

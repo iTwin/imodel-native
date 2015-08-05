@@ -72,8 +72,6 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
     stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr < m_multiTxnOp.back()));
 
-    m_curr.Increment(); // increment txn id before we exit
-
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
     m_snappyTo.Write((ByteCP) &header, sizeof(header));
@@ -90,13 +88,24 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 
     auto rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
+        {
+        BeAssert(false);
         return rc;
+        }
+
+    m_curr.Increment();
 
     if (1 == m_snappyTo.GetCurrChunk())
         return BE_SQLITE_DONE;
 
     StatusInt status = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", m_dgndb.GetLastInsertRowId());
-    return (SUCCESS != status) ? BE_SQLITE_ERROR : BE_SQLITE_DONE;
+    if (SUCCESS != status)
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
+        }
+
+    return BE_SQLITE_DONE;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -429,7 +438,9 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
     T_HOST.GetTxnAdmin()._OnCommit(*this);
 
-    SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
+    DbResult result = SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
+    if (result != BE_SQLITE_DONE)
+        return OnCommitStatus::Abort;
 
     OnEndValidate();
     return OnCommitStatus::Continue;
