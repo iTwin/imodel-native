@@ -826,6 +826,61 @@ void TxnManager::DeleteReversedTxns()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Ramanujam.Raman   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TxnManager::GetECChangeSet(ECChangeSet& ecChangeSet, TxnId startTxnId)
+    {
+    BeAssert(&ecChangeSet.GetDb() == &m_dgndb);
+
+    TxnId endTxnId = GetCurrentTxnId();
+    if (!startTxnId.IsValid() || startTxnId >= endTxnId)
+        {
+        BeAssert(false && "Invalid starting transaction");
+        return DgnDbStatus::BadArg;
+        }
+
+    if (HasChanges())
+        {
+        BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
+        return DgnDbStatus::TransactionActive;
+        }
+
+    DbResult result;
+    
+    TxnId nextTxnId;
+    ChangeGroup changeGroup;
+    for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId))
+        {
+        BeAssert(currTxnId.IsValid());
+
+        UndoChangeSet sqlChangeSet;
+        ReadChangeSet(sqlChangeSet, currTxnId, TxnAction::None);
+
+        result = changeGroup.AddChanges(sqlChangeSet.GetSize(), sqlChangeSet.GetData());
+        if (result != BE_SQLITE_OK)
+            {
+            BeAssert(false && "Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()");
+            return DgnDbStatus::SQLiteError;
+            }
+        }
+
+    UndoChangeSet mergedSqlChangeSet;
+    result = mergedSqlChangeSet.FromChangeGroup(changeGroup);
+    if (result != BE_SQLITE_OK)
+        {
+        BeAssert(false && "Failed to merge SqlChangeSet-s into a single SqlChangeSet");
+        return DgnDbStatus::SQLiteError;
+        }
+
+    ecChangeSet.Free();
+    BentleyStatus status = ecChangeSet.FromSqlChangeSet(mergedSqlChangeSet);
+    BeAssert(status == SUCCESS);
+    UNUSED_VARIABLE(status);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Element::_OnValidate()
