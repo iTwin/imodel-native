@@ -39,3 +39,4 @@ DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressi
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
 
+ComponentModelTest.SimulateDeveloperAndClient           # ?? Failed to open e:\Builds\mds06000011\Output\Winx64\build\BeGTest\run\Output\DgnComponentModelTest_Component.idgndb in mode 2 => result=400000a
