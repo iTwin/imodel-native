@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ECDb/ECChangeSet.h $
+|     $Source: PublicAPI/ECDb/ECChangeSummary.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,8 +19,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      07/2015
 //=======================================================================================
-struct ECChangeSet : NonCopyableClass
+struct ECChangeSummary : NonCopyableClass
 {
+    //=======================================================================================
+    // @bsiclass                                              Ramanujam.Raman      07/2015
+    //=======================================================================================
     struct SqlChange
     {
     private:
@@ -56,6 +59,9 @@ struct ECChangeSet : NonCopyableClass
             int GetIndirect() const { return m_indirect; }
         };
 
+    //=======================================================================================
+    // @bsiclass                                              Ramanujam.Raman      07/2015
+    //=======================================================================================
     struct ColumnMap
     {
     private:
@@ -81,6 +87,9 @@ struct ECChangeSet : NonCopyableClass
     typedef ClassMap const* ClassMapCP;
     typedef ClassMap* ClassMapP;
 
+    //=======================================================================================
+    // @bsiclass                                              Ramanujam.Raman      07/2015
+    //=======================================================================================
     struct ClassMap
     {
         friend struct TableMap;
@@ -117,6 +126,9 @@ struct ECChangeSet : NonCopyableClass
 
     typedef bmap<ECN::ECClassId, ClassMapP> ClassMapById;
 
+    //=======================================================================================
+    // @bsiclass                                              Ramanujam.Raman      07/2015
+    //=======================================================================================
     struct TableMap
     {
     private:
@@ -149,7 +161,7 @@ struct ECChangeSet : NonCopyableClass
 
     typedef bmap<Utf8String, TableMapP> TableMapByName;
     
-    //! An iterator over changes in a ECChangeSet
+    //! An iterator over changes in a ECChangeSummary
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
@@ -190,21 +202,21 @@ private:
 
     mutable TableMapByName m_tableMapByName;
 
-    Statement m_changeSetTableInsert;
-    Statement m_changeSetTableUpdate;
-    Statement m_changeSetTableSelect;
-    Statement m_changeSetTableDelete;
+    Statement m_changeSummaryTableInsert;
+    Statement m_changeSummaryTableUpdate;
+    Statement m_changeSummaryTableSelect;
+    Statement m_changeSummaryTableDelete;
 
     void Initialize();
 
-    ECChangeSet::TableMapCP GetTableMap(Utf8CP tableName) const;
+    ECChangeSummary::TableMapCP GetTableMap(Utf8CP tableName) const;
     void AddTableToMap(Utf8CP tableName) const;
     void FreeTableMap();
 
     BentleyStatus ProcessSqlChangeForTable(SqlChange const& sqlChange, TableMap const& tableMap);
-    void ProcessSqlChangeForStructMap(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap, ECInstanceId instanceId);
-    void ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap, ECInstanceId instanceId);
-    void ProcessSqlChangeForClassMap(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap, ECInstanceId instanceId);
+    void ProcessSqlChangeForStructMap(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap, ECInstanceId instanceId);
+    void ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap, ECInstanceId instanceId);
+    void ProcessSqlChangeForClassMap(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap, ECInstanceId instanceId);
 
     ECInstanceId GetInstanceIdFromChange(SqlChange const& sqlChange, TableMap const& tableMap) const;
     bool SqlChangeHasUpdatesForClass(SqlChange const& sqlChange, ClassMap const& classMap) const;
@@ -215,44 +227,44 @@ private:
     ECN::ECClassId GetClassIdFromChangeOrTable(SqlChange const& sqlChange, TableMap const& tableMap, ECInstanceId instanceId) const;
     bool GetStructArrayParentFromChange(ECN::ECClassId& parentClassId, ECInstanceId& parentInstanceId, SqlChange const& sqlChange, ClassMap const& classMap, ECInstanceId instanceId);
 
-    void CreateChangeSetTable();
-    void DestroyChangeSetTable();
-    void PrepareChangeSetTableStatements();
-    void FinalizeChangeSetTableStatements();
-    void RecordInChangeSetTable(ECChange const& ecChange);
-    bool SelectInChangeSetTable(DbOpcode& dbOpcode, ECN::ECClassId classId, ECInstanceId instanceId);
-    void InsertInChangeSetTable(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
-    void DeleteInChangeSetTable(ECN::ECClassId classId, ECInstanceId instanceId);
-    void UpdateInChangeSetTable(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
-    void BindChangeSetTableStatement(Statement& statement, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
-    void BindChangeSetTableStatement(Statement& statement, ECN::ECClassId classId, ECInstanceId instanceId);
+    void CreateChangeSummaryTable();
+    void DestroyChangeSummaryTable();
+    void PrepareChangeSummaryTableStatements();
+    void FinalizeChangeSummaryTableStatements();
+    void RecordInChangeSummaryTable(ECChange const& ecChange);
+    bool SelectInChangeSummaryTable(DbOpcode& dbOpcode, ECN::ECClassId classId, ECInstanceId instanceId);
+    void InsertInChangeSummaryTable(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
+    void DeleteInChangeSummaryTable(ECN::ECClassId classId, ECInstanceId instanceId);
+    void UpdateInChangeSummaryTable(ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
+    void BindChangeSummaryTableStatement(Statement& statement, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect);
+    void BindChangeSummaryTableStatement(Statement& statement, ECN::ECClassId classId, ECInstanceId instanceId);
 
 
 public:
-    //! Construct a ECChangeSet from a BeSQLite ChangeSet
-    ECChangeSet(ECDbR ecdb) : m_ecdb(ecdb) {}
+    //! Construct a ECChangeSummary from a BeSQLite ChangeSet
+    ECChangeSummary(ECDbR ecdb) : m_ecdb(ecdb) {}
 
     //! Destructor
-    ECDB_EXPORT ~ECChangeSet();
+    ECDB_EXPORT ~ECChangeSummary();
 
     //! Get the Db used by this change set
     ECDbR GetDb() const { return m_ecdb; }
 
-    //! Create a ECChangeSet from the contents of a BeSQLite ChangeSet
-    //! @remarks The ECChangeSet needs to be new or freed before this call. 
-    //! @see MakeIterator, GetChangeSetTableName
+    //! Create a ECChangeSummary from the contents of a BeSQLite ChangeSet
+    //! @remarks The ECChangeSummary needs to be new or freed before this call. 
+    //! @see MakeIterator, GetChangeSummaryTableName
     ECDB_EXPORT BentleyStatus FromSqlChangeSet(BeSQLite::ChangeSet& changeSet);
 
-    //! Get an iterator over the changes in this ECChangeSet
-    //! Use @ref FromSqlChangeSet to populate the ECChangeSet table.
+    //! Get an iterator over the changes in this ECChangeSummary
+    //! Use @ref FromSqlChangeSet to populate the ECChangeSummary table.
     Iterator MakeIterator() const { return Iterator(m_ecdb); }
 
     //! Get the name of the change set table
     //! @remarks The table includes ClassId, InstanceId and DbOpcode and IsIndirect columns, and can be used as part of other 
-    //! queries. Use @ref FromSqlChangeSet to populate the ECChangeSet table.
-    ECDB_EXPORT Utf8String GetChangeSetTableName() const;
+    //! queries. Use @ref FromSqlChangeSet to populate the ECChangeSummary table.
+    ECDB_EXPORT Utf8String GetChangeSummaryTableName() const;
         
-    //! Free the data held by this ECChangeSet.
+    //! Free the data held by this ECChangeSummary.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
     ECDB_EXPORT void Free();
 

@@ -1,21 +1,21 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECChangeSet.cpp $
+|     $Source: ECDb/ECChangeSummary.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-#define EC_CHANGESET_TABLE_PREFIX "temp."
-#define EC_CHANGESET_TABLE_NAME_NOPREFIX "ec_ChangeSet"
+#define EC_CHANGE_SUMMARY_TABLE_PREFIX "temp."
+#define EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "ec_ChangeSummary"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECChangeSet::SqlChange::SqlChange(Changes::Change const& change) : m_sqlChange(change)
+ECChangeSummary::SqlChange::SqlChange(Changes::Change const& change) : m_sqlChange(change)
     {
     Utf8CP tableName;
     DbResult rc = m_sqlChange.GetOperation(&tableName, &m_nCols, &m_dbOpcode, &m_indirect);
@@ -28,7 +28,7 @@ ECChangeSet::SqlChange::SqlChange(Changes::Change const& change) : m_sqlChange(c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::ClassMap::AddColumn(Utf8CP accessString, Utf8CP columnName, int columnIndex)
+void ECChangeSummary::ClassMap::AddColumn(Utf8CP accessString, Utf8CP columnName, int columnIndex)
     {
     ColumnMap columnMap(accessString, columnName, columnIndex);
     m_columnMapByAccessString[accessString] = columnMap;
@@ -37,7 +37,7 @@ void ECChangeSet::ClassMap::AddColumn(Utf8CP accessString, Utf8CP columnName, in
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::ClassMap::GetIsForeignKeyRelationship() const
+bool ECChangeSummary::ClassMap::GetIsForeignKeyRelationship() const
     {
     ECDbMapStrategy::Strategy mapStrategy = (ECDbMapStrategy::Strategy) m_mapStrategy;
     return (ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable == mapStrategy || ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable == mapStrategy);
@@ -46,7 +46,7 @@ bool ECChangeSet::ClassMap::GetIsForeignKeyRelationship() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-Utf8CP ECChangeSet::ClassMap::GetColumnName(Utf8CP accessString) const
+Utf8CP ECChangeSummary::ClassMap::GetColumnName(Utf8CP accessString) const
     {
     ColumnMapByAccessString::const_iterator iter = m_columnMapByAccessString.find(accessString);
     if (iter != m_columnMapByAccessString.end())
@@ -58,7 +58,7 @@ Utf8CP ECChangeSet::ClassMap::GetColumnName(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-int ECChangeSet::ClassMap::GetColumnIndex(Utf8CP accessString) const
+int ECChangeSummary::ClassMap::GetColumnIndex(Utf8CP accessString) const
     {
     ColumnMapByAccessString::const_iterator iter = m_columnMapByAccessString.find(accessString);
     if (iter != m_columnMapByAccessString.end())
@@ -70,7 +70,7 @@ int ECChangeSet::ClassMap::GetColumnIndex(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::ClassMap::Initialize(ECDbR ecdb, ECClassId classId, Utf8CP tableName, bmap<Utf8String, int> const& columnIndexByName)
+bool ECChangeSummary::ClassMap::Initialize(ECDbR ecdb, ECClassId classId, Utf8CP tableName, bmap<Utf8String, int> const& columnIndexByName)
     {
     m_classId = classId;
     m_tableName = tableName;
@@ -150,7 +150,7 @@ bool ECChangeSet::ClassMap::Initialize(ECDbR ecdb, ECClassId classId, Utf8CP tab
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::TableMap::QueryInstanceIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName) const
+bool ECChangeSummary::TableMap::QueryInstanceIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName) const
     {
     return QueryIdColumnFromMap(idColumnName, ecdb, tableName, 1);
     }
@@ -158,7 +158,7 @@ bool ECChangeSet::TableMap::QueryInstanceIdColumnFromMap(Utf8StringR idColumnNam
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::TableMap::QueryClassIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName) const
+bool ECChangeSummary::TableMap::QueryClassIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName) const
     {
     return QueryIdColumnFromMap(idColumnName, ecdb, tableName, 2);
     }
@@ -166,7 +166,7 @@ bool ECChangeSet::TableMap::QueryClassIdColumnFromMap(Utf8StringR idColumnName, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::TableMap::QueryIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName, int userData) const
+bool ECChangeSummary::TableMap::QueryIdColumnFromMap(Utf8StringR idColumnName, ECDbR ecdb, Utf8CP tableName, int userData) const
     {
     CachedStatementPtr statement = ecdb.GetCachedStatement(
         "SELECT ec_Column.Name"
@@ -190,7 +190,7 @@ bool ECChangeSet::TableMap::QueryIdColumnFromMap(Utf8StringR idColumnName, ECDbR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::TableMap::Initialize(ECDbR ecdb, Utf8CP tableName)
+void ECChangeSummary::TableMap::Initialize(ECDbR ecdb, Utf8CP tableName)
     {
     m_tableName = tableName;
 
@@ -271,7 +271,7 @@ void ECChangeSet::TableMap::Initialize(ECDbR ecdb, Utf8CP tableName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::TableMap::FreeClassMap()
+void ECChangeSummary::TableMap::FreeClassMap()
     {
     for (ClassMapById::const_iterator iter = m_classMaps.begin(); iter != m_classMaps.end(); iter++)
         delete iter->second;
@@ -281,7 +281,7 @@ void ECChangeSet::TableMap::FreeClassMap()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECChangeSet::TableMap::~TableMap()
+ECChangeSummary::TableMap::~TableMap()
     {
     FreeClassMap();
     }
@@ -289,33 +289,33 @@ ECChangeSet::TableMap::~TableMap()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::Initialize()
+void ECChangeSummary::Initialize()
     {
     if (IsValid())
         return;
 
-    CreateChangeSetTable();
-    PrepareChangeSetTableStatements();
+    CreateChangeSummaryTable();
+    PrepareChangeSummaryTableStatements();
     m_isValid = true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::Free()
+void ECChangeSummary::Free()
     {
     if (!IsValid())
         return;
 
-    FinalizeChangeSetTableStatements();
-    DestroyChangeSetTable();
+    FinalizeChangeSummaryTableStatements();
+    DestroyChangeSummaryTable();
     m_isValid = false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECChangeSet::~ECChangeSet()
+ECChangeSummary::~ECChangeSummary()
     {
     Free();
     FreeTableMap();
@@ -324,16 +324,16 @@ ECChangeSet::~ECChangeSet()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-Utf8String ECChangeSet::GetChangeSetTableName() const
+Utf8String ECChangeSummary::GetChangeSummaryTableName() const
     {
-    Utf8String tableName = EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX;
+    Utf8String tableName = EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX;
     return tableName;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECChangeSet::TableMapCP ECChangeSet::GetTableMap(Utf8CP tableName) const
+ECChangeSummary::TableMapCP ECChangeSummary::GetTableMap(Utf8CP tableName) const
     {
     if (m_tableMapByName.find(tableName) == m_tableMapByName.end())
         {
@@ -347,7 +347,7 @@ ECChangeSet::TableMapCP ECChangeSet::GetTableMap(Utf8CP tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::AddTableToMap(Utf8CP tableName) const
+void ECChangeSummary::AddTableToMap(Utf8CP tableName) const
     {
     TableMapP tableMap = new TableMap();
     tableMap->Initialize (m_ecdb, tableName);
@@ -357,7 +357,7 @@ void ECChangeSet::AddTableToMap(Utf8CP tableName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::FreeTableMap()
+void ECChangeSummary::FreeTableMap()
     {
     for (TableMapByName::const_iterator iter = m_tableMapByName.begin(); iter != m_tableMapByName.end(); iter++)
         delete iter->second;
@@ -367,7 +367,7 @@ void ECChangeSet::FreeTableMap()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::SqlChangeHasUpdatesForClass(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap) const
+bool ECChangeSummary::SqlChangeHasUpdatesForClass(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap) const
     {
     ColumnMapByAccessString const& columnMapByAccessString = classMap.GetColumnMapByAccessString();
     for (ColumnMapByAccessString::const_iterator it = columnMapByAccessString.begin(); it != columnMapByAccessString.end(); it++)
@@ -397,7 +397,7 @@ bool ECChangeSet::SqlChangeHasUpdatesForClass(SqlChange const& sqlChange, ECChan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap, ECInstanceId instanceId)
+void ECChangeSummary::ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap, ECInstanceId instanceId)
     {
     ECDbMapStrategy::Strategy mapStrategy = (ECDbMapStrategy::Strategy) classMap.GetMapStrategy();
 
@@ -434,20 +434,20 @@ void ECChangeSet::ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange, E
         return;
 
     ECChange ecChange(classMap.GetClassId(), instanceId, relDbOpcode, sqlChange.GetIndirect());
-    RecordInChangeSetTable(ecChange);
+    RecordInChangeSummaryTable(ecChange);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::ProcessSqlChangeForStructMap(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap, ECInstanceId instanceId)
+void ECChangeSummary::ProcessSqlChangeForStructMap(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap, ECInstanceId instanceId)
     {
     ECClassId parentClassId;
     ECInstanceId parentInstanceId;
     if (GetStructArrayParentFromChange(parentClassId, parentInstanceId, sqlChange, classMap, instanceId))
         {
         ECChange ecChange(parentClassId, parentInstanceId, DbOpcode::Update, sqlChange.GetIndirect());
-        RecordInChangeSetTable(ecChange);
+        RecordInChangeSummaryTable(ecChange);
         return;
         }
         
@@ -457,25 +457,25 @@ void ECChangeSet::ProcessSqlChangeForStructMap(SqlChange const& sqlChange, ECCha
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::ProcessSqlChangeForClassMap(SqlChange const& sqlChange, ECChangeSet::ClassMap const& classMap, ECInstanceId instanceId)
+void ECChangeSummary::ProcessSqlChangeForClassMap(SqlChange const& sqlChange, ECChangeSummary::ClassMap const& classMap, ECInstanceId instanceId)
     {
     DbOpcode dbOpcode = sqlChange.GetDbOpcode();
     ECChange ecChange(classMap.GetClassId(), instanceId, dbOpcode, sqlChange.GetIndirect());
 
     if (dbOpcode == DbOpcode::Insert || dbOpcode == DbOpcode::Delete)
-        RecordInChangeSetTable(ecChange);
+        RecordInChangeSummaryTable(ecChange);
     else if (SqlChangeHasUpdatesForClass(sqlChange, classMap))
-        RecordInChangeSetTable(ecChange);
+        RecordInChangeSummaryTable(ecChange);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECChangeSet::ProcessSqlChangeForTable(SqlChange const& sqlChange, TableMap const& tableMap)
+BentleyStatus ECChangeSummary::ProcessSqlChangeForTable(SqlChange const& sqlChange, TableMap const& tableMap)
     {
     if (!tableMap.GetIsMapped())
         {
-        LOG.infov("ECChangeSet skipping table %s since it's not mapped", tableMap.GetTableName());
+        LOG.infov("ECChangeSummary skipping table %s since it's not mapped", tableMap.GetTableName());
         return SUCCESS;
         }
 
@@ -519,7 +519,7 @@ BentleyStatus ECChangeSet::ProcessSqlChangeForTable(SqlChange const& sqlChange, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECChangeSet::FromSqlChangeSet(ChangeSet& changeSet)
+BentleyStatus ECChangeSummary::FromSqlChangeSet(ChangeSet& changeSet)
     {
     Initialize();
 
@@ -542,22 +542,22 @@ BentleyStatus ECChangeSet::FromSqlChangeSet(ChangeSet& changeSet)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::CreateChangeSetTable()
+void ECChangeSummary::CreateChangeSummaryTable()
     {
-    BeAssert(!m_ecdb.TableExists(EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX));
+    BeAssert(!m_ecdb.TableExists(EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX));
 
-    DbResult result = m_ecdb.CreateTable(EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX, "[Id] INTEGER NOT NULL PRIMARY KEY, [ClassId] INTEGER not null, [InstanceId] INTEGER not null, [DbOpcode] INTEGER not null, [IsIndirect] INTEGER not null");
+    DbResult result = m_ecdb.CreateTable(EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX, "[Id] INTEGER NOT NULL PRIMARY KEY, [ClassId] INTEGER not null, [InstanceId] INTEGER not null, [DbOpcode] INTEGER not null, [IsIndirect] INTEGER not null");
     BeAssert(result == BE_SQLITE_OK);
 
-    Utf8CP sqlIdx1 = "CREATE UNIQUE INDEX " EC_CHANGESET_TABLE_PREFIX "idx_" EC_CHANGESET_TABLE_NAME_NOPREFIX "_id ON [" EC_CHANGESET_TABLE_NAME_NOPREFIX "] (ClassId, InstanceId)";
+    Utf8CP sqlIdx1 = "CREATE UNIQUE INDEX " EC_CHANGE_SUMMARY_TABLE_PREFIX "idx_" EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "_id ON [" EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "] (ClassId, InstanceId)";
     result = m_ecdb.ExecuteSql(sqlIdx1);
     BeAssert(result == BE_SQLITE_OK);
 
-    Utf8CP sqlIdx2 = "CREATE INDEX " EC_CHANGESET_TABLE_PREFIX "idx_" EC_CHANGESET_TABLE_NAME_NOPREFIX "_op ON [" EC_CHANGESET_TABLE_NAME_NOPREFIX "](DbOpcode)";
+    Utf8CP sqlIdx2 = "CREATE INDEX " EC_CHANGE_SUMMARY_TABLE_PREFIX "idx_" EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "_op ON [" EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "](DbOpcode)";
     result = m_ecdb.ExecuteSql(sqlIdx2);
     BeAssert(result == BE_SQLITE_OK);
 
-    Utf8CP sqlIdx3 = "CREATE INDEX " EC_CHANGESET_TABLE_PREFIX "idx_" EC_CHANGESET_TABLE_NAME_NOPREFIX "_ind ON [" EC_CHANGESET_TABLE_NAME_NOPREFIX "](IsIndirect)";
+    Utf8CP sqlIdx3 = "CREATE INDEX " EC_CHANGE_SUMMARY_TABLE_PREFIX "idx_" EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "_ind ON [" EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX "](IsIndirect)";
     result = m_ecdb.ExecuteSql(sqlIdx3);
     BeAssert(result == BE_SQLITE_OK);
     }
@@ -565,11 +565,11 @@ void ECChangeSet::CreateChangeSetTable()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::DestroyChangeSetTable()
+void ECChangeSummary::DestroyChangeSummaryTable()
     {
-    BeAssert(m_ecdb.TableExists(EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX));
+    BeAssert(m_ecdb.TableExists(EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX));
 
-    Utf8CP sql = "DROP TABLE " EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX;
+    Utf8CP sql = "DROP TABLE " EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX;
     DbResult result = m_ecdb.ExecuteSql(sql);
     BeAssert(result == BE_SQLITE_OK);
     }
@@ -577,49 +577,49 @@ void ECChangeSet::DestroyChangeSetTable()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::PrepareChangeSetTableStatements()
+void ECChangeSummary::PrepareChangeSummaryTableStatements()
     {
-    Utf8String changeSetTableName = GetChangeSetTableName();
-    BeAssert(m_ecdb.TableExists(changeSetTableName.c_str()));
+    Utf8String changeSummaryTableName = GetChangeSummaryTableName();
+    BeAssert(m_ecdb.TableExists(changeSummaryTableName.c_str()));
 
     DbResult result;
 
-    BeAssert(!m_changeSetTableInsert.IsPrepared());
-    Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,IsIndirect) VALUES(?1,?2,?3,?4)", changeSetTableName.c_str());
-    result = m_changeSetTableInsert.Prepare(m_ecdb, insertSql.c_str());
+    BeAssert(!m_changeSummaryTableInsert.IsPrepared());
+    Utf8PrintfString insertSql("INSERT INTO %s (ClassId,InstanceId,DbOpcode,IsIndirect) VALUES(?1,?2,?3,?4)", changeSummaryTableName.c_str());
+    result = m_changeSummaryTableInsert.Prepare(m_ecdb, insertSql.c_str());
     BeAssert(result == BE_SQLITE_OK);
 
-    BeAssert(!m_changeSetTableUpdate.IsPrepared());
-    Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,IsIndirect=?4 WHERE ClassId=?1 AND InstanceId=?2", changeSetTableName.c_str());
-    result = m_changeSetTableUpdate.Prepare(m_ecdb, updateSql.c_str());
+    BeAssert(!m_changeSummaryTableUpdate.IsPrepared());
+    Utf8PrintfString updateSql("UPDATE %s SET DbOpcode=?3,IsIndirect=?4 WHERE ClassId=?1 AND InstanceId=?2", changeSummaryTableName.c_str());
+    result = m_changeSummaryTableUpdate.Prepare(m_ecdb, updateSql.c_str());
     BeAssert(result == BE_SQLITE_OK);
 
-    BeAssert(!m_changeSetTableSelect.IsPrepared());
-    Utf8PrintfString selectSql("SELECT DbOpcode, IsIndirect FROM %s WHERE ClassId=?1 AND InstanceId=?2", changeSetTableName.c_str());
-    result = m_changeSetTableSelect.Prepare(m_ecdb, selectSql.c_str());
+    BeAssert(!m_changeSummaryTableSelect.IsPrepared());
+    Utf8PrintfString selectSql("SELECT DbOpcode, IsIndirect FROM %s WHERE ClassId=?1 AND InstanceId=?2", changeSummaryTableName.c_str());
+    result = m_changeSummaryTableSelect.Prepare(m_ecdb, selectSql.c_str());
     BeAssert(result == BE_SQLITE_OK);
 
-    BeAssert(!m_changeSetTableDelete.IsPrepared());
-    Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", changeSetTableName.c_str());
-    result = m_changeSetTableDelete.Prepare(m_ecdb, deleteSql.c_str());
+    BeAssert(!m_changeSummaryTableDelete.IsPrepared());
+    Utf8PrintfString deleteSql("DELETE FROM %s WHERE ClassId=?1 AND InstanceId=?2", changeSummaryTableName.c_str());
+    result = m_changeSummaryTableDelete.Prepare(m_ecdb, deleteSql.c_str());
     BeAssert(result == BE_SQLITE_OK);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::FinalizeChangeSetTableStatements()
+void ECChangeSummary::FinalizeChangeSummaryTableStatements()
     {
-    m_changeSetTableInsert.Finalize();
-    m_changeSetTableUpdate.Finalize();
-    m_changeSetTableSelect.Finalize();
-    m_changeSetTableDelete.Finalize();
+    m_changeSummaryTableInsert.Finalize();
+    m_changeSummaryTableUpdate.Finalize();
+    m_changeSummaryTableSelect.Finalize();
+    m_changeSummaryTableDelete.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::RecordInChangeSetTable(ECChange const& ecChange)
+void ECChangeSummary::RecordInChangeSummaryTable(ECChange const& ecChange)
     {
     /*
     * Note: Struct arrays are the only known case where a previous
@@ -646,17 +646,17 @@ void ECChangeSet::RecordInChangeSetTable(ECChange const& ecChange)
     int indirect = ecChange.GetIndirect();
     
     DbOpcode foundDbOpcode;
-    bool found = SelectInChangeSetTable(foundDbOpcode, classId, instanceId);
+    bool found = SelectInChangeSummaryTable(foundDbOpcode, classId, instanceId);
 
     if (!found)
         {
-        InsertInChangeSetTable(classId, instanceId, dbOpcode, indirect);
+        InsertInChangeSummaryTable(classId, instanceId, dbOpcode, indirect);
         return;
         }
 
     if (foundDbOpcode == DbOpcode::Update && dbOpcode != DbOpcode::Update)
         {
-        UpdateInChangeSetTable(classId, instanceId, dbOpcode, indirect);
+        UpdateInChangeSummaryTable(classId, instanceId, dbOpcode, indirect);
         return;
         }
 
@@ -666,15 +666,15 @@ void ECChangeSet::RecordInChangeSetTable(ECChange const& ecChange)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::SelectInChangeSetTable(DbOpcode& dbOpcode, ECClassId classId, ECInstanceId instanceId)
+bool ECChangeSummary::SelectInChangeSummaryTable(DbOpcode& dbOpcode, ECClassId classId, ECInstanceId instanceId)
     {
-    BindChangeSetTableStatement(m_changeSetTableSelect, classId, instanceId);
+    BindChangeSummaryTableStatement(m_changeSummaryTableSelect, classId, instanceId);
 
-    DbResult result = m_changeSetTableSelect.Step();
+    DbResult result = m_changeSummaryTableSelect.Step();
 
     if (result == BE_SQLITE_ROW)
         {
-        dbOpcode = (DbOpcode) m_changeSetTableSelect.GetValueInt(0);
+        dbOpcode = (DbOpcode) m_changeSummaryTableSelect.GetValueInt(0);
         return true;
         }
 
@@ -685,42 +685,42 @@ bool ECChangeSet::SelectInChangeSetTable(DbOpcode& dbOpcode, ECClassId classId, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::InsertInChangeSetTable(ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
+void ECChangeSummary::InsertInChangeSummaryTable(ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
     {
-    BindChangeSetTableStatement(m_changeSetTableInsert, classId, instanceId, dbOpcode, indirect);
+    BindChangeSummaryTableStatement(m_changeSummaryTableInsert, classId, instanceId, dbOpcode, indirect);
 
-    DbResult result = m_changeSetTableInsert.Step();
+    DbResult result = m_changeSummaryTableInsert.Step();
     BeAssert(result == BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::DeleteInChangeSetTable(ECClassId classId, ECInstanceId instanceId)
+void ECChangeSummary::DeleteInChangeSummaryTable(ECClassId classId, ECInstanceId instanceId)
     {
-    BindChangeSetTableStatement(m_changeSetTableDelete, classId, instanceId);
+    BindChangeSummaryTableStatement(m_changeSummaryTableDelete, classId, instanceId);
 
-    DbResult result = m_changeSetTableDelete.Step();
+    DbResult result = m_changeSummaryTableDelete.Step();
     BeAssert(result == BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::UpdateInChangeSetTable(ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
+void ECChangeSummary::UpdateInChangeSummaryTable(ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
     {
-    BindChangeSetTableStatement(m_changeSetTableUpdate, classId, instanceId, dbOpcode, indirect);
+    BindChangeSummaryTableStatement(m_changeSummaryTableUpdate, classId, instanceId, dbOpcode, indirect);
 
-    DbResult result = m_changeSetTableUpdate.Step();
+    DbResult result = m_changeSummaryTableUpdate.Step();
     BeAssert(result == BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::BindChangeSetTableStatement(Statement& statement, ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
+void ECChangeSummary::BindChangeSummaryTableStatement(Statement& statement, ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect)
     {
-    BindChangeSetTableStatement(statement, classId, instanceId);
+    BindChangeSummaryTableStatement(statement, classId, instanceId);
     statement.BindInt(3, (int) dbOpcode);
     statement.BindInt(4, indirect);
     }
@@ -728,7 +728,7 @@ void ECChangeSet::BindChangeSetTableStatement(Statement& statement, ECClassId cl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::BindChangeSetTableStatement(Statement& statement, ECClassId classId, ECInstanceId instanceId)
+void ECChangeSummary::BindChangeSummaryTableStatement(Statement& statement, ECClassId classId, ECInstanceId instanceId)
     {
     statement.Reset();
     statement.BindInt64(1, classId);
@@ -738,18 +738,18 @@ void ECChangeSet::BindChangeSetTableStatement(Statement& statement, ECClassId cl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSet::Dump() const
+void ECChangeSummary::Dump() const
     {
     if (!IsValid())
         {
         BeAssert(false);
-        printf("Invalid ECChangeSet");
+        printf("Invalid ECChangeSummary");
         return;
         }
         
     printf("InstanceId;ClassId;ClassName;DbOpcode;IsIndirect\n");
 
-    for (ECChangeSet::Iterator::const_iterator const& entry : MakeIterator())
+    for (ECChangeSummary::Iterator::const_iterator const& entry : MakeIterator())
         {
         ECClassId classId = entry.GetClassId();
 
@@ -773,7 +773,7 @@ void ECChangeSet::Dump() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::GetColumnValueFromChangeOrTable(int64_t& value, SqlChange const& sqlChange, Utf8CP tableName, Utf8CP columnName, int columnIndex, Utf8CP instanceIdColumnName, ECInstanceId instanceId) const
+bool ECChangeSummary::GetColumnValueFromChangeOrTable(int64_t& value, SqlChange const& sqlChange, Utf8CP tableName, Utf8CP columnName, int columnIndex, Utf8CP instanceIdColumnName, ECInstanceId instanceId) const
     {
     if (columnIndex < 0)
         return false;
@@ -791,7 +791,7 @@ bool ECChangeSet::GetColumnValueFromChangeOrTable(int64_t& value, SqlChange cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::GetColumnValueFromChange(int64_t& value, SqlChange const& sqlChange, int columnIndex) const
+bool ECChangeSummary::GetColumnValueFromChange(int64_t& value, SqlChange const& sqlChange, int columnIndex) const
     {
     DbValue dbValue = sqlChange.GetChange().GetValue(columnIndex, (sqlChange.GetDbOpcode() == DbOpcode::Insert) ? Changes::Change::Stage::New : Changes::Change::Stage::Old);
     if (!dbValue.IsValid() || dbValue.IsNull())
@@ -804,7 +804,7 @@ bool ECChangeSet::GetColumnValueFromChange(int64_t& value, SqlChange const& sqlC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::QueryColumnValueFromTable(int64_t& value, Utf8CP tableName, Utf8CP columnName, Utf8CP instanceIdColumnName, ECInstanceId instanceId) const
+bool ECChangeSummary::QueryColumnValueFromTable(int64_t& value, Utf8CP tableName, Utf8CP columnName, Utf8CP instanceIdColumnName, ECInstanceId instanceId) const
     {
     Utf8PrintfString ecSql("SELECT %s FROM %s WHERE %s=?", columnName, tableName, instanceIdColumnName);
     CachedStatementPtr statement = m_ecdb.GetCachedStatement(ecSql.c_str());
@@ -827,7 +827,7 @@ bool ECChangeSet::QueryColumnValueFromTable(int64_t& value, Utf8CP tableName, Ut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::IsInstanceDeleted(ECInstanceId instanceId, TableMap const& tableMap) const
+bool ECChangeSummary::IsInstanceDeleted(ECInstanceId instanceId, TableMap const& tableMap) const
     {
     int64_t dummyId;
     bool found = QueryColumnValueFromTable(dummyId, tableMap.GetTableName(), tableMap.GetECInstanceIdColumnName(), tableMap.GetECInstanceIdColumnName(), instanceId);
@@ -837,7 +837,7 @@ bool ECChangeSet::IsInstanceDeleted(ECInstanceId instanceId, TableMap const& tab
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECClassId ECChangeSet::GetClassIdFromChangeOrTable(SqlChange const& sqlChange, TableMap const& tableMap, ECInstanceId instanceId) const
+ECClassId ECChangeSummary::GetClassIdFromChangeOrTable(SqlChange const& sqlChange, TableMap const& tableMap, ECInstanceId instanceId) const
     {
     int64_t value = -1;
     GetColumnValueFromChangeOrTable(value, sqlChange, tableMap.GetTableName(), tableMap.GetECClassIdColumnName(), tableMap.GetECClassIdColumnIndex(), tableMap.GetECInstanceIdColumnName(), instanceId);
@@ -847,7 +847,7 @@ ECClassId ECChangeSet::GetClassIdFromChangeOrTable(SqlChange const& sqlChange, T
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECInstanceId ECChangeSet::GetInstanceIdFromChange(SqlChange const& sqlChange, TableMap const& tableMap) const
+ECInstanceId ECChangeSummary::GetInstanceIdFromChange(SqlChange const& sqlChange, TableMap const& tableMap) const
     {
     int64_t value;
     GetColumnValueFromChange(value, sqlChange, tableMap.GetECInstanceIdColumnIndex());
@@ -857,7 +857,7 @@ ECInstanceId ECChangeSet::GetInstanceIdFromChange(SqlChange const& sqlChange, Ta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-bool ECChangeSet::GetStructArrayParentFromChange(ECClassId& parentClassId, ECInstanceId& parentInstanceId, SqlChange const& sqlChange, ClassMap const& classMap, ECInstanceId instanceId)
+bool ECChangeSummary::GetStructArrayParentFromChange(ECClassId& parentClassId, ECInstanceId& parentInstanceId, SqlChange const& sqlChange, ClassMap const& classMap, ECInstanceId instanceId)
     {
     int parentECInstanceIdColumnIndex = classMap.GetColumnIndex("ParentECInstanceId");
     if (parentECInstanceIdColumnIndex < 0)
@@ -901,11 +901,11 @@ bool ECChangeSet::GetStructArrayParentFromChange(ECClassId& parentClassId, ECIns
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-ECChangeSet::Iterator::const_iterator ECChangeSet::Iterator::begin() const
+ECChangeSummary::Iterator::const_iterator ECChangeSummary::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = MakeSqlString("SELECT ClassId,InstanceId,DbOpcode,IsIndirect FROM " EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX);
+        Utf8String sqlString = MakeSqlString("SELECT ClassId,InstanceId,DbOpcode,IsIndirect FROM " EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX);
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         }
@@ -920,9 +920,9 @@ ECChangeSet::Iterator::const_iterator ECChangeSet::Iterator::begin() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
-int ECChangeSet::Iterator::QueryCount() const
+int ECChangeSummary::Iterator::QueryCount() const
     {
-    Utf8String sqlString = MakeSqlString("SELECT COUNT(*) FROM " EC_CHANGESET_TABLE_PREFIX EC_CHANGESET_TABLE_NAME_NOPREFIX);
+    Utf8String sqlString = MakeSqlString("SELECT COUNT(*) FROM " EC_CHANGE_SUMMARY_TABLE_PREFIX EC_CHANGE_SUMMARY_TABLE_NAME_NOPREFIX);
 
     Statement sql;
     sql.Prepare(*m_db, sqlString.c_str());
