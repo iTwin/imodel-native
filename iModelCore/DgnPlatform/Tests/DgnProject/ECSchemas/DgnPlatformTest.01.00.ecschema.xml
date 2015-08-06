@@ -27,6 +27,11 @@
         <ECProperty propertyName="TestItemProperty" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="TestItem2" isDomainClass="True">
+        <BaseClass>dgn:ElementItem</BaseClass>
+        <ECProperty propertyName="TestItem2Property" typeName="string" />
+    </ECClass>
+
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
         <BaseClass>dgn:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />

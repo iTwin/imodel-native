@@ -1242,7 +1242,10 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         DgnDbR db = modified.GetDgnDb();
         BeSQLite::EC::ECInstanceKey existing = _QueryExistingInstanceKey(modified);
         if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db).GetValue()))
+            {
             _DeleteInstance(modified);
+            existing = BeSQLite::EC::ECInstanceKey();  //  trigger an insert below
+            }
             
         if (!existing.IsValid())
             InsertThis(modified);

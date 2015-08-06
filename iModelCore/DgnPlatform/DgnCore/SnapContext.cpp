@@ -393,7 +393,7 @@ protected:
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual bool _ProcessAsBody (bool isCurved) const override {return false;}
-virtual bool _ProcessAsFacets (bool isPolyface) const {return isPolyface;}
+virtual bool _ProcessAsFacets (bool isPolyface) const override {return isPolyface;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
@@ -480,7 +480,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled)
+virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled) override
     {
     // Quick exclude of geometry that didn't generate the hit...
     if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
@@ -513,9 +513,39 @@ virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled)
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _OutputGraphics (ViewContextR context) override
+    {
+    SnapDetailP snap = m_snapContext.GetSnapDetail();
+    IElemTopologyCP elemTopo = snap->GetElemTopology();
+    ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
+
+    if (nullptr == transientHandler)
+        return;
+
+    transientHandler->_DrawTransient(*snap, m_snapContext);
+    }
+
 public:
 
 SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext(snapContext) {m_isVisible = false;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool DoSnapUsingClosestCurve (SnapContextR snapContext)
+    {
+    SnapGraphicsProcessor processor(snapContext);
+
+    ElementGraphicsOutput::Process(processor, snapContext.GetDgnDb());
+
+    if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
+        return false; // No edge found...
+
+    return (SnapStatus::Success == snapContext.DoSnapUsingCurve(snapContext.GetSnapMode()) ? true : false);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13
@@ -526,7 +556,7 @@ static bool DoSnapUsingClosestCurve (GeometricElementCR element, SnapContextR sn
 
     ElementGraphicsOutput::Process(processor, element);
 
-    if (NULL == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
+    if (nullptr == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
 
     return (SnapStatus::Success == snapContext.DoSnapUsingCurve(snapContext.GetSnapMode()) ? true : false);
@@ -553,15 +583,15 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
         return SnapStatus::Success;
         }
 
-    if (NULL == detail.GetCurvePrimitive ())
+    if (nullptr == detail.GetCurvePrimitive ())
         {
         // Surface w/o curve is interior hit...only nearest should "track" surface...
         if (HitGeomType::Surface == detail.GetGeomType ())
             {
-            GeometricElementCPtr element = snap->GetElement(); // NEEDSWORK: Use GeomDetail m_geomId instead of drawing element...
+            GeometricElementCPtr element = snap->GetElement();
 
             if (!element.IsValid())
-                return SnapStatus::NotSnappable;
+                return SnapGraphicsProcessor::DoSnapUsingClosestCurve(*this) ? SnapStatus::Success : SnapStatus::NotSnappable;
 
             if (SnapMode::Origin != snapMode)
                 {
@@ -691,7 +721,7 @@ SnapStatus      SnapContext::DoTextSnap ()
 
         case SnapMode::Nearest:
             {
-            if (NULL == detail.GetCurvePrimitive ())
+            if (nullptr == detail.GetCurvePrimitive ())
                 return DoDefaultDisplayableSnap (); // NOTE: Boundary shape unavailable for origin only...always have for edge/interior hit...
 
             DSegment3d  segment;

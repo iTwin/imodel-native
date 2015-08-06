@@ -15,6 +15,7 @@ TextBlockTest.RoundTripMultiFormat                      # Jeff - We'll need this
 TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this for markups in Graphite04
 
 XGraphicsTests.SplitLargeMeshes                         # TFS 19411
+DgnElementTests.AddAndDropListener                      # notified Keith
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
