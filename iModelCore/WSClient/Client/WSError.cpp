@@ -260,8 +260,25 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
         m_id = WSError::Id::Unknown;
         }
 
-    // Set message and details
-    m_message = httpError.GetDisplayMessage();
+    // Set message 
+    if (WSError::Id::ClassNotFound == m_id)
+        {
+        m_message = WSErrorLocalizedString(MESSAGE_ClassNotFound);
+        }
+    else if (WSError::Id::FileNotFound == m_id)
+        {
+        m_message = WSErrorLocalizedString(MESSAGE_FileNotFound);
+        }
+    else if (WSError::Id::InstanceNotFound == m_id)
+        {
+        m_message = WSErrorLocalizedString(MESSAGE_InstanceNotFound);
+        }
+    else
+        {
+        m_message = httpError.GetDisplayMessage();
+        }
+
+    // Set description
     m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
 
     // Fallback to default messages if not enough information received
