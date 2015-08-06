@@ -1392,7 +1392,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, bvector<Utf8CP> const& cols)
+static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, bvector<Utf8CP> const& cols, bool thirdIsECClassId = false)
     {
     BeAssert((cols.size() >= 2) && "cols must be {sourceid, targetid, othercols...}");
 
@@ -1426,10 +1426,20 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         {
         istmt.Reset();
         istmt.ClearBindings();
-        istmt.BindId(1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(0)));
-        istmt.BindId(2, importer.FindElementId(sstmt.GetValueId<DgnElementId>(1)));
-        for (int i=2; i<(int)cols.size(); ++i)
-            istmt.BindText(i, sstmt.GetValueText(i), Statement::MakeCopy::No);
+        int icol = 0;
+        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)));
+        ++icol;
+        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)));
+        ++icol;
+        if (thirdIsECClassId)
+            {
+            istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol)));
+            ++icol;
+            }
+
+        for ( ; icol < (int)cols.size(); ++icol)
+            istmt.BindText(icol+1, sstmt.GetValueText(icol), Statement::MakeCopy::No);
+
         if (BE_SQLITE_DONE != istmt.Step())
             {
             // *** TBD: Report error somehow
@@ -1452,7 +1462,7 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers), {"GroupId", "MemberId"});
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), {"RootElementId", "DependentElementId", "Status", "Priority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), {"RootElementId", "DependentElementId", "ECClassId", "Status", "Priority"}, true);
     importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementUsesStyles), {"ElementId", "StyleId"});
 
     return DgnDbStatus::Success;

@@ -481,3 +481,53 @@ TEST_F(DgnModelTests, ImportElementsWithItems)
         }
 
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, ImportElementsWithDependencies)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP();
+    db->Txns().EnableTracking(true);
+
+    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    // ******************************
+    //  Create model1
+        
+    DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    ASSERT_EQ( DgnDbStatus::Success , model1->Insert() );
+
+    // Create 2 elements and make the first depend on the second
+        {
+        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+
+        TestElementPtr e1 = TestElement::Create(*db, model1->GetModelId(), gcatid, "e1");
+        ASSERT_TRUE( db->Elements().Insert(*e1).IsValid() );
+
+        TestElementPtr e2 = TestElement::Create(*db, model1->GetModelId(), gcatid, "e2");
+        ASSERT_TRUE( db->Elements().Insert(*e2).IsValid() );
+
+        TestElementDrivesElementHandler::Insert(*db, e2->GetElementId(), e1->GetElementId());
+
+        db->SaveChanges();
+
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        }
+
+    //  ******************************
+    //  Create model2 as a copy of model1
+
+    PhysicalModelPtr model2 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model2"));
+    ASSERT_EQ( DgnDbStatus::Success , model2->Insert() );
+
+    DgnImportContext import2(*db, *db);
+    ASSERT_EQ( DgnDbStatus::Success , model2->_ImportContentsFrom(*model1, import2) );
+
+    db->SaveChanges();
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    }

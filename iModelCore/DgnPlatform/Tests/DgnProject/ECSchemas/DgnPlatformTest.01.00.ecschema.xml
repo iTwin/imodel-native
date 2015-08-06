@@ -7,7 +7,7 @@
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="TestElement" isDomainClass="True">
-        <BaseClass>dgn:Element</BaseClass>
+        <BaseClass>dgn:PhysicalElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 
@@ -23,6 +23,7 @@
 
     <ECClass typeName="TestItem" isDomainClass="True">
         <BaseClass>dgn:ElementItem</BaseClass>
+        <ECProperty propertyName="Length" typeName="double" />
         <ECProperty propertyName="TestItemProperty" typeName="string" />
     </ECClass>
 
