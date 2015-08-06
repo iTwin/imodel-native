@@ -27,7 +27,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 //--------------------------------------------------------------------------------------+
-// WebServices Client API for connecting to BWSG server data source. 
+// WebServices Client API for connecting to BWSG server data source.
 //--------------------------------------------------------------------------------------+
 
 typedef std::shared_ptr<struct IWSRepositoryClient>     IWSRepositoryClientPtr;
@@ -47,12 +47,12 @@ typedef AsyncResult<void, WSError>                      WSUpdateFileResult;
 struct IWSRepositoryClient
     {
     public:
-        WSCLIENT_EXPORT virtual ~IWSRepositoryClient ();
+        WSCLIENT_EXPORT virtual ~IWSRepositoryClient();
 
-        virtual IWSClientPtr GetWSClient () const = 0;
-        virtual Utf8StringCR GetRepositoryId () const = 0;
+        virtual IWSClientPtr GetWSClient() const = 0;
+        virtual Utf8StringCR GetRepositoryId() const = 0;
 
-        virtual void SetCredentials (Credentials credentials) = 0;
+        virtual void SetCredentials(Credentials credentials) = 0;
 
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] cancellationToken
@@ -101,8 +101,8 @@ struct IWSRepositoryClient
             ) const = 0;
 
         //! Send query request to retrieve ECInstances.
-        //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters. 
-        //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query. 
+        //! WSG 1.x Navigation support: add WSQuery_CustomParameter_NavigationParentId to query custom parameters.
+        //!         Parent id and query class will be used for Navigation query and empty string will result in Navigation root query.
         //!         Select will be used as property list to select
         virtual AsyncTaskPtr<WSObjectsResult> SendQueryRequest
             (
@@ -120,7 +120,7 @@ struct IWSRepositoryClient
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;
@@ -156,10 +156,9 @@ typedef std::shared_ptr<struct IWSSchemaProvider> IWSSchemaProviderPtr;
 struct IWSSchemaProvider
     {
     public:
-        virtual ~IWSSchemaProvider ()
-            {
-            };
-        virtual BeFileName GetSchema (WSInfoCR info) = 0;
+        virtual ~IWSSchemaProvider()
+            {};
+        virtual BeFileName GetSchema(WSInfoCR info) = 0;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -173,7 +172,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         mutable LimitingTaskQueue<WSFileResult> m_fileDownloadQueue;
 
     private:
-        WSRepositoryClient (std::shared_ptr<struct ClientConnection> connection);
+        WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
 
     public:
         struct Timeout
@@ -206,14 +205,14 @@ struct WSRepositoryClient : public IWSRepositoryClient
             IHttpHandlerPtr customHandler = nullptr
             );
 
-        //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple 
+        //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.
-        WSCLIENT_EXPORT void SetFileDownloadLimit (size_t limit);
+        WSCLIENT_EXPORT void SetFileDownloadLimit(size_t limit);
 
-        WSCLIENT_EXPORT IWSClientPtr GetWSClient () const override;
-        WSCLIENT_EXPORT Utf8StringCR GetRepositoryId () const override;
+        WSCLIENT_EXPORT IWSClientPtr GetWSClient() const override;
+        WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
-        WSCLIENT_EXPORT void SetCredentials (Credentials credentials);
+        WSCLIENT_EXPORT void SetCredentials(Credentials credentials);
 
         //! Check if user can access repository
         WSCLIENT_EXPORT std::shared_ptr<PackagedAsyncTask<AsyncResult<void, WSError>>> VerifyAccess
@@ -268,7 +267,7 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const override;

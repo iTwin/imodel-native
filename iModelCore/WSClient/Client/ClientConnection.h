@@ -31,17 +31,17 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
         mutable std::shared_ptr<WebApi> m_webApi;
 
     private:
-        AsyncTaskPtr<void> InvalidateInfo () const;
-        std::shared_ptr<WebApi> GetWebApi (WSInfoCR info) const;
+        AsyncTaskPtr<void> InvalidateInfo() const;
+        std::shared_ptr<WebApi> GetWebApi(WSInfoCR info) const;
 
     public:
-        ClientConnection (std::shared_ptr<ClientConfiguration> configuration);
+        ClientConnection(std::shared_ptr<ClientConfiguration> configuration);
 
-        const ClientConfiguration& GetConfiguration () const;
-        ClientConfiguration& GetConfiguration ();
+        const ClientConfiguration& GetConfiguration() const;
+        ClientConfiguration& GetConfiguration();
 
-        void RegisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
-        void UnregisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
+        void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
+        void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
         AsyncTaskPtr<WebApiResult> GetWebApi
             (
@@ -57,34 +57,34 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
         template<typename R>
         AsyncTaskPtr<R> GetWebApiAndReturnResponse
             (
-            std::function<AsyncTaskPtr<R> (WebApiPtr)> requestCallback,
+            std::function<AsyncTaskPtr<R>(WebApiPtr)> requestCallback,
             ICancellationTokenPtr cancellationToken
             ) const
             {
-            auto thisPtr = shared_from_this ();
-            auto responsePtr = std::make_shared<R> ();
+            auto thisPtr = shared_from_this();
+            auto responsePtr = std::make_shared<R>();
 
-            return GetWebApi (cancellationToken)
-            ->Then ([=] (WebApiResult& webApiResult)
+            return GetWebApi(cancellationToken)
+                ->Then([=] (WebApiResult& webApiResult)
                 {
-                if (!webApiResult.IsSuccess ())
+                if (!webApiResult.IsSuccess())
                     {
-                    *responsePtr = R::Error (webApiResult);
+                    *responsePtr = R::Error(webApiResult);
                     return;
                     }
 
-                requestCallback (webApiResult.GetValue ())
-                ->Then ([=] (R& response)
+                requestCallback(webApiResult.GetValue())
+                    ->Then([=] (R& response)
                     {
-                    if (!response.IsSuccess () &&
-                        WSError::Status::ServerNotSupported == response.GetError ().GetStatus ())
+                    if (!response.IsSuccess() &&
+                        WSError::Status::ServerNotSupported == response.GetError().GetStatus())
                         {
-                        InvalidateInfo ();
+                        InvalidateInfo();
                         }
                     *responsePtr = response;
                     });
                 })
-            ->template Then<R> ([responsePtr, thisPtr]
+                    ->template Then<R>([responsePtr, thisPtr]
                     {
                     return *responsePtr;
                     });

@@ -24,18 +24,18 @@ struct NavigationCachingOptions
         bset<Utf8String> m_classesToAlwaysCacheChildren;
 
     public:
-        WSCACHE_EXPORT NavigationCachingOptions ();
+        WSCACHE_EXPORT NavigationCachingOptions();
 
-        WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren (const bset<Utf8String>& classes);
+        WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classes);
 
-        WSCACHE_EXPORT bool ShouldAlwaysCacheChildrenForClass (Utf8StringCR className) const;
+        WSCACHE_EXPORT bool ShouldAlwaysCacheChildrenForClass(Utf8StringCR className) const;
 
-        WSCACHE_EXPORT bool CanObjectHaveChildren (ObjectIdCR objectId) const;
+        WSCACHE_EXPORT bool CanObjectHaveChildren(ObjectIdCR objectId) const;
 
         // Uses FileDependentProperties custom attribute
-        WSCACHE_EXPORT bool IsFileClass (ECClassCP ecClass) const;
-        WSCACHE_EXPORT Utf8String GetFileSizeProperty (ECClassCP ecClass) const;
-        WSCACHE_EXPORT Utf8String GetFileNameProperty (ECClassCP ecClass) const;
+        WSCACHE_EXPORT bool IsFileClass(ECClassCP ecClass) const;
+        WSCACHE_EXPORT Utf8String GetFileSizeProperty(ECClassCP ecClass) const;
+        WSCACHE_EXPORT Utf8String GetFileNameProperty(ECClassCP ecClass) const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -48,7 +48,7 @@ struct FileInfo : public ChangeInfo
 
         // Get absolute file path
         BeFileName GetFilePath() const;
-        // Set file path 
+        // Set file path
         void SetFilePath(bool isPersistent, BeFileNameCR relativePath);
 
         // Return cache tag if file is found on disk

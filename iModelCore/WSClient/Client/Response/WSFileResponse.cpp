@@ -11,27 +11,25 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSFileResponse::WSFileResponse () :
-m_filePath (),
-m_isModified (false),
-m_eTag ()
-    {
-    }
+WSFileResponse::WSFileResponse() :
+m_filePath(),
+m_isModified(false),
+m_eTag()
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSFileResponse::WSFileResponse (BeFileName filePath, HttpStatus status, Utf8String eTag) :
-m_filePath (filePath),
-m_isModified (HttpStatus::OK == status),
-m_eTag (eTag)
-    {
-    }
+WSFileResponse::WSFileResponse(BeFileName filePath, HttpStatus status, Utf8String eTag) :
+m_filePath(filePath),
+m_isModified(HttpStatus::OK == status),
+m_eTag(eTag)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSFileResponse::IsModified () const
+bool WSFileResponse::IsModified() const
     {
     return m_isModified;
     }
@@ -39,7 +37,7 @@ bool WSFileResponse::IsModified () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR WSFileResponse::GetFilePath () const
+BeFileNameCR WSFileResponse::GetFilePath() const
     {
     return m_filePath;
     }
@@ -47,7 +45,7 @@ BeFileNameCR WSFileResponse::GetFilePath () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSFileResponse::GetETag () const
+Utf8StringCR WSFileResponse::GetETag() const
     {
     return m_eTag;
     }

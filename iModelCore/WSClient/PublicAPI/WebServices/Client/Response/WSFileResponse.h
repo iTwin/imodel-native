@@ -26,12 +26,12 @@ struct WSFileResponse
         Utf8String  m_eTag;
 
     public:
-        WSCLIENT_EXPORT WSFileResponse ();
-        WSCLIENT_EXPORT WSFileResponse (BeFileName filePath, HttpStatus status, Utf8String eTag);
+        WSCLIENT_EXPORT WSFileResponse();
+        WSCLIENT_EXPORT WSFileResponse(BeFileName filePath, HttpStatus status, Utf8String eTag);
 
-        WSCLIENT_EXPORT bool IsModified () const;
-        WSCLIENT_EXPORT BeFileNameCR GetFilePath () const;
-        WSCLIENT_EXPORT Utf8StringCR GetETag () const;
+        WSCLIENT_EXPORT bool IsModified() const;
+        WSCLIENT_EXPORT BeFileNameCR GetFilePath() const;
+        WSCLIENT_EXPORT Utf8StringCR GetETag() const;
     };
 
 typedef const WSFileResponse& WSFileResponseCR;

@@ -21,11 +21,10 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 struct EXPORT_VTABLE_ATTRIBUTE IExtendedDataAdapter
     {
     public:
-        virtual ~IExtendedDataAdapter ()
-            {
-            };
-        virtual ExtendedData GetData (ECInstanceKeyCR instanceKey) = 0;
-        virtual BentleyStatus UpdateData (ExtendedData& data) = 0;
+        virtual ~IExtendedDataAdapter()
+            {};
+        virtual ExtendedData GetData(ECInstanceKeyCR instanceKey) = 0;
+        virtual BentleyStatus UpdateData(ExtendedData& data) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

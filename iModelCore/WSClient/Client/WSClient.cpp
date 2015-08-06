@@ -11,58 +11,56 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-IWSClient::~IWSClient ()
-    {
-    }
+IWSClient::~IWSClient()
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSClient::WSClient (std::shared_ptr<ClientConnection> connection) :
-m_connection (connection)
+WSClient::WSClient(std::shared_ptr<ClientConnection> connection) :
+m_connection(connection)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+IWSClientPtr WSClient::Create(std::shared_ptr<ClientConnection> connection)
     {
+    return std::shared_ptr<WSClient>(new WSClient(connection));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-IWSClientPtr WSClient::Create (std::shared_ptr<ClientConnection> connection)
+IWSClientPtr WSClient::Create(Utf8StringCR serverUrl, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
     {
-    return std::shared_ptr<WSClient> (new WSClient (connection));
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-IWSClientPtr WSClient::Create (Utf8StringCR serverUrl, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler)
-    {
-    BeAssert (nullptr != clientInfo);
-    auto configuration = std::make_shared<ClientConfiguration> (serverUrl, "", clientInfo, nullptr, customHandler);
-    return Create (std::make_shared<ClientConnection> (configuration));
+    BeAssert(nullptr != clientInfo);
+    auto configuration = std::make_shared<ClientConfiguration>(serverUrl, "", clientInfo, nullptr, customHandler);
+    return Create(std::make_shared<ClientConnection>(configuration));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSClient::GetServerUrl () const
+Utf8String WSClient::GetServerUrl() const
     {
-    return m_connection->GetConfiguration ().GetServerUrl ();
+    return m_connection->GetConfiguration().GetServerUrl();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSClient::RegisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener)
+void WSClient::RegisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener)
     {
-    m_connection->RegisterServerInfoListener (listener);
+    m_connection->RegisterServerInfoListener(listener);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSClient::UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener)
+void WSClient::UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener)
     {
-    m_connection->UnregisterServerInfoListener (listener);
+    m_connection->UnregisterServerInfoListener(listener);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -73,7 +71,7 @@ AsyncTaskPtr<WSInfoResult> WSClient::GetServerInfo
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return m_connection->GetServerInfo (false, cancellationToken);
+    return m_connection->GetServerInfo(false, cancellationToken);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -84,7 +82,7 @@ AsyncTaskPtr<WSInfoResult> WSClient::SendGetInfoRequest
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return m_connection->GetServerInfo (true, cancellationToken);
+    return m_connection->GetServerInfo(true, cancellationToken);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -95,7 +93,7 @@ AsyncTaskPtr<WSRepositoriesResult> WSClient::SendGetRepositoriesRequest
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return SendGetRepositoriesRequest (bvector<Utf8String> (), bvector<Utf8String> ());
+    return SendGetRepositoriesRequest(bvector<Utf8String>(), bvector<Utf8String>());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -108,8 +106,8 @@ const bvector<Utf8String>& providerIds,
 ICancellationTokenPtr cancellationToken
 ) const
     {
-    return m_connection->GetWebApiAndReturnResponse<WSRepositoriesResult> ([=] (WebApiPtr webApi)
+    return m_connection->GetWebApiAndReturnResponse<WSRepositoriesResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendGetRepositoriesRequest (types, providerIds, cancellationToken);
+        return webApi->SendGetRepositoriesRequest(types, providerIds, cancellationToken);
         }, cancellationToken);
     }

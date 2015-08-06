@@ -74,30 +74,30 @@ struct WSError : public AsyncError
         Id                  m_id;
 
     private:
-        static bool IsValidErrorJson (JsonValueCR jsonError);
-        static Id ErrorIdFromString (Utf8StringCR errorIdString);
-        static Utf8String FormatDescription (Utf8StringCR errorMessage, Utf8StringCR errorDescription);
+        static bool IsValidErrorJson(JsonValueCR jsonError);
+        static Id ErrorIdFromString(Utf8StringCR errorIdString);
+        static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
-        BentleyStatus ParseBody (HttpResponseCR httpResponse);
-        BentleyStatus ParseJsonError (HttpResponseCR httpResponse);
-        BentleyStatus ParseXmlError (HttpResponseCR httpResponse);
+        BentleyStatus ParseBody(HttpResponseCR httpResponse);
+        BentleyStatus ParseJsonError(HttpResponseCR httpResponse);
+        BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
 
-        void SetStatusServerNotSupported ();
-        void SetStatusReceivedError (HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
+        void SetStatusServerNotSupported();
+        void SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
     public:
-        WSCLIENT_EXPORT WSError ();
-        WSCLIENT_EXPORT WSError (HttpResponseCR httpResponse);
+        WSCLIENT_EXPORT WSError();
+        WSCLIENT_EXPORT WSError(HttpResponseCR httpResponse);
         // Do not use in production code, this is for testing purposes only
-        WSCLIENT_EXPORT WSError (Id errorId);
+        WSCLIENT_EXPORT WSError(Id errorId);
 
-        WSCLIENT_EXPORT static WSError CreateServerNotSupportedError ();
-        WSCLIENT_EXPORT static WSError CreateFunctionalityNotSupportedError ();
+        WSCLIENT_EXPORT static WSError CreateServerNotSupportedError();
+        WSCLIENT_EXPORT static WSError CreateFunctionalityNotSupportedError();
 
-        WSCLIENT_EXPORT Status       GetStatus () const;
-        WSCLIENT_EXPORT Id           GetId () const;
-        WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage () const;
-        WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription () const;
+        WSCLIENT_EXPORT Status       GetStatus() const;
+        WSCLIENT_EXPORT Id           GetId() const;
+        WSCLIENT_EXPORT Utf8StringCR GetDisplayMessage() const;
+        WSCLIENT_EXPORT Utf8StringCR GetDisplayDescription() const;
     };
 
 typedef WSError& WSErrorR;

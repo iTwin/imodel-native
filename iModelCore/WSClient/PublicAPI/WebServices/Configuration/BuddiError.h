@@ -31,7 +31,7 @@ struct BuddiError : public AsyncError
             {
             //! Request ConnectionStatus != OK
             ConnectionError,
-            //! Response httpStatus != OK / XML is invadil / unable to parse value 
+            //! Response httpStatus != OK / XML is invadil / unable to parse value
             UnxpectedError,
             //! Check urlName and make sure it is registered in the BUDDI - buddi.bentley.com
             UrlNotConfigured
