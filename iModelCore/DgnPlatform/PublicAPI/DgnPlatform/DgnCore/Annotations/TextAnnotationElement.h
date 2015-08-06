@@ -12,6 +12,7 @@
 #include "TextAnnotation.h"
 #include <DgnPlatform/DgnCore/DgnElement.h>
 #include <DgnPlatform/DgnCore/ElementHandler.h>
+#include <DgnPlatform/DgnCore/SnapContext.h>
 
 DGNPLATFORM_TYPEDEFS(PhysicalTextAnnotationElement);
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalTextAnnotationElement);
@@ -42,6 +43,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
+    virtual bool _DrawHit(HitDetailCR, ViewContextR) const override {return false;} // Don't flash text box...
+    virtual SnapStatus _OnSnap(SnapContextR context) const override {return context.DoTextSnap();} // Default snap using text box...
 
 public:
     explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
