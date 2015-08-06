@@ -57,6 +57,7 @@
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_CategoryOwnsSubCategories   "CategoryOwnsSubCategories"
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
+#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"

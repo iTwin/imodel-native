@@ -73,12 +73,16 @@ public:
 struct DgnImportContext
 {
 private:
+    bool            m_areCompatibleDbs;
+    DPoint2d        m_xyOffset;
+    AngleInDegrees  m_yawAdj;
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     DgnRemapTables  m_remap;
 
 public:
-    DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) {;}
+    //! Construct a DgnImportContext object.
+    DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
 
     DgnDbR GetSourceDb() const {return m_sourceDb;}
     DgnDbR GetDestinationDb() const {return m_destDb;}
@@ -92,6 +96,15 @@ public:
     DGNPLATFORM_EXPORT DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
+
+    //! Check if the source and destination GCSs are compatible, such that elements can be copied between them.
+    DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::BadRequest;}
+
+    //! When copying between different DgnDbs, X and Y coordinates may need to be offset
+    DPoint2d GetOriginOffset() const {return m_xyOffset;}
+
+    //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
+    AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
 };
 
 template <class _QvKey> struct QvElemSet;
@@ -613,20 +626,29 @@ protected:
     //! implementation and your superclass succeed.)
     //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
-    //! @note If you hold any IDs, you must also override _RemapIds
+    //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source);
 
-    //! Make a (near) duplicate of yourself in memory, in preparation for copying from another element that <em>may be</em> in a different DgnDb. Do not deep-copy any other objects.
+    //! Make a (near) duplicate of yourself in memory, in preparation for copying from another element that <em>may be</em> in a different DgnDb. 
+    //! This base class implementation calls _CopyFrom and then _RemapIds and _AdjustPlacementForImport
+    //! @note Do not do any of the following:
+    //!     * Do not call Insert and do not attempt to remap your own ElementId. The caller will do those things.
+    //!     * Do not deep-copy child elements. The caller must do that (or not).
+    //!     * Do not copy ECRelationships or deep-copy related elements. The caller must do that (or not).
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
-    //! @param[in] params CreateParams. Might specify a different destination model, etc.
+    //! @param[in] destModel The destination model (which must be in the importer's destination Db).
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     //! @return In-memory copy of the element
-    //! @note This function calls _CopyFrom and then _RemapIds
-    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus* stat, DgnElement::CreateParams const& params, DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _CloneForImport(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
     //! Remap any IDs that might refer to elements or resources in the source DgnDb.
     //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer);
+
+    //! Apply X,Y offset and Yaw angle adjustment when importing from one DgnDb to another, in the case where source and destination GCSs are compatible but have the Cartesian coordinate system 
+    //! located at different geo locations and/or have different Azimuth angles.
+    //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
+    virtual void _AdjustPlacementForImport(DgnImportContext const& importer) {;}
 
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
@@ -665,6 +687,13 @@ protected:
     DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
+
+    //! Generate the CreateParams to use for Import
+    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
+    //! @return CreateParams initialized with the element's current data
+    //! @remarks The m_id and m_lastModTime fields are \em not set, as it is never correct for two elements to have the same ID, and lastModTime is computed. The m_parentId field is not set,
+    //! as it is not clear if the copy should be a child of the same parent as the original. The caller can set this if appropriate.
+    CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
 
 public:
     static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
@@ -734,17 +763,10 @@ public:
     //! Create a copy of this DgnElement and all of its extended content in a destination model.
     //! The copied element will be persistent in the destination DgnDb.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
-    //! @param[in] params CreateParams. Might specify a different destination model, etc. See GetCreateParamsForImport
+    //! @param[in] destModel The destination model (which must be in the importer's destination Db).
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     //! @return The persistent copy of the element
-    DgnElementCPtr Import(DgnDbStatus* stat, DgnElement::CreateParams const& params, DgnImportContext& importer) const;
-
-    //! Generate the CreateParams to use for Import
-    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
-    //! @return CreateParams initialized with the element's current data
-    //! @remarks The m_id and m_lastModTime fields are \em not set, as it is never correct for two elements to have the same ID, and lastModTime is computed. The m_parentId field is not set,
-    //! as it is not clear if the copy should be a child of the same parent as the original. The caller can set this if appropriate.
-    CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+    DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);
@@ -1076,6 +1098,7 @@ protected:
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     DgnElement3dCP _ToElement3d() const override {return this;}
     AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
+    DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const& context) override;
 
 public:
     Placement3dCR GetPlacement() const {return m_placement;} //!< Get the Placement3d of this DgnElement3d

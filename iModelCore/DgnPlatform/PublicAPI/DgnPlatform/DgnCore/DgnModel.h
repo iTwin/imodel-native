@@ -448,6 +448,11 @@ protected:
     //! @note The implementation should start by calling the superclass implementation.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
+    //! Generate the CreateParams to use for _CloneForImport
+    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
+    //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
+    DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+
 public:
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
@@ -598,14 +603,9 @@ public:
     //! take of populating most if not all subclass members.
     //! @return the copy of the model
     //! @param[out] stat        Optional. If not null, then an error code is stored here in case the clone fails.
-    //! @param[in] params       The parameters to use when creating a new model object.
+    //! @param importer     Used by elements when copying between DgnDbs.
     //! @see GetCreateParamsForImport
-    DGNPLATFORM_EXPORT DgnModelPtr virtual _Clone(DgnDbStatus* stat, DgnModel::CreateParams const& params) const;
-
-    //! Generate the CreateParams to use for _CloneForImport
-    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
-    //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
-    DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const;
 
     //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb from \a sourceModel.
     //! This base class implemenation calls the following methods, in order:
@@ -625,11 +625,10 @@ public:
     //! Note that ECRelationships between elements in the model and elements outside the model are \em not copied.
     //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
-    //! @param params       Must specify the destination DgnDb.
     //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
     //! @param sourceModel The model to copy
     //! @return the copied model, already inserted into the destination Db.
-    DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, CreateParams const& params, DgnModelCR sourceModel, DgnImportContext& importer);
+    DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer);
 
     //! Make a copy of the specified model, including all of the contents of the model. The destination may be a different DgnDb.
     //! This is just a convenience method that calls Clone, Insert, and then _CopyContentsFrom.
@@ -637,11 +636,10 @@ public:
     //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param sourceModel  The model to copy
-    //! @param params       Must specify the destination DgnDb.
     //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
     //! @return the copied model
     template<typename T>
-    static RefCountedPtr<T> Import(DgnDbStatus* stat, CreateParams const& params, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, params, sourceModel, importer).get());}
+    static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
 
 };
 

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include <DgnPlatform/DgnGeoCoord.h>
 
 #define WSTR(astr) WString(astr,BentleyCharEncoding::Utf8).c_str()
 
@@ -391,4 +392,53 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
         return DgnClassId();
 
     return m_remap.Add(source, DgnClassId(destecclass->GetId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) 
+    : m_sourceDb(source), m_destDb(dest) 
+    {
+    DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
+    DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
+
+    m_xyOffset = DPoint2d::FromZero();
+    m_yawAdj = AngleInDegrees::FromDegrees(0);
+
+    if (!IsBetweenDbs() || nullptr == sourceGcs || nullptr == destGcs)
+        {
+        m_areCompatibleDbs = true;
+        return;
+        }
+
+    WString spn, dpn;
+    if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))
+        {
+        m_areCompatibleDbs = false;
+        return;
+        }
+
+    GeoPoint sourceOrgLatLng;
+    if (REPROJECT_Success != sourceGcs->LatLongFromUors(sourceOrgLatLng, DPoint3d::FromZero()))
+        {
+        m_areCompatibleDbs = false;
+        return;
+        }
+    DPoint3d destCoordinates;
+    if (REPROJECT_Success != destGcs->UorsFromLatLong(destCoordinates, sourceOrgLatLng))
+        {
+        m_areCompatibleDbs = false;
+        return;
+        }
+    
+    if (0 != BeNumerical::Compare(0.0, destCoordinates.z))
+        {
+        BeDataAssert(false && "different elevations??");
+        m_areCompatibleDbs = false;
+        return;
+        }
+
+    m_xyOffset = DPoint2d::From(destCoordinates.x, destCoordinates.y);
+    m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
     }

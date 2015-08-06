@@ -323,9 +323,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
                 <SourceECInstanceIdColumn>RootElementId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>RootElementClassId</SourceECClassIdColumn>
                 <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>DependentElementClassId</TargetECClassIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">

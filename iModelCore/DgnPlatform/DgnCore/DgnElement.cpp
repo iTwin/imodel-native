@@ -744,8 +744,11 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnElement::CreateParams const& params, DgnImportContext& importer) const
+DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
     {
+    DgnElement::CreateParams params = GetCreateParamsForImport(importer);
+    params.m_modelId = destModel.GetModelId();
+
     DgnElementPtr cloneElem = GetElementHandler().Create(params);
 
     if (!cloneElem.IsValid())
@@ -758,7 +761,11 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnElement::CreateP
 
     cloneElem->_CopyFrom(*this);
 
-    cloneElem->_RemapIds(importer);
+    if (importer.IsBetweenDbs())
+        {
+        cloneElem->_RemapIds(importer);
+        cloneElem->_AdjustPlacementForImport(importer);
+        }
 
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
@@ -788,6 +795,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_RemapIds(DgnImportContext& importer)
     {
+    BeAssert(importer.IsBetweenDbs());
     m_categoryId = importer.RemapCategory(m_categoryId);
     m_parentId   = importer.FindElementId(m_parentId);
     }
@@ -809,6 +817,7 @@ void GeometricElement::_CopyFrom(DgnElementCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_RemapIds(DgnImportContext& importer)
     {
+    BeAssert(importer.IsBetweenDbs());
     T_Super::_RemapIds(importer);
     ElementGeomIO::Import(m_geom, m_geom, importer);
     }
@@ -833,18 +842,14 @@ DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnImportContext& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnElement::CreateParams const& params, DgnImportContext& importer) const
+DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
     {
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
-    DgnElementPtr cc = _CloneForImport(stat, params, importer);       // (also calls _ImportFrom)
+    DgnElementPtr cc = _CloneForImport(stat, destModel, importer); // (also calls _CopyFrom and _RemapIds)
     if (!cc.IsValid())
         return DgnElementCPtr();
-
-    // *** TBD: Deep copy Aspects
-
-    // *** TBD: Copy my Children
 
     DgnElementCPtr ccp = cc->Insert(stat);
     if (!ccp.IsValid())
@@ -864,6 +869,15 @@ void DgnElement3d::_CopyFrom(DgnElementCR other)
     DgnElement3dCP el3d = other.ToElement3d();
     if (el3d)
         m_placement = el3d->m_placement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
+    {
+    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**

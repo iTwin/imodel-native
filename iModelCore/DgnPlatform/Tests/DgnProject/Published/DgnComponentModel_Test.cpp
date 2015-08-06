@@ -374,7 +374,7 @@ void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     DgnImportContext importer(*m_componentDb, *m_clientDb);
 
     DgnDbStatus status;
-    ComponentModelPtr cmCopy = DgnModel::Import(&status, componentModel->GetCreateParamsForImport(importer), *componentModel, importer);
+    ComponentModelPtr cmCopy = DgnModel::Import(&status, *componentModel, importer);
     
     ASSERT_TRUE( cmCopy.IsValid() );
 
