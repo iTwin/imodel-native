@@ -58,4 +58,3 @@ BentleyStatus UpgraderFromV3ToV4::Upgrade()
 
     return SUCCESS;
     }
-

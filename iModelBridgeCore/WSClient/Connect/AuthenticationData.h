@@ -16,8 +16,8 @@
 
 struct AuthenticationData : NonCopyableClass
     {
-public:
-    static const Utf8String USERNAME;
-    static const Utf8String PASSWORD;
-    static const Utf8String TOKEN;
+    public:
+        static const Utf8String USERNAME;
+        static const Utf8String PASSWORD;
+        static const Utf8String TOKEN;
     };

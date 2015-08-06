@@ -21,7 +21,6 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UrlData
     {
-
     private:
         Utf8String m_defaultUrl;
         //Check URL IDs in the buddi.bentley.com
@@ -73,7 +72,6 @@ struct UrlProvider
         static const UrlData s_usageTrackingUrl[3];
         static const UrlData s_passportUrl[3];
 
-
     private:
         static Utf8String GetBuddiUrl(Utf8StringCR urlName, uint32_t regionId);
         static Utf8String GetUrl(Utf8CP urlName, const UrlData* defaultUrls);
@@ -83,12 +81,12 @@ struct UrlProvider
                                                ILocalState* customlocalState = nullptr,
                                                IBuddiClientPtr customBuddi = nullptr);
 
-        WSCLIENT_EXPORT static Utf8String GetPunchlistWsgUrl ();
-        WSCLIENT_EXPORT static Utf8String GetConnectWsgUrl ();
-        WSCLIENT_EXPORT static Utf8String GetConnectEulaUrl ();
-        WSCLIENT_EXPORT static Utf8String GetConnectLearnStsAuthUri ();
-        WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl ();
-        WSCLIENT_EXPORT static Utf8String GetPassportUrl ();
+        WSCLIENT_EXPORT static Utf8String GetPunchlistWsgUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectWsgUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectEulaUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectLearnStsAuthUri();
+        WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl();
+        WSCLIENT_EXPORT static Utf8String GetPassportUrl();
 
         WSCLIENT_EXPORT static void CleanUpUrlCache();
     };

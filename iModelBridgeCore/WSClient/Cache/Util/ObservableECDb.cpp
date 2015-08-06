@@ -40,7 +40,7 @@ void ObservableECDb::UnRegisterSchemaChangeListener(IECDbSchemaChangeListener* l
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ObservableECDb::NotifyOnSchemaChangedListeners()
     {
-    auto listenersCopy = m_cacheSchemaChangeListeners; // Safe guard against added listeners 
+    auto listenersCopy = m_cacheSchemaChangeListeners; // Safe guard against added listeners
     for (IECDbSchemaChangeListener* listener : listenersCopy)
         {
         if (m_cacheSchemaChangeListeners.find(listener) != m_cacheSchemaChangeListeners.end()) // Safe guard agains removed listeners

@@ -13,7 +13,7 @@
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
+MOBILEDGN_TRANSLATABLE_STRINGS_START(ConnectL10N, Connect)
     {
     ALERT_SignInFailed_ServerError,          // =="Could not connect to server. Check your network connection."==
     ALERT_SignInFailed_Message,              // =="Please enter the correct email and password."==

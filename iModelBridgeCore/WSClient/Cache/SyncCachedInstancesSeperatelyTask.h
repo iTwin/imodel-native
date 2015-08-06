@@ -23,8 +23,8 @@ struct SyncCachedInstancesSeperatelyTask : public CachingTaskBase
         std::deque<ObjectId>  m_objectsLeftToCache;
 
     private:
-        virtual void _OnExecute ();
-        void CacheNextObjects (CacheTransactionCR txn);
+        virtual void _OnExecute();
+        void CacheNextObjects(CacheTransactionCR txn);
 
     public:
         SyncCachedInstancesSeperatelyTask

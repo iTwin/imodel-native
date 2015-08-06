@@ -27,13 +27,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ExtendedDataAdapter : public IExtendedDataAdapter
         ECSqlStatementCache m_statementCache;
 
     public:
-        WSCACHE_EXPORT ExtendedDataAdapter (ObservableECDb& db);
+        WSCACHE_EXPORT ExtendedDataAdapter(ObservableECDb& db);
 
         //! Call import schema once to initialize ECDb for extended data storage
-        WSCACHE_EXPORT BentleyStatus ImportSchema ();
+        WSCACHE_EXPORT BentleyStatus ImportSchema();
 
-        WSCACHE_EXPORT ExtendedData GetData (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT BentleyStatus UpdateData (ExtendedData& data) override;
+        WSCACHE_EXPORT ExtendedData GetData(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus UpdateData(ExtendedData& data) override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

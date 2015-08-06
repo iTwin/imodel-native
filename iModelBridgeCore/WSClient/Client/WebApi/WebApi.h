@@ -28,8 +28,8 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
         const std::shared_ptr<const ClientConfiguration> m_configuration;
 
     public:
-        WebApi (std::shared_ptr<const ClientConfiguration> configuration);
-        virtual ~WebApi ();
+        WebApi(std::shared_ptr<const ClientConfiguration> configuration);
+        virtual ~WebApi();
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
@@ -78,7 +78,7 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const = 0;

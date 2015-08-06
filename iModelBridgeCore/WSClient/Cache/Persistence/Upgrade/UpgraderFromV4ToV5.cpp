@@ -310,4 +310,3 @@ BentleyStatus UpgraderFromV4ToV5::UpdateInstances(const bvector<UpgradeInstance>
         }
     return SUCCESS;
     }
-

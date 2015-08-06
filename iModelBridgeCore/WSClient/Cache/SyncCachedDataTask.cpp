@@ -30,52 +30,51 @@ bvector<IQueryProviderPtr> queryProviders,
 ICachingDataSource::ProgressCallback onProgress,
 ICancellationTokenPtr cancellationToken
 ) :
-CachingTaskBase (ds, cancellationToken),
-m_queryProviders (queryProviders),
-m_initialInstances (initialInstances),
-m_queriesToCache (initialQueries.begin (), initialQueries.end ()),
-m_onProgress (onProgress ? onProgress : [] (double, double)
+CachingTaskBase(ds, cancellationToken),
+m_queryProviders(queryProviders),
+m_initialInstances(initialInstances),
+m_queriesToCache(initialQueries.begin(), initialQueries.end()),
+m_onProgress(onProgress ? onProgress : [] (double, double)
     {})
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SyncCachedDataTask::_OnExecute()
     {
+    m_ds->GetCacheAccessThread()->ExecuteAsync(std::bind(&SyncCachedDataTask::StartCaching, this))
+        ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedDataTask::CacheRejectedInstances, this))
+        ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedDataTask::CacheFiles, this));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::_OnExecute ()
+void SyncCachedDataTask::StartCaching()
     {
-    m_ds->GetCacheAccessThread ()->ExecuteAsync (std::bind (&SyncCachedDataTask::StartCaching, this))
-    ->Then (m_ds->GetCacheAccessThread (), std::bind (&SyncCachedDataTask::CacheRejectedInstances, this))
-    ->Then (m_ds->GetCacheAccessThread (), std::bind (&SyncCachedDataTask::CacheFiles, this));
-    }
+    m_onProgress(0, 0);
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::StartCaching ()
-    {
-    m_onProgress (0, 0);
-
-    if (IsTaskCanceled ())
+    if (IsTaskCanceled())
         {
         return;
         }
 
-    auto txn = m_ds->StartCacheTransaction ();
+    auto txn = m_ds->StartCacheTransaction();
 
-    bset<ECInstanceKey> instancesToCache (m_initialInstances.begin (), m_initialInstances.end ());
-    CacheInstances (txn, instancesToCache);
-    ContinueCachingQueries (txn);
+    bset<ECInstanceKey> instancesToCache(m_initialInstances.begin(), m_initialInstances.end());
+    CacheInstances(txn, instancesToCache);
+    ContinueCachingQueries(txn);
 
-    txn.Commit ();
+    txn.Commit();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::CacheInstances (CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys)
+void SyncCachedDataTask::CacheInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys)
     {
-    if (IsTaskCanceled () || instanceKeys.empty ())
+    if (IsTaskCanceled() || instanceKeys.empty())
         {
         return;
         }
@@ -83,98 +82,98 @@ void SyncCachedDataTask::CacheInstances (CacheTransactionCR txn, const bset<ECIn
     bset<ObjectId> objectIds;
     for (ECInstanceKeyCR instanceKey : instanceKeys)
         {
-        objectIds.insert (txn.GetCache ().FindInstance (instanceKey));
+        objectIds.insert(txn.GetCache().FindInstance(instanceKey));
         }
 
-    SyncCachedInstancesTask::Run (m_ds, objectIds, GetCancellationToken ())
-    ->Then (m_ds->GetCacheAccessThread (), [=] (ICachingDataSource::BatchResult result)
+    SyncCachedInstancesTask::Run(m_ds, objectIds, GetCancellationToken())
+        ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
-        AddResult (result);
+        AddResult(result);
 
-        if (IsTaskCanceled ())
+        if (IsTaskCanceled())
             {
             return;
             }
 
-        auto txn = m_ds->StartCacheTransaction ();
+        auto txn = m_ds->StartCacheTransaction();
         for (ECInstanceKeyCR instnaceKey : instanceKeys)
             {
-            PrepareCachingQueries (txn, instnaceKey, true);
+            PrepareCachingQueries(txn, instnaceKey, true);
             }
 
-        ContinueCachingQueries (txn);
-        txn.Commit ();
+        ContinueCachingQueries(txn);
+        txn.Commit();
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::CacheRejectedInstances ()
+void SyncCachedDataTask::CacheRejectedInstances()
     {
-    if (IsTaskCanceled () || m_instancesToRedownload.empty ())
+    if (IsTaskCanceled() || m_instancesToRedownload.empty())
         {
         return;
         }
 
-    SyncCachedInstancesTask::Run (m_ds, m_instancesToRedownload, GetCancellationToken ())
-    ->Then (m_ds->GetCacheAccessThread (), [=] (ICachingDataSource::BatchResult result)
+    SyncCachedInstancesTask::Run(m_ds, m_instancesToRedownload, GetCancellationToken())
+        ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
         {
-        AddResult (result);
+        AddResult(result);
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::CacheFiles ()
+void SyncCachedDataTask::CacheFiles()
     {
-    if (IsTaskCanceled () || m_filesToDownload.empty ())
+    if (IsTaskCanceled() || m_filesToDownload.empty())
         {
         return;
         }
 
-    auto txn = m_ds->StartCacheTransaction ();
+    auto txn = m_ds->StartCacheTransaction();
 
     bset<ObjectId> filesToDownload;
     for (ECInstanceKeyCR instanceKey : m_filesToDownload)
         {
-        filesToDownload.insert (txn.GetCache ().FindInstance (instanceKey));
+        filesToDownload.insert(txn.GetCache().FindInstance(instanceKey));
         }
 
-    txn.Commit ();
+    txn.Commit();
 
     auto onProgress = [=] (double bytesTransfered, double bytesTotal, Utf8StringCR fileName)
         {
-        m_onProgress (bytesTransfered, bytesTotal);
+        m_onProgress(bytesTransfered, bytesTotal);
         };
 
-    auto task = std::make_shared<DownloadFilesTask> (m_ds, filesToDownload, FileCache::Persistent, onProgress, GetCancellationToken ());
-    m_ds->GetCacheAccessThread ()->Push (task);
+    auto task = std::make_shared<DownloadFilesTask>(m_ds, filesToDownload, FileCache::Persistent, onProgress, GetCancellationToken());
+    m_ds->GetCacheAccessThread()->Push(task);
 
-    task->Then (m_ds->GetCacheAccessThread (), [=]
+    task->Then(m_ds->GetCacheAccessThread(), [=]
         {
-        AddResult (task->GetResult ());
+        AddResult(task->GetResult());
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::ContinueCachingQueries (CacheTransactionCR txn)
+void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
     {
-    if (IsTaskCanceled () || m_queriesToCache.empty ())
+    if (IsTaskCanceled() || m_queriesToCache.empty())
         {
         return;
         }
 
-    auto providerQuery = m_queriesToCache.front ();
-    m_queriesToCache.pop_front ();
+    auto providerQuery = m_queriesToCache.front();
+    m_queriesToCache.pop_front();
 
-    if (!providerQuery.IsValid ())
+    if (!providerQuery.IsValid())
         {
-        LOG.warningv ("Invalid query provided");
-        ContinueCachingQueries (txn);
+        LOG.warningv("Invalid query provided");
+        ContinueCachingQueries(txn);
         return;
         }
 
@@ -182,104 +181,104 @@ void SyncCachedDataTask::ContinueCachingQueries (CacheTransactionCR txn)
     WSQueryPtr query = providerQuery.query;
     bool syncRecursively = providerQuery.syncRecursively;
 
-    Utf8String eTag = txn.GetCache ().ReadResponseCacheTag (responseKey);
-    auto ct = GetCancellationToken ();
+    Utf8String eTag = txn.GetCache().ReadResponseCacheTag(responseKey);
+    auto ct = GetCancellationToken();
 
-    m_ds->GetClient ()->SendQueryRequest (*query, eTag, ct)
-    ->Then (m_ds->GetCacheAccessThread (), [=] (WSObjectsResult result)
+    m_ds->GetClient()->SendQueryRequest(*query, eTag, ct)
+        ->Then(m_ds->GetCacheAccessThread(), [=] (WSObjectsResult result)
         {
-        if (IsTaskCanceled ())
+        if (IsTaskCanceled())
             {
             return;
             }
 
-        auto txn = m_ds->StartCacheTransaction ();
-        if (result.IsSuccess ())
+        auto txn = m_ds->StartCacheTransaction();
+        if (result.IsSuccess())
             {
-            if (SUCCESS != txn.GetCache ().CachePartialResponse (responseKey, result.GetValue (), m_instancesToRedownload, query.get (), ct))
+            if (SUCCESS != txn.GetCache().CachePartialResponse(responseKey, result.GetValue(), m_instancesToRedownload, query.get(), ct))
                 {
-                SetError ({ICachingDataSource::Status::InternalCacheError, ct});
+                SetError({ICachingDataSource::Status::InternalCacheError, ct});
                 return;
                 }
 
-            InvalidatePersistentInstances ();
+            InvalidatePersistentInstances();
 
             // TODO: CachePartialResponse could return keys to avoid additonal query
             ECInstanceKeyMultiMap cachedInstances;
-            if (CacheStatus::OK != txn.GetCache ().ReadResponseInstanceKeys (responseKey, cachedInstances))
+            if (CacheStatus::OK != txn.GetCache().ReadResponseInstanceKeys(responseKey, cachedInstances))
                 {
-                SetError (ICachingDataSource::Status::InternalCacheError);
+                SetError(ICachingDataSource::Status::InternalCacheError);
                 return;
                 }
 
-            if (IsTaskCanceled ())
+            if (IsTaskCanceled())
                 {
                 return;
                 }
 
             for (auto& pair : cachedInstances)
                 {
-                PrepareCachingQueries (txn, ECInstanceKey (pair.first, pair.second), syncRecursively);
+                PrepareCachingQueries(txn, ECInstanceKey(pair.first, pair.second), syncRecursively);
                 }
             }
         else
             {
-            RegisterError (txn, responseKey, result.GetError ());
+            RegisterError(txn, responseKey, result.GetError());
             }
 
-        ContinueCachingQueries (txn);
-        txn.Commit ();
+        ContinueCachingQueries(txn);
+        txn.Commit();
         });
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::RegisterError (CacheTransactionCR txn, CachedResponseKeyCR responseKey, WSErrorCR error)
+void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, WSErrorCR error)
     {
-    if (WSError::Status::ReceivedError == error.GetStatus ())
+    if (WSError::Status::ReceivedError == error.GetStatus())
         {
-        AddFailedObject (txn, txn.GetCache ().FindInstance (responseKey.GetParent ()), error);
+        AddFailedObject(txn, txn.GetCache().FindInstance(responseKey.GetParent()), error);
         }
     else
         {
-        SetError (error);
+        SetError(error);
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::PrepareCachingQueries (CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
+void SyncCachedDataTask::PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively)
     {
-    if (m_instancesWithQueriesProvided.find (instanceKey) != m_instancesWithQueriesProvided.end ())
+    if (m_instancesWithQueriesProvided.find(instanceKey) != m_instancesWithQueriesProvided.end())
         {
         return;
         }
 
-    bool isPersistent = IsInstancePersistent (txn, instanceKey);
+    bool isPersistent = IsInstancePersistent(txn, instanceKey);
 
     for (auto queryProviderPtr : m_queryProviders)
         {
         if (syncRecursively)
             {
-            auto queries = queryProviderPtr->GetQueries (txn, instanceKey, isPersistent);
-            m_queriesToCache.insert (m_queriesToCache.end (), queries.begin (), queries.end ());
+            auto queries = queryProviderPtr->GetQueries(txn, instanceKey, isPersistent);
+            m_queriesToCache.insert(m_queriesToCache.end(), queries.begin(), queries.end());
             }
 
-        if (queryProviderPtr->DoUpdateFile (txn, instanceKey, isPersistent))
+        if (queryProviderPtr->DoUpdateFile(txn, instanceKey, isPersistent))
             {
-            m_filesToDownload.insert (instanceKey);
+            m_filesToDownload.insert(instanceKey);
             }
         }
 
-    m_instancesWithQueriesProvided.insert (instanceKey);
+    m_instancesWithQueriesProvided.insert(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::InvalidatePersistentInstances ()
+void SyncCachedDataTask::InvalidatePersistentInstances()
     {
     m_persistentInstances = nullptr;
     }
@@ -287,17 +286,17 @@ void SyncCachedDataTask::InvalidatePersistentInstances ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SyncCachedDataTask::IsInstancePersistent (CacheTransactionCR txn, ECInstanceKeyCR instanceKey)
+bool SyncCachedDataTask::IsInstancePersistent(CacheTransactionCR txn, ECInstanceKeyCR instanceKey)
     {
     if (nullptr == m_persistentInstances)
         {
-        m_persistentInstances = std::make_shared<ECInstanceKeyMultiMap> ();
-        if (SUCCESS != txn.GetCache ().ReadFullyPersistedInstanceKeys (*m_persistentInstances))
+        m_persistentInstances = std::make_shared<ECInstanceKeyMultiMap>();
+        if (SUCCESS != txn.GetCache().ReadFullyPersistedInstanceKeys(*m_persistentInstances))
             {
-            BeAssert (false);
-            SetError (ICachingDataSource::Status::InternalCacheError);
+            BeAssert(false);
+            SetError(ICachingDataSource::Status::InternalCacheError);
             }
         }
 
-    return ECDbHelper::IsInstanceInMultiMap (instanceKey, *m_persistentInstances);
+    return ECDbHelper::IsInstanceInMultiMap(instanceKey, *m_persistentInstances);
     }

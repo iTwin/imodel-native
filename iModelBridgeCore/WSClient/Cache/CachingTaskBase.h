@@ -35,20 +35,19 @@ struct CachingTaskBase : public PackagedAsyncTask<void>
         CachingDataSource::FailedObjects m_failedObjects;
 
     protected:
-        virtual void _OnExecute () = 0;
-        virtual void _OnError (CachingDataSource::ErrorCR error)
-            {
-            };
+        virtual void _OnExecute() = 0;
+        virtual void _OnError(CachingDataSource::ErrorCR error)
+            {};
 
         // Set error and cancel task
-        void SetError (CachingDataSource::ErrorCR error);
+        void SetError(CachingDataSource::ErrorCR error);
         // Returns true if user canceled or error occurred - SetError() was called
-        bool IsTaskCanceled () const;
+        bool IsTaskCanceled() const;
         // Get main cancellation token for task
-        ICancellationTokenPtr GetCancellationToken () const;
+        ICancellationTokenPtr GetCancellationToken() const;
         // Add results or error to task
-        void AddResult (const CachingDataSource::BatchResult& result);
-        void AddFailedObject (CacheTransactionCR txn, ObjectIdCR objectId, ICachingDataSource::ErrorCR error);
+        void AddResult(const CachingDataSource::BatchResult& result);
+        void AddFailedObject(CacheTransactionCR txn, ObjectIdCR objectId, ICachingDataSource::ErrorCR error);
 
     public:
         CachingTaskBase
@@ -57,10 +56,10 @@ struct CachingTaskBase : public PackagedAsyncTask<void>
             ICancellationTokenPtr cancellationToken
             );
 
-        bool                              IsSuccess ();
-        CachingDataSource::Error&         GetError ();
-        CachingDataSource::FailedObjects& GetFailedObjects ();
-        CachingDataSource::BatchResult    GetResult ();
+        bool                              IsSuccess();
+        CachingDataSource::Error&         GetError();
+        CachingDataSource::FailedObjects& GetFailedObjects();
+        CachingDataSource::BatchResult    GetResult();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

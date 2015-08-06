@@ -11,7 +11,7 @@
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-MOBILEDGN_TRANSLATABLE_STRINGS_START (WSErrorL10N, WSError)
+MOBILEDGN_TRANSLATABLE_STRINGS_START(WSErrorL10N, WSError)
     {
     MESSAGE_ServerNotSupported,         // =="Server is not supported. Please check server address or contact your server administrator."==
     MESSAGE_FunctionalityNotSupported,  // =="Requested functionality is not supported for this server version."==
