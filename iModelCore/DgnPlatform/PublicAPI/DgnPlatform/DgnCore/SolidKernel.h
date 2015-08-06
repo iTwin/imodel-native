@@ -13,7 +13,7 @@
 #include "IViewDraw.h"
 #include "IPickGeom.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<IFaceMaterialAttachments> IFaceMaterialAttachmentsPtr; //!< Reference counted type to manage the life-cycle of the IFaceMaterialAttachments.
 
@@ -283,4 +283,4 @@ IFacetOptionsCR                 facetOptions
 
 typedef RefCountedPtr<IFacetTopologyTable> IFacetTopologyTablePtr;
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

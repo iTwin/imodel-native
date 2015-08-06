@@ -20,7 +20,7 @@ DGNPLATFORM_TYPEDEFS(AreaFormatter);
 DGNPLATFORM_TYPEDEFS(VolumeFormatter);
 DGNPLATFORM_TYPEDEFS(DateTimeFormatter);
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<AngleFormatter>       AngleFormatterPtr;
 typedef RefCountedPtr<DirectionFormatter>   DirectionFormatterPtr;
@@ -699,6 +699,6 @@ public:
     DGNPLATFORM_EXPORT WString ToString(DateTimeCR) const;
     }; // DateTimeFormatter
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

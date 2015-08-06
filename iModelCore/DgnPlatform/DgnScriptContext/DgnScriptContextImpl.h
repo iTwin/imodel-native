@@ -17,7 +17,7 @@
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Steve.Wilson    7/15
@@ -150,7 +150,7 @@ struct DgnScriptContextImpl : BeJsContext
     static void DestroyJsProjections (BeJsContext& context, BeJsContext::Projection*);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 #endif//ndef _DGN_SCRIPT_CONTEXT_IMPL_H_
 

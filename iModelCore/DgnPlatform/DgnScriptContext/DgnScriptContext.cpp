@@ -17,7 +17,7 @@
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15

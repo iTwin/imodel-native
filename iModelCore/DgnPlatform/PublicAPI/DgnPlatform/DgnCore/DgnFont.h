@@ -12,7 +12,7 @@
 
 typedef struct FT_FaceRec_* FT_Face; // Shield users from freetype.h because they have a bad include scheme.
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef bvector<DgnFontPtr> T_DgnFontPtrs;
 
@@ -286,4 +286,4 @@ struct DgnFontManager : NonCopyableClass
     DGNPLATFORM_EXPORT static DgnFontCR ResolveFont(DgnFontCP);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

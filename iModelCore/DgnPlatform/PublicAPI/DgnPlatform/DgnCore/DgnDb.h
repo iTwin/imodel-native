@@ -22,7 +22,7 @@ A DgnDb is a BeSQLite::Db that holds graphic and non-graphic data. A DgnDb objec
 @ref PAGE_DgnPlatform
 */
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/13
@@ -215,4 +215,4 @@ inline BeSQLite::DbResult DgnViews::SaveProperty(DgnViewId viewId, DgnViewProper
 inline BeSQLite::DbResult DgnViews::SavePropertyString(DgnViewId viewId, DgnViewPropertySpecCR spec, Utf8StringCR value, uint64_t id) {return m_dgndb.SavePropertyString(spec, value, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) {return m_dgndb.DeleteProperty(spec, viewId.GetValue(), id);}
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

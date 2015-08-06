@@ -9,7 +9,7 @@
 /*__BENTLEY_INTERNAL_ONLY__*/
 
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct                     ElemRangeCalc;
 struct                     RangeClipPlaneSet;
@@ -162,5 +162,5 @@ public:
     void      _DrawPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

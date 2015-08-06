@@ -15,7 +15,7 @@
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 DGNPLATFORM_TYPEDEFS (IRangeNodeCheck)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   05/07
@@ -97,6 +97,6 @@ public:
     DGNPLATFORM_EXPORT Result CheckElement(DgnElementCR element, bool doRangeTest) const;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

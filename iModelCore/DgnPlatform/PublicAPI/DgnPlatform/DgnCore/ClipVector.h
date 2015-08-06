@@ -11,7 +11,7 @@
 #include "../DgnPlatform.h"
 #include "ClipPrimitive.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef bvector<ClipPrimitivePtr> T_ClipPrimitiveVector;
 
@@ -46,4 +46,4 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus ApplyCameraToPlanes(double focalLength);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

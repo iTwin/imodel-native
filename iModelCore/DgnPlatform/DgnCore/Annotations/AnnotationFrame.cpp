@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFrameStylePersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationFramePersistence.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 using namespace flatbuffers;
 
 template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }

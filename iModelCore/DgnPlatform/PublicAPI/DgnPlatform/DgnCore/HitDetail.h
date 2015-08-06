@@ -13,7 +13,7 @@
 #include "IViewDraw.h"
 #include "IViewOutput.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
@@ -385,4 +385,4 @@ public:
     HitDetail* GetSecondHit() const {return m_secondHit;}
 }; 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

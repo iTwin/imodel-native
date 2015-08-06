@@ -11,7 +11,7 @@
 #include    "Locate.h"
 #include    <DgnPlatform/DgnCore/SimplifyViewDrawGeom.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 enum TestLStylePhase
     {
@@ -146,5 +146,5 @@ public:
     DGNPLATFORM_EXPORT static void InitBoresite (DRay3dR boresite, DPoint3dCR spacePoint, DMatrix4dCR worldToLocal);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

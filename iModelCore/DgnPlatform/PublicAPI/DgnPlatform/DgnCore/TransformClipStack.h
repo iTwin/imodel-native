@@ -14,7 +14,7 @@
 #include    <Bentley/bvector.h>
 #include    "IViewDraw.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      02/07
 +===============+===============+===============+===============+===============+======*/
@@ -62,4 +62,4 @@ TransformClip* GetTop ();
 
 }; // TransformClipStack
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

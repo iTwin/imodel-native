@@ -8,7 +8,7 @@
 #include <DgnPlatform/DgnCore/Annotations/AnnotationLeaderStyle.h>
 #include "Annotations.fb.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -42,4 +42,4 @@ public:
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

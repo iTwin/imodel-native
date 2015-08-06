@@ -11,7 +11,7 @@
 #include    <DgnPlatform\Tools\stringop.h>
 #include    <DgnPlatform\DgnCore\DgnCoreAPI.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #define GEOCOORD_ACS_EXTENDERID     0x04151956
 #define GEOCOORD_MGRS_EXTENDERID    0x03271957

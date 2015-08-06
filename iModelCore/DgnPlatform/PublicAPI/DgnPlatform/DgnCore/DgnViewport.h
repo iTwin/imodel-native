@@ -19,7 +19,7 @@
     // WIP: hack to get docs to come out right
     namespace BentleyApi{ namespace Dgn{
 #else
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+    BEGIN_BENTLEY_DGN_NAMESPACE
 #endif
 
 /**  @addtogroup DgnViewGroup
@@ -922,5 +922,5 @@ public:
 #if defined (DOCUMENTATION_GENERATOR)
     }}
 #else
-    END_BENTLEY_DGNPLATFORM_NAMESPACE
+    END_BENTLEY_DGN_NAMESPACE
 #endif

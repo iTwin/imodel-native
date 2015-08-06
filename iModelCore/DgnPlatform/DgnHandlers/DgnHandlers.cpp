@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnHandlers/DgnECSymbolProvider.h>
 #include <DgnPlatform/DgnHandlers/Dimension.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09

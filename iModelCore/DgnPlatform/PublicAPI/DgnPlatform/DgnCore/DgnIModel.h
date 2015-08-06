@@ -10,7 +10,7 @@
 
 #include "DgnDb.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Supplies the parameters necessary to create new .imodel file.
@@ -91,4 +91,4 @@ public:
     DGNPLATFORM_EXPORT static BeSQLite::DbResult Create(BeFileNameCR outFile, BeFileNameCR dgndbFile, CreateIModelParams params);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

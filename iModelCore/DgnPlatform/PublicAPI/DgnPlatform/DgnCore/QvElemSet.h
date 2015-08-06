@@ -12,7 +12,7 @@
 
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass
@@ -159,5 +159,5 @@ QvElem* Find(QV_KEY const& key)
     }
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

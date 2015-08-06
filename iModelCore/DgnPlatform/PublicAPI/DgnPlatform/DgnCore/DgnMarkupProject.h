@@ -51,7 +51,7 @@ DGNPLATFORM_REF_COUNTED_PTR(PhysicalRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalRedlineViewController)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct RedlineModelHandler;
 struct PhysicalRedlineModelHandler;
@@ -626,4 +626,4 @@ namespace dgn_ModelHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

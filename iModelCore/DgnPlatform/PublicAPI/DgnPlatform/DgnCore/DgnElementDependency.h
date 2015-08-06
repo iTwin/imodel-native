@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCore/TxnManager.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnElementDependencyGraph;
 
@@ -281,4 +281,4 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus WhatIfChanged(IEdgeProcessor& processor, bvector<DgnElementId> const& directlyChangedEntities, bvector<BeSQLite::EC::ECInstanceId> const& directlyChangedDepRels);
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

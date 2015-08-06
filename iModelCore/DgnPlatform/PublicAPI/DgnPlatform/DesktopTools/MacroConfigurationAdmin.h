@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/MacroConfigurationAdmin.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include "ConfigurationManager.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * An implementation of IConfigurationAdmin that maintains
@@ -84,4 +84,4 @@ public:
 
 typedef MacroConfigurationAdmin::ExpandOptions MacroExpandOptions;
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

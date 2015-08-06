@@ -13,7 +13,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCore/MaterialSettings.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 // __PUBLISH_SECTION_END__
 
@@ -142,7 +142,7 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus FindMaterial (MaterialList& materials, Utf8CP name, DgnDbR source);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */
 

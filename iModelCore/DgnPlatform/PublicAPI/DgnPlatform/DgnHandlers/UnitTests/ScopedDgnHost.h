@@ -16,7 +16,7 @@
 // This header file is snuck in through a back door. This header file can only include and use published API header files 
 // (or the few headers that are brought in through the back door).
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct ScopedDgnHostImpl;
 
@@ -57,5 +57,5 @@ enum DgnInitializeMode {DGNINITIALIZEMODE_None, DGNINITIALIZEMODE_FillModel}; //
 TestDgnManager (WCharCP fullFileName, BeSQLite::Db::OpenMode mode=BeSQLite::Db::OpenMode::ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel) : TestDataManager(fullFileName,mode,(DGNINITIALIZEMODE_FillModel==imode)) {}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

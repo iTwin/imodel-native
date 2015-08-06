@@ -10,7 +10,7 @@
 
 DGNPLATFORM_TYPEDEFS (DgnRangeTree)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/10
@@ -165,4 +165,4 @@ public:
     DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 
 // helper macro for using the DgnPlatform namespace
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 //__PUBLISH_EXTRACT_END__
 
 //__PUBLISH_EXTRACT_START__ Model_CreateAndInsert.sampleCode

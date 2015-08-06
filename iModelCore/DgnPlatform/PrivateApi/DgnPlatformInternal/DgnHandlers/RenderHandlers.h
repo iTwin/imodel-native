@@ -2,7 +2,7 @@
 |
 |     $Source: PrivateApi/DgnPlatformInternal/DgnHandlers/RenderHandlers.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,7 @@
 
 DGNPLATFORM_TYPEDEFS (RenderCellHandler)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 #if defined (NEEDS_WORK_DGNITEM)
 //=======================================================================================
@@ -70,4 +70,4 @@ public:
 };
 #endif
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

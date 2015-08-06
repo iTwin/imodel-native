@@ -63,7 +63,7 @@ extern const WChar DIMMLTEXT_ValuePlaceHolder[];
 
 #define CURRENT_DIM_CHECKSUM_TYPE   3
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef struct _elementProcess
     {
@@ -374,7 +374,7 @@ static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WC
 static void VariCharFromMSWChar (char* outVariCharString, size_t outNumBytes, WCharCP inUnicodeString, uint16_t fontNumber, uint16_t shxBigFontNumber, DgnDbR dgnFile);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS(AdimProcess)
 
@@ -1783,7 +1783,7 @@ END_BENTLEY_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS (IDimElementHelper)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 enum DimensionCategory
     {
@@ -1952,7 +1952,7 @@ void                            *pUserData,
 DgnModelP                    modelRef
 );
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 
 

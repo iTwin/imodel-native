@@ -6,7 +6,7 @@
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014

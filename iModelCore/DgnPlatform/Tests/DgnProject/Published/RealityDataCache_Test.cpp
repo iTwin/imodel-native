@@ -13,7 +13,7 @@
 #include <functional>
 #include <memory>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
 // @bsiclass                                        Grigas.Petraitis            03/2015

@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 using BentleyApi::BeSQLite::EC::ECInstanceKey;
 using BentleyApi::BeSQLite::EC::ECSqlStatement;
@@ -263,7 +263,7 @@ inline NamedVolume& NamedVolume::operator= (NamedVolume&& other)
     return *this;
     }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 

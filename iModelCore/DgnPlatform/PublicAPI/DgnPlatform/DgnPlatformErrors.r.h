@@ -11,7 +11,7 @@
 
 #include <Bentley/Bentley.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Error code categories
@@ -132,4 +132,4 @@ enum LineStyleStatus
 
 /** @endcond */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

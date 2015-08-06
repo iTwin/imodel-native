@@ -1,13 +1,13 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/AnnotationLeaderPersistence.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
 #include <DgnPlatform/DgnCore/Annotations/AnnotationLeader.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -31,4 +31,4 @@ public:
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

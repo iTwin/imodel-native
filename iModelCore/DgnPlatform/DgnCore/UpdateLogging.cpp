@@ -58,7 +58,7 @@
 #include <DgnPlatform/DgnCore/QueryView.h>
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 static bool s_inLoadUpdateCyclePending;
 static bool s_inLoadUpdateCycle;

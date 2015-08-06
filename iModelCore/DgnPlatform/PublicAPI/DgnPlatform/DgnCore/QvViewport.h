@@ -10,7 +10,7 @@
 
 #include "DgnViewport.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                      KeithBentley    10/02
@@ -49,6 +49,6 @@ public:
 //__PUBLISH_SECTION_START__
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__

@@ -26,8 +26,8 @@
 #include <BeSQLite/ChangeSet.h>
 #include <ECDb/ECDbApi.h>
 
-#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn;
-
+#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn; // for backwards compatibility, do not use
+#define USING_NAMESPACE_BENTLEY_DGN         using namespace BentleyApi::Dgn;
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 #define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
 
@@ -41,10 +41,10 @@
 #define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1 (_sName_,_name_,struct)
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGNPLATFORM_NAMESPACE
+    BEGIN_BENTLEY_DGN_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGN_NAMESPACE
 
 #define DGNPLATFORM_REF_COUNTED_PTR(_sname_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGNPLATFORM_NAMESPACE
+    BEGIN_BENTLEY_DGN_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGN_NAMESPACE
 
 #define GEOCOORD_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
@@ -268,7 +268,6 @@ enum
     DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
     DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
     DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
-
     MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
     MAXDIRLENGTH          = 256,
     MAXDEVICELENGTH       = 256,
@@ -279,7 +278,7 @@ enum
 END_BENTLEY_NAMESPACE
 
 //__PUBLISH_SECTION_START__
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 ECINSTANCE_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
 ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
@@ -983,4 +982,4 @@ public:
 
 /** @endcond */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -18,7 +18,7 @@ DGNPLATFORM_REF_COUNTED_PTR(PhysicalTextAnnotationElement);
 
 #define DGN_CLASSNAME_PhysicalTextAnnotationElement "PhysicalTextAnnotationElement"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup Annotations
 //! @beginGroup
@@ -73,4 +73,4 @@ namespace dgn_ElementHandler
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

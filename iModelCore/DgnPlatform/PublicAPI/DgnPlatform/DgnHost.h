@@ -14,7 +14,7 @@
 
 #include "DgnPlatform.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // A DgnHost is an object that uniquely identifies a usage of the DgnPlatform libraries for a single purpose.
@@ -164,6 +164,6 @@ public:
     WString const&  GetWString () const {return m_string;}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

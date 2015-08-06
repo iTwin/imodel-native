@@ -18,7 +18,7 @@
 #include <Regions/rimsbsAPI.h>
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 enum class RegionLoops
     {
@@ -322,5 +322,5 @@ DGNPLATFORM_EXPORT static RegionGraphicsContextPtr Create ();
 
 }; // RegionGraphicsContext
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

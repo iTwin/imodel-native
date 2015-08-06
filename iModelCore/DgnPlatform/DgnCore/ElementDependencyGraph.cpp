@@ -22,7 +22,7 @@ static bool s_debugGraph_showElementIds;
 
 HANDLER_DEFINE_MEMBERS(DgnElementDependencyHandler)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct EdgeStatusAccessor
 {
@@ -113,7 +113,7 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
 
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

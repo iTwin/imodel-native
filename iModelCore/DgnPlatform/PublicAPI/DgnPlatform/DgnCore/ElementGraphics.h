@@ -13,7 +13,7 @@
 #include "SolidKernel.h"
 #include "ViewContext.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 //__PUBLISH_SECTION_END__
 struct EXPORT_VTABLE_ATTRIBUTE WireframeGeomUtil
 {
@@ -172,6 +172,6 @@ DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, Dg
 
 /** @endGroup */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

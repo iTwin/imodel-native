@@ -1155,7 +1155,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
     }
 
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
 {
     ECN::ECClassCR m_ecclass;
@@ -1172,7 +1172,7 @@ struct MultiAspectMux : DgnElement::AppData
     DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/ConfigurationManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -16,7 +16,7 @@
 #include <RmgrTools/Tools/UglyStrings.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*=================================================================================**//**
 * An implementation of IConfigurationAdmin that accesses system environment variables and CSIDL.

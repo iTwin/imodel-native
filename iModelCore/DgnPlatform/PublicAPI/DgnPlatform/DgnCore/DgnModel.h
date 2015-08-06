@@ -21,7 +21,7 @@ DGNPLATFORM_TYPEDEFS (PlanarPhysicalModel)
 DGNPLATFORM_TYPEDEFS (SheetModel)
 DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
@@ -1120,4 +1120,4 @@ namespace dgn_ModelHandler
     };
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

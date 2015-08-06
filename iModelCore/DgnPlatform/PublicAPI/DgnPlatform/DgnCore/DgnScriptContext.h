@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCore/DgnElement.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnScriptContextImpl;
 
@@ -135,4 +135,4 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
 }; 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

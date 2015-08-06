@@ -20,7 +20,7 @@
 DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! The GeomStreamEntryId class identifies a geometric primitive in a GeomStream.
@@ -1341,4 +1341,4 @@ public:
     //__PUBLISH_SECTION_START__
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

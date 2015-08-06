@@ -10,7 +10,7 @@
 
 #include "ViewContext.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
   Output that doesn't do anything.
@@ -122,4 +122,4 @@ NullContext (IViewDrawP viewDraw = NULL, bool setupScan = false) {m_IViewDraw = 
 
 }; // NullContext
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

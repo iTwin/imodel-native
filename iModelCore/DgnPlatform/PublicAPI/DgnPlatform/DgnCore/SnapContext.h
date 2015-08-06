@@ -14,7 +14,7 @@
 #include "NullContext.h"
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Interface to be used when snapping.
@@ -90,4 +90,4 @@ DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, ISpriteP sprite, DPoint3dCR 
 
 }; // SnapContext
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

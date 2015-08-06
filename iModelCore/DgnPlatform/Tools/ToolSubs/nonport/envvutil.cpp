@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/envvutil.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -87,7 +87,7 @@ StatusInt util_readRegistry (WStringR, WCharCP) {BeAssert (false); return ERROR;
 #pragma comment (lib, "shell32")
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 *   pString <= Environment string (or NULL)

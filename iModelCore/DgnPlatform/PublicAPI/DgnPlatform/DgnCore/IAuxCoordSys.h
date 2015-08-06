@@ -18,7 +18,7 @@
 
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! @addtogroup AuxiliaryCoordinateSystems
@@ -351,6 +351,6 @@ DGNPLATFORM_EXPORT void PointToGrid (DgnViewportP viewPort, DPoint3dR point) con
 
 /** @endGroup */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

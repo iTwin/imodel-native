@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/fileutil/findfile.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -19,7 +19,7 @@
 #include <DgnPlatform/Tools/stringop.h>
 #include <Bentley/BeFileListIterator.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #define UF_INTERNALUSE_RELATIVEPATH    0x40
 

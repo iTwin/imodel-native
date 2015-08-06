@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnCore/DgnScriptContext.h>
 #include <Bentley/BeTimeUtilities.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define TEST_JS_NAMESPACE    "DgnComponentModelTest"

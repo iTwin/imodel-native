@@ -13,7 +13,7 @@
 #include    <Bentley/BeIconUtilities.h>
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct ISprite;
 typedef RefCountedPtr<ISprite> ISpritePtr;
@@ -128,4 +128,4 @@ ISpriteP GetSprite()  {return m_sprite;}
 };
 
 /** @endGroup */
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

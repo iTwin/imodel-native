@@ -19,7 +19,7 @@
 
 typedef uintptr_t QvExtSymbID;
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
  @addtogroup ViewContext
@@ -987,4 +987,4 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

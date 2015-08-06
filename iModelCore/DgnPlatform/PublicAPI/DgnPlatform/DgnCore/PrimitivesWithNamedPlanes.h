@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DGVariable;
 
@@ -181,4 +181,4 @@ struct PrimitivesWithNamedPlane
     DGNPLATFORM_EXPORT static StatusInt ComputePointOfIntersection (DPoint3dR isectPoint, ICurvePrimitiveCR thisCurve, ICurvePrimitiveCR targetCurve, DPoint3dCR testPointIn);
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

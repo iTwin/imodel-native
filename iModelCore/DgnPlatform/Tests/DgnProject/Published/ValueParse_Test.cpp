@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ValueParse_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 double const EPSILON = 0.000000001;

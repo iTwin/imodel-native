@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/MacroFileProcessor.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,7 +10,7 @@
 #include    <DgnPlatform/DesktopTools/MacroConfigurationAdmin.h>
 #include    <Bentley/BeTextFile.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * Utility class that can read a MicroStation .cfg or pcf file.
@@ -101,5 +101,5 @@ public:
 };
 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

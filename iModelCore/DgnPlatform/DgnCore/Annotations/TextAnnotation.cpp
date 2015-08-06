@@ -11,7 +11,7 @@
 #include <DgnPlatformInternal/DgnCore/Annotations/AnnotationLeaderPersistence.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 using namespace flatbuffers;
 
 template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }

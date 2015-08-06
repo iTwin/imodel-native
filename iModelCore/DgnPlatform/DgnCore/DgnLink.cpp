@@ -8,7 +8,7 @@
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/DgnCore/DgnLink.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //=======================================================================================
 // Used in persistence; do not change values.

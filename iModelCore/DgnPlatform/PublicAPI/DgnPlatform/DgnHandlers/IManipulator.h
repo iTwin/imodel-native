@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * @addtogroup Manipulators
@@ -201,5 +201,5 @@ virtual IEditManipulatorPtr _GetTransientManipulator (HitDetailCR hit) {return n
 
 }; // ITransientGeometryHandler
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

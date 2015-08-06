@@ -14,7 +14,7 @@
 #include <functional>
 #include <memory>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Grigas.Petraitis    10/2014

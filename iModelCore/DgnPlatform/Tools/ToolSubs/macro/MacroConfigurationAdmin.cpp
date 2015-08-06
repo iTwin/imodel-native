@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroConfigurationAdmin.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -16,7 +16,7 @@
 #define CFGVAR_DEFINED_NULL         ((WStringP)-1) /* defined but no translation */
 #define INVALID_MACRO_LEVEL         (ConfigurationVariableLevel)-99
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/94
@@ -41,7 +41,7 @@ static WCharCP     getLevelDebugString (ConfigurationVariableLevel level)
     return (s_levelNames[level]);
     }
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct MacroEntry
 {
@@ -520,7 +520,7 @@ void            PrintLevelCfgVarSummaryLine (BeTextFileR debugFile, WCharCP macr
 
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/93

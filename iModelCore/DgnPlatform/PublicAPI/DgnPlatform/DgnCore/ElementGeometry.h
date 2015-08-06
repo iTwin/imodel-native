@@ -12,7 +12,7 @@
 #include "SolidKernel.h"
 #include "ViewContext.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 
@@ -435,4 +435,4 @@ DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometricElemen
 
 }; // ElementGeometryBuilder
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -12,7 +12,7 @@
 #include <Bentley/BeThread.h>
 #include <DgnPlatform/DgnCore/ViewContext.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnDbRTree3dViewFilter;
                                                                                                                     
@@ -138,4 +138,4 @@ public:
     uint32_t GetElementCount() const;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -60,7 +60,7 @@
 #define TABLEHANDLER_DEFINE_MEMBERS(__classname__) \
     __classname__&  __classname__::GetHandler(){static __classname__* s_instance=nullptr; if (nullptr==s_instance) s_instance=new __classname__(); return *s_instance;}
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnDomains;
 
@@ -400,4 +400,4 @@ public:
     DgnBaseDomain();
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

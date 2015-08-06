@@ -9,7 +9,7 @@
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Seeds are defaults - You can add more seeds for testing - never change seeds!

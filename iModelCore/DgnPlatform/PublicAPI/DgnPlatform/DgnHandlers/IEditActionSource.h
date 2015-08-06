@@ -11,7 +11,7 @@
 
 #include    <DgnPlatform/DgnPlatform.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct     IEditActionArray;
 
@@ -37,6 +37,6 @@ virtual void    _TestPath (DPoint3dCP point, int view, HitDetailCP path, IEditAc
 
 }; // IEditActionSource
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

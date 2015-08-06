@@ -14,7 +14,7 @@
 #define     LS_ALL_LINES        (~0)
 #define     LS_ALL_MLINE_TYPES  (~0)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef std::map <WString, WString> NameDefinitionList_T;
 typedef NameDefinitionList_T::value_type   NameDefinitionValue_T;
@@ -41,4 +41,4 @@ DGNPLATFORM_EXPORT static int           LoadLinDefinition (WCharCP linFileName, 
 DGNPLATFORM_EXPORT static double        GetDefaultLinScale (DgnModelP destDgnModel);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

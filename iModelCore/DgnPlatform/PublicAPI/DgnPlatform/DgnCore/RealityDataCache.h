@@ -56,7 +56,7 @@ struct HttpRealityDataSourceRequest;
         static const bool value = sizeof(probe<T>(nullptr)) > 1; \
     };
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct RealityDataCacheOptions;
 
@@ -1068,4 +1068,4 @@ public:
     //! @param[in] responseReceiver The object that will receive the response of this request.
     DGNPLATFORM_EXPORT RealityDataSourceResult Request(Data& data, Utf8CP url, RequestOptions const& options, IRealityDataSourceResponseReceiver& responseReceiver);
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

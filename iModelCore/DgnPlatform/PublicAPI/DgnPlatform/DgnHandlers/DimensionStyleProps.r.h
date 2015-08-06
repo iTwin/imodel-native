@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/DimensionStyleProps.r.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -95,7 +95,7 @@
 //!    </UL>
 //!</p>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //!---------------------------------------------------------------------------------**//**
 //!Valid values for ball and chain modes.  Used for properties:
@@ -2158,6 +2158,6 @@ enum DimStyleProp_ValueList
 
 //__PUBLISH_SECTION_START__
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

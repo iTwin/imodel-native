@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/nonport/winnt/w32tools.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #define NOMINMAX
@@ -65,7 +65,7 @@ extern "C"
 #define     INCLUDE_win32tools_recordDelayLoadHookFailure   (1)
 #include    <DgnPlatform/DesktopTools/w32tools.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #pragma comment(lib, "VERSION")
 #pragma comment(lib, "shlwapi")

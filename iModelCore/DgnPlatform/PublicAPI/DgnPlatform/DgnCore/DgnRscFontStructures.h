@@ -7,7 +7,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef int16_t RscFontVec;
 typedef unsigned short RscFontDist;
@@ -170,4 +170,4 @@ struct RscFontHeader
     char name[1];
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

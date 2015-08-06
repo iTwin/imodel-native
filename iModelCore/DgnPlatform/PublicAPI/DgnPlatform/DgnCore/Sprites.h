@@ -11,7 +11,7 @@
 #include    "ISprite.h"
 #include    <Bentley/RefCounted.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 typedef RefCountedPtr<struct RgbaSprite> RgbaSpritePtr;
 //=======================================================================================
@@ -72,4 +72,4 @@ public:
     DGNPLATFORM_EXPORT ISpriteP GetISpriteP ();
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

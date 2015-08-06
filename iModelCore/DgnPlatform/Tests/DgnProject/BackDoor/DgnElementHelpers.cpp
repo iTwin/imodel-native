@@ -9,7 +9,7 @@
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnProject/DgnElementHelpers.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 

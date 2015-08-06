@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/MacroFileProcessor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -22,7 +22,7 @@
 #undef DGN_PLATFORM_MT
 #include    <RmgrTools/Tools/ToolSubs.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 enum
     {
@@ -108,10 +108,10 @@ WChar       GetOneChar ()
     }
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 
 

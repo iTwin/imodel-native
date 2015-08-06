@@ -12,7 +12,7 @@
 #include    <DgnPlatform/DgnPlatform.r.h>
 #include    <Bentley/WString.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A unit can be categorized according to its system.  The system has no mathematical
@@ -26,12 +26,12 @@ enum class UnitSystem
     USSurvey    = 3,
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS (UnitDefinition)
 DGNPLATFORM_TYPEDEFS (UnitIteratorOptions)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A UnitDefinition describes a unit which is a context in which users and
@@ -419,4 +419,4 @@ public:
 
 /** @endcond */
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

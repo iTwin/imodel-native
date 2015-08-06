@@ -28,7 +28,7 @@ DGNPLATFORM_TYPEDEFS (DimStyleTableEditor)
 
 #define DIMSTYLE_COMPAREOPTS_UserInterface      DIMSTYLE_COMPAREOPTS_IgnoreUnusedDiffs
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DimensionHandler;
 struct NoteCellHeaderHandler;
@@ -669,7 +669,7 @@ struct DimStyleDgnCacheLoaderCollection
 
 //__PUBLISH_SECTION_START__
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 /*=====================================================================================+

@@ -10,7 +10,7 @@
 //__PUBLISH_SECTION_START__
 #include    <Bentley/WString.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Specifies the details of a message to be displayed to the user through the NotificationManager.
@@ -118,4 +118,4 @@ public:
     DGNPLATFORM_EXPORT static MessageBoxValue OpenMessageBox(MessageBoxType mbType, Utf8CP message, MessageBoxIconType icon);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

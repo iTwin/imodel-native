@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnCore/QueryModel.h>
 #include <DgnPlatform/DgnCore/ViewController.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Populates a QueryModel with \ref DgnElementGroup from a SQL query. The query can combine 
@@ -211,4 +211,4 @@ public:
     double GetLastQueryCounter() {return m_lastQueryTime;}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

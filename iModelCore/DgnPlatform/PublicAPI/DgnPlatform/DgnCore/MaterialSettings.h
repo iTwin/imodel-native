@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/MaterialSettings.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -28,7 +28,7 @@ DGNPLATFORM_TYPEDEFS (MaterialShaderIterator)
 DGNPLATFORM_TYPEDEFS (MaterialFur)
 DGNPLATFORM_TYPEDEFS (MaterialProjectionParameters)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 // __PUBLISH_SECTION_END__
 #endif //!defined (resource) && !defined (type_resource_generator)
@@ -1491,7 +1491,7 @@ public:
     DGNPLATFORM_EXPORT void DeletePresetData ();
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */
 

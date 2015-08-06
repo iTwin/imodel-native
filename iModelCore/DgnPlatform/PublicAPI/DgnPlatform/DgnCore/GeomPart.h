@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCore/ElementGeometry.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! A DgnGeomPart stores geometry that can be shared between multiple elements.
@@ -56,4 +56,4 @@ public:
     GeomStreamR GetGeomStreamR() {return m_geometry;}
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

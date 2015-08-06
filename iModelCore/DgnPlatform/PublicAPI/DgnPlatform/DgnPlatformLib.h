@@ -27,7 +27,7 @@ typedef struct FT_LibraryRec_* FT_Library; // Shield users from freetype.h becau
 
 DGNPLATFORM_TYPEDEFS(DgnHost)
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
@@ -1074,5 +1074,5 @@ public:
     DGNPLATFORM_EXPORT static void ForwardAssertionFailures(BeAssertFunctions::T_BeAssertHandler*);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

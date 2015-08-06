@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_SQLITE_EC 
 USING_NAMESPACE_EC
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Ramanujam.Raman                   01/15
@@ -518,4 +518,4 @@ void NamedVolume::Fit (DgnViewport& viewport, double const* aspectRatio /*=nullp
 #endif
     }
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

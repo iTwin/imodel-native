@@ -7,7 +7,7 @@
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 #include <DgnPlatform/DgnCore/TextStyleInterop.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

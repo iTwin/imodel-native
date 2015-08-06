@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/ConfigurationManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnHost.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Provide a delegate mechanism for iterating through all configuration variables.
 struct IConfigVariableIteratorDelegate
@@ -178,4 +178,4 @@ public:
     ConfigurationManager::CheckVariableIsDefinedOnce (_V_ ## cfgvar_checker, _CRT_WIDE (#_V_))
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

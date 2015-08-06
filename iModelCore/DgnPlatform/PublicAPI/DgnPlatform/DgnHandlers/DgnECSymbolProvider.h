@@ -10,7 +10,7 @@
 
 #include <ECObjects/ECObjectsAPI.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * Provides method symbols for IECInstances.
@@ -115,5 +115,5 @@ struct DgnElementExpressionContext : DgnDbExpressionContext
     };
 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

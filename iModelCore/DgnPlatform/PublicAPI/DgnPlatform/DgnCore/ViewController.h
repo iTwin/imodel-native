@@ -33,7 +33,7 @@ DGNPLATFORM_REF_COUNTED_PTR(HypermodelingViewController)
 #include "../DgnPlatformErrors.r.h"
 #include "SectionClip.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct FullUpdateInfo;
 struct DynamicUpdateInfo;
@@ -1141,4 +1141,4 @@ public:
     virtual ViewControllerPtr _SupplyController(DgnDbR db, DgnViews::View const& view) = 0;
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

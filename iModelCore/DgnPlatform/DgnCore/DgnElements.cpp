@@ -9,7 +9,7 @@
 
 typedef DgnElementCP* DgnElementH;
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    01/01
 +===============+===============+===============+===============+===============+======*/
@@ -231,7 +231,7 @@ public:
     void Purge(int64_t memTarget);
     void Destroy();
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14

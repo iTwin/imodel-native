@@ -19,7 +19,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
@@ -1137,4 +1137,4 @@ public:
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

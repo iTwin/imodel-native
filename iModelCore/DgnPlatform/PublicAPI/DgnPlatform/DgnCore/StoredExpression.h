@@ -12,7 +12,7 @@
 #include "../DgnPlatform.h"
 
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------
 Format of XAttribute Data
@@ -242,4 +242,4 @@ public:
 };
 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

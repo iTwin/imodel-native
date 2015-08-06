@@ -15,7 +15,7 @@
 #include <GeoCoord/GCSLibrary.h>
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 using namespace BentleyApi::GeoCoordinates;
 
 namespace {

@@ -2,7 +2,7 @@
 |
 |     $Source: Tools/ToolSubs/macro/expandMacro.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -15,7 +15,7 @@
 #include <RmgrTools/Tools/UglyStrings.h>
 #include "macro.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 #define DQUOTE                  (0x22)
 #define SQUOTE                  (0x27)

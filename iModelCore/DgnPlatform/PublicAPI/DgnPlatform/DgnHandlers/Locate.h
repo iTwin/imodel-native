@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 #include <DgnPlatform/DgnCore/HitDetail.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
@@ -250,7 +250,7 @@ public:
 
 }; // ElementLocateManager
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 BEGIN_BENTLEY_NAMESPACE
 typedef Dgn::LocateFailureValue LocateFailure;

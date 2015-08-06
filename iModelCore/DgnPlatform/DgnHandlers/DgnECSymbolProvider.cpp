@@ -11,11 +11,11 @@
 #include    <ECObjects/SystemSymbolProvider.h>
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_EC
 
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // DgnDbExpressionContext
@@ -729,7 +729,7 @@ IECInstancePtr DgnECSymbolProvider::CreatePseudoRelatedInstance (Utf8CP spec)
     }
 #endif
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 
 

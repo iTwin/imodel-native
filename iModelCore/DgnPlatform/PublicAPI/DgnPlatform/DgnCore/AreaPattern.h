@@ -13,7 +13,7 @@
 
 #if !defined(__midl) // For a MIDL compile, all we care about are the values of the #define constants.
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 /*=================================================================================**//**
  @addtogroup AreaPattern
@@ -302,5 +302,5 @@ PATTERN_FLAGS_Default           = (0),          //!< Use active setting by defau
 
 #endif // !defined(__midl)
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

@@ -11,7 +11,7 @@
 #include <Bentley/BeFile.h>
 #include <Bentley/bvector.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Utilities to read and write common image formats.
@@ -90,4 +90,4 @@ struct ImageUtilities
 /** @} */
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

@@ -71,7 +71,7 @@
 #include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
@@ -1605,4 +1605,4 @@ public:
     DGNPLATFORM_EXPORT void PurgeUnused();
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

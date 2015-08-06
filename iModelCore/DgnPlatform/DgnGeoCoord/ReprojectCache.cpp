@@ -15,7 +15,7 @@
 #include    <DgnPlatform\DgnHandlers\IGeoCoordReproject.h>
 #include    <DgnPlatform\DgnCore\Undo.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_USTN
 
 using namespace BentleyApi::GeoCoordinates;

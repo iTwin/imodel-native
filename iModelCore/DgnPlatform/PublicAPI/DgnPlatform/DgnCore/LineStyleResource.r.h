@@ -82,7 +82,7 @@ Multiline modifiers
 |   Resource structures                                                 |
 |                                                                       |
 +======================================================================*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct LineStyleParamsResource
     {
     uint32_t    modifiers;      /* see STYLEMOD_... above              */
@@ -100,6 +100,6 @@ struct LineStyleParamsResource
     RotMatrix   rMatrix;
     };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */

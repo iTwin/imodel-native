@@ -96,7 +96,7 @@ struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptingAdmin
 * directories delivered with the unit test framework.
 * @bsiclass                                     Sam.Wilson                      01/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 struct ScopedDgnHostImpl : DgnPlatformLib::Host
 {
     bool        m_isInitialized;
@@ -113,7 +113,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
     
 };
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011

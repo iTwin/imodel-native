@@ -12,7 +12,7 @@
 template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
 
 USING_NAMESPACE_EC
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 using namespace flatbuffers;
 
 #define DGN_STYLE_TYPE_AnnotationText "2"

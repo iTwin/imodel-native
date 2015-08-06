@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include <UnitTests/BackDoor/DgnProject/BackDoor.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 #define LOCS(str) str

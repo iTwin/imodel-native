@@ -12,7 +12,7 @@
 #include "DgnPlatform/DgnPlatform.h"
 #include "DgnFont.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! @addtogroup TextModule
 //! @beginGroup
@@ -165,4 +165,4 @@ public:
 
 //! @endGroup
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

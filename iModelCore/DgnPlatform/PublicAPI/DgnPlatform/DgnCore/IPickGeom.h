@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include "HitDetail.h"
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 //! Interface to supply additional topology information that describes the subsequent geometry.
@@ -51,5 +51,5 @@ virtual DRay3d _GetBoresite() const = 0;
 
 }; // IPickGeom
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 

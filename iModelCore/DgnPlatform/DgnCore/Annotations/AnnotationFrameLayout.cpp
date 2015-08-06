@@ -6,7 +6,7 @@
 #include <DgnPlatformInternal.h> 
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_DGN
 
 static const double SQRT_TWO = sqrt(2.0);
 static const double TWO_PI = (2.0 * Angle::Pi());

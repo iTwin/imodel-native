@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_TableHandler
 {
@@ -53,7 +53,7 @@ HANDLER_DEFINE_MEMBERS(Aspect)
 };
 
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ViewHandler)
 

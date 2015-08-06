@@ -10,7 +10,7 @@
 
 #include <DgnPlatform/DgnPlatform.h>
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                     Brien.Bastings  05/09
@@ -29,4 +29,4 @@ DGNPLATFORM_EXPORT static void ConvertColorDefToRgbFactor (RgbFactorR rgbFactpr,
 DGNPLATFORM_EXPORT static void InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor);
 };
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE

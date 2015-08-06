@@ -12,7 +12,7 @@ DGNPLATFORM_TYPEDEFS (ViewTransientCaller)
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
 // @bsiclass
@@ -35,6 +35,6 @@ virtual void _DrawTransients (ViewContextR context, bool isPreUpdate) = 0;
 
 }; // IViewTransients
 
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+END_BENTLEY_DGN_NAMESPACE
 
 /** @endcond */
