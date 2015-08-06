@@ -55,9 +55,6 @@
     <ClCompile Include="NonPublished\DgnColors_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="Published\DgnModel_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\DgnProject_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -171,6 +168,12 @@
     </ClCompile>
     <ClCompile Include="Performance\ElementInsertPerformance.cpp">
       <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\DgnModel_Test.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
