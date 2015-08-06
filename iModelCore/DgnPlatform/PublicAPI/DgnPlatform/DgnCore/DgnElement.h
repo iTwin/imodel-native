@@ -740,7 +740,8 @@ public:
     DgnDbStatus SetCode(Utf8CP code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
-    Utf8CP GetLabel() const {return m_label.c_str();}
+    //! @return the Label if it is exists, nullptr otherwise.
+    Utf8CP GetLabel() const {return m_label.empty() ? nullptr : m_label.c_str();}
 
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}

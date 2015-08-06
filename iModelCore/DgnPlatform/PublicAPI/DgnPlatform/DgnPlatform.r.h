@@ -8,8 +8,12 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "DgnPlatformBaseType.r.h"
+#include <Geom/GeomApi.h>
+#include "ExportMacros.h"
 #include <BeJsonCpp/BeJsonUtilities.h>
+
+#define BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
+#define END_BENTLEY_DGNPLATFORM_NAMESPACE   } END_BENTLEY_NAMESPACE
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 

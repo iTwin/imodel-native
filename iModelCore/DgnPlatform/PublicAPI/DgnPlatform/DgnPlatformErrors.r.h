@@ -10,9 +10,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/Bentley.h>
-#include <Bentley/BeFileName.h>
-#include <BeSQLite/L10N.h>
-#include "DgnPlatformBaseType.r.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
