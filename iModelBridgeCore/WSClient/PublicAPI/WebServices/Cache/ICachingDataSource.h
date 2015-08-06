@@ -39,7 +39,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             DataNotCached,
             NetworkErrorsOccured,
             FunctionalityNotSupported,
-            DependencyNotSynced
+            DependencyNotSynced,
+            ApplicationError        // Used by application logic to pass user-readable error messages
             };
 
         enum DataOrigin
@@ -308,8 +309,10 @@ struct ICachingDataSource::Error : public AsyncError
         WSCACHE_EXPORT Error(ICachingDataSource::Status status);
         WSCACHE_EXPORT Error(CacheStatus status);
         WSCACHE_EXPORT Error(WSErrorCR error);
-        //! Constructs error with status InternalCacheError message and desription form error
+        //! Constructs error with status InternalCacheError message and desription from error
         WSCACHE_EXPORT Error(AsyncErrorCR error);
+        //! Constructs error with status and message with description from error
+        WSCACHE_EXPORT Error(ICachingDataSource::Status status, AsyncErrorCR error);
         //! Constructs error with status InternalCacheError and specified message.
         WSCACHE_EXPORT Error(Utf8StringCR message);
         //! Constructs error with supplied status or status Canceled if cancellation token is non null and already canceled.
