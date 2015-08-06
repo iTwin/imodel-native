@@ -29,20 +29,27 @@ class UrlQueue
 
     CRAWLERLIB_EXPORT virtual size_t NumberOfUrls() const;
 
-    CRAWLERLIB_EXPORT virtual void SetMaxNumberOfVisitedUrls(size_t n);
     CRAWLERLIB_EXPORT size_t GetMaxNumberOfVisitedUrls();
+    CRAWLERLIB_EXPORT virtual void SetMaxNumberOfVisitedUrls(size_t n); //Those method are virtual so they can be mocked/spy in tests
+    CRAWLERLIB_EXPORT virtual void SetAcceptExternalLinks(bool accept);
+    CRAWLERLIB_EXPORT virtual void SetAcceptLinksInExternalLinks(bool accept);
+    CRAWLERLIB_EXPORT virtual void SetMaximumCrawlDepth(uint32_t depth);
 
     CRAWLERLIB_EXPORT virtual void AddUrl(UrlPtr const& url);
     CRAWLERLIB_EXPORT virtual UrlPtr NextUrl();
 
     private:
     bool HaveAlreadyVisited(UrlPtr const& url) const;
+    bool IsAcceptedUrl(UrlPtr const& url) const;
 
     size_t m_NumberOfUrls;
     size_t m_MaxNumberOfVisitedUrls;
+    bool m_AcceptExternalLinks;
+    bool m_AcceptLinksInExternalLinks;
+    uint32_t m_MaximumCrawlDepth;
 
     std::queue<UrlPtr> m_Urls;
-    std::set<UrlPtr, UrlPtrCompare> m_VisitedUrls;
+    UrlPtrSet m_VisitedUrls;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

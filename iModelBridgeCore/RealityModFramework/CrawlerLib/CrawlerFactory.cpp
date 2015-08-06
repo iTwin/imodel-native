@@ -11,6 +11,8 @@
 #include <CrawlerLib/Downloader.h>
 #include <CrawlerLib/PageParser.h>
 #include <CrawlerLib/UrlQueue.h>
+#include <CrawlerLib/RobotsTxtParser.h>
+#include <CrawlerLib/Politeness.h>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 
@@ -19,9 +21,15 @@ USING_NAMESPACE_BENTLEY_CRAWLERLIB
 //+---------------+---------------+---------------+---------------+---------------+------
 Crawler* CrawlerFactory::GetSingleThreadedCrawler()
     {
-    IPageDownloader* downloader = new SingleThreadedDownloader;
-    UrlQueue* queue = new UrlQueue;
-    IPageParser* parser = new PageParser;
+    IPageDownloader* webPageDownloader = new SingleThreadedDownloader;
 
-    return new Crawler(downloader, queue, parser);
+    IPageDownloader* robotsTxtDownloader = new SingleThreadedDownloader;
+    RobotsTxtParser* robotsTxtParser = new RobotsTxtParser;
+    ISleeper* sleeper = new Sleeper;
+    IPoliteness* politeness = new Politeness(robotsTxtDownloader, robotsTxtParser, sleeper);
+
+    UrlQueue* queue = new UrlQueue;
+    IPageParser* pageParser = new PageParser;
+
+    return new Crawler(webPageDownloader, politeness, queue, pageParser);
     } 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicApi/CrawlerLib/Url.h $
-| 
+|
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
@@ -16,38 +16,47 @@
 #include <Bentley/RefCounted.h>
 
 #include <regex>
+#include <set>
 #include <exception>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 struct Url : public RefCountedBase
     {
-    public: 
-    CRAWLERLIB_EXPORT Url(WString const& url);
-    CRAWLERLIB_EXPORT Url(Url const& baseUrl, WString const& relativePath);
-    CRAWLERLIB_EXPORT Url(Url const& other);
+    public:
+    CRAWLERLIB_EXPORT Url(WString const& url, UrlPtr const& parent);
     CRAWLERLIB_EXPORT virtual ~Url() {}
 
-    CRAWLERLIB_EXPORT inline WString GetDomainName() const {return m_DomainName;}
-    inline WString const& GetUrlWString() const {return m_Url;}
+    CRAWLERLIB_EXPORT inline WString const& GetDomainName() const {return m_DomainName;}
+    CRAWLERLIB_EXPORT inline WString const& GetUrlWString() const {return m_Url;}
+    CRAWLERLIB_EXPORT inline UrlPtr const& GetParent() const {return m_Parent;}
+    CRAWLERLIB_EXPORT inline uint32_t GetDepth() const {return m_Depth;}
+    CRAWLERLIB_EXPORT inline bool IsExternalPage() const {return m_IsExternalPage;}
+    CRAWLERLIB_EXPORT bool IsSubUrlOf(Url const& parent);
 
     CRAWLERLIB_EXPORT inline bool operator==(Url const& other) const;
     CRAWLERLIB_EXPORT inline bool operator<(Url const& other) const;
-    CRAWLERLIB_EXPORT Url& operator=(Url const& other);
 
-    CRAWLERLIB_EXPORT static bool IsValidAbsoluteLink(WString const& link);
-    CRAWLERLIB_EXPORT static bool IsValidRelativeLink(WString const& link);
 
     protected:
-    Url() {} //For testing/mocking purpose
+    Url() {} 
+    void RemoveTrailingSlash(WString& urlString) const;
 
+    UrlPtr m_Parent;
     WString m_Url;
     WString m_DomainName;
+    bool m_IsExternalPage;
+    uint32_t m_Depth;
 
-    private:
-    static const std::wregex s_UrlRegex; 
+    static const std::wregex s_UrlRegex;
     static const std::wregex s_RelativeUrlRegex;
     static const std::wregex s_DomainNameRegex;
     static const std::wregex s_RelativeUrlWithDotRegex;
+    };
+
+struct Seed : public Url
+    {
+    public:
+    CRAWLERLIB_EXPORT Seed(WString const& url);
     };
 
 class InvalidUrlException : public std::exception
@@ -72,4 +81,5 @@ struct UrlPtrCompare
     bool operator() (UrlPtr const& lhs, UrlPtr const& rhs) const {return *lhs < *rhs;}
     };
 
+typedef std::set<UrlPtr, UrlPtrCompare> UrlPtrSet;
 END_BENTLEY_CRAWLERLIB_NAMESPACE

@@ -38,7 +38,11 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)PageParser$(oext) : $(baseDir)PageParser.cpp $(PublicApiDir)PageParser.h ${MultiCompileDepends}
 
+$(o)RobotsTxtParser$(oext) : $(baseDir)RobotsTxtParser.cpp $(PublicApiDir)RobotsTxtParser.h ${MultiCompileDepends}
+
 $(o)Url$(oext) : $(baseDir)Url.cpp $(PublicApiDir)Url.h ${MultiCompileDepends}
+
+$(o)Politeness$(oext) : $(baseDir)Politeness.cpp $(PublicApiDir)Politeness.h ${MultiCompileDepends}
 
 $(o)Downloader$(oext) : $(baseDir)Downloader.cpp $(PublicApiDir)Downloader.h ${MultiCompileDepends}
 

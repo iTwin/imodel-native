@@ -1,4 +1,11 @@
-#include "./UrlMock.h"
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/CrawlerLib/QueueTester.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include "./Mocks.h"
 #include <Bentley/BeTest.h>
 #include <CrawlerLib/UrlQueue.h>
 #include <CrawlerLib/Url.h>
@@ -79,6 +86,116 @@ TEST_F(QueueTester, WhenTheMaxNumberOfUrlIsReachedAdditionalUrlsAreIgnored)
 
     queue.AddUrl(url5);
     ASSERT_EQ(2, queue.NumberOfUrls());
+    }
+
+TEST_F(QueueTester, WhenExternalLinksAreEnabledAddigAnExternalLinkAddsTheLinkToTheQueue)
+    {
+    queue.SetAcceptExternalLinks(true);
+
+    UrlMock internalUrl(L"http://internal.com");
+    internalUrl.SetIsExternalPage(false);
+    UrlPtr internalUrlPtr = new UrlMock(internalUrl);
+
+    UrlMock externalUrl(L"http://external.com");
+    externalUrl.SetIsExternalPage(true);
+    UrlPtr externalUrlPtr = new UrlMock(externalUrl);
+
+    queue.AddUrl(internalUrlPtr);
+    ASSERT_EQ(1, queue.NumberOfUrls());
+
+    queue.AddUrl(externalUrlPtr);
+    ASSERT_EQ(2, queue.NumberOfUrls());
+    }
+
+TEST_F(QueueTester, WhenExternalLinksAreDisabledAddigAnExternalLinkIsIgnored)
+    {
+    queue.SetAcceptExternalLinks(false);
+
+    UrlMock internalUrl(L"http://internal.com");
+    internalUrl.SetIsExternalPage(false);
+    UrlPtr internalUrlPtr = new UrlMock(internalUrl);
+
+    UrlMock externalUrl(L"http://external.com");
+    externalUrl.SetIsExternalPage(true);
+    UrlPtr externalUrlPtr = new UrlMock(externalUrl);
+
+    queue.AddUrl(internalUrlPtr);
+    ASSERT_EQ(1, queue.NumberOfUrls());
+
+    queue.AddUrl(externalUrlPtr);
+    ASSERT_EQ(1, queue.NumberOfUrls());
+    }
+
+TEST_F(QueueTester, WhenCrawlingLinksInExternalLinksIsDisabledThoseLinksAreIgnored)
+    {
+    queue.SetAcceptExternalLinks(true);
+    queue.SetAcceptLinksInExternalLinks(false);
+
+    UrlMock internalUrl(L"http://internal.com");
+    internalUrl.SetIsExternalPage(false);
+    UrlPtr internalUrlPtr = new UrlMock(internalUrl);
+
+    UrlMock externalUrl(L"http://external.com");
+    externalUrl.SetIsExternalPage(true);
+    UrlPtr externalUrlPtr = new UrlMock(externalUrl);
+
+    UrlMock linkInExternalUrl(L"http://link-with-external-parent.com");
+    linkInExternalUrl.SetIsExternalPage(true);
+    linkInExternalUrl.SetParent(externalUrlPtr);
+    UrlPtr linkInExternalUrlPtr = new UrlMock(linkInExternalUrl);
+
+    queue.AddUrl(internalUrlPtr);
+    queue.AddUrl(externalUrlPtr);
+    ASSERT_EQ(2, queue.NumberOfUrls());
+
+    queue.AddUrl(linkInExternalUrlPtr);
+    ASSERT_EQ(2, queue.NumberOfUrls());
+    }
+
+TEST_F(QueueTester, WhenCrawlingLinksInExternalLinksIsEnabledThoseLinksAreAddedToTheQueue)
+    {
+    queue.SetAcceptExternalLinks(true);
+    queue.SetAcceptLinksInExternalLinks(true);
+
+    UrlMock internalUrl(L"http://internal.com");
+    internalUrl.SetIsExternalPage(false);
+    UrlPtr internalUrlPtr = new UrlMock(internalUrl);
+
+    UrlMock externalUrl(L"http://external.com");
+    externalUrl.SetIsExternalPage(true);
+    UrlPtr externalUrlPtr = new UrlMock(externalUrl);
+
+    UrlMock linkInExternalUrl(L"http://link-with-external-parent.com");
+    linkInExternalUrl.SetIsExternalPage(true);
+    linkInExternalUrl.SetParent(externalUrlPtr);
+    UrlPtr linkInExternalUrlPtr = new UrlMock(linkInExternalUrl);
+
+    queue.AddUrl(internalUrlPtr);
+    queue.AddUrl(externalUrlPtr);
+    ASSERT_EQ(2, queue.NumberOfUrls());
+
+    queue.AddUrl(linkInExternalUrlPtr);
+    ASSERT_EQ(3, queue.NumberOfUrls());
+    }
+
+TEST_F(QueueTester, WhenAnUrlHasADepthLargerThanTheMaximumDepthItIsIgnored)
+    {
+    uint32_t maximumDepth = 100;
+    queue.SetMaximumCrawlDepth(maximumDepth);
+
+    UrlMock urlWithCorrectDepth(L"http://limit-depth.com");
+    urlWithCorrectDepth.SetDepth(maximumDepth);
+    UrlPtr urlWithCorrectDepthPtr = new UrlMock(urlWithCorrectDepth);
+
+    UrlMock urlWithIncorrectDepth(L"http://depth-too-large.com");
+    urlWithIncorrectDepth.SetDepth(maximumDepth + 1);
+    UrlPtr urlWithIncorrectDepthPtr = new UrlMock(urlWithIncorrectDepth);
+
+    queue.AddUrl(urlWithCorrectDepthPtr);
+    ASSERT_EQ(1, queue.NumberOfUrls());
+
+    queue.AddUrl(urlWithIncorrectDepthPtr);
+    ASSERT_EQ(1, queue.NumberOfUrls());
     }
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

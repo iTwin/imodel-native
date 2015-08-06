@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: CrawlerLib/PageParser.cpp $
-| 
+|
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
@@ -10,20 +10,41 @@
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
+using namespace regex_constants;
 
-const wregex PageParser::s_LinkRegex = wregex(L"<\\s*a\\s+"         //The opening of the <a> tag
-                                              L"[^<]*href\\s*=\\s*" //The href element
-                                              L"\"([^<\"]+)\""      //The actual link to parse
-                                              L"[^<]*>");           //The closing '>' of the <a> tag
+const wregex PageParser::s_LinkRegex = wregex(L"<\\s*a\\s+"          //The opening of the <a> tag
+                                              L"[^<]*href\\s*=\\s*"  //The href element
+                                              L"\"([^<\"]+)\""       //The actual link to parse
+                                              L"[^<]*>", icase);     //The closing '>' of the <a> tag
+
+const wregex PageParser::s_RelNoFollowRegex = wregex(L"<\\s*a\\s+"
+                                                     L"[^<]*rel\\s*=\\s*"
+                                                     L"\"nofollow\""
+                                                     L"[^<]*>", icase);
+
+const wregex PageParser::s_NoFollowMetaTagRegex = wregex(L"<\\s*meta\\s+"
+                                                         L"name=\"robots\"\\s+"
+                                                         L"[^<]*content\\s*=\\s*"
+                                                         L"\".*nofollow.*\""
+                                                         L"[^<]*>", icase);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-PageContentPtr PageParser::ParsePage(UrlPtr const& url, WString const& text) const
+PageParser::PageParser()
+    {
+    m_ParseLinksRelNoFollow = true;
+    m_ParsePagesWithNoFollowMetaTag = true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+PageContentPtr PageParser::ParsePage(WString const& text, UrlPtr const& url) const
     {
     PageContentPtr content = new PageContent(*url, text);
 
-    AddLinksFromText(url, text, content);
+    AddLinksFromText(text, url, content);
 
     return content;
     }
@@ -31,23 +52,26 @@ PageContentPtr PageParser::ParsePage(UrlPtr const& url, WString const& text) con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PageParser::AddLinksFromText(UrlPtr const& url, WString const& text, PageContentPtr content) const
+void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageContentPtr content) const
     {
+    if(!m_ParsePagesWithNoFollowMetaTag && regex_search(text.c_str(), PageParser::s_NoFollowMetaTagRegex))
+        return;
+
     wcregex_iterator words_begin(text.begin(), text.end(), PageParser::s_LinkRegex);
     wcregex_iterator words_end;
     for(auto i = words_begin; i != words_end; ++i)
         {
         wcmatch match = *i;
-        WString matchString = match[1].str().c_str();
-        if(Url::IsValidAbsoluteLink(matchString))
+        WCharCP completeHtmlATag = match[0].str().c_str();
+        if(m_ParseLinksRelNoFollow || !regex_match(completeHtmlATag, PageParser::s_RelNoFollowRegex))
             {
-            UrlPtr pNewLink = new Url(matchString);
-            content->AddLink(pNewLink);
-            }
-        else if(Url::IsValidRelativeLink(matchString))
-            {
-            UrlPtr pNewLink = new Url(*url, matchString);
-            content->AddLink(pNewLink);
+            WString linkString = match[1].str().c_str();
+            try
+                {
+                UrlPtr pNewLink = new Url(linkString, url);
+                content->AddLink(pNewLink);
+                }
+            catch(InvalidUrlException const&) { }
             }
         }
     }

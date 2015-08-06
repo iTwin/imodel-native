@@ -17,7 +17,10 @@ using namespace std;
 UrlQueue::UrlQueue()
     {
     m_NumberOfUrls = 0;
-    m_MaxNumberOfVisitedUrls = (numeric_limits<size_t>::max)(); //The paratheses are there to prevent the max() macro to replace this call 
+    m_MaxNumberOfVisitedUrls = (numeric_limits<size_t>::max)(); //The paratheses are there to prevent the max() macro to replace this call
+    m_AcceptExternalLinks = false;
+    m_AcceptLinksInExternalLinks = false;
+    m_MaximumCrawlDepth = (numeric_limits<uint32_t>::max)();
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,12 +79,23 @@ UrlPtr UrlQueue::NextUrl()
 //+---------------+---------------+---------------+---------------+---------------+------
 void UrlQueue::AddUrl(UrlPtr const& url)
     {
-    if(!HaveAlreadyVisited(url) && m_VisitedUrls.size() < m_MaxNumberOfVisitedUrls)
+    if(IsAcceptedUrl(url) && m_VisitedUrls.size() < m_MaxNumberOfVisitedUrls)
         {
         m_Urls.push(url);
         m_VisitedUrls.insert(url);
         ++m_NumberOfUrls;
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bool UrlQueue::IsAcceptedUrl(UrlPtr const& url) const
+    {
+    return !HaveAlreadyVisited(url)
+        && (url->GetDepth() <= m_MaximumCrawlDepth)
+        && (m_AcceptExternalLinks || !url->IsExternalPage())
+        && (m_AcceptLinksInExternalLinks || !(url->GetParent().IsValid() && url->GetParent()->IsExternalPage()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -96,7 +110,7 @@ bool UrlQueue::HaveAlreadyVisited(UrlPtr const& url) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void UrlQueue::SetMaxNumberOfVisitedUrls(size_t n) 
+void UrlQueue::SetMaxNumberOfVisitedUrls(size_t n)
     {
     m_MaxNumberOfVisitedUrls = n;
     }
@@ -108,3 +122,28 @@ size_t UrlQueue::GetMaxNumberOfVisitedUrls()
     {
     return m_MaxNumberOfVisitedUrls;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void UrlQueue::SetAcceptExternalLinks(bool accept)
+    {
+    m_AcceptExternalLinks = accept;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void UrlQueue::SetAcceptLinksInExternalLinks(bool accept)
+    {
+    m_AcceptLinksInExternalLinks = accept;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void UrlQueue::SetMaximumCrawlDepth(uint32_t depth)
+    {
+    m_MaximumCrawlDepth = depth;
+    }
+
