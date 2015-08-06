@@ -37,7 +37,7 @@ ECDbPublicHeaders =  \
                 $(publicApiDir)JsonAdapter.h \
                 $(publicApiDir)ECRelationshipPath.h \
                 $(publicApiDir)ECJsonUtility.h \
-                $(publicApiDir)ECChangeSummary.h
+                $(publicApiDir)ChangeSummary.h
 
 ECDbAllHeaders = \
                 $(ECDbPublicHeaders) \
@@ -222,7 +222,7 @@ $(o)ECInstanceFinder$(oext):								$(baseDir)ECInstanceFinder.cpp            $(
 
 $(o)ViewGenerator$(oext):									$(baseDir)ViewGenerator.cpp                 $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)ECChangeSummary$(oext):								$(baseDir)ECChangeSummary.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)ChangeSummary$(oext):								$(baseDir)ChangeSummary.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)InternalNode$(oext):									$(baseDir)ECSql/Parser/InternalNode.cpp    $(ECDbAllHeaders) ${MultiCompileDepends}
 
