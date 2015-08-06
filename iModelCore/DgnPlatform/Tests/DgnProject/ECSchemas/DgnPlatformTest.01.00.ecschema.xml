@@ -11,11 +11,6 @@
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 
-    <ECClass typeName="TestPhysicalElement" isDomainClass="True">
-        <BaseClass>dgn:PhysicalElement</BaseClass>
-        <ECProperty propertyName="TestElementProperty" typeName="string" />
-    </ECClass>
-
     <ECClass typeName="TestElement2d" isDomainClass="True">
         <BaseClass>dgn:DrawingElement</BaseClass>
         <ECProperty propertyName="TestElementProperty" typeName="string" />
@@ -23,8 +18,8 @@
 
     <ECClass typeName="TestItem" isDomainClass="True">
         <BaseClass>dgn:ElementItem</BaseClass>
-        <ECProperty propertyName="Length" typeName="double" />
         <ECProperty propertyName="TestItemProperty" typeName="string" />
+        <ECProperty propertyName="Length" typeName="double" />
     </ECClass>
 
     <ECClass typeName="TestItem2" isDomainClass="True">
