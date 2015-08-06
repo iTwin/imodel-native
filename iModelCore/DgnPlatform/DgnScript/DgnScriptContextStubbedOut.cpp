@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/DgnScriptContextStubbedOut.cpp $
+|     $Source: DgnScript/DgnScriptContextStubbedOut.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

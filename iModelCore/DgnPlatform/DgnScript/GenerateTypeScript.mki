@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: DgnScriptContext/GenerateTypeScript.mki $
+#     $Source: DgnScript/GenerateTypeScript.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -13,11 +13,11 @@
     %return
 %endif
 
-%ifndef dgnScriptContextDir
-    %error Caller must define dgnScriptContextDir
+%ifndef dgnScriptDir
+    %error Caller must define dgnScriptDir
 %endif
 
-dgnScriptContextGen =% $(dgnPlatformBuildDir_)DgnScriptContextGen/
+dgnScriptGen =% $(dgnPlatformBuildDir_)DgnScriptGen/
 
 %if defined(winNT)
     TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
@@ -26,12 +26,12 @@ dgnScriptContextGen =% $(dgnPlatformBuildDir_)DgnScriptContextGen/
 %endif
 
 always:
-    !~@mkdir $(dgnScriptContextGen)
-    !~@mkdir $(dgnScriptContextGen)DgnPlatform
+    !~@mkdir $(dgnScriptGen)
+    !~@mkdir $(dgnScriptGen)DgnPlatform
 
-dgnScriptContextTsDir = $(dgnScriptContextDir)ts/ts/
+dgnScriptContextTsDir = $(dgnScriptDir)ts/ts/
 
-$(dgnScriptContextGen)DgnPlatform/DgnScriptContextImpl.h : $(dgnScriptContextDir)DgnScriptContextImpl.h
+$(dgnScriptGen)DgnPlatform/DgnScriptContextImpl.h : $(dgnScriptDir)DgnScriptContextImpl.h
     $(LinkFirstDepToFirstTarget)
 
 
@@ -41,16 +41,16 @@ $(dgnScriptContextGen)DgnPlatform/DgnScriptContextImpl.h : $(dgnScriptContextDir
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-$(dgnScriptContextGen)DgnObjectModelJsCallbacks.cpp : $(dgnScriptContextTsDir)DgnObjectModel.d.ts $(dgnScriptContextTsDir)DgnObjectModelJsCallbacksTemplate.cpp $(dgnScriptContextTsDir)DgnObjectModelJsProjectionsTemplate.h $(dgnScriptContextDir)DgnScriptContextImpl.h
+$(dgnScriptGen)DgnObjectModelJsCallbacks.cpp : $(dgnScriptContextTsDir)DgnObjectModel.d.ts $(dgnScriptContextTsDir)DgnObjectModelJsCallbacksTemplate.cpp $(dgnScriptContextTsDir)DgnObjectModelJsProjectionsTemplate.h $(dgnScriptDir)DgnScriptContextImpl.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
         --declarationPath "$(dgnScriptContextTsDir)DgnObjectModel.d.ts" \
         --nativeOutputTemplatePath "$(dgnScriptContextTsDir)DgnObjectModelJsCallbacksTemplate.cpp" \
         --nativeOutputHeaderTemplatePath "$(dgnScriptContextTsDir)DgnObjectModelJsProjectionsTemplate.h" \
         --nativeSourcePaths "$(DgnPlatformAPISrc)DgnPlatform.h" \
-        --typeScriptOutputPath "$(dgnScriptContextGen)DgnObjectModel.ts" \
-        --nativeOutputPath "$(dgnScriptContextGen)DgnObjectModelJsCallbacks.cpp" \
-        --nativeOutputHeaderPath "$(dgnScriptContextGen)DgnPlatform/DgnObjectModelJsProjections.h" \
+        --typeScriptOutputPath "$(dgnScriptGen)DgnObjectModel.ts" \
+        --nativeOutputPath "$(dgnScriptGen)DgnObjectModelJsCallbacks.cpp" \
+        --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/DgnObjectModelJsProjections.h" \
         --projectionTypeName "BentleyApi::Dgn::DgnScriptProjection" \
         --initializeProjectionsCallbackName "BentleyApi::Dgn::DgnScriptContextImpl::InitializeJsProjections" \
         --destroyProjectionsCallbackName "BentleyApi::Dgn::DgnScriptContextImpl::DestroyJsProjections" \
@@ -60,29 +60,29 @@ $(dgnScriptContextGen)DgnObjectModelJsCallbacks.cpp : $(dgnScriptContextTsDir)Dg
     ~time
 
 
-tsSourceFiles = $(dgnScriptContextGen)DgnObjectModel.ts $(dgnScriptContextTsDir)_references.ts
+tsSourceFiles = $(dgnScriptGen)DgnObjectModel.ts $(dgnScriptContextTsDir)_references.ts
 
-# The rule below *also* outputs $(dgnScriptContextGen)DgnObjectModel.d.ts
+# The rule below *also* outputs $(dgnScriptGen)DgnObjectModel.d.ts
 # I didn't list that as an output, because ~time won't update it
 
 %if !defined(NDEBUG)
-    DEBUG_PARMS = --sourceMap --mapRoot $(dgnScriptContextGen)
+    DEBUG_PARMS = --sourceMap --mapRoot $(dgnScriptGen)
 %endif
 
 
-$(dgnScriptContextGen)DgnObjectModel.js : $(tsSourceFiles)
+$(dgnScriptGen)DgnObjectModel.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptContextGen)DgnObjectModel.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnObjectModel.js
     ~time
 
-$(dgnScriptContextGen)DgnScriptContextBootstrap.cpp : $(dgnScriptContextGen)DgnObjectModel.js
+$(dgnScriptGen)DgnScriptContextBootstrap.cpp : $(dgnScriptGen)DgnObjectModel.js
     $(msg)
-    python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__OBJECTMODELJSSOURCE__=$(dgnScriptContextGen)DgnObjectModel.js" \
-                                          --nativeSourceFile $(dgnScriptContextDir)ts/DgnScriptContextBootstrapper.cpp \
-                                          --outputPath $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp
+    python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__OBJECTMODELJSSOURCE__=$(dgnScriptGen)DgnObjectModel.js" \
+                                          --nativeSourceFile $(dgnScriptDir)ts/DgnScriptContextBootstrapper.cpp \
+                                          --outputPath $(dgnScriptGen)DgnScriptContextBootstrap.cpp
     ~time
 
 
 
-$(BuildContext)Delivery/DgnObjectModel.d.ts : $(dgnScriptContextGen)DgnObjectModel.d.ts
+$(BuildContext)Delivery/DgnObjectModel.d.ts : $(dgnScriptGen)DgnObjectModel.d.ts
     $(LinkFirstDepToFirstTarget)

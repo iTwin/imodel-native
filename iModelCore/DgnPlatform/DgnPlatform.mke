@@ -29,7 +29,7 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 
 dimensionDir    = $(DgnHandlersDir)Dimension/
 
-dgnScriptContextDir = $(_MakeFilePath)DgnScriptContext/
+dgnScriptDir = $(_MakeFilePath)DgnScript/
 
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
                     $(DgnCoreAPISrc)IViewOutput.h \
@@ -93,7 +93,7 @@ o = $(coreObjs)
 # Generate the TypeScript portion of the DgnScriptContext.
 # This also generates $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp, which we compile below.
 #----------------------------------------------------------------------
-%include $(dgnScriptContextDir)GenerateTypeScript.mki
+%include $(dgnScriptDir)GenerateTypeScript.mki
 
 cIncs + -I$(dgnScriptContextGen)
 
@@ -319,7 +319,7 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 
 %ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
-$(o)DgnScriptContext$(oext) : $(dgnScriptContextDir)DgnScriptContext.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
+$(o)DgnScriptContext$(oext) : $(dgnScriptDir)DgnScriptContext.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
 
 $(o)DgnScriptContextBootstrap$(oext) : $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp ${MultiCompileDepends}
 
@@ -327,7 +327,7 @@ $(o)DgnObjectModelJsCallbacks$(oext) : $(dgnScriptContextGen)DgnObjectModelJsCal
 
 %else
 
-$(o)DgnScriptContextStubbedOut$(oext) : $(dgnScriptContextDir)DgnScriptContextStubbedOut.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
+$(o)DgnScriptContextStubbedOut$(oext) : $(dgnScriptDir)DgnScriptContextStubbedOut.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
 
 %endif
 

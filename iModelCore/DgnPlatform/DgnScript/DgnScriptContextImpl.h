@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/DgnScriptContextImpl.h $
+|     $Source: DgnScript/DgnScriptContextImpl.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

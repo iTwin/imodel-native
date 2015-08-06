@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/ts/ts/DgnObjectModelJsProjectionsTemplate.h $
+|     $Source: DgnScript/ts/ts/DgnObjectModelJsProjectionsTemplate.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

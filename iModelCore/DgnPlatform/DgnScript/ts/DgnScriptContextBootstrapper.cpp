@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/ts/DgnScriptContextBootstrapper.cpp $
+|     $Source: DgnScript/ts/DgnScriptContextBootstrapper.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
