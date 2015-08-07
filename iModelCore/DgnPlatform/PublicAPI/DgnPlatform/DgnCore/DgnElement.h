@@ -84,27 +84,44 @@ public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
 
+    //! @name Source and Destination Dbs
+    //! @{
     DgnDbR GetSourceDb() const {return m_sourceDb;}
     DgnDbR GetDestinationDb() const {return m_destDb;}
     bool IsBetweenDbs() const {return &GetDestinationDb() != &GetSourceDb();}
+    //! @}
 
+    //! @name ID remapping
+    //! @{
+    //! Look up a copy of a model
     DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
-    DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Register a copy of a model
+    DGNPLATFORM_EXPORT DgnModelId AddModelId(DgnModelId sourceId, DgnModelId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Look up a copy of an element
     DGNPLATFORM_EXPORT DgnElementId FindElementId(DgnElementId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of an element
     DGNPLATFORM_EXPORT DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a GeomPart has been imported
+    DGNPLATFORM_EXPORT DgnGeomPartId RemapGeomPartId(DgnGeomPartId sourceId);
+    //! Make sure that a Category has been imported
     DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
+    //! Look up a copy of an subcategory
     DGNPLATFORM_EXPORT DgnSubCategoryId FindSubCategory(DgnSubCategoryId sourceId) const {return m_remap.Find(sourceId);}
+    //! Make sure that a SubCategory has been imported
     DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
+    //! Make sure that an ECClass has been imported
     DGNPLATFORM_EXPORT DgnClassId RemapClassId(DgnClassId sourceId);
+    //! @}
 
+    //! @name GCS coordinate system shift
+    //! @{
     //! Check if the source and destination GCSs are compatible, such that elements can be copied between them.
     DgnDbStatus CheckCompatibleGCS() const {return m_areCompatibleDbs? DgnDbStatus::Success: DgnDbStatus::BadRequest;}
-
     //! When copying between different DgnDbs, X and Y coordinates may need to be offset
     DPoint2d GetOriginOffset() const {return m_xyOffset;}
-
     //! When copying between different DgnDbs, the Yaw angle may need to be adjusted.
     AngleInDegrees GetYawAdjustment() const {return m_yawAdj;}
+    //! @}
 };
 
 template <class _QvKey> struct QvElemSet;
@@ -270,7 +287,8 @@ public:
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
 
-        DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _Clone(DgnElementCR sourceEl) const;
+        //! The Item should make a copy of itself.
+        DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
         DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}

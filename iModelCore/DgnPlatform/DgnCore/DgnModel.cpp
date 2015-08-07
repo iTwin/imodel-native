@@ -1375,7 +1375,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
             continue;       // I guess the source element wasn't copied.
 
         //  Make a copy of the source item 
-        RefCountedPtr<DgnElement::Item> ccitem = dynamic_cast<DgnElement::Item*>(sourceitem->_Clone(*sourceEl).get());
+        RefCountedPtr<DgnElement::Item> ccitem = dynamic_cast<DgnElement::Item*>(sourceitem->_CloneForImport(*sourceEl, importer).get());
         if (!ccitem.IsValid())
             {
             // *** TBD: Record failure somehow
@@ -1506,6 +1506,8 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 
     if ((stat = newModel->Insert()) != DgnDbStatus::Success)
         return nullptr;
+
+    importer.AddModelId(sourceModel.GetModelId(), newModel->GetModelId());
 
     if ((stat = newModel->_ImportContentsFrom(sourceModel, importer)) != DgnDbStatus::Success)
         return nullptr;

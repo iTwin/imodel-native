@@ -1261,7 +1261,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_Clone(DgnElementCR el) const
+RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_CloneForImport(DgnElementCR el, DgnImportContext& importer) const
     {
     DgnClassId classid = GetECClassId(el.GetDgnDb());
     if (!el.GetElementId().IsValid() || !classid.IsValid())
@@ -1275,8 +1275,12 @@ RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_Clone(DgnElementCR el) co
     if (!aspect.IsValid())
         return nullptr;
 
+    // *** WIP_IMPORTER - we read the *persistent* properties -- we don't copy the in-memory copies -- pending changes are ignored!
+
     if (DgnDbStatus::Success != aspect->_LoadProperties(el))
         return nullptr;
+
+    // Assume that there are no IDs to be remapped.
 
     return aspect;
     }
