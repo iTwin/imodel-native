@@ -269,6 +269,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), Solver solver=Solver(), DgnModelId id=DgnModelId()) :
             m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props), m_solver(solver) {}
+
+        DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
 
 private:
@@ -346,6 +348,12 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR element);
 
+    //! Called after a DgnElement that was previously deleted from this DgnModel has been reinstated by undo
+    //! @param[in] element The element that was just reinstatted.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnReversedDeleteElement(DgnElementCR element);
+
     //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
@@ -358,6 +366,13 @@ protected:
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
+
+    //! Called after a DgnElement in this DgnModel has been removed by undo
+    //! @param[in] element The element that was just deleted by undo.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element);
+
     /** @} */
 
     //! Load all of the DgnElements of this DgnModel into memory.
@@ -411,6 +426,45 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
     virtual void _AddGraphicsToScene(ViewContextR) {}
     void ReadProperties();
+
+    //! The sublcass should import elements from the source model into this model. 
+    //! Import is done in phases. The import framework will call _ImportElementAspectsFrom and then _ImportECRelationshipsFrom after calling this method.
+    //! @note It should be rare for a subclass to override _ImportElementsFrom. The base class implementation copies all elements in the model,
+    //! and it fixes up all parent-child pointers. A subclass can override _ShouldImportElementFrom in order to exclude individual elements.
+    //! @see _ShouldImportElementFrom
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportElementsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+    
+    virtual bool _ShouldImportElement(DgnElementCR sourceElement) {return true;}
+
+    //! The sublcass should import ECRelationships from the source model into this model. 
+    //! Import is done in phases. This method will be called by the import framework after all elements have been imported and before ECRelationships are imported.
+    //! A subclass implementation of _ImportElementAspectsFrom should copy only the ElementAspect subclasses that are defined by the 
+    //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the ElementAspects defined in the base Dgn schema, including
+    //! ElementItem.
+    //! @note The implementation should start by calling the superclass implementation.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+
+    //! The sublcass should import ECRelationships from the source model into this model. 
+    //! Import is done in phases. This method will be called by the import framework after all elements and aspects have been imported.
+    //! This method will be called after all elements (and aspects) have been imported.
+    //! <p>
+    //! A subclass implementation of _ImportECRelationshipsFrom should copy only the relationship subclasses that are defined by the 
+    //! the ECSchema/DgnDomain of the subclass. For example, the base DgnModel implementation will handle the relationships defined in the 
+    //! base Dgn schema, including ElementDrivesElement, ElementGeomUsesParts, ElementGroupHasMembers, and ElementUsesStyles.
+    //! <p>
+    //! Both endpoints of an ECRelationship must be in the same DgnDb. Since the import operation can copy elements between DgnDbs, a subclass implementation
+    //! must be careful about which ECRelationships to import. Normally, only ECRelationships between elements in the model should be copied. 
+    //! ECRelationships that start/end outside the model can only be copied if the foreign endpoint is also copied. 
+    //! If endpoint elements must be deep-copyed, however, that must be done in _ImportElementsFrom, not in this function. That is because
+    //! deep-copying an element in the general case requires all of the support for copying and remapping of parents and aspects that is implemented by the framework,
+    //! prior to the phase where ECRelationships are copied.
+    //! @note The implementation should start by calling the superclass implementation.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+
+    //! Generate the CreateParams to use for _CloneForImport
+    //! @param importer Specifies source and destination DgnDbs and knows how to remap IDs
+    //! @return CreateParams initialized with the model's current data, remapped to the destination DgnDb.
+    DGNPLATFORM_EXPORT CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
 
 public:
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
@@ -538,7 +592,14 @@ public:
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
     //! @param[in] newName The name for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
+    //! @see CopyModel, Import
     DGNPLATFORM_EXPORT DgnModelPtr Clone(Utf8CP newName) const;
+
+    //! Make a persitent copy of the specified DgnModel and its contents.
+    //! @param[in] model The model to copy
+    //! @param[in] newName The name for the new DgnModel.
+    //! @see Import
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, Utf8CP newName);
 
     //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
@@ -554,6 +615,48 @@ public:
 
     //! a const iterator to the end of the loaded elements for this DgnModel.
     const_iterator end() const {return m_elements.end();}
+
+    //! Make a duplicate of this DgnModel object in memory. Do not copy its elements. @see ImportModel
+    //! It's not normally necessary for a DgnModel subclass to override _Clone. The base class implementation will 
+    //! invoke the subclass handler to create an instance of the subclass. The base class implementation will also
+    //! cause the new model object to read its properties from the this (source) model's properties. That will 
+    //! take of populating most if not all subclass members.
+    //! @return the copy of the model
+    //! @param[out] stat        Optional. If not null, then an error code is stored here in case the clone fails.
+    //! @param importer     Used by elements when copying between DgnDbs.
+    //! @see GetCreateParamsForImport
+    DGNPLATFORM_EXPORT DgnModelPtr virtual _CloneForImport(DgnDbStatus* stat, DgnImportContext& importer) const;
+
+    //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb from \a sourceModel.
+    //! This base class implemenation calls the following methods, in order:
+    //!     -# _ImportElementsFrom
+    //!     -# _ImportElementAspectsFrom
+    //!     -# _ImportECRelationshipsFrom
+    //! @param sourceModel The model to copy
+    //! @param importer     Used by elements when copying between DgnDbs.
+    //! @return non-zero if the copy failed
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
+
+    //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
+    //! This is just a convenience method that calls the follow methods, in order:
+    //!     -# _CloneForImport
+    //!     -# Insert
+    //!     -# _CopyContentsFrom
+    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
+    //! @param sourceModel The model to copy
+    //! @return the copied model, already inserted into the destination Db.
+    DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer);
+
+    //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
+    //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
+    //! @param sourceModel  The model to copy
+    //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
+    //! @return the copied model
+    //! @see ImportModel
+    template<typename T>
+    static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
+
 };
 
 //=======================================================================================
@@ -641,7 +744,6 @@ public:
 *   -# When the Solver and content of the new ComponentModel are finished, generate an ECClass for clients to use. See #GenerateECClass and #AddAllToECSchema.
 *   -# Deliver your DgnDb and your Solver script program to your clients.
 * <p>
-* Clients will create a ComponentProxyModel in order to create instances of solutions of a ComponentModel.
 *
 * Whether you use use a script to create elements or you create elements interactively, be sure to assign the solution geometry to the "Element Category", as explained below.
 *
@@ -677,7 +779,7 @@ public:
 * This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category before creating the ComponentModel.
 * See #GetElementCategoryName for the name of this category.
 * Elements in the ComponentModel that are not assigned to the Element Category are considered to be construction elements and are not harvested.
-* @see ComponentProxyModel, DgnScriptContext
+* @see DgnScriptContext, DgnComponentModelSolutions
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
@@ -826,109 +928,13 @@ public:
     */
     DGNPLATFORM_EXPORT DgnDbStatus Solve(Json::Value const& parameters);
 
-};
-
-//=======================================================================================
-//! A DgnModel3d that stores a reference to a ComponentModel and captured solutions of that ComponentModel.
-//!
-//! A ComponentProxyModel is a bridge between normal models that hold instances of components and the ComponentModel that defines the solutions.
-//! <p> 
-//! The basic pattern for placing instances of component solutions is:
-//!     -# Make sure the component's schema has been generated. See ComponentModel::AddAllToECSchema.
-//!     -# Once per schema, import the component's schema into the target DgnDb. See #ImportSchema.
-//!     -# Once per component model, create a proxy model. See #Create.
-//!     -# Once per solution parameter set, solve and capture a solution. See #CaptureSolution.
-//!     -# Create and place as many instances of a captured solution as you like. See #CreateSolutionInstance.
-//! @see ComponentModel
-// @bsiclass                                                    Keith.Bentley   10/11
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ComponentProxyModel : DgnModel3d
-{
-private:
-    DEFINE_T_SUPER(DgnModel3d)
-    
-    Utf8String m_componentName;
-    DgnCategoryId m_categoryId;
-    DgnClassId m_elementClassId;
-    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcatxlat;
-
-    DgnModelType _GetModelType() const override {return DgnModelType::Component;}
-    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
-    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
-    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
-    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;//!< @private
-
-    bool IsForComponent(ComponentModelCR);
-    //! Compute the name of the proxy model that would represent \a componentModel. 
-    static Utf8String ComputeName(ComponentModelCR componentModel);
-    void ImportElementCategory(ComponentModelCR);
-
-public:
-    //! @private
-    explicit ComponentProxyModel(CreateParams const&);
-
-    //! @name Creating a Proxy Model
-    //@{
-
     //! Import the specified ECSchema into the target DgnDb.
-    //! This must be done \em once before any ComponentProxyModels are created for ComponentModels that are defined in the schema.
+    //! This must be done \em once before any ComponentModelSolutions are created for ComponentModels that are defined in the schema.
     //! @param[in] targetDb     The DgnDb that is to hold the new schema
     //! @param[in] schemaFile   The full filename of the ECSchema.xml file to import
     //! @return non-zero error status if the ECSchema could not be imported; DgnDbStatus::DuplicateName if an ECSchema by the same name already exists.
-    //! @see ComponentModel::GenerateECClass
+    //! @see GenerateECClass
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR targetDb, BeFileNameCR schemaFile);
-    
-    //! Create a new ComponentProxyModel object to represent the specified ComponentModel (which might be in a different DgnDb).
-    //! The proxy's name will be computed from the name of \a componentModel.
-    //! @note The caller must already have imported the ComponentModel's ECSchema by calling #ImportSchema.
-    //! @note The caller must call #Insert. 
-    //! @param[in] targetDb     The DgnDb that is to hold the new ComponentProxyModel
-    //! @param[in] componentModel The ComponentModel that is to be represented
-    //! @param[in] componentSchemaName The name of the ECSchema that contains the component model's ECClass, which should have been imported already into this DgnDb.
-    //! @return The newly created ComponentProxyModel
-    DGNPLATFORM_EXPORT static ComponentProxyModelPtr Create(DgnDbR targetDb, ComponentModelCR componentModel, Utf8CP componentSchemaName);
-
-    //! Look up an existing ComponentProxyModel in the target DgnDb that represents the specified ComponentModel (which might be in a different DgnDb)
-    //! The caller does not specify the proxy's name, because a proxy's name is always computed from the name of the componentModel that it represents.
-    //! @param[in] targetDb     The DgnDb that holds ComponentProxyModel
-    //! @param[in] componentModel The ComponentModel that is to be represented
-    //! @return The ComponentProxyModel in the target Db that represents the component model, if it exists.
-    DGNPLATFORM_EXPORT static ComponentProxyModelPtr Get(DgnDbR targetDb, ComponentModelCR componentModel);
-    //@}
-
-    //! @name Capturing Solutions
-    //@{
-    //! Compute the code that would be used by a ComponentProxyModel to refer to a solution with the specified parameters.
-    //! @param[in] parms    The solver parameters
-    //! @return a generated name for the solution
-    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(Json::Value const& parms);
-
-    //! Look up the element in the this proxy model that represents the specified solution
-    //! @param[in] solutionName     The solution name to look for
-    //! @return The element in this model that represents the specified solution, if it is stored. Returns an invalid pointer if 
-    //! no solution has been captured or if this proxy model is not for the specified componentModel.
-    //! @see ComputeSolutionName
-    DGNPLATFORM_EXPORT PhysicalElementCPtr QuerySolution(Utf8StringCR solutionName);
-
-    //! Harvest geometry from the component model and store in this proxy model in the form of an element. The code of the
-    //! returned element is based on the computed name of the solution.
-    //! @param[in] componentModel The ComponentModel that is to be harvested
-    //! @return An element that captures the solution. Returns an invalid pointer if this proxy model is not for the specified componentModel.
-    //! @see ComponentModel::Solve
-    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(ComponentModelR componentModel);
-    //@}
-
-    //! @name Creating a Solution Instance
-    //@{
-    //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
-    //! @param[in] destinationModel The model where the instance will be inserted by the caller
-    //! @param[in] solutionElement The element that captures a solution to a ComponentModel. See CaptureSolution and QuerySolution
-    //! @param[in] origin The instance placement origin
-    //! @param[in] angles The instance placement angles
-    //! @return An new element that could be inserted as an instance of a captured solution
-    //! @see CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT static PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles);
-    //@}
 };
 
 //=======================================================================================
@@ -1087,12 +1093,6 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Component : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ModelHandler for ComponentProxyModel
-    struct EXPORT_VTABLE_ATTRIBUTE ComponentProxy : Model
-    {
-        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentProxyModel, ComponentProxyModel, ComponentProxy, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for GraphicsModel2d

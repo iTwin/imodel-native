@@ -13,6 +13,7 @@
 #include "GenericDgnModelTestFixture.h"
 #include <UnitTests/BackDoor/DgnProject/DgnElementHelpers.h>
 #include <UnitTests/BackDoor/DgnProject/DgnDbUtilities.h>
+#include <UnitTests/BackDoor/DgnProject/DgnPlatformTestDomain.h>
 
 #define LOCALIZED_STR(str) str
 

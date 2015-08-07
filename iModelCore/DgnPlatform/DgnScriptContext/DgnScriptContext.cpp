@@ -48,15 +48,6 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsDgnModel::InsertElement(JsDgnElementP element)
-    {
-    if (nullptr != element)
-        m_model->GetDgnDb().Elements().Insert(*element->m_el);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 void JsDgnModel::DeleteAllElements() 
     {
     m_model->FillModel();

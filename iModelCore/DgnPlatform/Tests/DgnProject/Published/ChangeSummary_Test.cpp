@@ -203,7 +203,7 @@ void ChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Utf8
                 else if (v.IsNull())
                     printf("<null>");
                 else
-                    printf(v.Format(1000).c_str());
+                    printf("%s", v.Format(1000).c_str());
 
                 printf(" ");
                 }
@@ -224,7 +224,7 @@ void ChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Utf8
                 else if (v.IsNull())
                     printf("<null>");
                 else
-                    printf(v.Format(1000).c_str());
+                    printf("%s", v.Format(1000).c_str());
 
                 printf(" ");
                 }
@@ -547,7 +547,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     m_testDb->SaveChanges();
     
-    ECClassCP ecClass = ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
+    ECClassCP ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
     ASSERT_TRUE(ecClass != nullptr);
     Utf8PrintfString deleteECSql("DELETE FROM %s.%s WHERE ECInstanceId=?", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
 
@@ -673,7 +673,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
     ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
-    ECClassCP ecClass = ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
+    ECClassCP ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
     ASSERT_TRUE(ecClass != nullptr);
     Utf8PrintfString deleteECSql("DELETE FROM %s.%s WHERE ECInstanceId=?", ecClass->GetSchema().GetName().c_str(), ecClass->GetName().c_str());
 

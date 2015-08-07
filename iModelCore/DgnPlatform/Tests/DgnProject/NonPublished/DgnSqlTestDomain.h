@@ -23,24 +23,11 @@ struct ObstacleElementHandler;
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
-struct TestPhysicalElement : PhysicalElement
-{
-protected:
-    TestPhysicalElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    TestPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, DgnClassId, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, Utf8CP elementCode);
-    static ICurvePrimitivePtr CreateBox (DPoint3dCR low, DPoint3dCR high);
-public:
-    void Translate(DVec3dCR);
-};
-
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      05/15
-//=======================================================================================
-struct RobotElement : TestPhysicalElement
+struct RobotElement : PhysicalElement
 {
 private:
     friend struct RobotElementHandler;
-    RobotElement(PhysicalElement::CreateParams const& params) : TestPhysicalElement(params) {;}
+    RobotElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
     RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode);
 public:
     //! Factory method that creates an instance of a RobotElement
@@ -51,16 +38,18 @@ public:
 
     //! Query the DgnClassId for the Robot ECClass in the specified DgnDb.
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_ROBOT_CLASS));}
+
+    void Translate(DVec3dCR offset);
 };
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      05/15
 //=======================================================================================
-struct ObstacleElement : TestPhysicalElement
+struct ObstacleElement : PhysicalElement
 {
 private:
     friend struct ObstacleElementHandler;
-    ObstacleElement(PhysicalElement::CreateParams const& params) : TestPhysicalElement(params) {;}
+    ObstacleElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
     ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode);
 public:
     //! Factory method that creates an instance of a ObstacleElement
@@ -87,17 +76,17 @@ typedef RefCountedCPtr<ObstacleElement>  ObstacleElementCPtr;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct RobotElementHandler : dgn_ElementHandler::Element
+struct RobotElementHandler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ObstacleElementHandler : dgn_ElementHandler::Element
+struct ObstacleElementHandler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, dgn_ElementHandler::Physical, )
 };
 
 //=======================================================================================

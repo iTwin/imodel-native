@@ -252,6 +252,13 @@ struct ElementGeomIO
         void Draw(ViewContextR, DgnCategoryId, ViewFlags) const;
     };
 
+    //! Remap embedded IDs. The dest and source GeomStreams can be the same.
+    //! @param dest     The output GeomStream
+    //! @param source   The input GeomStream
+    //! @param remapper  The ID remapper
+    static DgnDbStatus Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& remapper);
+
+
 }; // ElementGeomIO
 
 //=======================================================================================
@@ -391,6 +398,9 @@ bool AppendLocal (ElementGeometryCR);
 void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 public:
+
+DGNPLATFORM_EXPORT BentleyStatus GetGeomStream (GeomStreamR);
+DGNPLATFORM_EXPORT BentleyStatus GetPlacement (Placement3dR);
 
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);

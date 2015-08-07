@@ -10,10 +10,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 
-#define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
-#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
-
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*=================================================================================**//**
