@@ -766,7 +766,7 @@ void ECChangeSummary::Dump() const
         else /* if (opCode = DbOpcode::Delete) */
             opCodeStr = "Delete";
 
-        printf("%lld;%lld;%s;%s;%s\n", entry.GetInstanceId().GetValueUnchecked(), (int64_t) classId, className.c_str(), opCodeStr.c_str(), entry.GetIsIndirect() ? "Yes" : "No");
+        printf("%" PRId64 ";%" PRId64 ";%s;%s;%s\n", entry.GetInstanceId().GetValueUnchecked(), (int64_t) classId, className.c_str(), opCodeStr.c_str(), entry.GetIsIndirect() ? "Yes" : "No");
         }
     }
 
