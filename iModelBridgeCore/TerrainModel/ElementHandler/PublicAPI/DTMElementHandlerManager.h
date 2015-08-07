@@ -62,8 +62,12 @@ This is the handler to manage DTMElement creation and retrieval
 class DTMElementHandlerManager
     {
 /*__PUBLISH_CLASS_VIRTUAL__*/
-/*__PUBLISH_SECTION_END__*/
     public:
+        struct IDTMIsFriendModelExtension
+            {
+            virtual bool IsFriendModel (ElementHandleCR element, DgnModelRefP modelRef) = 0;
+            };
+/*__PUBLISH_SECTION_END__*/
         struct IDTMElementPowerPlatformExtension
             {
             virtual DgnPlatform::DgnTextStylePtr GetActiveStyle (DgnFileR file) = 0;
@@ -72,7 +76,7 @@ class DTMElementHandlerManager
     private:
     static int s_mrDTMactivationRefCount;
     static IDTMElementPowerPlatformExtension* s_DTMElementPowerPlatformExtension;
-
+    static IDTMIsFriendModelExtension*        s_DTMIsFriendModel;
     static IMultiResolutionGridManagerCreatorPtr s_multiResolutionGridManagerCreator;
     static IRasterTextureSourceManager*          s_rasterTextureSourceManagerP;
     static bool                                  s_isDrawForAnimation;
@@ -102,8 +106,16 @@ public:
                 return s_rasterTextureSourceManagerP;
                 }
    
-     
+    static bool IsFriendModel (ElementHandleCR element, DgnModelRefP modelRef)
+        {
+        if (s_DTMIsFriendModel != nullptr)
+            return s_DTMIsFriendModel->IsFriendModel (element, modelRef);
+        return false;
+        }
+
 /*__PUBLISH_SECTION_START__*/
+    DTMELEMENT_EXPORT static void SetIsFriendModelExtension (IDTMIsFriendModelExtension* value);
+
     //! Test if the ElementHandle is a DTMElement
     //! @param[in] element the Element Handle to test
     //! @return if the DTM is an Element

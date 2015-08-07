@@ -243,6 +243,9 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
             m_symbologyInActiveModel = m_activeModel && symbologyElement.GetModelRef () == m_activeModel;
             m_inActiveModel = m_activeModel && element.GetModelRef () == m_activeModel;
 
+            if (DTMElementHandlerManager::IsFriendModel (symbologyElement, m_activeModel))
+                m_symbologyInActiveModel = true;
+
             DTMElementHandlerManager::GetName (element, m_name);
             DTMDataRefPtr dtmDataRef;
             if (DTMElementHandlerManager::GetDTMDataRef (dtmDataRef, element) == SUCCESS)

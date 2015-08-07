@@ -28,6 +28,7 @@ void Initializations ();
 //=======================================================================================
 int DTMElementHandlerManager::s_mrDTMactivationRefCount = 0;
 DTMElementHandlerManager::IDTMElementPowerPlatformExtension* DTMElementHandlerManager::s_DTMElementPowerPlatformExtension = nullptr;
+DTMElementHandlerManager::IDTMIsFriendModelExtension* DTMElementHandlerManager::s_DTMIsFriendModel = nullptr;
 
 IMultiResolutionGridManagerCreatorPtr DTMElementHandlerManager::s_multiResolutionGridManagerCreator = 0;
 IRasterTextureSourceManager*          DTMElementHandlerManager::s_rasterTextureSourceManagerP = 0;
@@ -130,6 +131,14 @@ int registerElementHandlers ()
     XAttributeHandlerManager::RegisterHandler(XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_TRANSLATION), &s_dtmHeaderHandlerInfoXAttributeHandler2);
 
     return  SUCCESS;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 08/15
+//=======================================================================================
+void DTMElementHandlerManager::SetIsFriendModelExtension (DTMElementHandlerManager::IDTMIsFriendModelExtension* value)
+    {
+    s_DTMIsFriendModel = value;
     }
 
 //=======================================================================================
