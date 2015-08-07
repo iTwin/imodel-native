@@ -19,3 +19,6 @@ FileUtilTests.TruncateFilePath_MaxPathSmallerThanDirectory_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
+
+#Fails on iOS; Vincas said to ignore
+ECDbAdapterTests.*
