@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/BeSQLiteDb_Test.cpp $
+|  $Source: Tests/Published/BeSQLiteDb_Test.cpp.orig $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -610,6 +610,7 @@ TEST_F(BeSQLiteDbTests, linestyleDB)
     //Dump the result for display
     m_db.DumpSqlResults ("SELECT * from linestyles");
     }
+
 
 #ifdef PUBLISHER_WONT_PUBLISH_EXPIRED_FILES
 /*---------------------------------------------------------------------------------**//**
