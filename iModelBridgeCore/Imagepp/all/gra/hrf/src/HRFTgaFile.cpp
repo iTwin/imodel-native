@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFTgaFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFTgaFile
@@ -748,7 +748,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                 if (pTag->GetID() == HRFAttributeDateTime::ATTRIBUTE_ID)
                     {
                     BE_STRING_UTILITIES_SWSCANF (((HFCPtr<HRFAttributeDateTime>&)pTag)->GetData().c_str(),
-                                                L"%u/%u/%u %u:%u:%u",
+                                                L"%hu/%hu/%hu %hu:%hu:%hu",
                                                 &m_pTgaExtentionArea->m_Year,
                                                 &m_pTgaExtentionArea->m_Month,
                                                 &m_pTgaExtentionArea->m_Day,
@@ -793,7 +793,7 @@ void HRFTgaFile::SaveTgaFile(bool pi_CloseFile)
                     {
                     float temp;
                     BE_STRING_UTILITIES_SWSCANF (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str(),
-                                                L"%3.2f%c",
+                                                L"%f%hhu",
                                                 &temp,
                                                 &m_pTgaExtentionArea->m_SoftwareVersionLetter);
                     //temp = (float)atof (((HFCPtr<HRFAttributeVersion>&)pTag)->GetData().c_str());

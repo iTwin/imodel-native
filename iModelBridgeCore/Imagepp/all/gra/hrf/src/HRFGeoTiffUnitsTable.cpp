@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFGeoTiffUnitsTable.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //:>-----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ bool HRFGeoTiffUnitsTable::GetRecord(short pi_Code,
         po_pRecord->Code = pi_Code;
         po_pRecord->EPSGName = RecordValues[1];
         po_pRecord->EPSGAbbr = RecordValues[2];
-        Result = sscanf(RecordValues[3].c_str(), "%d",  &(po_pRecord->TargetUnitCode)) == 1;
+        Result = sscanf(RecordValues[3].c_str(), "%hd",  &(po_pRecord->TargetUnitCode)) == 1;
         Result = sscanf(RecordValues[4].c_str(), "%lf", &(po_pRecord->FactorB)) == 1 && Result;
         Result = sscanf(RecordValues[5].c_str(), "%lf", &(po_pRecord->FactorC)) == 1 && Result;
         }

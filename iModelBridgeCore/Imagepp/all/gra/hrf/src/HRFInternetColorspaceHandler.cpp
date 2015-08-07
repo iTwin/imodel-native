@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFInternetColorspaceHandler.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFInternetColorspaceHandler
@@ -71,7 +71,7 @@ void HRFInternetColorspaceHandler::Handle(HRFInternetImagingFile& pi_rFile,
 
     // Place the buffer in a string in order to force a '\0' at the end in order to avoid an access violation
     if (sscanf(string((const char*)pio_rBuffer.GetData(), pio_rBuffer.GetDataSize()).c_str() + s_Label.size() + 1,
-               "%lu,%lu:%lu %lu %lu %lu %lu %lu %lu %lu",
+               "%hu,%lu:%lu %lu %lu %lu %lu %lu %lu %lu",
                &Resolution,
                &SubImage,
                &Calibrated,

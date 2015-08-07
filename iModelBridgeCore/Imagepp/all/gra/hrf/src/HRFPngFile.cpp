@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFPngFile.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class HRFPngFile
@@ -566,7 +566,7 @@ bool HRFPngFile::AssignStructTo(HFCPtr<HRFPageDescriptor> pi_pPage)
             m_pPngInfo->valid  |= PNG_INFO_tIME;
 
             sscanf ((char*)((HFCPtr<HRFAttributeTimeModification>&)pTag)->GetData().c_str(),
-                    "%04u:%02u:%02u %02u:%02u:%02u",
+                    "%04hu:%02hhu:%02hhu %02hhu:%02hhu:%02hhu",
                     &m_pPngInfo->mod_time.year,
                     &m_pPngInfo->mod_time.month,
                     &m_pPngInfo->mod_time.day,

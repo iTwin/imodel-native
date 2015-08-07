@@ -1487,8 +1487,12 @@ typedef struct {
 
 #define	is2DEncoding(sp) \
 	(sp->b.groupoptions & GROUP3OPT_2DENCODING)
-#define	isAligned(p,t)	((((unsigned long)(p)) & (sizeof (t)-1)) == 0)
 
+#ifdef _M_X64
+#define	isAligned(p,t)	((((unsigned long long)(p)) & (sizeof (t)-1)) == 0)
+#else
+#define isAligned(p,t)  ((((unsigned long)(p)) & (sizeof (t)-1)) == 0)
+#endif
 /*
  * Group 3 and Group 4 Decoding.
  */

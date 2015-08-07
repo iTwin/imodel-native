@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGFGraphicObject.h $
 //:>
-//:>  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGFGraphicObject
@@ -43,7 +43,7 @@ class HNOVTABLEINIT HGFGraphicObject : public HPMPersistentObject,
     HPM_DECLARE_CLASS_DLL(_HDLLg, 1010)
 
 public:
-    _HDLLg enum Location
+    enum Location
         {
         S_INSIDE,
         S_ON_BOUNDARY,

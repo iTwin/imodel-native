@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DComplexShape.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DComplexShape
@@ -935,7 +935,7 @@ void HGF2DComplexShape::PrintState(ostream& po_rOutput) const
     HDUMP0("Object is a HGF2DComplexShape\n");
 
     po_rOutput << "The complex shape contains " << m_ShapeList.size() << " shapes" << endl;
-    HDUMP1("The complex shape contains %ld shapes\n", m_ShapeList.size());
+    HDUMP1("The complex shape contains %lld shapes\n", (uint64_t)m_ShapeList.size());
 
     po_rOutput << "Begin component listing" << endl;
     HDUMP0("Begin component listing\n");

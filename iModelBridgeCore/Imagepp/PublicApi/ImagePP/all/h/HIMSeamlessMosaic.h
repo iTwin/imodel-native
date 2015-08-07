@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMSeamlessMosaic.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -111,7 +111,7 @@ public:
 
     friend class HIMSeamlessMosaicIterator;
 
-    typedef enum SamplingQuality
+    enum SamplingQuality
         {
         SAMPLING_FAST,
         SAMPLING_NORMAL,

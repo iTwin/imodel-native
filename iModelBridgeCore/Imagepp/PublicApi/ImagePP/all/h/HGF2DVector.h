@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HGF2DVector.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HGF2DVector
@@ -64,7 +64,7 @@ class HNOVTABLEINIT HGF2DVector : public HFCShareableObject<HGF2DVector>
 
 public:
 
-    _HDLLg enum Location
+    enum Location
         {
         S_INSIDE,
         S_ON_BOUNDARY,

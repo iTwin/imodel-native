@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFilePrint.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HTIFFFilePrint
@@ -40,19 +40,19 @@ public:
 
     void operator() (const double pi_rValue)
         {
-        fprintf(m_pOutputFile, "%8.6lf%s", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%8.6lf%s", pi_rValue, AString(m_Separator).c_str());
         }
     void operator() (const float pi_rValue)
         {
-        fprintf(m_pOutputFile, "%8.6f%s", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%8.6f%s", pi_rValue, AString(m_Separator).c_str());
         }
     void operator() (const unsigned short pi_rValue)
         {
-        fprintf(m_pOutputFile, "%u%s", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%u%s", pi_rValue, AString(m_Separator).c_str());
         }
     void operator() (const uint32_t pi_rValue)
         {
-        fprintf(m_pOutputFile, "%u%s", pi_rValue, m_Separator);
+        fprintf(m_pOutputFile, "%u%s", pi_rValue, AString(m_Separator).c_str());
         }
 
     // Add more types here as needed...
@@ -667,9 +667,9 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
             {
             fprintf(po_pOutput, "  %s: \n", GetTagNameString(REFERENCEBLACKWHITE));
 
-            fprintf(po_pOutput, "    0: %g\n", ValR[0]);
-            fprintf(po_pOutput, "    1: %g\n", ValR[1]);
-            fprintf(po_pOutput, "    2: %g\n", ValR[2]);
+            fprintf(po_pOutput, "    0: %g\n", ValR[0].Value);
+            fprintf(po_pOutput, "    1: %g\n", ValR[1].Value);
+            fprintf(po_pOutput, "    2: %g\n", ValR[2].Value);
             }
         else
             {
@@ -1110,7 +1110,7 @@ void HTIFFFile::_PrintCurrentDirectory (FILE* po_pOutput, uint32_t pi_Flag)
 
             for (size_t i=0; i<ValL;)
                 {
-                fprintf (po_pOutput, " [%3ld] ", i);
+                fprintf (po_pOutput, " [%3llu] ", (uint64_t)i);
                 for (size_t j=0; (j<8) && (i<ValL); j++, i++)
                     fprintf (po_pOutput, "%8u ", pVal[i]);
                 fprintf (po_pOutput, "\n");
@@ -2809,7 +2809,7 @@ void HTIFFFile::PrintEXIFTags(uint32_t pi_PageDirInd,
                                                  ConvRationalToDblVals);
 
         fprintf(po_pOutput,
-                "  %s: .2f\n",
+                "  %s: %.2f\n",
                 pDirToSearch->GetTagNameString(EXIF_EXPOSUREINDEX),
                 ConvRationalToDblVals[0]);
         }

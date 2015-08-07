@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hve/src/HVE2DHoledShape.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HVE2DHoledShape
@@ -2090,7 +2090,7 @@ void HVE2DHoledShape::PrintState(ostream& po_rOutput) const
     HDUMP0("Object is a HVE2DHoledShape\n");
 
     po_rOutput << "The holed shape contains " << m_HoleList.size() << "holes" << endl;
-    HDUMP1("The holed shape contains %ld holes", m_HoleList.size());
+    HDUMP1("The holed shape contains %lld holes", (uint64_t)m_HoleList.size());
 
     m_pBaseShape->PrintState(po_rOutput);
 

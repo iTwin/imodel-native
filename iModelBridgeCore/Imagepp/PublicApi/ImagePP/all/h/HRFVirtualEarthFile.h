@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HRFVirtualEarthFile.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HRFVirtualEarthFile
@@ -95,7 +95,7 @@ public:
     //Class ID for this class.
     HDECLARE_CLASS_ID(1500, HRFRasterFile)
 
-    _HDLLg enum MapStyle
+    enum MapStyle
         {
         MAPSTYLE_Aerial = 0,
         MAPSTYLE_AerialWihtLabels,

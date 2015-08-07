@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hgf/src/HGF2DPolySegment.cpp $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HGF2DPolySegment
@@ -5386,7 +5386,7 @@ void HGF2DPolySegment::PrintState(ostream& po_rOutput) const
 
     // Indicate number of points
     po_rOutput << "There is " << m_Points.size() << "Points in PolySegment" << endl;
-    HDUMP1("There is %ld Points in polysegment", m_Points.size());
+    HDUMP1("There is %llu Points in polysegment", (uint64_t)m_Points.size());
 
     // Dump all points
     char    DumString[256];

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hfc/src/HFCMemoryBinStream.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Methods for class HFCMemoryBinStream
@@ -43,7 +43,7 @@ static struct MemoryBinStreamCreator : public HFCBinStream::Creator
             {
             WString OffsetString = Filename.substr(ColonPos+1, Filename.length() - ColonPos - 1);
             Filename.erase(ColonPos, Filename.length()-ColonPos);
-            swscanf(OffsetString.c_str(), L"%ld", &OriginOffset);
+            swscanf(OffsetString.c_str(), L"%lld", &OriginOffset);
             }
         Filename = pURL->GetHost() + L"\\" + Filename;
 

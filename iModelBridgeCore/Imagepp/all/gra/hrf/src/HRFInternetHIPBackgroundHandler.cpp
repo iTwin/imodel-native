@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/hrf/src/HRFInternetHIPBackgroundHandler.cpp $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -58,11 +58,12 @@ void HRFInternetHIPBackgroundHandler::Handle(HRFInternetImagingFile& pi_rFile,
     // hip-background:background
     //
     uint32_t Background;
+    uint32_t unused;
 
     // Place the buffer in a string in order to force a '\0' at the end in order to avoid an access violation
     if (sscanf(string((const char*)pio_rBuffer.GetData(), pio_rBuffer.GetDataSize()).c_str() + s_Label.size() + 1,
                "%lu:%lu\r\n",
-               &Background) != 1)
+               &Background, &unused) != 1)
         throw HRFIIHandlerException(HRFII_INVALID_DATA_FORMAT_EXCEPTION,
                                     pi_rFile.GetURL()->GetURL(),
                                     HRFIIHandlerException::HIP_BACKGROUND);

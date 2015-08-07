@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HIMColorBalancedImage.h $
 //:>
-//:>  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -33,7 +33,7 @@ class HIMColorBalancedImage : public HRAImageView
 
 public:
 
-    typedef enum SamplingQuality
+    enum SamplingQuality
         {
         SAMPLING_FAST,
         SAMPLING_NORMAL,
@@ -220,7 +220,7 @@ public:
 
 protected:
 
-    typedef enum ColorMode
+    enum ColorMode
         {
         COLORMODE_GRAY,
         COLORMODE_RGB
