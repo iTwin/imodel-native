@@ -346,6 +346,12 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR element);
 
+    //! Called after a DgnElement that was previously deleted from this DgnModel has been reinstated by undo
+    //! @param[in] element The element that was just reinstatted.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnReversedDeleteElement(DgnElementCR element);
+
     //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
@@ -358,6 +364,13 @@ protected:
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
+
+    //! Called after a DgnElement in this DgnModel has been removed by undo
+    //! @param[in] element The element that was just deleted by undo.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnReversedAddElement(DgnElementCR element);
+
     /** @} */
 
     //! Load all of the DgnElements of this DgnModel into memory.
