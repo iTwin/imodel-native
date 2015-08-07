@@ -513,6 +513,14 @@ void DgnModel::_OnInsertedElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnReversedDeleteElement(DgnElementCR el) 
+    {
+    RegisterElement(el);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
     return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
@@ -522,6 +530,16 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_OnDeletedElement(DgnElementCR element)
+    {
+    RemoveFromRangeIndex(element);
+    if (m_filled)
+        m_elements.erase(element.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KeithBentley    10/00
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnReversedAddElement(DgnElementCR element)
     {
     RemoveFromRangeIndex(element);
     if (m_filled)

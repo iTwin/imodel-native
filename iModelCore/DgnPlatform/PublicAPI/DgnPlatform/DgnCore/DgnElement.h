@@ -556,6 +556,10 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
+    //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
+    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
+
     //! Called when this element is about to be replace an original element in the DgnDb.
     //! @param [in] original the original state of this element.
     //! Subclasses may override this method to control whether their instances are updated.
@@ -586,6 +590,10 @@ protected:
     //! Called after a DgnElement was successfully deleted. Note that the element will not be marked as persistent when this is called.
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
+
+    //! Called after a DgnElement that was previously added has been removed by an undo.
+    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
     //! Subclasses may override this method to control which other elements may become children.

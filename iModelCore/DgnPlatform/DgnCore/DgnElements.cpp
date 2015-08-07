@@ -1021,7 +1021,7 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
     // We need to load this element, since filled models need to register it 
     DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
     BeAssert(el.IsValid());
-    el->_OnInserted(nullptr);
+    el->_OnReversedDelete();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1034,7 +1034,7 @@ void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& chan
     // see if we have this element in memory, if so call its _OnDelete method.
     DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
     if (el.IsValid()) 
-        el->_OnDeleted(); // Note: this MUST be a DgnElementPtr, since we can't call _OnDeleted with an element with a zero ref count
+        el->_OnReversedAdd(); // Note: this MUST be a DgnElementPtr, since we can't call _OnReversedAdd with an element with a zero ref count
     }
 
 /*---------------------------------------------------------------------------------**//**
