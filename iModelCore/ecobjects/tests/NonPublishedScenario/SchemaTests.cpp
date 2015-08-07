@@ -2,7 +2,7 @@
 |
 |     $Source: tests/NonPublishedScenario/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -34,7 +34,7 @@ TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer
         {
         ECClassCP ecClass = *cit;
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        wprintf(L"ECClass=0x%llx, name=%s\n", (uint64_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(2, count);
@@ -42,7 +42,7 @@ TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer
     for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        wprintf(L"ECClass=0x%llx, name=%s\n", (uint64_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(4, count);
@@ -69,7 +69,7 @@ TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
         {
         ECClassCP ecClass = *cit;
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        wprintf(L"ECClass=0x%llx, name=%s\n", (uint64_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(2, count);
@@ -77,7 +77,7 @@ TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
     for (ECClassCP ecClass: container)
         {
         WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        wprintf(L"ECClass=0x%llx, name=%s\n", (uint64_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(4, count);
