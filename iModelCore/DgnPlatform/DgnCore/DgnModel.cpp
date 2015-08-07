@@ -1361,7 +1361,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
         DgnElement::Item const* sourceitem = DgnElement::Item::GetItem(*sourceEl);
         if (nullptr == sourceitem)
             {
-            BeDataAssert(false && "Element has item, but item can't be loaded??!");
+            BeDataAssert(false && "Element has item, but item can't be loaded");
             continue;
             }
 
