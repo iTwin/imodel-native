@@ -32,10 +32,10 @@ struct SyncCachedInstancesTask : public CachingTaskBase
             ICancellationTokenPtr ct
             );
 
-        virtual void _OnExecute ();
-        void CacheNextObjects ();
-        WSQuery GetQuery ();
-        void ResolveNotFoundInstances ();
+        virtual void _OnExecute();
+        void CacheNextObjects();
+        WSQuery GetQuery();
+        void ResolveNotFoundInstances();
 
     public:
         // Will run task depending on server version

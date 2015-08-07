@@ -24,31 +24,31 @@ struct WebApiV2 : public WebApi
         WSInfo m_info;
 
     private:
-        Utf8String GetWebApiUrl () const;
-        Utf8String GetRepositoryUrl (Utf8StringCR repositoryId) const;
-        Utf8String GetUrl (Utf8StringCR path, Utf8StringCR queryString = "") const;
+        Utf8String GetWebApiUrl() const;
+        Utf8String GetRepositoryUrl(Utf8StringCR repositoryId) const;
+        Utf8String GetUrl(Utf8StringCR path, Utf8StringCR queryString = "") const;
 
-        Utf8String CreateObjectSubPath (ObjectIdCR objectId) const;
-        Utf8String CreateFileSubPath (ObjectIdCR objectId) const;
-        Utf8String CreateClassSubPath (Utf8StringCR schemaName, Utf8StringCR className) const;
-        Utf8String CreateNavigationSubPath (ObjectIdCR parentId) const;
+        Utf8String CreateObjectSubPath(ObjectIdCR objectId) const;
+        Utf8String CreateFileSubPath(ObjectIdCR objectId) const;
+        Utf8String CreateClassSubPath(Utf8StringCR schemaName, Utf8StringCR className) const;
+        Utf8String CreateNavigationSubPath(ObjectIdCR parentId) const;
 
-        Utf8String CreateSelectPropertiesQuery (const bset<Utf8String>& properties) const;
+        Utf8String CreateSelectPropertiesQuery(const bset<Utf8String>& properties) const;
 
-        std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader () const;
-        static Utf8String GetNullableString (RapidJsonValueCR jsonValue);
+        std::shared_ptr<WSObjectsReader> CreateJsonInstancesReader() const;
+        static Utf8String GetNullableString(RapidJsonValueCR jsonValue);
 
-        WSRepositoriesResult ResolveGetRepositoriesResponse (HttpResponse& response) const;
-        WSCreateObjectResult ResolveCreateObjectResponse (HttpResponse& response) const;
-        WSUpdateObjectResult ResolveUpdateObjectResponse (HttpResponse& response) const;
-        WSObjectsResult ResolveObjectsResponse (HttpResponse& response, const ObjectId* objectId = nullptr) const;
-        WSFileResult ResolveFileResponse (HttpResponse& response, BeFileName filePath) const;
+        WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response) const;
+        WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response) const;
+        WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response) const;
+        WSObjectsResult ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId = nullptr) const;
+        WSFileResult ResolveFileResponse(HttpResponse& response, BeFileName filePath) const;
 
     public:
-        WebApiV2 (std::shared_ptr<const ClientConfiguration> configuration, WSInfo info);
-        virtual ~WebApiV2 ();
+        WebApiV2(std::shared_ptr<const ClientConfiguration> configuration, WSInfo info);
+        virtual ~WebApiV2();
 
-        static bool IsSupported (WSInfoCR info);
+        static bool IsSupported(WSInfoCR info);
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
@@ -97,7 +97,7 @@ struct WebApiV2 : public WebApi
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const override;

@@ -52,13 +52,13 @@ Utf8String ConnectSpaces::sm_eulaUrlBase;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSpaces::Initialize (ClientInfoPtr clientInfo)
+void ConnectSpaces::Initialize(ClientInfoPtr clientInfo)
     {
-    BeAssert (nullptr != clientInfo);
+    BeAssert(nullptr != clientInfo);
 
     s_clientInfo = clientInfo;
-    s_threadPool   = WorkerThreadPool::Create (1, "ConnectSpaces::web");
-    s_dlThreadPool = WorkerThreadPool::Create (2, "ConnectSpaces::downloads");
+    s_threadPool = WorkerThreadPool::Create(1, "ConnectSpaces::web");
+    s_dlThreadPool = WorkerThreadPool::Create(2, "ConnectSpaces::downloads");
 
     if (sm_actionMap.empty())
         {
@@ -123,8 +123,8 @@ void ConnectSpaces::Uninitialize()
     {
     if (s_threadPool != nullptr)
         {
-        s_threadPool->OnEmpty ()->Wait ();
-        s_threadPool = nullptr;        
+        s_threadPool->OnEmpty()->Wait();
+        s_threadPool = nullptr;
         }
 
     if (s_dlThreadPool)
@@ -136,32 +136,29 @@ void ConnectSpaces::Uninitialize()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSpaces::ConnectSpaces() : 
-m_client (s_clientInfo),
-m_cancelToken (SimpleCancellationToken::Create())
-    {
-    }
+ConnectSpaces::ConnectSpaces() :
+m_client(s_clientInfo),
+m_cancelToken(SimpleCancellationToken::Create())
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectSpaces::ConnectSpaces(const ConnectSpaces& other) : 
-m_credentials(other.m_credentials), 
-m_token(other.m_token), 
-m_eulaToken(other.m_eulaToken), 
-m_client (other.m_client),
+ConnectSpaces::ConnectSpaces(const ConnectSpaces& other) :
+m_credentials(other.m_credentials),
+m_token(other.m_token),
+m_eulaToken(other.m_eulaToken),
+m_client(other.m_client),
 // NOTE: Create a new m_cancelToken
 m_cancelToken(SimpleCancellationToken::Create(other.m_cancelToken->IsCanceled()))
 // NOTE: DO NOT copy m_credentialsCriticalSection.
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSpaces::~ConnectSpaces()
-    {
-    }
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
@@ -169,8 +166,8 @@ ConnectSpaces::~ConnectSpaces()
 void ConnectSpaces::SetCredentials(Credentials credentials, Utf8StringCR token)
     {
     m_credentialsCriticalSection.Enter();
-    m_credentials = std::move (credentials);
-    m_token = SamlToken (token);
+    m_credentials = std::move(credentials);
+    m_token = SamlToken(token);
     m_credentialsCriticalSection.Leave();
     }
 
@@ -191,22 +188,22 @@ void ConnectSpaces::Cancel()
     {
     // Note: m_cancelToken is a ref-counted pointer, but it is created in the constructor,
     // so there's no need to check if it's non-null.
-    m_cancelToken->SetCanceled ();
+    m_cancelToken->SetCanceled();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpRequest ConnectSpaces::CreateGetRequest (Utf8StringCR url, bool acceptJson /*= true*/, bool includeToken /*= true*/)
+HttpRequest ConnectSpaces::CreateGetRequest(Utf8StringCR url, bool acceptJson /*= true*/, bool includeToken /*= true*/)
     {
-    HttpRequest request = m_client.CreateGetRequest (url);
+    HttpRequest request = m_client.CreateGetRequest(url);
 
     if (includeToken)
         {
-        request.GetHeaders ().SetAuthorization (m_token.ToAuthorizationString ());
+        request.GetHeaders().SetAuthorization(m_token.ToAuthorizationString());
         }
 
-    request.SetTimeoutSeconds (HTTP_DEFAULT_TIMEOUT);
+    request.SetTimeoutSeconds(HTTP_DEFAULT_TIMEOUT);
     request.SetCancellationToken(m_cancelToken);
 
     if (acceptJson)
@@ -220,9 +217,9 @@ HttpRequest ConnectSpaces::CreateGetRequest (Utf8StringCR url, bool acceptJson /
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsRedirectToStsLogin (HttpResponseCR response)
+bool IsRedirectToStsLogin(HttpResponseCR response)
     {
-    return Connect::IsImsLoginRedirect (response);
+    return Connect::IsImsLoginRedirect(response);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -233,8 +230,8 @@ void ConnectSpaces::SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR re
     Json::Value credentials;
 
     m_credentialsCriticalSection.Enter();
-    credentials["username"] = m_credentials.GetUsername ();
-    credentials["password"] = m_credentials.GetPassword ();
+    credentials["username"] = m_credentials.GetUsername();
+    credentials["password"] = m_credentials.GetPassword();
     m_credentialsCriticalSection.Leave();
 
     Json::Value wrapper;
@@ -244,7 +241,7 @@ void ConnectSpaces::SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR re
         wrapper["data"] = response;
         }
 
-    MobileDgnApplication::App ().Messages ().Send (JsonMessage (messageType, wrapper));
+    MobileDgnApplication::App().Messages().Send(JsonMessage(messageType, wrapper));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -253,21 +250,21 @@ void ConnectSpaces::SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR re
 void ConnectSpaces::SendStatusToUIThread(StatusAction action, StatusCode statusCode, JsonValueCR data)
     {
     Json::Value statusData(data);
-    statusData["statusAction"] = (int)action;
-    statusData["statusCode"] = (int)statusCode;
+    statusData["statusAction"] = (int) action;
+    statusData["statusCode"] = (int) statusCode;
     SendJsonMessageToUiThread(CS_MESSAGE_StatusReport, statusData);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ConnectSpaces::GetNewTokenIfNeeded (bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl /*= NULL*/,
-                                        Utf8CP stsUrl /*= NULL*/)
+BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl /*= NULL*/,
+                                                 Utf8CP stsUrl /*= NULL*/)
     {
     SamlToken newToken;
 
     m_credentialsCriticalSection.Enter();
-    if (!getNewToken && !token.IsEmpty ())
+    if (!getNewToken && !token.IsEmpty())
         {
         m_credentialsCriticalSection.Leave();
         return SUCCESS;
@@ -285,11 +282,11 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded (bool getNewToken, StatusAction
         // which cannot change, since they are non-pointer member variables.
         if (&token == &m_token)
             {
-            SendJsonMessageToUiThread (CS_MESSAGE_TokenUpdate, token.AsString());
+            SendJsonMessageToUiThread(CS_MESSAGE_TokenUpdate, token.AsString());
             }
         else if (&token == &m_eulaToken)
             {
-            SendJsonMessageToUiThread (CS_MESSAGE_EulaTokenUpdate, token.AsString ());
+            SendJsonMessageToUiThread(CS_MESSAGE_EulaTokenUpdate, token.AsString());
             }
         return SUCCESS;
         }
@@ -299,7 +296,6 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded (bool getNewToken, StatusAction
         return ERROR;
         }
     }
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
@@ -319,7 +315,7 @@ void ConnectSpaces::FetchFileList(Utf8StringCR dsId, Utf8StringCR folderId, bool
 
     HttpResponse httpResponse = CreateGetRequest(navUrl).Perform();
 
-    if (IsRedirectToStsLogin (httpResponse))
+    if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)
             {
@@ -610,28 +606,28 @@ void ConnectSpaces::FetchDatasourceList(bool getNewToken)
 * @bsimethod                                                    Rolandas.Rimkus    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::ResetEula(bool getNewToken)
-    {    
+    {
     if (SUCCESS != GetNewTokenIfNeeded(getNewToken, ResetEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), Connect::GetStsUrl().c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
         }
-    Utf8String url = Connect::GetEulaUrl() + "/Agreements/RevokeAgreementService/" + m_credentials.GetUsername ();
-    HttpRequest request = m_client.CreatePostRequest (url);
+    Utf8String url = Connect::GetEulaUrl() + "/Agreements/RevokeAgreementService/" + m_credentials.GetUsername();
+    HttpRequest request = m_client.CreatePostRequest(url);
     request.GetHeaders().SetValue("Content-Type", "application/json");
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     bmap<Utf8String, Utf8String> attributes;
     BentleyStatus attributeStatus = m_eulaToken.GetAttributes(attributes);
     m_credentialsCriticalSection.Leave();
-    
+
     if (SUCCESS != attributeStatus)
         {
         // The token we got is invalid.
         SendStatusToUIThread(ResetEulaAction, CredentialsError);
         return;
         }
-    request.SetTimeoutSeconds (HTTP_DEFAULT_TIMEOUT);
+    request.SetTimeoutSeconds(HTTP_DEFAULT_TIMEOUT);
     request.SetCancellationToken(m_cancelToken);
     HttpResponse httpResponse = request.Perform();
     if (IsRedirectToStsLogin(httpResponse))
@@ -657,7 +653,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
             {
             SendStatusToUIThread(ResetEulaAction, OK);
             Json::Value dsData = httpResponse.GetBody().AsJson();
-            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, httpResponse.GetBody().AsJson().asString());  
+            SendJsonMessageToUiThread(CS_MESSAGE_ResetEula, httpResponse.GetBody().AsJson().asString());
             }
         else
             {
@@ -671,7 +667,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::CheckEula(bool getNewToken)
     {
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str() , Connect::GetStsUrl().c_str())) 
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), Connect::GetStsUrl().c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -680,7 +676,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
     Utf8String url = sm_eulaUrlBase + "/state";
     HttpRequest request = CreateGetRequest(url);
     m_credentialsCriticalSection.Enter();
-    request.GetHeaders().SetAuthorization (m_eulaToken.ToAuthorizationString());
+    request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     m_credentialsCriticalSection.Leave();
     HttpResponse httpResponse = request.Perform();
     if (IsRedirectToStsLogin(httpResponse))
@@ -709,7 +705,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
             try
                 {
                 const Json::Value &accepted = dsData["accepted"];
-                
+
                 if (accepted.isBool())
                     {
                     Json::Value messageData;
@@ -721,14 +717,13 @@ void ConnectSpaces::CheckEula(bool getNewToken)
                     else
                         {
                         Utf8String eulaString;
-                        
+
                         if (DownloadEula(eulaString))
                             {
                             messageData[CS_MESSAGE_FIELD_EULA] = eulaString;
                             SendJsonMessageToUiThread(CS_MESSAGE_EulaStatus, messageData);
                             }
                         }
-                    
                     }
                 else
                     {
@@ -770,12 +765,12 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     {
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str() , Connect::GetStsUrl().c_str()))
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, Connect::GetEulaUrl().c_str(), Connect::GetStsUrl().c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return false;
         }
-    BeFileName tempPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetTemporaryDirectory ();
+    BeFileName tempPathName = MobileDgnApplication::App().GetApplicationPaths().GetTemporaryDirectory();
     tempPathName.AppendToPath(L"eula.html");
     Utf8String tempPath(tempPathName);
     Utf8String url = sm_eulaUrlBase;
@@ -831,7 +826,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
             SendStatusToUIThread(CheckEulaAction, UnknownError);
             }
         }
-    
+
     return retValue;
     }
 
@@ -846,7 +841,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
         return;
         }
     Utf8String url = sm_eulaUrlBase + "/state";
-    HttpRequest request = m_client.CreatePostRequest (url);
+    HttpRequest request = m_client.CreatePostRequest(url);
     request.GetHeaders().SetValue("Content-Type", "application/json");
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
@@ -860,7 +855,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
         SendStatusToUIThread(AcceptEulaAction, CredentialsError);
         return;
         }
-    request.SetTimeoutSeconds (HTTP_DEFAULT_TIMEOUT);
+    request.SetTimeoutSeconds(HTTP_DEFAULT_TIMEOUT);
     request.SetCancellationToken(m_cancelToken);
     Json::Value params;
     params["accepted"] = true;
@@ -906,11 +901,11 @@ void ConnectSpaces::FetchFileListAsync(Utf8StringCR dsId, Utf8StringCR folderId)
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_threadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->FetchFileList(dsId, folderId);
-            delete spaces;
-            });
+        [=] ()
+        {
+        spaces->FetchFileList(dsId, folderId);
+        delete spaces;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -922,11 +917,11 @@ void ConnectSpaces::FetchObjectListAsync(Utf8StringCR dsId, Utf8StringCR objectC
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_threadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->FetchObjectList(dsId, objectClass);
-            delete spaces;
-            });
+        [=] ()
+        {
+        spaces->FetchObjectList(dsId, objectClass);
+        delete spaces;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -938,11 +933,11 @@ void ConnectSpaces::FetchDatasourceListAsync()
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_threadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->FetchDatasourceList();
-            delete spaces;
-            });
+        [=] ()
+        {
+        spaces->FetchDatasourceList();
+        delete spaces;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -954,11 +949,11 @@ void ConnectSpaces::ResetEulaAsync()
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_threadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->ResetEula();
-            delete spaces;
-            });
+        [=] ()
+        {
+        spaces->ResetEula();
+        delete spaces;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -970,11 +965,11 @@ void ConnectSpaces::CheckEulaAsync()
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_threadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->CheckEula();
-            delete spaces;
-            });
+        [=] ()
+        {
+        spaces->CheckEula();
+        delete spaces;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -986,11 +981,11 @@ void ConnectSpaces::AcceptEulaAsync()
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_threadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->AcceptEula();
-            delete spaces;
-            });
+        [=] ()
+        {
+        spaces->AcceptEula();
+        delete spaces;
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1018,8 +1013,8 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
     Utf8String docId(MESSAGE_STRING_FIELD("$id"));
     Utf8String lastModified(MESSAGE_STRING_FIELD("FileLastModifiedDate"));
     WString wFilename(filename.c_str(), true);
-    BeFileName tempPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetTemporaryDirectory ();
-    BeFileName docsPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetDocumentsDirectory ();
+    BeFileName tempPathName = MobileDgnApplication::App().GetApplicationPaths().GetTemporaryDirectory();
+    BeFileName docsPathName = MobileDgnApplication::App().GetApplicationPaths().GetDocumentsDirectory();
     tempPathName.AppendToPath(wFilename.c_str());
     docsPathName.AppendToPath(wFilename.c_str());
 
@@ -1031,7 +1026,7 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
     Utf8String docUrl = Connect::GetWsgUrl() + "/Datasources/" + datasourceId + "/Files/Document/" + docId;
 
     HttpRequest firstRequest = CreateGetRequest(docUrl, false);
-    firstRequest.SetFollowRedirects (false);
+    firstRequest.SetFollowRedirects(false);
     HttpResponse response = firstRequest.Perform();
     Json::Value data;
     SetJsonDocData(data, datasourceId, docId, filename);
@@ -1042,46 +1037,46 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
         return;
         }
 
-    if (response.GetHeaders ().GetValue ("Location") == nullptr)
+    if (response.GetHeaders().GetValue("Location") == nullptr)
         {
         SendStatusToUIThread(DownloadFileAction, UnexpectedResponseError, data);
         return;
         }
-    docUrl = response.GetHeaders ().GetValue ("Location");
+    docUrl = response.GetHeaders().GetValue("Location");
 
-    HttpRequest httpRequest = CreateGetRequest (docUrl, false, false);
+    HttpRequest httpRequest = CreateGetRequest(docUrl, false, false);
 
-    httpRequest.SetResponseBody (HttpFileBody::Create (tempPathName));
-    httpRequest.SetDownloadProgressCallback (
-         [=] (double bytesDownloaded, double bytesTotal)
-             {
-             bool isProgressKnown = 0 != bytesTotal;
-             if (isProgressKnown)
-                 {
-                 Json::Value data;
-                 SetJsonDocData(data, datasourceId, docId, filename);
-                 data["isProgressKnown"] = isProgressKnown;
-                 data["bytesDownloaded"] = bytesDownloaded;
-                 data["bytesTotal"] = bytesTotal;
-                 SendJsonMessageToUiThread(CS_MESSAGE_DownloadProgress, data);
-                 }
-             });
+    httpRequest.SetResponseBody(HttpFileBody::Create(tempPathName));
+    httpRequest.SetDownloadProgressCallback(
+        [=] (double bytesDownloaded, double bytesTotal)
+        {
+        bool isProgressKnown = 0 != bytesTotal;
+        if (isProgressKnown)
+            {
+            Json::Value data;
+            SetJsonDocData(data, datasourceId, docId, filename);
+            data["isProgressKnown"] = isProgressKnown;
+            data["bytesDownloaded"] = bytesDownloaded;
+            data["bytesTotal"] = bytesTotal;
+            SendJsonMessageToUiThread(CS_MESSAGE_DownloadProgress, data);
+            }
+        });
     httpRequest.SetRetryOptions(HttpRequest::ResumeTransfer);
-    httpRequest.SetTimeoutSeconds (HTTP_FILE_DOWNLOAD_TIMEOUT);
+    httpRequest.SetTimeoutSeconds(HTTP_FILE_DOWNLOAD_TIMEOUT);
 
     HttpResponse httpResponse = httpRequest.Perform();
 
-//    if (httpResponse.Status() != HttpResponse::OK)
-//        {
-//        printf("Download error: %s\n", Json::FastWriter().write(httpResponse.Body().AsJson()).c_str());
-//        }
-//    printf("Download headers: \n");
-//    for (auto it : httpResponse.Headers().Map())
-//        {
-//        printf("%s: %s\n", it.first.c_str(), it.second.c_str());
-//        }
+    //    if (httpResponse.Status() != HttpResponse::OK)
+    //        {
+    //        printf("Download error: %s\n", Json::FastWriter().write(httpResponse.Body().AsJson()).c_str());
+    //        }
+    //    printf("Download headers: \n");
+    //    for (auto it : httpResponse.Headers().Map())
+    //        {
+    //        printf("%s: %s\n", it.first.c_str(), it.second.c_str());
+    //        }
 
-    if (IsRedirectToStsLogin (httpResponse))
+    if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)
             {
@@ -1094,10 +1089,10 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
             DownloadFile(messageObj, true);
             }
         }
-    else 
+    else
         {
         StatusCode result = UnknownError;
-        
+
         if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
             {
             result = NetworkError;
@@ -1106,7 +1101,7 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
             {
             result = OK;
             }
-        
+
         if (result == OK)
             {
             BeFileName::BeMoveFile(tempPathName, docsPathName);
@@ -1137,7 +1132,7 @@ void ConnectSpaces::DownloadFile(JsonValueCR messageObj, bool getNewToken)
                 {
                 int64_t localUnixModTime;
                 remoteModTime.ToUnixMilliseconds(localUnixModTime);
-                time_t localFileTime = (time_t)(localUnixModTime / 1000);
+                time_t localFileTime = (time_t) (localUnixModTime / 1000);
                 BeFileName::SetFileTime(docsPathName, NULL, &localFileTime);
                 }
             SendJsonMessageToUiThread(CS_MESSAGE_FileDownloaded, messageObj);
@@ -1159,23 +1154,23 @@ void ConnectSpaces::DownloadFileAsync(JsonValueCR messageObj)
     ConnectSpaces* spaces = new ConnectSpaces(*this);
     m_credentialsCriticalSection.Leave();
     s_dlThreadPool->ExecuteAsync(
-        [=]()
-            {
-            spaces->DownloadFile(messageObj);
-            delete spaces;
-            }/*FIXME,
-        [=]()
-            {
-            spaces->Cancel();
-            delete spaces;
-            }*/);
+        [=] ()
+        {
+        spaces->DownloadFile(messageObj);
+        delete spaces;
+        }/*FIXME,
+    [=]()
+    {
+    spaces->Cancel();
+    delete spaces;
+    }*/);
     }
 
 Json::Value ConnectSpaces::AppendFileStatus(JsonValueCR itemObj)
     {
     Utf8String filename(itemObj["Name"].asString());
     WString wFilename(filename.c_str(), true);
-    BeFileName docsPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetDocumentsDirectory ();
+    BeFileName docsPathName = MobileDgnApplication::App().GetApplicationPaths().GetDocumentsDirectory();
     docsPathName.AppendToPath(wFilename.c_str());
     FileStatus status = MissingStatus;
     DateTime remoteModTime;
@@ -1188,7 +1183,7 @@ Json::Value ConnectSpaces::AppendFileStatus(JsonValueCR itemObj)
             int64_t remoteUnixMillisModTime;
 
             remoteModTime.ToUnixMilliseconds(remoteUnixMillisModTime);
-            time_t remoteUnixModTime = (time_t)(remoteUnixMillisModTime / 1000);
+            time_t remoteUnixModTime = (time_t) (remoteUnixMillisModTime / 1000);
             if (remoteUnixModTime > localUnixModTime)
                 {
                 status = NeedsUpdateStatus;
@@ -1201,7 +1196,7 @@ Json::Value ConnectSpaces::AppendFileStatus(JsonValueCR itemObj)
         }
 
     Json::Value withStatus(itemObj);
-    withStatus[CS_MESSAGE_FIELD_fileStatus] = (int)status;
+    withStatus[CS_MESSAGE_FIELD_fileStatus] = (int) status;
 
     return withStatus;
     }
@@ -1294,7 +1289,7 @@ bool ConnectSpaces::OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj
 
 void ConnectSpaces::DecreaseDates()
     {
-    BeFileName docsPathName = MobileDgnApplication::App ().GetApplicationPaths ().GetDocumentsDirectory();
+    BeFileName docsPathName = MobileDgnApplication::App().GetApplicationPaths().GetDocumentsDirectory();
     bvector<BeFileName> imodelPaths;
     BeDirectoryIterator::WalkDirsAndMatch(imodelPaths, docsPathName, L"*.imodel", false);
     int i = 0;
@@ -1307,11 +1302,10 @@ void ConnectSpaces::DecreaseDates()
                 {
                 fileTime -= 3600;
                 BeFileName::SetFileTime(it->c_str(), NULL, &fileTime);
-                printf("Date moved back one hour for %s\n", Utf8String (*it).c_str());
+                printf("Date moved back one hour for %s\n", Utf8String(*it).c_str());
                 }
             }
         }
     }
 
 #endif
-

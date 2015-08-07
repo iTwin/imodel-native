@@ -26,14 +26,14 @@ struct ServerQueryHelper
         const ISelectProvider& m_selectProvider;
 
     private:
-        static bset<ECPropertyCP> GetRequiredProperties (ECPropertyCP ecProperty);
+        static bset<ECPropertyCP> GetRequiredProperties(ECPropertyCP ecProperty);
 
     public:
-        WSCACHE_EXPORT ServerQueryHelper (const ISelectProvider& selectProvider);
+        WSCACHE_EXPORT ServerQueryHelper(const ISelectProvider& selectProvider);
 
         //! Returns empty when selecting all classes
-        WSCACHE_EXPORT bset<Utf8String> GetAllSelectedProperties (const ECSchemaList& ecSchemas) const;
-        WSCACHE_EXPORT Utf8String GetSelect (ECClassCR ecClass) const;
+        WSCACHE_EXPORT bset<Utf8String> GetAllSelectedProperties(const ECSchemaList& ecSchemas) const;
+        WSCACHE_EXPORT Utf8String GetSelect(ECClassCR ecClass) const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

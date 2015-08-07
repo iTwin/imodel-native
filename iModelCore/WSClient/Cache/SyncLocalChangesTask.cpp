@@ -456,7 +456,6 @@ BentleyStatus SyncLocalChangesTask::BuildSyncJson(IDataSourceCache& cache, Chang
     return SUCCESS;
     }
 
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/

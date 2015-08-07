@@ -19,12 +19,12 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 class ECDbDebugInfo
     {
-private:
-    ECDbAdapter m_dbAdapter;
+    private:
+        ECDbAdapter m_dbAdapter;
 
-public:
-    WSCACHE_EXPORT ECDbDebugInfo (ObservableECDb& ecDb);
-    WSCACHE_EXPORT Utf8String GetDataDebugInfo(ECSchemaCP schema);
+    public:
+        WSCACHE_EXPORT ECDbDebugInfo(ObservableECDb& ecDb);
+        WSCACHE_EXPORT Utf8String GetDataDebugInfo(ECSchemaCP schema);
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -33,18 +33,18 @@ public:
 //! Class that simplifies cache state logging. Constructor and destructor will write ECDbDebugInfo::GetDataDebugInfo debug log for specified schemas.
 class ECDbDebugInfoHolder
     {
-private:
-    ECDbDebugInfo m_info;
-    bvector<ECSchemaCP> m_schemas;
-    Utf8String m_message;
-    Utf8String m_context;
+    private:
+        ECDbDebugInfo m_info;
+        bvector<ECSchemaCP> m_schemas;
+        Utf8String m_message;
+        Utf8String m_context;
 
-private:
-    void Log (Utf8StringCR context);
+    private:
+        void Log(Utf8StringCR context);
 
-public:
-    WSCACHE_EXPORT ECDbDebugInfoHolder (ObservableECDb& ecDb, const bvector<ECSchemaCP>& schemas, Utf8StringCR message, Utf8StringCR context);
-    WSCACHE_EXPORT ~ECDbDebugInfoHolder();
+    public:
+        WSCACHE_EXPORT ECDbDebugInfoHolder(ObservableECDb& ecDb, const bvector<ECSchemaCP>& schemas, Utf8StringCR message, Utf8StringCR context);
+        WSCACHE_EXPORT ~ECDbDebugInfoHolder();
     };
 
 #ifdef DEBUG

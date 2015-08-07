@@ -22,10 +22,10 @@ struct ConnectTokenProvider : public IConnectTokenProvider
         std::shared_ptr<IConnectAuthenticationPersistence> m_persistence;
 
     public:
-        WSCLIENT_EXPORT ConnectTokenProvider (std::shared_ptr<IConnectAuthenticationPersistence> customPersistence = nullptr);
+        WSCLIENT_EXPORT ConnectTokenProvider(std::shared_ptr<IConnectAuthenticationPersistence> customPersistence = nullptr);
 
-        WSCLIENT_EXPORT SamlTokenPtr UpdateToken () override;
-        WSCLIENT_EXPORT SamlTokenPtr GetToken () override;
+        WSCLIENT_EXPORT SamlTokenPtr UpdateToken() override;
+        WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

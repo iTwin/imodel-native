@@ -18,12 +18,11 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ITransactionHandler
     {
     public:
-        virtual ~ITransactionHandler ()
-            {
-            };
+        virtual ~ITransactionHandler()
+            {};
 
-        virtual BentleyStatus CommitTransaction () = 0;
-        virtual BentleyStatus RollbackTransaction () = 0;
+        virtual BentleyStatus CommitTransaction() = 0;
+        virtual BentleyStatus RollbackTransaction() = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

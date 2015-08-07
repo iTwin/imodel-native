@@ -18,14 +18,13 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct IConnectTokenProvider
     {
     public:
-        virtual ~IConnectTokenProvider ()
-            {
-            };
+        virtual ~IConnectTokenProvider()
+            {};
 
         //! Update cached token and return it. Return null if token cannot be retrieved
-        virtual SamlTokenPtr UpdateToken () = 0;
+        virtual SamlTokenPtr UpdateToken() = 0;
         //! Return cached token. Return null if token is not cached
-        virtual SamlTokenPtr GetToken () = 0;
+        virtual SamlTokenPtr GetToken() = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

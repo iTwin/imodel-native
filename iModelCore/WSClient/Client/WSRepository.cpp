@@ -10,14 +10,13 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepository::WSRepository ()
-    {
-    }
+WSRepository::WSRepository()
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSRepository::GetId () const
+Utf8StringCR WSRepository::GetId() const
     {
     return m_id;
     }
@@ -25,15 +24,15 @@ Utf8StringCR WSRepository::GetId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepository::SetId (Utf8String id)
+void WSRepository::SetId(Utf8String id)
     {
-    m_id = std::move (id);
+    m_id = std::move(id);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSRepository::GetLocation () const
+Utf8StringCR WSRepository::GetLocation() const
     {
     return m_location;
     }
@@ -41,15 +40,15 @@ Utf8StringCR WSRepository::GetLocation () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepository::SetLocation (Utf8String location)
+void WSRepository::SetLocation(Utf8String location)
     {
-    m_location = std::move (location);
+    m_location = std::move(location);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSRepository::GetLabel () const
+Utf8StringCR WSRepository::GetLabel() const
     {
     return m_label;
     }
@@ -57,15 +56,15 @@ Utf8StringCR WSRepository::GetLabel () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepository::SetLabel (Utf8String label)
+void WSRepository::SetLabel(Utf8String label)
     {
-    m_label = std::move (label);
+    m_label = std::move(label);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSRepository::GetDescription () const
+Utf8StringCR WSRepository::GetDescription() const
     {
     return m_description;
     }
@@ -73,15 +72,15 @@ Utf8StringCR WSRepository::GetDescription () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepository::SetDescription (Utf8String description)
+void WSRepository::SetDescription(Utf8String description)
     {
-    m_description = std::move (description);
+    m_description = std::move(description);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSRepository::GetPluginId () const
+Utf8StringCR WSRepository::GetPluginId() const
     {
     return m_pluginId;
     }
@@ -89,7 +88,7 @@ Utf8StringCR WSRepository::GetPluginId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSRepository::SetPluginId (Utf8String pluginId)
+void WSRepository::SetPluginId(Utf8String pluginId)
     {
-    m_pluginId = std::move (pluginId);
+    m_pluginId = std::move(pluginId);
     }

@@ -18,17 +18,16 @@ IHttpHeaderProviderPtr defaultHeadersProvider,
 IWSSchemaProviderPtr schemaProvider,
 IHttpHandlerPtr customHandler
 ) :
-m_serverUrl (serverUrl),
-m_repositoryId (repositoryId),
-m_schemaProvider (schemaProvider),
-m_httpClient (std::make_shared<HttpClient> (defaultHeadersProvider, customHandler))
-    {
-    }
+m_serverUrl(serverUrl),
+m_repositoryId(repositoryId),
+m_schemaProvider(schemaProvider),
+m_httpClient(std::make_shared<HttpClient>(defaultHeadersProvider, customHandler))
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ClientConfiguration::GetServerUrl () const
+Utf8StringCR ClientConfiguration::GetServerUrl() const
     {
     return m_serverUrl;
     }
@@ -36,7 +35,7 @@ Utf8StringCR ClientConfiguration::GetServerUrl () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ClientConfiguration::GetRepositoryId () const
+Utf8StringCR ClientConfiguration::GetRepositoryId() const
     {
     return m_repositoryId;
     }
@@ -44,7 +43,7 @@ Utf8StringCR ClientConfiguration::GetRepositoryId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-HttpClientR ClientConfiguration::GetHttpClient () const
+HttpClientR ClientConfiguration::GetHttpClient() const
     {
     return *m_httpClient;
     }
@@ -52,11 +51,11 @@ HttpClientR ClientConfiguration::GetHttpClient () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName ClientConfiguration::GetDefaultSchemaPath (WSInfoCR info) const
+BeFileName ClientConfiguration::GetDefaultSchemaPath(WSInfoCR info) const
     {
     if (nullptr == m_schemaProvider)
         {
-        return BeFileName ();
+        return BeFileName();
         }
-    return m_schemaProvider->GetSchema (info);
+    return m_schemaProvider->GetSchema(info);
     }

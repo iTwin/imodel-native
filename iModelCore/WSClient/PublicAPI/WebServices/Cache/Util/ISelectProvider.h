@@ -27,21 +27,20 @@ struct EXPORT_VTABLE_ATTRIBUTE ISelectProvider
         typedef bvector<SortProperty> SortProperties;
 
     public:
-        virtual ~ISelectProvider ()
-            {
-            };
+        virtual ~ISelectProvider()
+            {};
 
         //! Return properties that should be selected for class instances. Return null to not select instances of this class.
         //! Default returns select all.
-        WSCACHE_EXPORT virtual std::shared_ptr<SelectProperties> GetSelectProperties (ECClassCR ecClass) const;
+        WSCACHE_EXPORT virtual std::shared_ptr<SelectProperties> GetSelectProperties(ECClassCR ecClass) const;
 
         //! Return integer priority to sort instances by class.
         //! Default returns 0.
-        WSCACHE_EXPORT virtual int GetSortPriority (ECClassCR ecClass) const;
+        WSCACHE_EXPORT virtual int GetSortPriority(ECClassCR ecClass) const;
 
         //! Return ordered properties that are used to sort class instances.
         //! Default returns no sorting properties.
-        WSCACHE_EXPORT virtual SortProperties GetSortProperties (ECClassCR ecClass) const;
+        WSCACHE_EXPORT virtual SortProperties GetSortProperties(ECClassCR ecClass) const;
     };
 
 typedef const ISelectProvider& ISelectProviderCR;
@@ -60,19 +59,19 @@ struct ISelectProvider::SelectProperties
 
     public:
         // Default constructor to select all properties and instance id
-        WSCACHE_EXPORT SelectProperties ();
+        WSCACHE_EXPORT SelectProperties();
 
-        WSCACHE_EXPORT void AddProperty (ECPropertyCP ecProperty);
-        WSCACHE_EXPORT const bvector<ECPropertyCP>& GetProperties () const;
+        WSCACHE_EXPORT void AddProperty(ECPropertyCP ecProperty);
+        WSCACHE_EXPORT const bvector<ECPropertyCP>& GetProperties() const;
 
-        WSCACHE_EXPORT void AddExtendedProperty (Utf8StringCR extendedProperty);
-        WSCACHE_EXPORT const bvector<Utf8String>& GetExtendedProperties () const;
+        WSCACHE_EXPORT void AddExtendedProperty(Utf8StringCR extendedProperty);
+        WSCACHE_EXPORT const bvector<Utf8String>& GetExtendedProperties() const;
 
-        WSCACHE_EXPORT void SetSelectInstanceId (bool selectInstanceId);
-        WSCACHE_EXPORT bool GetSelectInstanceId () const;
+        WSCACHE_EXPORT void SetSelectInstanceId(bool selectInstanceId);
+        WSCACHE_EXPORT bool GetSelectInstanceId() const;
 
-        WSCACHE_EXPORT void SetSelectAll (bool selectAll);
-        WSCACHE_EXPORT bool GetSelectAll () const;
+        WSCACHE_EXPORT void SetSelectAll(bool selectAll);
+        WSCACHE_EXPORT bool GetSelectAll() const;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -85,9 +84,9 @@ struct ISelectProvider::SortProperty
         bool m_ascending;
 
     public:
-        WSCACHE_EXPORT SortProperty (ECPropertyCR ecProperty, bool ascending = true);
-        WSCACHE_EXPORT ECPropertyCR GetProperty () const;
-        WSCACHE_EXPORT bool GetSortAscending () const;
+        WSCACHE_EXPORT SortProperty(ECPropertyCR ecProperty, bool ascending = true);
+        WSCACHE_EXPORT ECPropertyCR GetProperty() const;
+        WSCACHE_EXPORT bool GetSortAscending() const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

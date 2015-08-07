@@ -57,12 +57,12 @@ struct ChangeManager : public IChangeManager
             uint64_t optionalChangeNumber
             );
 
-        BentleyStatus CommitObjectCreation (ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
-        BentleyStatus CommitRelationshipCreation (ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
-        BentleyStatus CommitObjectChange (ECInstanceKeyCR instanceKey);
-        BentleyStatus CommitRelationshipChange (ECInstanceKeyCR instanceKey);
+        BentleyStatus CommitObjectCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
+        BentleyStatus CommitRelationshipCreation(ECInstanceKeyCR instanceKey, Utf8StringCR newRemoteId);
+        BentleyStatus CommitObjectChange(ECInstanceKeyCR instanceKey);
+        BentleyStatus CommitRelationshipChange(ECInstanceKeyCR instanceKey);
 
-        Utf8String CreateRemoteId ();
+        Utf8String CreateRemoteId();
 
     public:
         WSCACHE_EXPORT ChangeManager
@@ -81,17 +81,17 @@ struct ChangeManager : public IChangeManager
 
         // -- Making local changes to existing data --
 
-        WSCACHE_EXPORT bool IsSyncActive () const override;
-        WSCACHE_EXPORT void SetSyncActive (bool active) override;
+        WSCACHE_EXPORT bool IsSyncActive() const override;
+        WSCACHE_EXPORT void SetSyncActive(bool active) override;
 
-        WSCACHE_EXPORT ECInstanceKey LegacyCreateObject (ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) override;
-        WSCACHE_EXPORT ECRelationshipClassCP GetLegacyParentRelationshipClass () override;
+        WSCACHE_EXPORT ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT ECRelationshipClassCP GetLegacyParentRelationshipClass() override;
 
-        WSCACHE_EXPORT ECInstanceKey CreateObject (ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT ECInstanceKey CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
 
-        WSCACHE_EXPORT BentleyStatus ModifyObject (ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT BentleyStatus ModifyObject(ECInstanceKeyCR instanceKey, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) override;
 
-        WSCACHE_EXPORT BentleyStatus DeleteObject (ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT BentleyStatus DeleteObject(ECInstanceKeyCR instanceKey, SyncStatus syncStatus = SyncStatus::Ready) override;
 
         WSCACHE_EXPORT ECInstanceKey CreateRelationship
             (
@@ -107,29 +107,29 @@ struct ChangeManager : public IChangeManager
             SyncStatus syncStatus = SyncStatus::Ready
             ) override;
 
-        WSCACHE_EXPORT BentleyStatus ModifyFile (ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) override;
-        WSCACHE_EXPORT BentleyStatus SetSyncStatus (ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
+        WSCACHE_EXPORT BentleyStatus ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameCR filePath, bool copyFile, SyncStatus syncStatus = SyncStatus::Ready) override;
+        WSCACHE_EXPORT BentleyStatus SetSyncStatus(ECInstanceKeyCR instanceKey, SyncStatus syncStatus) override;
 
         // -- Getting changes --
 
-        WSCACHE_EXPORT bool HasChanges () override;
+        WSCACHE_EXPORT bool HasChanges() override;
 
-        WSCACHE_EXPORT BentleyStatus GetChanges (Changes& changesOut, bool onlyReadyToSync = false) override;
-        WSCACHE_EXPORT BentleyStatus GetChanges (ECInstanceKeyCR instanceKey, Changes& changesOut) override;
-        WSCACHE_EXPORT BentleyStatus GetCreatedRelationships (ECInstanceKeyCR endInstancekey, bvector<RelationshipChange>& changesOut) override;
+        WSCACHE_EXPORT BentleyStatus GetChanges(Changes& changesOut, bool onlyReadyToSync = false) override;
+        WSCACHE_EXPORT BentleyStatus GetChanges(ECInstanceKeyCR instanceKey, Changes& changesOut) override;
+        WSCACHE_EXPORT BentleyStatus GetCreatedRelationships(ECInstanceKeyCR endInstancekey, bvector<RelationshipChange>& changesOut) override;
 
-        WSCACHE_EXPORT ObjectChange GetObjectChange (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT RelationshipChange GetRelationshipChange (ECInstanceKeyCR relationshipKey) override;
-        WSCACHE_EXPORT FileChange GetFileChange (ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ObjectChange GetObjectChange(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT RelationshipChange GetRelationshipChange(ECInstanceKeyCR relationshipKey) override;
+        WSCACHE_EXPORT FileChange GetFileChange(ECInstanceKeyCR instanceKey) override;
 
-        WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus (ECInstanceKeyCR instance) override;
-        WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus (ECInstanceKeyCR instance) override;
+        WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instance) override;
+        WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instance) override;
 
         // -- Commiting changes --
 
-        WSCACHE_EXPORT BentleyStatus CommitCreationChanges (const std::map<ECInstanceKey, Utf8String>& newRemoteIds) override;
-        WSCACHE_EXPORT BentleyStatus CommitObjectChanges (ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT BentleyStatus CommitFileChanges (ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus CommitCreationChanges(const std::map<ECInstanceKey, Utf8String>& newRemoteIds) override;
+        WSCACHE_EXPORT BentleyStatus CommitObjectChanges(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT BentleyStatus CommitFileChanges(ECInstanceKeyCR instanceKey) override;
 
         WSCACHE_EXPORT BentleyStatus UpdateCreatedInstance
             (

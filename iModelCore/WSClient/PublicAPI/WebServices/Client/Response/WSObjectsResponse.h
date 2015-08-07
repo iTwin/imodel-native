@@ -33,26 +33,26 @@ struct WSObjectsResponse
         mutable std::shared_ptr<WSObjectsReader::Instances> m_readerInstances;
 
     private:
-        JsonValueR GetJsonValuePrivate () const;
-        std::shared_ptr<rapidjson::Document> GetRapidJsonDocumentPrivate () const;
+        JsonValueR GetJsonValuePrivate() const;
+        std::shared_ptr<rapidjson::Document> GetRapidJsonDocumentPrivate() const;
 
     public:
-        WSCLIENT_EXPORT WSObjectsResponse ();
-        WSCLIENT_EXPORT WSObjectsResponse (std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag);
+        WSCLIENT_EXPORT WSObjectsResponse();
+        WSCLIENT_EXPORT WSObjectsResponse(std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag);
 
-        WSCLIENT_EXPORT Utf8StringCR GetETag () const;
-        WSCLIENT_EXPORT bool IsModified () const;
+        WSCLIENT_EXPORT Utf8StringCR GetETag() const;
+        WSCLIENT_EXPORT bool IsModified() const;
 
         //! Lightweight wrapper to read object instances returned by server (WebApi version independant)
-        WSCLIENT_EXPORT const WSObjectsReader::Instances& GetInstances () const;
+        WSCLIENT_EXPORT const WSObjectsReader::Instances& GetInstances() const;
 
-        //! Deprecated, use GetInstances. Get WebApi version specific server response 
-        WSCLIENT_EXPORT JsonValueCR GetJsonValue () const;
-        WSCLIENT_EXPORT JsonValueR GetJsonValue ();
+        //! Deprecated, use GetInstances. Get WebApi version specific server response
+        WSCLIENT_EXPORT JsonValueCR GetJsonValue() const;
+        WSCLIENT_EXPORT JsonValueR GetJsonValue();
 
-        //! Deprecated, use GetInstances. Get WebApi version specific server response 
-        WSCLIENT_EXPORT const rapidjson::Document& GetRapidJsonDocument () const;
-        WSCLIENT_EXPORT rapidjson::Document& GetRapidJsonDocument ();
+        //! Deprecated, use GetInstances. Get WebApi version specific server response
+        WSCLIENT_EXPORT const rapidjson::Document& GetRapidJsonDocument() const;
+        WSCLIENT_EXPORT rapidjson::Document& GetRapidJsonDocument();
     };
 
 typedef const WSObjectsResponse& WSObjectsResponseCR;
