@@ -176,7 +176,7 @@ MessageList    MSGLISTID_DgnGeoCoordStrings =
     { DGNGEOCOORD_Msg_CantConvertToMilitaryGrid,              "Could not convert point to Military Grid coordinates"   },
     { DGNGEOCOORD_Msg_CantConvertFromMilitaryGrid,            "Input string is not valid a Military Grid coordinate."  },
     { DGNGEOCOORD_Msg_DatumConvertNotSetErrors,               "Warning or Error: Datum converter could not be set and resulted in %d points being possibly incorrectly reprojected; this may be the result of grid shift files not being properly installed."  },
-    { DGNGEOCOORD_Msg_VerticalConvertErrors,                  "Warning or Error: Vertical datum conversion errors occured for %d points for which elevation may have been incorrectly adjusted; this may be the result of Geoid or VERTCON files not being properly installed or configured."  },
+    { DGNGEOCOORD_Msg_VerticalConvertErrors,                  "Warning or Error: Vertical datum conversion errors occurred for %d points for which elevation may have been incorrectly adjusted; this may be the result of Geoid or VERTCON files not being properly installed or configured."  },
     
 
 
