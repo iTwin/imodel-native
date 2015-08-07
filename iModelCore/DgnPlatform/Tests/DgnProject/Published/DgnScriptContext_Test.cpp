@@ -174,4 +174,35 @@ TEST(DgnScriptTest, Test1)
         ASSERT_EQ( -1 , sres );
         }
     }
+
+/*=================================================================================**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++===============+===============+===============+===============+===============+======*/
+struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
+    {
+    void _HandleScriptError(BeJsContextR, Category category, Utf8CP description) override
+        {
+        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s", (int)category, description);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DgnScriptTest, Test2)
+    {
+    ScopedDgnHost  autoDgnHost;
+
+    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+
+    BeFileName jsFileName;
+    BeTest::GetHost().GetDocumentsRoot (jsFileName);
+    jsFileName.AppendToPath(L"DgnScriptTest.js");
+
+    Utf8String jsProgram;
+    DgnScriptLibrary::ReadText(jsProgram, jsFileName);
+
+    T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
+    }
+
 #endif

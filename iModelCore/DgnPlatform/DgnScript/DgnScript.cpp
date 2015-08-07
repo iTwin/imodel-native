@@ -266,7 +266,7 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
     if (ilib->second.second)
         return BSISUCCESS;
 
-    ilib->second.first->_ImportScriptLibrary(*m_jsContext, libName);
+    ilib->second.first->_ImportScriptLibrary(GetDgnScriptContext(), libName);
     ilib->second.second = true;
     return BSISUCCESS;
     }
@@ -278,7 +278,7 @@ void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptErrorHandler::C
     {
     if (nullptr == m_errorHandler)
         return;
-    m_errorHandler->_HandleScriptError(*m_jsContext, category, description);
+    m_errorHandler->_HandleScriptError(GetDgnScriptContext(), category, description);
     }
 
 //---------------------------------------------------------------------------------------
@@ -312,4 +312,13 @@ DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, D
     {
     DgnScriptLibrary jslib(db);
     return jslib.QueryScript(sText, stypeFound, sName, stypePreferred);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP script)
+    {
+    /*auto res = */GetDgnScriptContext().EvaluateScript(script);
+    //m_jsContext->
     }

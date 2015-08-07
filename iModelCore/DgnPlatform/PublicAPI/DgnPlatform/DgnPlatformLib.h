@@ -149,6 +149,8 @@ public:
             //! @param libName  the library's unique ID that will be requested by script client programs
             DGNPLATFORM_EXPORT BentleyStatus ImportScriptLibrary(Utf8CP libName); 
 
+            DGNPLATFORM_EXPORT void/*Json::Value*/ EvaluateScript(Utf8CP script);
+
             //! Clean up
             DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;
             };
