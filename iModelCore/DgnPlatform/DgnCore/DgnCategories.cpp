@@ -503,7 +503,7 @@ static DgnSubCategoryId importSubCategory(DgnRemapTables& remap, DgnDbR destDb, 
         }
 
     if (!destSubCategoryId.IsValid())
-        destSubCategoryId;
+        return destSubCategoryId;
 
     return remap.Add(sourceSubCat.GetSubCategoryId(), destSubCategoryId);
     }

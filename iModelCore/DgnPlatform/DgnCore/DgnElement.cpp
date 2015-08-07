@@ -256,6 +256,14 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnReversedDelete() const
+    {
+    GetModel()->_OnReversedDeleteElement(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     {
     if (m_classId != original.m_classId)
@@ -317,6 +325,18 @@ void DgnElement::_OnDeleted() const
     DgnModelPtr model = GetModel();
     if (model.IsValid())
         model->_OnDeletedElement(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnReversedAdd() const
+    {
+    CallAppData(OnDeletedCaller());
+    GetDgnDb().Elements().DropFromPool(*this);
+    DgnModelPtr model = GetModel();
+    if (model.IsValid())
+        model->_OnReversedAddElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
