@@ -72,7 +72,7 @@ void            OnNewElement ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _SetDrawViewFlags (ViewFlagsCP flags) override
+virtual void    _SetDrawViewFlags (ViewFlags flags) override
     {
     T_Super::_SetDrawViewFlags (flags);
 
@@ -364,9 +364,7 @@ StatusInt ProcessCurve (MSBsplineCurveCP curveP, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isWireframeDisplay (ViewContextR context)
     {
-    ViewFlagsCP flags = context.GetViewFlags();
-
-    return (nullptr != flags && DgnRenderMode::Wireframe == flags->GetRenderMode());
+    return (DgnRenderMode::Wireframe == context.GetViewFlags().GetRenderMode());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1140,14 +1138,14 @@ int             nPoints
 
         m_transform.Multiply(rotatedViewOrigin, viewOrigin);
 
-        if (!m_viewport->GetViewFlags()->noFrontClip)
+        if (!m_viewport->GetViewFlags().noFrontClip)
             {
             zHigh = rotatedViewOrigin.z + m_viewport->GetViewDelta()->z;
             clipMask = clipMask | ClipMask::ZHigh;
             pZHigh = &zHigh;
             }
 
-        if (!m_viewport->GetViewFlags()->noBackClip)
+        if (!m_viewport->GetViewFlags().noBackClip)
             {
             zLow = rotatedViewOrigin.z;
             clipMask = clipMask | ClipMask::ZLow;

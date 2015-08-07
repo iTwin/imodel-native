@@ -515,418 +515,416 @@ public:
     DGNPLATFORM_EXPORT static void DirectPopTransClipOutput(IDrawGeomR); //<! @private
 
 public:
-
-DGNPLATFORM_EXPORT StatusInt VisitElement(GeometricElementCR);    
-
-/// @name Coordinate Query and Conversion
-//@{
-
-//! Transform an array of points in the current local coordinate system into DgnCoordSystem::World coordinates.
-//! @param[out]     worldPts    An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
-//! @param[in]      localPts    Input array in current local coordinates,
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void LocalToWorld(DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const;
-
-//! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
-//! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in]      localPts    Input array in current local coordinates,
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const;
-
-//! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
-//! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
-//! @param[in]      localPts    Input array in current local coordinates,
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::World into the current local coordinate system.
-//! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToLocal(DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
-//! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
-//! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
-//! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
-//! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
-//! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-//! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-//! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPt, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
-//! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-//! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
-
-//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
-//! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      viewPts     Input array in DgnCoordSystem::View.
-//! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP WorldPts, DPoint3dCP viewPts, int nPts) const;
-
-//! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
-//! @return   NULL if no transform present.
-DGNPLATFORM_EXPORT TransformCP GetCurrLocalToWorldTransformCP () const;
-
-//! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::World.
-//! @param[out]     trans       Transform from current local coordinate system to DgnCoordSystem::World
-//! @return   SUCCESS if there is a current local coordinate system.
-DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans(TransformR trans) const;
-
-//! Retrieve a copy of the transform from the DgnCoordSystem::World to current local coordinate system.
-//! @param[out]     trans       Transform from DgnCoordSystem::World to current local coordinate system
-//! @return   SUCCESS if there is a current local coordinate system.
-DGNPLATFORM_EXPORT BentleyStatus GetCurrWorldToLocalTrans(TransformR trans) const;
-
-//! Retrieve a copy of the transform from the local coordinate system at the specified index into DgnCoordSystem::World.
-//! @param[out]     trans  Transform from local coordinate system at the specified index to DgnCoordSystem::World
-//! @param[in]      index  Index into transform stack to return transform for.
-//! @return   SUCCESS if there is a local coordinate system.
-DGNPLATFORM_EXPORT BentleyStatus GetLocalToWorldTrans(TransformR trans, size_t index) const;
-
-//! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
-//! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
-//! @param[in]      origin      The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
-//!                             closer to the eye are larger than those further from the eye. May be NULL, in which case the center of the view is used.
-//! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
-DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
-
-//! Get transform aligned with current view rotation.
-DGNPLATFORM_EXPORT void GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal);
-
-//! Check whether the current transform is view independent. Several MicroStation element types can display
-//! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current
-//! view-to-local transformation via #PushViewIndependentOrigin.
-//! @return   true if the current local coordinate system is a view independent transform.
-DGNPLATFORM_EXPORT bool IsViewIndependent();
-//@}
-
-/// @name Pushing and Popping Transforms and Clips
-//@{
-//! Push a Transform, creating a new local coordinate system.
-//! @param[in]      trans       The transform to push.
-//! @see   PopTransformClip
-DGNPLATFORM_EXPORT void PushTransform(TransformCR trans);
-
-/// @name Pushing and Popping Transforms and Clips
-//@{
-//! Push a ClipVector, creating a new local clip region.
-//! @param[in]      clip       A clipping descriptor to push.
-//! @see   PopTransformClip
-DGNPLATFORM_EXPORT void PushClip(ClipVectorCR clip);
-
-//! Push a set of clip planes, creating a new local clip region.
-//! @param[in]      clipPlanes  Clipping planes to push - the intersections of their half planes define clip region.
-//! @see   PopTransformClip
-DGNPLATFORM_EXPORT void PushClipPlanes(ClipPlaneSetCR clipPlanes);
-
-//! Push a transform such that the X,Y plane of the new local coordinate system will be aligned with the X,Y plane of the
-//! view coordinate system, oriented about the given origin.
-//! @param[in]      origin      Origin for rotation, in the \e current local coordinate system.
-DGNPLATFORM_EXPORT void PushViewIndependentOrigin(DPoint3dCP origin);
-
-//! Remove the most recently pushed coordinate system and clip, restoring the local coordinate system to its previous state.
-DGNPLATFORM_EXPORT void PopTransformClip();
-//@}
-
-/// @name Query Methods
-//@{
-
-//! Get the current state of the ViewFlags for this context's output, can be NULL.
-//! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
-//! from the DgnViewport's viewflags. However, during the course of an operation,
-//! the viewflags for the output may be different than those on the DgnViewport.
-//! @return   the current state of the viewflags for this ViewContext.
-DGNPLATFORM_EXPORT ViewFlagsCP GetViewFlags() const;
-
-//! Sets the current state of the ViewFlags for this context's output.
-DGNPLATFORM_EXPORT void SetViewFlags(ViewFlagsCP);
-
-//! Get the DgnDb for this ViewContext.
-DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
-
-//! Get the current persistent element being visited by this ViewContext.
-DGNPLATFORM_EXPORT GeometricElementCP GetCurrentElement() const;
-
-/** @cond BENTLEY_SDK_Scope1 */
-//! Set the project for this ViewContext when not attaching a viewport.
-DGNPLATFORM_EXPORT void SetDgnDb(DgnDbR);
-
-//! Set or clear the current persistent element.
-DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
-/** @endcond */
-
-//! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
-//! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)
-DGNPLATFORM_EXPORT DrawPurpose GetDrawPurpose() const;
-
-//! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
-//! DgnViewport, so therefore callers must always test the result of this call for NULL.
-//! @return the DgnViewport. NULL if not attached to a DgnViewport.
-DGNPLATFORM_EXPORT DgnViewportP GetViewport() const;
-
-DGNPLATFORM_EXPORT bool Is3dView() const;
-DGNPLATFORM_EXPORT bool IsCameraOn() const;
-//@}
-
-//! Get the clip planes that define the limits of the displayed volume.  This will include
-//! planes for the top,bottom,left and right sides of the view and optionally the front
-//! and back planes if they are enabled.
-//! @return the clip planes set.
-DGNPLATFORM_EXPORT ClipPlaneSetCP GetRangePlanes() const;
-
-/// @name Get/Set Current Display Parameters
-//@{
-
-//__PUBLISH_SECTION_END__
-
-//! Get the current LineStyleSymb.
-//! @return the current LineStyleSymb.
-//DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
-
-//! Set the linestyle in the current linestyle MatSymb. This method is mainly used to temporarily clear the current
-//! linestyle, for pieces of geometry that are to be drawn solid. To do that, call GetCurrLineStyle and save the
-//! current value. Then call this method passing NULL and when you're done, call this method again to restore the saved linestyle.
-//! @param[in]      lstyle      The new current linestyle. If NULL, no (solid) linestyle is used.
-//DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
-
-DGNPLATFORM_EXPORT bool& GetUseCachedGraphics();
-DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
-
-//! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.
-//! @note Does NOT call ActivateMatSymb on the output or change the current ElemDisplayParams/ElemMatSymb of the context.
-DGNPLATFORM_EXPORT void CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR);
-
-//! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied OvrMatSymb.
-//! @note Does NOT call ActivateOverrideMatSymb on the output or change the current ElemDisplayParams/OvrMatSymb of the context.
-DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR);
-
-//__PUBLISH_SECTION_START__
-
-//DGNPLATFORM_EXPORT ColorDef GetCurrLineColor ();
-//DGNPLATFORM_EXPORT ColorDef GetCurrFillColor ();
-//DGNPLATFORM_EXPORT uint32_t GetCurrWidth ();
-
-//! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
-//! @return the net display priority. For 3D views, display priority is always 0.
-DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearance = nullptr) const;
-
-//! Get the current ElemMatSymb.
-//! @return   the current ElemMatSymb.
-DGNPLATFORM_EXPORT ElemMatSymbP GetElemMatSymb();
-
-//! Get the current OvrMatSymb.
-//! @return the current OvrMatSymb.
-DGNPLATFORM_EXPORT OvrMatSymbP GetOverrideMatSymb();
-
-//! Get the current ElemDisplayParams.
-//! @return the current ElemDisplayParams.
-DGNPLATFORM_EXPORT ElemDisplayParamsP GetCurrentDisplayParams();
-
-//! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
-//! @note Calls ActivateMatSymb on the output.
-DGNPLATFORM_EXPORT void CookDisplayParams();
-
-//! Change the current ElemDisplayParams for any context overrides. Cooks the modified ElemDisplayParams into the current OvrMatSymb using the current override flags.
-//! @note Calls ActivateOverrideMatSymb on the output.
-DGNPLATFORM_EXPORT void CookDisplayParamsOverrides();
-
-//! Clears current override flags and re-applies context overrides.
-//! @note Calls ActivateOverrideMatSymb on the output.
-DGNPLATFORM_EXPORT void ResetContextOverrides();
-
-//__PUBLISH_SECTION_END__
-
-//! Gets the current level of detail.
-//! @return       the current level of detail.
-DGNPLATFORM_EXPORT double GetCurrentLevelOfDetail() const;
-
-
-//! Sets the current level of detail.
-DGNPLATFORM_EXPORT void SetCurrentLevelOfDetail(double levelOfDetail);
-
-//! Check the current display style for a monochrome color override.
-//! @return       whether monochrome style is currently active.
-DGNPLATFORM_EXPORT bool IsMonochromeDisplayStyleActive();
-DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometricElementCR);
-
-DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
-
-//__PUBLISH_SECTION_START__
-//@}
-
-/// @name Methods to Retrieve Related Interfaces from a ViewContext
-//@{
-
-//! Get the IViewDraw interface for this ViewContext. Usually, but not always, this will be the IViewDraw from the viewport to which this
-//! context is attached.
-//! @return   the IViewDraw for this context
-DGNPLATFORM_EXPORT IViewDrawR GetIViewDraw();
-
-//! Get the IDrawGeom interface for this ViewContext. Applications should use this method to draw geometry in Draw methods.
-//! @return   the IDrawGeom for this context
-DGNPLATFORM_EXPORT IDrawGeomR GetIDrawGeom();
-
-/** @cond BENTLEY_SDK_Scope1 */
-//! Get the ICachedDraw interface for this ViewContext.
-//! @return   the ICachedDraw for this context.
-DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw();
-
-//! Check whether we are creating a cached presentation.
-//! @return   true if we're in the process of creating a cache presentation.
-DGNPLATFORM_EXPORT bool CheckICachedDraw();
-/** @endcond */
-
-//! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-NULL value.
-//! @return the IPickGeom interface for this context. May return NULL.
-DGNPLATFORM_EXPORT IPickGeomP GetIPickGeom();
-
-//@}
-
-/// @name Identifying element "topology".
-//@{
-//! Query the current IElementTopology.
-//! @return An object that holds additional information about the graphics that are currently being drawn.
-DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
-
-//! Set the current IElementTopology.
-//! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
-DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
-
-//! Query the current GeomStreamEntryId.
-DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const;
-
-//! Set the current GeomStreamEntryId.
-DGNPLATFORM_EXPORT void SetGeomStreamEntryId(GeomStreamEntryId geomId);
-
-//@}
-
-//__PUBLISH_SECTION_END__
-DGNPLATFORM_EXPORT bool WantAreaPatterns();
-DGNPLATFORM_EXPORT void DrawAreaPattern(ClipStencil& boundary);
-//__PUBLISH_SECTION_START__
-
-/** @name Draw Geometry Using Current Linestyle */
-/** @{ */
-
-//! Draw a 2D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
-//! @param[in]      nPts        Number of vertices in \c pts.
-//! @param[in]      pts         Array of points in linestring.
-//! @param[in]      zDepth      Display priority for all vertices.
-//! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-//! @param[in]      closed      Do point represent a shape or linestring.
-DGNPLATFORM_EXPORT void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
-
-//! Draw a 3D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
-//! @param[in]      nPts        Number of vertices in \c pts.
-//! @param[in]      pts         Array of points in linestring
-//! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
-//!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
-//! @param[in]      closed      Do point represent a shape or linestring.
-DGNPLATFORM_EXPORT void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
-
-//! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
-//! @param[in]      ellipse     The arc data.
-//! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
-//! @param[in]      zDepth      Z depth value.
-//! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-//!                               optional and is only used to speed processing. If you do not already have the range, pass NULL.
-DGNPLATFORM_EXPORT void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range);
-
-//! Draw a 3D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
-//! @param[in]      ellipse     The arc data.
-//! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
-//! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
-//!                               optional and is only used to speed processing. If you do not already have the range, pass NULL.
-DGNPLATFORM_EXPORT void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range);
-
-//! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
-//! @param        curve       bspline curve parameters
-//! @param[in]    zDepth      Z depth value.
-DGNPLATFORM_EXPORT void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth);
-
-//! Draw a BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
-//! @param        curve       bspline curve parameters
-DGNPLATFORM_EXPORT void DrawStyledBSplineCurve3d(MSBsplineCurveCR curve);
-
-//! Draw a curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
-//! @param        curve       curve geometry
-DGNPLATFORM_EXPORT void DrawStyledCurveVector3d(CurveVectorCR curve);
-
-//! Draw a 2d curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
-//! @param        curve       curve geometry
-//! @param[in]    zDepth      Z depth value.
-DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
-
-//! Draw an instance of a DisplaySymbol given a DisplaySymbol definition (an IDisplaySymbol). DisplaySymbol definitions are generally cached globally,
-//! so the first call to this method for a given symbol definition will create the cached representation, and all subsequent calls will draw
-//! instances using that cached representation.
-//! @param[in]      symbolDef        Symbol definition to draw from.
-//! @param[in]      trans            Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
-//! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be NULL.
-//! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
-//! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
-DGNPLATFORM_EXPORT void DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);
-
-//! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
-DGNPLATFORM_EXPORT void DrawTextString(TextStringCR);
-
-//! Draw geometry by either using a previously cached representation if it has already been created, or by
-//! calling its stroke method if the cached representation does not yet exist.
-//! <p>Any displayable that wishes to cache any or all of its output should call this method.
-//! <p>It first checks to see whether the appropriate cached representation was previously generated, and if so it simply draws
-//! that cached representation. If not, it creates an caching context and then calls the appropriate stroke methods
-//! to create a cache representation using the caching context.
-//! @param[in] stroker An object to use to create cache representation (if necessary).
-//! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
-//! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
-DGNPLATFORM_EXPORT QvElem* DrawCached(IStrokeForCache& stroker);
-
-DGNPLATFORM_EXPORT bool CheckStop();
-
-};
+    DGNPLATFORM_EXPORT StatusInt VisitElement(GeometricElementCR);
+
+    /// @name Coordinate Query and Conversion
+    //@{
+
+    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::World coordinates.
+    //! @param[out]     worldPts    An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      localPts    Input array in current local coordinates,
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void LocalToWorld(DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const;
+
+    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
+    //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      localPts    Input array in current local coordinates,
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const;
+
+    //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
+    //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      localPts    Input array in current local coordinates,
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::World into the current local coordinate system.
+    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToLocal(DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
+    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint4dCP viewPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
+    //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToLocal(DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
+    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Npc.
+    //! @param[out]     npcPts      An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
+    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPt, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+    //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void WorldToView(Point2dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
+
+    //! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+    //! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+    //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
+    //! @param[in]      nPts        Number of points in both arrays.
+    DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP WorldPts, DPoint3dCP viewPts, int nPts) const;
+
+    //! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
+    //! @return   NULL if no transform present.
+    DGNPLATFORM_EXPORT TransformCP GetCurrLocalToWorldTransformCP () const;
+
+    //! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::World.
+    //! @param[out]     trans       Transform from current local coordinate system to DgnCoordSystem::World
+    //! @return   SUCCESS if there is a current local coordinate system.
+    DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans(TransformR trans) const;
+
+    //! Retrieve a copy of the transform from the DgnCoordSystem::World to current local coordinate system.
+    //! @param[out]     trans       Transform from DgnCoordSystem::World to current local coordinate system
+    //! @return   SUCCESS if there is a current local coordinate system.
+    DGNPLATFORM_EXPORT BentleyStatus GetCurrWorldToLocalTrans(TransformR trans) const;
+
+    //! Retrieve a copy of the transform from the local coordinate system at the specified index into DgnCoordSystem::World.
+    //! @param[out]     trans  Transform from local coordinate system at the specified index to DgnCoordSystem::World
+    //! @param[in]      index  Index into transform stack to return transform for.
+    //! @return   SUCCESS if there is a local coordinate system.
+    DGNPLATFORM_EXPORT BentleyStatus GetLocalToWorldTrans(TransformR trans, size_t index) const;
+
+    //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
+    //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
+    //! @param[in]      origin      The point at which the pixel size is calculated. This point is only relevant in camera views, where local coordinates
+    //!                             closer to the eye are larger than those further from the eye. May be NULL, in which case the center of the view is used.
+    //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
+    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP origin) const;
+
+    //! Get transform aligned with current view rotation.
+    DGNPLATFORM_EXPORT void GetViewIndependentTransform(TransformP trans, DPoint3dCP originLocal);
+
+    //! Check whether the current transform is view independent. Several MicroStation element types can display
+    //! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current
+    //! view-to-local transformation via #PushViewIndependentOrigin.
+    //! @return   true if the current local coordinate system is a view independent transform.
+    DGNPLATFORM_EXPORT bool IsViewIndependent();
+    //@}
+
+    /// @name Pushing and Popping Transforms and Clips
+    //@{
+    //! Push a Transform, creating a new local coordinate system.
+    //! @param[in]      trans       The transform to push.
+    //! @see   PopTransformClip
+    DGNPLATFORM_EXPORT void PushTransform(TransformCR trans);
+
+    /// @name Pushing and Popping Transforms and Clips
+    //@{
+    //! Push a ClipVector, creating a new local clip region.
+    //! @param[in]      clip       A clipping descriptor to push.
+    //! @see   PopTransformClip
+    DGNPLATFORM_EXPORT void PushClip(ClipVectorCR clip);
+
+    //! Push a set of clip planes, creating a new local clip region.
+    //! @param[in]      clipPlanes  Clipping planes to push - the intersections of their half planes define clip region.
+    //! @see   PopTransformClip
+    DGNPLATFORM_EXPORT void PushClipPlanes(ClipPlaneSetCR clipPlanes);
+
+    //! Push a transform such that the X,Y plane of the new local coordinate system will be aligned with the X,Y plane of the
+    //! view coordinate system, oriented about the given origin.
+    //! @param[in]      origin      Origin for rotation, in the \e current local coordinate system.
+    DGNPLATFORM_EXPORT void PushViewIndependentOrigin(DPoint3dCP origin);
+
+    //! Remove the most recently pushed coordinate system and clip, restoring the local coordinate system to its previous state.
+    DGNPLATFORM_EXPORT void PopTransformClip();
+    //@}
+
+    /// @name Query Methods
+    //@{
+
+    //! Get the current state of the ViewFlags for this context's output, can be NULL.
+    //! When a ViewContext is first attached to a DgnViewport, the ViewFlags are initialized
+    //! from the DgnViewport's viewflags. However, during the course of an operation,
+    //! the viewflags for the output may be different than those on the DgnViewport.
+    //! @return   the current state of the viewflags for this ViewContext.
+    DGNPLATFORM_EXPORT ViewFlags GetViewFlags() const {return m_IDrawGeom->GetDrawViewFlags();}
+
+    //! Sets the current state of the ViewFlags for this context's output.
+    void SetViewFlags(ViewFlags flags) {m_IDrawGeom->SetDrawViewFlags(flags);}
+
+    //! Get the DgnDb for this ViewContext.
+    DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
+
+    //! Get the current persistent element being visited by this ViewContext.
+    DGNPLATFORM_EXPORT GeometricElementCP GetCurrentElement() const;
+
+    /** @cond BENTLEY_SDK_Scope1 */
+    //! Set the project for this ViewContext when not attaching a viewport.
+    DGNPLATFORM_EXPORT void SetDgnDb(DgnDbR);
+
+    //! Set or clear the current persistent element.
+    DGNPLATFORM_EXPORT void SetCurrentElement(GeometricElementCP);
+    /** @endcond */
+
+    //! Get the DrawPurpose specified when this ViewContext was attached to the current DgnViewport.
+    //! @return the DrawPurpose specified in the call to DrawContext#Attach (drawcontext.h)
+    DGNPLATFORM_EXPORT DrawPurpose GetDrawPurpose() const;
+
+    //! Get the DgnViewport to which this ViewContext is attached. ViewContext's do not always have to be attached to an
+    //! DgnViewport, so therefore callers must always test the result of this call for NULL.
+    //! @return the DgnViewport. NULL if not attached to a DgnViewport.
+    DGNPLATFORM_EXPORT DgnViewportP GetViewport() const;
+
+    DGNPLATFORM_EXPORT bool Is3dView() const;
+    DGNPLATFORM_EXPORT bool IsCameraOn() const;
+    //@}
+
+    //! Get the clip planes that define the limits of the displayed volume.  This will include
+    //! planes for the top,bottom,left and right sides of the view and optionally the front
+    //! and back planes if they are enabled.
+    //! @return the clip planes set.
+    DGNPLATFORM_EXPORT ClipPlaneSetCP GetRangePlanes() const;
+
+    /// @name Get/Set Current Display Parameters
+    //@{
+
+    //__PUBLISH_SECTION_END__
+
+    //! Get the current LineStyleSymb.
+    //! @return the current LineStyleSymb.
+    //DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
+
+    //! Set the linestyle in the current linestyle MatSymb. This method is mainly used to temporarily clear the current
+    //! linestyle, for pieces of geometry that are to be drawn solid. To do that, call GetCurrLineStyle and save the
+    //! current value. Then call this method passing NULL and when you're done, call this method again to restore the saved linestyle.
+    //! @param[in]      lstyle      The new current linestyle. If NULL, no (solid) linestyle is used.
+    //DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
+
+    DGNPLATFORM_EXPORT bool& GetUseCachedGraphics();
+    DGNPLATFORM_EXPORT bool GetDisplayPriorityRange(int32_t& low, int32_t& high) const;
+
+    //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied ElemMatSymb.
+    //! @note Does NOT call ActivateMatSymb on the output or change the current ElemDisplayParams/ElemMatSymb of the context.
+    DGNPLATFORM_EXPORT void CookDisplayParams(ElemDisplayParamsR, ElemMatSymbR);
+
+    //! Change the supplied "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the supplied OvrMatSymb.
+    //! @note Does NOT call ActivateOverrideMatSymb on the output or change the current ElemDisplayParams/OvrMatSymb of the context.
+    DGNPLATFORM_EXPORT void CookDisplayParamsOverrides(ElemDisplayParamsR, OvrMatSymbR);
+
+    //__PUBLISH_SECTION_START__
+
+    //DGNPLATFORM_EXPORT ColorDef GetCurrLineColor ();
+    //DGNPLATFORM_EXPORT ColorDef GetCurrFillColor ();
+    //DGNPLATFORM_EXPORT uint32_t GetCurrWidth ();
+
+    //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
+    //! @return the net display priority. For 3D views, display priority is always 0.
+    DGNPLATFORM_EXPORT int32_t ResolveNetDisplayPriority(int32_t geomPriority, DgnSubCategoryId subCategoryId, DgnCategories::SubCategory::Appearance* appearance = nullptr) const;
+
+    //! Get the current ElemMatSymb.
+    //! @return   the current ElemMatSymb.
+    DGNPLATFORM_EXPORT ElemMatSymbP GetElemMatSymb();
+
+    //! Get the current OvrMatSymb.
+    //! @return the current OvrMatSymb.
+    DGNPLATFORM_EXPORT OvrMatSymbP GetOverrideMatSymb();
+
+    //! Get the current ElemDisplayParams.
+    //! @return the current ElemDisplayParams.
+    DGNPLATFORM_EXPORT ElemDisplayParamsP GetCurrentDisplayParams();
+
+    //! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
+    //! @note Calls ActivateMatSymb on the output.
+    DGNPLATFORM_EXPORT void CookDisplayParams();
+
+    //! Change the current ElemDisplayParams for any context overrides. Cooks the modified ElemDisplayParams into the current OvrMatSymb using the current override flags.
+    //! @note Calls ActivateOverrideMatSymb on the output.
+    DGNPLATFORM_EXPORT void CookDisplayParamsOverrides();
+
+    //! Clears current override flags and re-applies context overrides.
+    //! @note Calls ActivateOverrideMatSymb on the output.
+    DGNPLATFORM_EXPORT void ResetContextOverrides();
+
+    //__PUBLISH_SECTION_END__
+
+    //! Gets the current level of detail.
+    //! @return       the current level of detail.
+    DGNPLATFORM_EXPORT double GetCurrentLevelOfDetail() const;
+
+
+    //! Sets the current level of detail.
+    DGNPLATFORM_EXPORT void SetCurrentLevelOfDetail(double levelOfDetail);
+
+    //! Check the current display style for a monochrome color override.
+    //! @return       whether monochrome style is currently active.
+    DGNPLATFORM_EXPORT bool IsMonochromeDisplayStyleActive();
+    DGNPLATFORM_EXPORT bool ElementIsUndisplayed(GeometricElementCR);
+
+    DGNPLATFORM_EXPORT void CacheQvGeometryTexture(uint32_t rendMatID);
+
+    //__PUBLISH_SECTION_START__
+    //@}
+
+    /// @name Methods to Retrieve Related Interfaces from a ViewContext
+    //@{
+
+    //! Get the IViewDraw interface for this ViewContext. Usually, but not always, this will be the IViewDraw from the viewport to which this
+    //! context is attached.
+    //! @return   the IViewDraw for this context
+    DGNPLATFORM_EXPORT IViewDrawR GetIViewDraw();
+
+    //! Get the IDrawGeom interface for this ViewContext. Applications should use this method to draw geometry in Draw methods.
+    //! @return   the IDrawGeom for this context
+    DGNPLATFORM_EXPORT IDrawGeomR GetIDrawGeom();
+
+    /** @cond BENTLEY_SDK_Scope1 */
+    //! Get the ICachedDraw interface for this ViewContext.
+    //! @return   the ICachedDraw for this context.
+    DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw();
+
+    //! Check whether we are creating a cached presentation.
+    //! @return   true if we're in the process of creating a cache presentation.
+    DGNPLATFORM_EXPORT bool CheckICachedDraw();
+    /** @endcond */
+
+    //! Get the IPickGeom interface for this ViewContext. Only contexts that are specific to picking will return a non-NULL value.
+    //! @return the IPickGeom interface for this context. May return NULL.
+    DGNPLATFORM_EXPORT IPickGeomP GetIPickGeom();
+
+    //@}
+
+    /// @name Identifying element "topology".
+    //@{
+    //! Query the current IElementTopology.
+    //! @return An object that holds additional information about the graphics that are currently being drawn.
+    DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
+
+    //! Set the current IElementTopology.
+    //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
+    DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
+
+    //! Query the current GeomStreamEntryId.
+    DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId() const;
+
+    //! Set the current GeomStreamEntryId.
+    DGNPLATFORM_EXPORT void SetGeomStreamEntryId(GeomStreamEntryId geomId);
+
+    //@}
+
+    //__PUBLISH_SECTION_END__
+    DGNPLATFORM_EXPORT bool WantAreaPatterns();
+    DGNPLATFORM_EXPORT void DrawAreaPattern(ClipStencil& boundary);
+    //__PUBLISH_SECTION_START__
+
+    /** @name Draw Geometry Using Current Linestyle */
+    /** @{ */
+
+    //! Draw a 2D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
+    //! @param[in]      nPts        Number of vertices in \c pts.
+    //! @param[in]      pts         Array of points in linestring.
+    //! @param[in]      zDepth      Display priority for all vertices.
+    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //! @param[in]      closed      Do point represent a shape or linestring.
+    DGNPLATFORM_EXPORT void DrawStyledLineString2d(int nPts, DPoint2dCP pts, double zDepth, DPoint2dCP range, bool closed = false);
+
+    //! Draw a 3D linestring using the current Linestyle, if any. If there is no current Linestyle, draw a solid linestring.
+    //! @param[in]      nPts        Number of vertices in \c pts.
+    //! @param[in]      pts         Array of points in linestring
+    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the vertices in \c points. This argument is
+    //!                                 optional and is only used to speed processing. If you do not already have the range of your points, pass NULL.
+    //! @param[in]      closed      Do point represent a shape or linestring.
+    DGNPLATFORM_EXPORT void DrawStyledLineString3d(int nPts, DPoint3dCP pts, DPoint3dCP range, bool closed = false);
+
+    //! Draw a 2D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
+    //! @param[in]      ellipse     The arc data.
+    //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
+    //! @param[in]      zDepth      Z depth value.
+    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
+    //!                               optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    DGNPLATFORM_EXPORT void DrawStyledArc2d(DEllipse3dCR ellipse, bool isEllipse, double zDepth, DPoint2dCP range);
+
+    //! Draw a 3D elliptical arc using the current Linestyle. If there is no current Linestyle, draw a solid arc.
+    //! @param[in]      ellipse     The arc data.
+    //! @param[in]      isEllipse   Treat full sweep as ellipse not arc.
+    //! @param[in]      range       Array of 2 points with the range (min followed by max) of the arc. This argument is
+    //!                               optional and is only used to speed processing. If you do not already have the range, pass NULL.
+    DGNPLATFORM_EXPORT void DrawStyledArc3d(DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range);
+
+    //! Draw a 2d BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
+    //! @param        curve       bspline curve parameters
+    //! @param[in]    zDepth      Z depth value.
+    DGNPLATFORM_EXPORT void DrawStyledBSplineCurve2d(MSBsplineCurveCR curve, double zDepth);
+
+    //! Draw a BSpline curve using the current Linestyle. If there is no current Linestyle, draw a solid BSpline.
+    //! @param        curve       bspline curve parameters
+    DGNPLATFORM_EXPORT void DrawStyledBSplineCurve3d(MSBsplineCurveCR curve);
+
+    //! Draw a curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
+    //! @param        curve       curve geometry
+    DGNPLATFORM_EXPORT void DrawStyledCurveVector3d(CurveVectorCR curve);
+
+    //! Draw a 2d curve vector using the current Linestyle. If there is no current Linestyle, draw a solid curve vector.
+    //! @param        curve       curve geometry
+    //! @param[in]    zDepth      Z depth value.
+    DGNPLATFORM_EXPORT void DrawStyledCurveVector2d(CurveVectorCR curve, double zDepth);
+
+    //! Draw an instance of a DisplaySymbol given a DisplaySymbol definition (an IDisplaySymbol). DisplaySymbol definitions are generally cached globally,
+    //! so the first call to this method for a given symbol definition will create the cached representation, and all subsequent calls will draw
+    //! instances using that cached representation.
+    //! @param[in]      symbolDef        Symbol definition to draw from.
+    //! @param[in]      trans            Transform to be applied to the symbol definition to determine location, orientation, size of this instance.
+    //! @param[in]      clip             ClipPlaneSet to be applied to symbol. May be NULL.
+    //! @param[in]      ignoreColor      If true, ignore the colors in the symbol definition and use the current color from \c context.
+    //! @param[in]      ignoreWeight     If true, ignore line weights in the symbol definition, and use the current line weight from \c context.
+    DGNPLATFORM_EXPORT void DrawSymbol(IDisplaySymbol* symbolDef, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight);
+
+    //! Draw a text string and any adornments such as background shape, underline, overline, etc. Sets up current ElemDisplayParams for TextString symbology.
+    DGNPLATFORM_EXPORT void DrawTextString(TextStringCR);
+
+    //! Draw geometry by either using a previously cached representation if it has already been created, or by
+    //! calling its stroke method if the cached representation does not yet exist.
+    //! <p>Any displayable that wishes to cache any or all of its output should call this method.
+    //! <p>It first checks to see whether the appropriate cached representation was previously generated, and if so it simply draws
+    //! that cached representation. If not, it creates an caching context and then calls the appropriate stroke methods
+    //! to create a cache representation using the caching context.
+    //! @param[in] stroker An object to use to create cache representation (if necessary).
+    //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
+    //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
+    DGNPLATFORM_EXPORT QvElem* DrawCached(IStrokeForCache& stroker);
+
+    DGNPLATFORM_EXPORT bool CheckStop();
+}; // ViewContext
 
 /** @endGroup */
 

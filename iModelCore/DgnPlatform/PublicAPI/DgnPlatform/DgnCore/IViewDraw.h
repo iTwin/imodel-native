@@ -895,17 +895,6 @@ struct IStrokeForCache
     //! @param[in] pixelSize size (in local coordinates) of a screen pixel.
     virtual void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) = 0;
 
-    //! Query if it's possible for screen size dependent geometry to be stroked. This is typically
-    //! not the case when methods for displaying exact geometry are available. If however, a screen size dependent 
-    //! approximation (such as a facetted representation of curved geometry) may be displayed, then return true.
-    //! @note This method is called before _StrokeForCache.
-    virtual bool _GetSizeDependentGeometryPossible() const {return false;}
-
-    //! Return true only if the stroked geometry was dependent on the screen size. This method is called after stroking and is only
-    //! applicable when _GetSizeDepdentGeometryPossible returns true.
-    //! @note This method is called after _StrokeForCache to determine if a size dependent cache presentation was actually created.
-    virtual bool _GetSizeDependentGeometryStroked() const {return false;}
-
     //! Return DrawExpense::High only if the representation is very expensive to reproduce, otherwise leave as DrawExpense::Medium.  This will cause
     //! the cached geometry to be preserved in low memory conditions.
     virtual DrawExpense _GetDrawExpense() const {return DrawExpense::Medium;}
@@ -914,11 +903,6 @@ struct IStrokeForCache
     //! required for snapping as well as for locating the interiors of filled/rendered geometry.
     //! @note A stroker that has a very expensive to create cached representation (ex. breps) should NEVER return true, see _WantLocateByQvElem.
     virtual bool _WantLocateByStroker() const {return true;}
-
-    //! Return true to locate interiors using the cached result (QvElem). To be used for very expensive cached representations (ex. breps).
-    //! As a QvElem hit is only sufficient for locates and not snapping, a stroker that returns true is expected to also maintain it's own
-    //! wireframe geometry cache and output it when their _Draw method is called for the purpose of picking.
-    virtual bool _WantLocateByQvElem() const {return !_WantLocateByStroker();}
 
     //! (2D ONLY) The stroker is required to supply the "net" display priority for the QvElem when it is initially created.
     //! A QvElem has a single display priority for all it's geometry. It is expected that this method returns the same value that will be supplied to 
@@ -931,18 +915,6 @@ struct IStrokeForCache
     //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
-
-    //! Return QvCache to use. To use temporary QvCache, override to return nullptr.
-    virtual QvCacheP _GetQVCache() const {return _GetDgnDb().Models().GetQvCache();}
-
-    //! Return key value that may be used to identify/lookup QvElem in QvCache.
-    virtual int32_t _GetQvIndex() const = 0;
-
-    //! Return QvElem created by a prior call to _StrokeForCache. When nullptr is returned, _StrokeForCache will be called to create a new QvElem.
-    virtual QvElemP _GetQvElem(double pixelSize = 0.0) const = 0;
-
-    //! Save the QvElem created by calling _StrokeForCache for use in subsequent draws.
-    virtual void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const = 0;
 
     //! Return dgnDb for default QvCache.
     virtual DgnDbR _GetDgnDb() const = 0;
@@ -959,15 +931,10 @@ protected:
     GeometricElementCR  m_element;
 
 public:
-
     explicit StrokeElementForCache(GeometricElementCR element) : m_element(element) {}
 
     virtual DgnDbR _GetDgnDb() const override {return m_element.GetDgnDb();}
     virtual DRange3d _GetRange() const override {return m_element.CalculateRange3d();}
-    virtual QvCacheP _GetQVCache() const override {return m_element.GetMyQvCache();}
-
-    DGNPLATFORM_EXPORT virtual QvElemP _GetQvElem(double pixelSize) const;
-    DGNPLATFORM_EXPORT virtual void _SaveQvElem(QvElemP, double pixelSize, double sizeDependentRatio) const;
 };
 
 //=======================================================================================
@@ -985,10 +952,6 @@ public:
     DGNPLATFORM_EXPORT virtual ~TransientCachedGraphics();
 
     virtual DgnDbR _GetDgnDb() const override {return m_dgnDb;}
-    virtual int32_t _GetQvIndex() const override {return 0;} // Not used by Get/Save...
-
-    virtual QvElemP _GetQvElem(double pixelSize) const override {return m_qvElem;}
-    virtual void _SaveQvElem(QvElemP qvElem, double pixelSize, double sizeDependentRatio) const override {m_qvElem = qvElem;}
 };
 
 //=======================================================================================
@@ -1014,8 +977,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IDrawGeom
     friend struct ViewContext;
 
 protected:
-    virtual ViewFlagsCP _GetDrawViewFlags() = 0;
-    virtual void _SetDrawViewFlags(ViewFlagsCP) = 0;
+    virtual ViewFlags _GetDrawViewFlags() = 0;
+    virtual void _SetDrawViewFlags(ViewFlags) = 0;
     virtual void _ActivateMatSymb(ElemMatSymbCP matSymb) = 0;
     virtual void _ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb) = 0;
     virtual void _DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range) = 0;
@@ -1049,18 +1012,17 @@ protected:
     virtual ~IDrawGeom() {}
 
 public:
-
-    DGNPLATFORM_EXPORT IDrawGeom();
+    IDrawGeom() {}
 
     //! Get the current View Flags for this object. The view flags are initialized from the view flags
     //! of its controlling DgnViewport at the beginning of every display operation. However, during display operations,
     //! the view flags are sometimes temporarily modified for specific purposes, so they are not
     //! always the same.
     //! @return the current view flags for this IViewDraw
-    DGNPLATFORM_EXPORT ViewFlagsCP GetDrawViewFlags();
+    ViewFlags GetDrawViewFlags() {return _GetDrawViewFlags();}
 
     //! Sets the current state of the ViewFlags for this context's output.
-    DGNPLATFORM_EXPORT void SetDrawViewFlags(ViewFlagsCP);
+    void SetDrawViewFlags(ViewFlags flags) {_SetDrawViewFlags(flags);}
 
     //! Set an ElemMatSymb to be the "active" ElemMatSymb for this IDrawGeom.
     //! @param[in]          matSymb     The new active ElemMatSymb. All geometry drawn via calls to this IDrawGeom will

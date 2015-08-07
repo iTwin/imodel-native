@@ -88,184 +88,169 @@ public:
 //=======================================================================================
 struct ElementGeomIO
 {
-enum class OpCode : uint32_t
+    enum class OpCode : uint32_t
     {
-    Invalid             = 0,
-    Header              = 1,    //!< Required to be first opcode
-    BeginSubCategory    = 2,    //!< Mark start of geometry having same sub-category and transform
-    GeomPartInstance    = 3,    //!< Draw referenced geometry part
-    BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
-    PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
-    PointPrimitive2d    = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
-    ArcPrimitive        = 7,    //!< Single arc/ellipse
-    CurveVector         = 8,    //!< CurveVector
-    Polyface            = 9,    //!< PolyfaceQueryCarrier
-    CurvePrimitive      = 10,   //!< Single CurvePrimitive
-    SolidPrimitive      = 11,   //!< SolidPrimitive
-    BsplineSurface      = 12,   //!< BSpline surface
-    ParasolidBRep       = 13,   //!< Parasolid body
-    BRepPolyface        = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
-    BRepPolyfaceExact   = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
-    BRepEdges           = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
-    BRepFaceIso         = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
-    LineStyle           = 18,   //!< Raster/vector line styles
-    AreaFill            = 19,   //!< Opaque and gradient fills
-    Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
-    Material            = 21,   //!< Render material
-    TextString          = 22,   //!< TextString (single-line/single-format run of characters)
-    LineStyleModifiers  = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
+        Invalid             = 0,
+        Header              = 1,    //!< Required to be first opcode
+        BeginSubCategory    = 2,    //!< Mark start of geometry having same sub-category and transform
+        GeomPartInstance    = 3,    //!< Draw referenced geometry part
+        BasicSymbology      = 4,    //!< Set symbology for subsequent geometry that doesn't follow subCategory appearance
+        PointPrimitive      = 5,    //!< Simple lines, line strings, shapes, point strings, etc.
+        PointPrimitive2d    = 6,    //!< Simple 2d lines, line strings, shapes, point strings, etc.
+        ArcPrimitive        = 7,    //!< Single arc/ellipse
+        CurveVector         = 8,    //!< CurveVector
+        Polyface            = 9,    //!< PolyfaceQueryCarrier
+        CurvePrimitive      = 10,   //!< Single CurvePrimitive
+        SolidPrimitive      = 11,   //!< SolidPrimitive
+        BsplineSurface      = 12,   //!< BSpline surface
+        ParasolidBRep       = 13,   //!< Parasolid body
+        BRepPolyface        = 14,   //!< PolyfaceQueryCarrier from Parasolid BRep
+        BRepPolyfaceExact   = 15,   //!< PolyfaceQueryCarrier from Parasolid BRep with only straight edges and planar faces
+        BRepEdges           = 16,   //!< CurveVector from Parasolid body edges (Not created/necessary for BRepPolyfaceExact)
+        BRepFaceIso         = 17,   //!< CurveVector from Parasolid body face iso lines (Not created/necessary for BRepPolyfaceExact)
+        LineStyle           = 18,   //!< Raster/vector line styles
+        AreaFill            = 19,   //!< Opaque and gradient fills
+        Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
+        Material            = 21,   //!< Render material
+        TextString          = 22,   //!< TextString (single-line/single-format run of characters)
+        LineStyleModifiers  = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
     };
 
-//=======================================================================================
-//! Internal Header op code
-//! @private
-//=======================================================================================
-struct Header
+    //=======================================================================================
+    //! Internal Header op code
+    //! @private
+    //=======================================================================================
+    struct Header
     {
-    uint32_t        m_version:8;
-    uint32_t        m_reserved:24;
-    uint32_t        m_flags;
+        uint32_t        m_version:8;
+        uint32_t        m_reserved:24;
+        uint32_t        m_flags;
+        Header(uint8_t version = 1, uint32_t flags = 0) : m_version(version), m_reserved(0), m_flags(flags) {}
+    };
 
-    Header(uint8_t version = 1, uint32_t flags = 0) : m_version(version), m_reserved(0), m_flags(flags) {}
-
-    }; // Header
-
-//=======================================================================================
-//! Internal op code
-//! @private
-//=======================================================================================
-struct Operation
+    //=======================================================================================
+    //! Internal op code
+    //! @private
+    //=======================================================================================
+    struct Operation
     {
-    OpCode          m_opCode;
-    uint32_t        m_dataSize;
-    uint8_t const*  m_data;
+        OpCode          m_opCode;
+        uint32_t        m_dataSize;
+        uint8_t const*  m_data;
 
-    Operation() : m_opCode(OpCode::Invalid), m_dataSize(0), m_data(nullptr) {}
-    Operation(OpCode opCode, uint32_t dataSize = 0, uint8_t const* data = nullptr) : m_opCode(opCode), m_dataSize(dataSize), m_data(data) {}
+        Operation() : m_opCode(OpCode::Invalid), m_dataSize(0), m_data(nullptr) {}
+        Operation(OpCode opCode, uint32_t dataSize = 0, uint8_t const* data = nullptr) : m_opCode(opCode), m_dataSize(dataSize), m_data(data) {}
 
-    bool IsGeometryOp() const;
+        bool IsGeometryOp() const;
+    };
 
-    }; // Operation
-
-//=======================================================================================
-//! Internal op code writer
-//! @private
-//=======================================================================================
-struct Writer
+    //=======================================================================================
+    //! Internal op code writer
+    //! @private
+    //=======================================================================================
+    struct Writer
     {
-    DgnDbR m_db;
-    bvector<uint8_t> m_buffer;
+        DgnDbR m_db;
+        bvector<uint8_t> m_buffer;
 
-    Writer(DgnDbR db) : m_db(db) {AppendHeader();}
+        Writer(DgnDbR db) : m_db(db) {AppendHeader();}
+        void AppendHeader() {Header hdr; Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
+        void Reset() {m_buffer.clear(); AppendHeader();};
+        bool AppendSimplified(ICurvePrimitiveCR, bool isClosed, bool is3d);
+        bool AppendSimplified(CurveVectorCR, bool is3d);
+        bool AppendSimplified(ElementGeometryCR, bool is3d);
+        void Append(Operation const& egOp);
+        void Append(DPoint2dCP, size_t nPts, int8_t boundary);
+        void Append(DPoint3dCP, size_t nPts, int8_t boundary);
+        void Append(DEllipse3dCR, int8_t boundary);
+        void Append(ICurvePrimitiveCR);
+        void Append(CurveVectorCR);
+        void Append(PolyfaceQueryCR);
+        void Append(ISolidPrimitiveCR);
+        void Append(MSBsplineSurfaceCR);
+        void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
+        void Append(ElementGeometryCR);
+        void Append(DgnSubCategoryId, TransformCR geomToElem);
+        void Append(DgnGeomPartId);
+        void Append(ElemDisplayParamsCR); // Adds multiple op-codes...
+        void Append(TextStringCR);
+    };
 
-    void AppendHeader() {Header hdr; Append(Operation(OpCode::Header, (uint32_t) sizeof (hdr), (const uint8_t *) &hdr));}
-    void Reset() {m_buffer.clear(); AppendHeader();};
-
-    bool AppendSimplified(ICurvePrimitiveCR, bool isClosed, bool is3d);
-    bool AppendSimplified(CurveVectorCR, bool is3d);
-    bool AppendSimplified(ElementGeometryCR, bool is3d);
-
-    void Append(Operation const& egOp);    
-    void Append(DPoint2dCP, size_t nPts, int8_t boundary);
-    void Append(DPoint3dCP, size_t nPts, int8_t boundary);
-    void Append(DEllipse3dCR, int8_t boundary);
-    void Append(ICurvePrimitiveCR);
-    void Append(CurveVectorCR);
-    void Append(PolyfaceQueryCR);
-    void Append(ISolidPrimitiveCR);
-    void Append(MSBsplineSurfaceCR);
-    void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
-    void Append(ElementGeometryCR);
-    void Append(DgnSubCategoryId, TransformCR geomToElem);
-    void Append(DgnGeomPartId);
-    void Append(ElemDisplayParamsCR); // Adds multiple op-codes...
-    void Append(TextStringCR);
-
-    }; // Writer;
-    
-//=======================================================================================
-//! Internal op code reader
-//! @private
-//=======================================================================================
-struct Reader
+    //=======================================================================================
+    //! Internal op code reader
+    //! @private
+    //=======================================================================================
+    struct Reader
     {
-    DgnDbR m_db;
-    
-    Reader(DgnDbR db) : m_db(db) {}
+        DgnDbR m_db;
 
-    static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
+        Reader(DgnDbR db) : m_db(db) {}
 
-    bool Get(Operation const&, DPoint2dCP&, int& nPts, int8_t& boundary) const;
-    bool Get(Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;
-    bool Get(Operation const&, DEllipse3dR, int8_t& boundary) const;
-    bool Get(Operation const&, PolyfaceQueryCarrier&) const;
-    bool Get(Operation const&, ICurvePrimitivePtr&) const;
-    bool Get(Operation const&, CurveVectorPtr&) const;
-    bool Get(Operation const&, ISolidPrimitivePtr&) const;
-    bool Get(Operation const&, MSBsplineSurfacePtr&) const;
-    bool Get(Operation const&, ISolidKernelEntityPtr&) const;
-    bool Get(Operation const&, ElementGeometryPtr&) const;
-    bool Get(Operation const&, DgnSubCategoryId&, TransformR) const;
-    bool Get(Operation const&, DgnGeomPartId&) const;
-    bool Get(Operation const&, ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
-    bool Get(Operation const&, TextStringR) const;
+        static Header const* GetHeader(Operation const& egOp) {return (OpCode::Header == egOp.m_opCode ? (Header const*)egOp.m_data : nullptr);}
 
+        bool Get(Operation const&, DPoint2dCP&, int& nPts, int8_t& boundary) const;
+        bool Get(Operation const&, DPoint3dCP&, int& nPts, int8_t& boundary) const;
+        bool Get(Operation const&, DEllipse3dR, int8_t& boundary) const;
+        bool Get(Operation const&, PolyfaceQueryCarrier&) const;
+        bool Get(Operation const&, ICurvePrimitivePtr&) const;
+        bool Get(Operation const&, CurveVectorPtr&) const;
+        bool Get(Operation const&, ISolidPrimitivePtr&) const;
+        bool Get(Operation const&, MSBsplineSurfacePtr&) const;
+        bool Get(Operation const&, ISolidKernelEntityPtr&) const;
+        bool Get(Operation const&, ElementGeometryPtr&) const;
+        bool Get(Operation const&, DgnSubCategoryId&, TransformR) const;
+        bool Get(Operation const&, DgnGeomPartId&) const;
+        bool Get(Operation const&, ElemDisplayParamsR) const; // Updated by multiple op-codes, true if changed
+        bool Get(Operation const&, TextStringR) const;
     }; // Reader
 
-//=======================================================================================
-//! Iternal op code iterator
-//! @private
-//=======================================================================================
-struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
+    //=======================================================================================
+    //! Iternal op code iterator
+    //! @private
+    //=======================================================================================
+    struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
     private:
+        uint8_t const*  m_data;
+        size_t          m_dataOffset;
+        size_t          m_totalDataSize;
+        Operation       m_egOp;
 
-    uint8_t const*  m_data;
-    size_t          m_dataOffset;
-    size_t          m_totalDataSize;
-    Operation       m_egOp;
+        void ToNext();
+        Iterator(uint8_t const* data, size_t totalDataSize) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0) {ToNext();}
+        Iterator() : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0) {}
 
-    void ToNext();
-
-    Iterator(uint8_t const* data, size_t totalDataSize) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0) {ToNext();}
-    Iterator() : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0) {}
-
-    friend struct ElementGeomIO;
+        friend struct ElementGeomIO;
 
     public:
-
-    Iterator&        operator++() {ToNext(); return *this;}
-    bool             operator==(Iterator const& rhs) const {return m_dataOffset == rhs.m_dataOffset;}
-    bool             operator!=(Iterator const& rhs) const {return !(*this == rhs);}
-    Operation const& operator*() const {return m_egOp;}
+        Iterator&        operator++() {ToNext(); return *this;}
+        bool             operator==(Iterator const& rhs) const {return m_dataOffset == rhs.m_dataOffset;}
+        bool             operator!=(Iterator const& rhs) const {return !(*this == rhs);}
+        Operation const& operator*() const {return m_egOp;}
 
     }; // Iterator
 
-//=======================================================================================
-//! Internal op code helper
-//! @private
-//=======================================================================================
-struct Collection
+    //=======================================================================================
+    //! Internal op code helper
+    //! @private
+    //=======================================================================================
+    struct Collection
     {
     private:
-
-    uint8_t const*  m_data;
-    size_t          m_dataSize;
+        uint8_t const*  m_data;
+        size_t          m_dataSize;
 
     public:
+        typedef Iterator const_iterator;
+        typedef const_iterator iterator; //!< only const iteration is possible
 
-    typedef Iterator const_iterator;
-    typedef const_iterator iterator; //!< only const iteration is possible
-    
-    Collection(uint8_t const* data, size_t dataSize) : m_data(data), m_dataSize(dataSize) {}
+        Collection(uint8_t const* data, size_t dataSize) : m_data(data), m_dataSize(dataSize) {}
 
-    const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
-    const_iterator end() const {return const_iterator();}
-
-    void GetGeomPartIds(IdSet<DgnGeomPartId>&, DgnDbR) const;
-    void Draw(ViewContextR, DgnCategoryId, ViewFlagsCR) const;
-
-    }; // Collection
+        const_iterator begin() const {return const_iterator(m_data, m_dataSize);}
+        const_iterator end() const {return const_iterator();}
+        void GetGeomPartIds(IdSet<DgnGeomPartId>&, DgnDbR) const;
+        void Draw(ViewContextR, DgnCategoryId, ViewFlags) const;
+    };
 
 }; // ElementGeomIO
 

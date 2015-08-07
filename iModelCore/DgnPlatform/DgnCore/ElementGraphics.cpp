@@ -155,10 +155,9 @@ void ModifyDrawViewFlags(ViewFlagsR flags)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void _SetDrawViewFlags(ViewFlagsCP flags) override
+virtual void _SetDrawViewFlags(ViewFlags flags) override
     {
     T_Super::_SetDrawViewFlags(flags);
-
     ModifyDrawViewFlags(m_viewFlags);
     }
 

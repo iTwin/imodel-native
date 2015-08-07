@@ -109,45 +109,40 @@ struct RegionGraphicsDrawGeom : SimplifyViewDrawGeom
 {
     DEFINE_T_SUPER(SimplifyViewDrawGeom)
 private:
+    RG_Header*          m_pRG;
+    RIMSBS_Context*     m_pCurves;
+    MTG_MarkSet         m_activeFaces;
+    int                 m_currentGeomMarkerId;
+    double              m_textMarginFactor;
+    bool                m_interiorText;
+    // clang says not used - bool m_isAssociative;
+    bool                m_isFlood;
 
-RG_Header*          m_pRG;
-RIMSBS_Context*     m_pCurves;
-MTG_MarkSet         m_activeFaces;
-int                 m_currentGeomMarkerId;
-double              m_textMarginFactor;
-bool                m_interiorText;
-// clang says not used - bool m_isAssociative;
-bool                m_isFlood;
+    bool                m_forcePlanar;
+    Transform           m_flattenTrans;
+    DVec3d              m_flattenDir;
 
-bool                m_forcePlanar;
-Transform           m_flattenTrans;
-DVec3d              m_flattenDir;
+    RegionErrors        m_regionError;
+    CurveVectorPtr      m_textBoundaries; // Union region collected from draw
 
-RegionErrors        m_regionError;
-CurveVectorPtr      m_textBoundaries; // Union region collected from draw
+    protected:
 
-protected:
+    GeometricElementCP  GetCurrentElement();
+    bool                ComputePostFlattenTransform (CurveVectorCR region);
+    void                ResetPostFlattenTransform ();
+    virtual void        _SetDrawViewFlags (ViewFlags flags) override;
+    virtual bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
+    virtual bool        _DoClipping () const override {return m_context->IsAttached ();} // Only want for initial flood create...
+    virtual bool        _DoTextGeometry () const override {return false;}
+    virtual bool        _DoSymbolGeometry () const override {return false;}
+    virtual StatusInt   _ProcessCurvePrimitive (ICurvePrimitiveCR, bool closed, bool filled) override;
+    virtual StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
+    virtual StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
+    virtual StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
+    virtual StatusInt   _ProcessBody (ISolidKernelEntityCR entity) override {return SUCCESS;}
+    virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
 
-GeometricElementCP  GetCurrentElement();
-
-bool                ComputePostFlattenTransform (CurveVectorCR region);
-void                ResetPostFlattenTransform ();
-
-virtual void        _SetDrawViewFlags (ViewFlagsCP flags) override;
-virtual bool        _ClipPreservesRegions () const override {return false;} // Want fast open curve clip...
-
-virtual bool        _DoClipping () const override {return m_context->IsAttached ();} // Only want for initial flood create...
-virtual bool        _DoTextGeometry () const override {return false;}
-virtual bool        _DoSymbolGeometry () const override {return false;}
-
-virtual StatusInt   _ProcessCurvePrimitive (ICurvePrimitiveCR, bool closed, bool filled) override;
-virtual StatusInt   _ProcessCurveVector (CurveVectorCR, bool filled) override;
-virtual StatusInt   _ProcessSolidPrimitive (ISolidPrimitiveCR) override {return SUCCESS;}
-virtual StatusInt   _ProcessSurface (MSBsplineSurfaceCR surface) override {return SUCCESS;}
-virtual StatusInt   _ProcessBody (ISolidKernelEntityCR entity) override {return SUCCESS;}
-virtual StatusInt   _ProcessFacetSet (PolyfaceQueryCR facets, bool isFilled) override {return SUCCESS;}
-
-virtual void        _DrawTextString (TextStringCR text, double* zDepth) override;
+    virtual void        _DrawTextString (TextStringCR text, double* zDepth) override;
 
 public:
 

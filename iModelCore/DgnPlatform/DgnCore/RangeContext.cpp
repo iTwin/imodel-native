@@ -1052,10 +1052,10 @@ virtual StatusInt _InitContextForView() override
     Frustum     frustum = GetFrustum();
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
-    ViewFlagsCP viewFlags = GetViewFlags();
+    ViewFlags viewFlags = GetViewFlags();
 
     // DepthFitContext needs the frustum planes in RangeOutput also to properly clip elements that span outside the view.
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, frustum.GetPts(), nullptr != viewFlags && !viewFlags->noFrontClip, nullptr != viewFlags && !viewFlags->noBackClip, 1.0E-6)))
+    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, frustum.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
         {
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
 

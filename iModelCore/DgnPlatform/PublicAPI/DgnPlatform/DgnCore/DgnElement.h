@@ -14,10 +14,14 @@ Classes for working with %DgnElements in memory.
 @ref PAGE_ElementOverview
 
 */
-
 BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
-
 #include <Bentley/BeAssert.h>
+
+BEGIN_BENTLEY_RENDER_NAMESPACE
+struct Graphic : RefCountedBase {};
+DEFINE_REF_COUNTED_PTR(Graphic)
+
+END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -26,8 +30,9 @@ namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct MultiAspectMux;
 
-typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
+DEFINE_REF_COUNTED_PTR(ElementGeometry)
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 template <class _QvKey> struct QvElemSet;
 
 //=======================================================================================
@@ -44,8 +49,9 @@ public:
     void DeleteQvElem(QvElem* qvElem);
     QvKey32(uint32_t key) {m_key = key;} // allow non-explicit!
 };
-
 typedef QvElemSet<QvKey32> T_QvElemSet;
+#endif
+
 
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
@@ -404,7 +410,7 @@ private:
 
 protected:
     struct Flags
-        {
+    {
         uint32_t m_persistent:1;
         uint32_t m_editable:1;
         uint32_t m_lockHeld:1;
@@ -412,7 +418,7 @@ protected:
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
         Flags() {memset(this, 0, sizeof(*this));}
-        };
+    };
 
     mutable BeAtomic<uint32_t> m_refCount;
     DgnDbR          m_dgndb;
@@ -916,6 +922,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
 protected:
     GeomStream m_geom;
+    mutable bmap<DgnViewportCP, RefCountedPtr<Render::Graphic>, std::less<DgnViewportCP>, 8> m_graphics;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
@@ -929,10 +936,9 @@ protected:
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
 public:
-    DGNPLATFORM_EXPORT QvCache* GetMyQvCache() const;
-    DGNPLATFORM_EXPORT QvElem* GetQvElem(uint32_t index) const;
-    DGNPLATFORM_EXPORT bool SetQvElem(QvElem* qvElem, uint32_t index);
-    T_QvElemSet* GetQvElems(bool createIfNotPresent) const;
+    DGNPLATFORM_EXPORT Render::GraphicPtr FindGraphic(DgnViewportCR) const;
+    DGNPLATFORM_EXPORT void CacheGraphic(Render::Graphic const&, DgnViewportCR) const;
+    DGNPLATFORM_EXPORT bool RemoveGraphic(Render::Graphic const&, DgnViewportCR) const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;

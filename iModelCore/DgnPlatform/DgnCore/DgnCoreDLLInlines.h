@@ -56,7 +56,6 @@ DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 DG_INLINE bool DgnViewport::Is3dView() const {return m_is3dView;}
 DG_INLINE bool DgnViewport::IsActive() const {return NULL != m_output;}
 DG_INLINE bool DgnViewport::IsCameraOn() const {return m_isCameraOn;}
-DG_INLINE ViewFlagsCP DgnViewport::GetViewFlags() const {return &m_rootViewFlags;}
 DG_INLINE CameraInfo const& DgnViewport::GetCamera() const {return m_camera;}
 DG_INLINE void DgnViewport::SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
 DG_INLINE RotMatrixCR DgnViewport::GetRotMatrix() const {return m_rotMatrix;}
@@ -66,8 +65,6 @@ DG_INLINE bool DgnViewport::IsGridOn() const {return _IsGridOn();}
 DG_INLINE bool DgnViewport::IsSheetView() const {return _IsSheetView();}
 DG_INLINE ViewControllerCR DgnViewport::GetViewController() const {return *m_viewController;}
 DG_INLINE ViewControllerR DgnViewport::GetViewControllerR() const {return *m_viewController;}
-DG_INLINE DPoint3dCP DgnViewport::GetViewOrigin() const {return _GetViewOrigin();}
-DG_INLINE DPoint3dCP DgnViewport::GetViewDelta() const {return _GetViewDelta();}
 DG_INLINE void DgnViewport::Destroy() {_Destroy();}
 DG_INLINE ColorDef DgnViewport::GetBackgroundColor() const {return m_backgroundColor;}
 DG_INLINE void DgnViewport::GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
@@ -195,8 +192,6 @@ DG_INLINE double ViewContext::GetArcTolerance() const {return m_arcTolerance;}
 DG_INLINE double ViewContext::GetMinLOD() const {return m_minLOD;}
 DG_INLINE void ViewContext::SetMinLOD(double lod) { m_minLOD = lod; }
 DG_INLINE ScanCriteriaCP ViewContext::GetScanCriteria() const {return m_scanCriteria;}
-DG_INLINE ViewFlagsCP ViewContext::GetViewFlags() const {return m_IDrawGeom ? m_IDrawGeom->GetDrawViewFlags() : NULL;}
-DG_INLINE void ViewContext::SetViewFlags(ViewFlagsCP flags) {if (NULL != m_IDrawGeom) m_IDrawGeom->SetDrawViewFlags(flags);}
 DG_INLINE ElemDisplayParamsP ViewContext::GetCurrentDisplayParams() {return &m_currDisplayParams;}
 DG_INLINE bool ViewContext::GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
 DG_INLINE void ViewContext::SetArcTolerance(double tol) {m_arcTolerance = tol;}
@@ -247,10 +242,6 @@ DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m
 DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
 DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
 
-DG_INLINE IDrawGeom::IDrawGeom() { }
-
-DG_INLINE ViewFlagsCP IDrawGeom::GetDrawViewFlags() {return _GetDrawViewFlags();}
-DG_INLINE void IDrawGeom::SetDrawViewFlags(ViewFlagsCP flags) {_SetDrawViewFlags(flags);}
 DG_INLINE void IDrawGeom::ActivateMatSymb(ElemMatSymbCP matSymb){_ActivateMatSymb(matSymb);}
 DG_INLINE void IDrawGeom::ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb){_ActivateOverrideMatSymb(ovrMatSymb);}
 

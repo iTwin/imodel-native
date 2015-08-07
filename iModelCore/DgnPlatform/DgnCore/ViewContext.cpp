@@ -197,11 +197,11 @@ void ViewContext::_PushFrustumClip()
 
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
-    ViewFlagsCP viewFlags = GetViewFlags();
+    ViewFlags viewFlags = GetViewFlags();
 
     Frustum polyhedron = GetFrustum();
 
-    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), NULL != viewFlags && !viewFlags->noFrontClip, NULL != viewFlags && !viewFlags->noBackClip, 1.0E-6)))
+    if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, polyhedron.GetPts(), !viewFlags.noFrontClip, !viewFlags.noBackClip, 1.0E-6)))
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
     }
 
@@ -685,6 +685,7 @@ uint32_t ViewContext::GetLocalTransformKey() const
     return (uint32_t) transformedPoint.x + (uint32_t) transformedPoint.y + (uint32_t) transformedPoint.z;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -726,6 +727,7 @@ void StrokeElementForCache::_SaveQvElem(QvElemP qvElem, double pixelSize, double
 
     cacheSet->Add(QvSizedKey(pixelSize, sizeDependentRatio, unsizedKey), qvElem);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/15
@@ -848,18 +850,15 @@ void ViewContext::_OutputElement(GeometricElementCR element)
 void ViewContext::_AddViewOverrides(OvrMatSymbR ovrMatSymb)
     {
     // NOTE: ElemDisplayParams/ElemMatSymb ARE NOT setup at this point!
-    ViewFlagsCP viewFlags = GetViewFlags();
+    ViewFlags viewFlags = GetViewFlags();
 
-    if (NULL == viewFlags)
-        return;
-
-    if (!viewFlags->weights)
+    if (!viewFlags.weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!viewFlags->styles)
+    if (!viewFlags.styles)
         ovrMatSymb.SetRasterPattern(DgnViewport::GetDefaultIndexedLinePattern(0));
 
-    if (!viewFlags->transparency)
+    if (!viewFlags.transparency)
         {
         ovrMatSymb.SetLineTransparency(0);
         ovrMatSymb.SetFillTransparency(0);
@@ -1337,12 +1336,13 @@ QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache,
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvElem)
     {
-    static double   s_sizeDependentCacheRatio = 3.0;
-    double          sizeDependentRatio = s_sizeDependentCacheRatio;
-    double          pixelSize = 0.0;
 
     deleteQvElem = false;
+    QvElem*  qvElem = nullptr;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
+    static double   s_sizeDependentCacheRatio = 3.0;
+    double          pixelSize = 0.0;
     if (stroker._GetSizeDependentGeometryPossible())
         {
         DRange3d    localRange = stroker._GetRange();
@@ -1359,9 +1359,9 @@ QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvE
         return nullptr;
         }
 
-    bool     useCachedDisplay = _UseCachedDisplay();
-    QvElem*  qvElem = nullptr;
 
+    bool     useCachedDisplay = _UseCachedDisplay();
+    double          sizeDependentRatio = s_sizeDependentCacheRatio;
     // if there is already a qvElem, use that instead of stroking.
     if (useCachedDisplay)
         qvElem = stroker._GetQvElem(pixelSize);
@@ -1385,6 +1385,7 @@ QvElem* ViewContext::GetCachedGeometry(IStrokeForCache& stroker, bool& deleteQvE
         else
             deleteQvElem = true;
         }
+#endif
 
     return qvElem;
     }

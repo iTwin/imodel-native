@@ -72,7 +72,7 @@ void DgnViewport::InitViewSettings(bool useBgTexture)
     {
     BeAssert(m_output);
 
-    m_output->SetViewAttributes(*GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
+    m_output->SetViewAttributes(GetViewFlags(), m_backgroundColor, useBgTexture, _WantAntiAliasLines(), _WantAntiAliasText());
     m_qvParamsSet = true;
     }
 

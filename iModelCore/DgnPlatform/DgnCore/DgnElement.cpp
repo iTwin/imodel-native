@@ -88,7 +88,6 @@ void DgnElement::ClearAllAppData()
 * @bsimethod                                                    KeithBentley    02/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 HeapZone& DgnElement::GetHeapZone()  const {return GetDgnDb().Elements().GetHeapZone();}
-QvCache*  GeometricElement::GetMyQvCache() const {return GetDgnDb().Models().GetQvCache();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/01
@@ -118,6 +117,7 @@ DgnDbStatus DgnElement::_DeleteInDb() const
     return DgnDbStatus::WriteError;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   06/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -155,6 +155,7 @@ T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
     AddAppData(s_qvElemsKey, qvElems);
     return  qvElems;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
@@ -679,6 +680,7 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
     return DgnDbStatus::Success;
     }
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -687,6 +689,7 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
     T_QvElemSet* qvElems = GetQvElems(false);
     return qvElems ? qvElems->Find(id) : nullptr;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15

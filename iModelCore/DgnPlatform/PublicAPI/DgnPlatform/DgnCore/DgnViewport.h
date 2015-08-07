@@ -825,15 +825,15 @@ public:
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
-    DGNPLATFORM_EXPORT DPoint3dCP GetViewOrigin() const;
+    DPoint3dCP GetViewOrigin() const {return _GetViewOrigin();}
 
     //! Get the View Delta (size) of this DgnViewport in root coordinate distances.
     //! @return the view delta in root coordinate distances.
-    DGNPLATFORM_EXPORT DPoint3dCP GetViewDelta() const;
+    DPoint3dCP GetViewDelta() const  {return _GetViewDelta();}
 
     //! Get the current View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
-    DGNPLATFORM_EXPORT ViewFlagsCP GetViewFlags() const;
+    ViewFlags GetViewFlags() const {return m_rootViewFlags;}
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
