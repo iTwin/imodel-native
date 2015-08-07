@@ -26,7 +26,6 @@ struct DgnModelTests : public testing::Test
             {
             DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
             m_dgndb = tdm.GetDgnProjectP();
-           
             }
          //---------------------------------------------------------------------------------------
         // @bsimethod                                                   Julija Suboc     07/13
@@ -335,4 +334,205 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
         i++;
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnModelTests, ModelsIterator)
+    {
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP ();
+    ASSERT_TRUE (db != nullptr);
+
+    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    seedModel->FillModel ();
+    EXPECT_TRUE (seedModel != nullptr);
+
+    //Inserts models
+    DgnModelPtr M1 = seedModel->Clone ("Model1");
+    M1->Insert ("Test Model 1");
+    Utf8CP m1_name = M1->GetModelName ();
+    db->SaveChanges ("changeSet1");
+
+    DgnModelPtr M2 = seedModel->Clone ("Model2");
+    M2->Insert ("Test Model 2", true);
+
+    DgnModelPtr M3 = seedModel->Clone ("Model3");
+    M3->Insert ("Test Model 3", true);
+    db->SaveChanges ("changeSet1");
+
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model1").IsValid ());
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model2").IsValid ());
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model3").IsValid ());
+
+    DgnModelId m1id = db->Models ().QueryModelId ("Model1");
+    DgnModelId m2id = db->Models ().QueryModelId ("Model2");
+    DgnModelId m3id = db->Models ().QueryModelId ("Model3");
+
+    BentleyStatus ModelName = db->Models ().GetModelName ((Utf8StringR)m1_name, m1id);
+    EXPECT_EQ (0, ModelName);
+
+    DgnModels& models = db->Models ();
+    DgnModels::Iterator iter = models.MakeIterator ();
+    EXPECT_EQ (4, iter.QueryCount ());
+    DgnModels::Iterator::Entry entry = iter.begin ();
+    int i = 0;
+    for (auto const& entry : iter)
+        {
+        if (entry.GetModelId () == m1id)
+            {
+            EXPECT_EQ (M1->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
+            EXPECT_STREQ ("Model1", entry.GetName ());
+            EXPECT_STREQ ("Test Model 1", entry.GetDescription ());
+            EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
+            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
+            EXPECT_EQ (1, entry.GetVisibility ());
+            }
+        else if (entry.GetModelId () == m2id)
+            {
+            EXPECT_EQ (M2->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());
+            EXPECT_STREQ ("Model2", entry.GetName ());
+            EXPECT_STREQ ("Test Model 2", entry.GetDescription ());
+            EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
+            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
+            EXPECT_EQ (1, entry.GetVisibility ());
+            }
+        else if (entry.GetModelId () == m3id)
+            {
+            EXPECT_EQ (M3->GetClassId ().GetValue (), entry.GetClassId ().GetValue ());;
+            EXPECT_STREQ ("Model3", entry.GetName ());
+            EXPECT_STREQ ("Test Model 3", entry.GetDescription ());
+            EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
+            EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
+            EXPECT_EQ (1, entry.GetVisibility ());
+            }
+        i++;
+        }
+    iter.end ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnModelTests, AbandonChanges)
+    {
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP ();
+    ASSERT_TRUE (db != nullptr);
+
+    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    seedModel->FillModel ();
+    EXPECT_TRUE (seedModel != nullptr);
+
+    //Inserts a model
+    DgnModelPtr M1 = seedModel->Clone ("Model1");
+    M1->Insert ("Test Model 1");
+    EXPECT_TRUE (M1 != nullptr);
+    db->SaveChanges ("changeSet1");
+
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model1").IsValid ());
+    M1->Delete ();
+    EXPECT_FALSE (db->Models ().QueryModelId ("Model1").IsValid ());
+
+    DgnModelPtr model2 = seedModel->Clone ("Model2");
+    model2->Insert ();
+
+    //Model 1 should be back. Model 2 shouldnt be in the db anymore.
+    DbResult rzlt = db->AbandonChanges ();
+    EXPECT_TRUE (rzlt == 0);
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model1").IsValid ());
+    EXPECT_FALSE (db->Models ().QueryModelId ("Model2").IsValid ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct TestAppData : DgnModel::AppData
+    {
+    bool isFilled;
+    virtual DropMe _OnFilled (DgnModelCR model) override
+        {
+        isFilled = true;
+        return DropMe::No;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+//! Test for adding AppData on a model.
+* @bsimethod                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnModelTests, AddAppData)
+    {
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP ();
+    ASSERT_TRUE (db != nullptr);
+
+    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    seedModel->FillModel ();
+    EXPECT_TRUE (seedModel != nullptr);
+
+    //Inserts a model
+    DgnModelPtr M1 = seedModel->Clone ("Model1");
+    M1->Insert ("Test Model 1");
+    EXPECT_TRUE (M1 != nullptr);
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model1").IsValid ());
+
+    static DgnModel::AppData::Key m_key;
+    TestAppData *m_AppData = new TestAppData ();
+    M1->AddAppData (m_key, m_AppData);
+    M1->FillModel ();
+    EXPECT_TRUE (m_AppData->isFilled);
+    EXPECT_TRUE (M1->FindAppData (m_key) != nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+//! Test for dropping AppData from a model.
+* @bsimethod                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnModelTests, DropAppData)
+    {
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP ();
+    ASSERT_TRUE (db != nullptr);
+
+    DgnModelPtr seedModel = db->Models ().GetModel (db->Models ().QueryFirstModelId ());
+    seedModel->FillModel ();
+    EXPECT_TRUE (seedModel != nullptr);
+
+    //Inserts a model
+    DgnModelPtr M1 = seedModel->Clone ("Model1");
+    M1->Insert ("Test Model 1");
+    EXPECT_TRUE (M1 != nullptr);
+    EXPECT_TRUE (db->Models ().QueryModelId ("Model1").IsValid ());
+
+    static DgnModel::AppData::Key m_key;
+    TestAppData *m_AppData = new TestAppData ();
+    M1->AddAppData (m_key, m_AppData);
+    M1->FillModel ();
+    EXPECT_TRUE (m_AppData->isFilled);
+    StatusInt status = M1->DropAppData (m_key);
+    EXPECT_TRUE (status == 0);
+    EXPECT_TRUE (M1->FindAppData (m_key) == nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnModelTests, ReplaceInvalidCharacter)
+    {
+    DgnDbTestDgnManager tdm (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP ();
+    ASSERT_TRUE (db != nullptr);
+
+    Utf8String name = "Invalid*Name";
+    Utf8CP InvalidChar = "*";
+    Utf8Char replace = ' ';
+
+    bool check = DgnDbTable::IsValidName (name, InvalidChar);
+    EXPECT_FALSE (check);
+    DgnDbTable::ReplaceInvalidCharacters (name, InvalidChar, replace);
+    EXPECT_EQ ("Invalid Name", (Utf8String)name);
+    check = DgnDbTable::IsValidName (name, InvalidChar);
+    EXPECT_TRUE (check);
+    }
 
