@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScript/ts/ts/DgnObjectModelJsProjectionsTemplate.h $
+|     $Source: DgnScript/ts/ts/DgnJsApiProjectionTemplate.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
-#include "DgnScriptContextImpl.h"
+#include "DgnJsApi.h"
 
 ___GENERATED_UNSCOPED_CODE__
 

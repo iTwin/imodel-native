@@ -85,19 +85,35 @@ public:
         friend class DgnPlatformLib;
 
     public:
-
         //! Provides access to scripting services.
-        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScriptContext.
-        //! You may subclass ScriptingAdmin if you want to add more thread-specific contexts to it.
-        struct ScriptingAdmin : IHostObject
+        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScript.
+        //! You may subclass ScriptAdmin if you want to add more thread-specific contexts to it.
+        struct ScriptAdmin : IHostObject
             {
+            //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
+            struct ScriptLibraryImporter : IHostObject
+                {
+                //! Import the specified script
+                virtual void _ImportScriptLibrary(BeJsContextR, Utf8CP libName) = 0;
+                };
+
+            //! Interface for handling errors reported by scripts or that prevent scripts from running
+            struct ScriptErrorHandler : IHostObject
+                {
+                //! Handle a script error
+                enum class Category {ReportedByScript, Other};
+                DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description);
+                };
+
             BeJsEnvironmentP m_jsenv;
-            DgnScriptContextP m_dgnContext;
+            BeJsContextP m_jsContext;
+            bmap<Utf8String, bpair<ScriptLibraryImporter*,bool>> m_importers;
+            ScriptErrorHandler* m_errorHandler;
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            DGNPLATFORM_EXPORT ScriptingAdmin();
-            DGNPLATFORM_EXPORT ~ScriptingAdmin();
+            DGNPLATFORM_EXPORT ScriptAdmin();
+            DGNPLATFORM_EXPORT ~ScriptAdmin();
 
             //! Provide the script environment needed to evaluate script expressions on the host's thread. 
             //! There can only be one BeJsEnvironment per thread ... and this is it!
@@ -105,8 +121,8 @@ public:
             DGNPLATFORM_EXPORT BeJsEnvironmentR GetBeJsEnvironment();
 
             //! Provide the BeJsContext to use when executing script that needs to use the Dgn script object model. 
-            //! There can only be one DgnScriptContext per thread ... and this is it!
-            DGNPLATFORM_EXPORT DgnScriptContextR GetDgnScriptContext();
+            //! There can only be one DgnScript per thread ... and this is it!
+            DGNPLATFORM_EXPORT BeJsContextR GetDgnScriptContext();
 
             //! Obtain the text of the specified script program.
             //! This base class implementation looks for the program by name in the specified DgnDb.
@@ -117,6 +133,24 @@ public:
             //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
             //! @return non-zero if the JS program is not available from the library.
             DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
+
+            //! Register the script error handler
+            ScriptErrorHandler* RegisterScriptErrorHandler(ScriptErrorHandler& h) {auto was  = m_errorHandler; m_errorHandler = &h; return was;}
+
+            //! Handle a reported script error. Invokes the registered error handler.
+            DGNPLATFORM_EXPORT void HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description);
+
+            //! Register to import a set of projections or other script classes into the DgnScript JsContext
+            //! @param libName  the library's unique ID that will be requested by script client programs
+            //! @param importer the importer that can install the specified library
+            DGNPLATFORM_EXPORT void RegisterScriptLibraryImporter(Utf8CP libName, ScriptLibraryImporter& importer);
+
+            //! Make sure that the specified script library is loaded
+            //! @param libName  the library's unique ID that will be requested by script client programs
+            DGNPLATFORM_EXPORT BentleyStatus ImportScriptLibrary(Utf8CP libName); 
+
+            //! Clean up
+            DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;
             };
 
         //! Provides Exception handling capabilities
@@ -922,7 +956,7 @@ public:
         IACSManagerP            m_acsManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
-        ScriptingAdmin*         m_scriptingAdmin;
+        ScriptAdmin*         m_scriptingAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         
@@ -971,8 +1005,8 @@ public:
         //! Supply the RealityDataAdmin
         DGNPLATFORM_EXPORT virtual RealityDataAdmin& _SupplyRealityDataAdmin();
 
-        //! Supply the ScriptingAdmin
-        DGNPLATFORM_EXPORT virtual ScriptingAdmin& _SupplyScriptingAdmin();
+        //! Supply the ScriptAdmin
+        DGNPLATFORM_EXPORT virtual ScriptAdmin& _SupplyScriptingAdmin();
 
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
@@ -1021,7 +1055,7 @@ public:
         //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
-        ScriptingAdmin&         GetScriptingAdmin()        {return *m_scriptingAdmin;}
+        ScriptAdmin&         GetScriptAdmin()        {return *m_scriptingAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}

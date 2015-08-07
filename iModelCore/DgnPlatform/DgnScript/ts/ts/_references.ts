@@ -1,2 +1,2 @@
-﻿/// <reference path="DgnScriptContext.ts" />
+﻿/// <reference path="DgnScript.ts" />
  

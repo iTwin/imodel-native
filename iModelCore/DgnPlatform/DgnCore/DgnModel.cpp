@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -258,9 +258,8 @@ void DgnModel::Solver::Solve(DgnModelR model)
     {
     if (Type::Script == m_type)
         {
-        DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
         int retval;
-        DgnDbStatus xstatus = som.ExecuteModelSolver(retval, model, m_name.c_str(), m_parameters);
+        DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), m_parameters);
         if (xstatus != DgnDbStatus::Success || 0 != retval)
             {
             TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Model solver failed");   // *** NEEDS WORK: Get failure description from ModelSolver

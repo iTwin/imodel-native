@@ -1,5 +1,16 @@
 declare module BentleyApi.Dgn {
 
+    //! Utilities
+    class JsUtils implements IDisposable, BeJsProjection_RefCounted {
+        //! Make sure that a script library is loaded
+        static ImportLibrary(libName: Bentley_Utf8String): void;
+
+        //! Report an error
+        static ReportError(description: Bentley_Utf8String): void;
+
+        Dispose(): void;
+    }
+
     //! A wrapper for BentleyApi::DPoint3d
     class JsDPoint3d implements IDisposable, BeJsProjection_RefCounted {
         static Create(x: cxx_double, y: cxx_double, z: cxx_double): cxx_pointer<JsDPoint3d>;
