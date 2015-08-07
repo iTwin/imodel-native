@@ -709,6 +709,16 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importer)
+    {
+    m_modelId = importer.FindModelId(m_modelId);
+    m_categoryId = importer.RemapCategory(m_categoryId);
+    m_classId = importer.RemapClassId(m_classId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
@@ -752,6 +762,38 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
+    {
+    DgnElement::CreateParams params = GetCreateParamsForImport(importer);
+    params.m_modelId = destModel.GetModelId();
+
+    DgnElementPtr cloneElem = GetElementHandler().Create(params);
+
+    if (!cloneElem.IsValid())
+        {
+        if (nullptr != stat)
+            *stat = DgnDbStatus::BadRequest;
+
+        return nullptr;
+        }
+
+    cloneElem->_CopyFrom(*this);
+
+    if (importer.IsBetweenDbs())
+        {
+        cloneElem->_RemapIds(importer);
+        cloneElem->_AdjustPlacementForImport(importer);
+        }
+
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
+
+    return cloneElem;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_CopyFrom(DgnElementCR other)
@@ -759,17 +801,23 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    if (&m_dgndb != &other.m_dgndb)
-        {
-        BeAssert(false);
-        return;
-        }
+    // Copying between DgnDbs is allowed. Caller must do ID remapping.
 
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
     m_lastModTime = other.m_lastModTime;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_RemapIds(DgnImportContext& importer)
+    {
+    BeAssert(importer.IsBetweenDbs());
+    m_categoryId = importer.RemapCategory(m_categoryId);
+    m_parentId   = importer.FindElementId(m_parentId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -785,6 +833,53 @@ void GeometricElement::_CopyFrom(DgnElementCR other)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_RemapIds(DgnImportContext& importer)
+    {
+    BeAssert(importer.IsBetweenDbs());
+    T_Super::_RemapIds(importer);
+    ElementGeomIO::Import(m_geom, m_geom, importer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams DgnElement::GetCreateParamsForImport(DgnImportContext& importer) const
+    {
+    CreateParams parms(importer.GetDestinationDb(), GetModelId(), GetElementClassId(), GetCategoryId());
+    if (importer.IsBetweenDbs())
+        {
+        // Caller probably wants to preserve these when copying between Dbs. We never preserve them when copying within a Db.
+        parms.m_label = GetLabel();
+        parms.m_code = GetCode();
+
+        parms.RelocateToDestinationDb(importer);
+        }
+    return parms;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const
+    {
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
+
+    DgnElementPtr cc = _CloneForImport(stat, destModel, importer); // (also calls _CopyFrom and _RemapIds)
+    if (!cc.IsValid())
+        return DgnElementCPtr();
+
+    DgnElementCPtr ccp = cc->Insert(stat);
+    if (!ccp.IsValid())
+        return ccp;
+
+    importer.AddElementId(GetElementId(), ccp->GetElementId());
+    return ccp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement3d::_CopyFrom(DgnElementCR other)
@@ -794,6 +889,15 @@ void DgnElement3d::_CopyFrom(DgnElementCR other)
     DgnElement3dCP el3d = other.ToElement3d();
     if (el3d)
         m_placement = el3d->m_placement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement3d::_AdjustPlacementForImport(DgnImportContext const& importer)
+    {
+    m_placement.GetOriginR().Add(DPoint3d::From(importer.GetOriginOffset()));
+    m_placement.GetAnglesR().AddYaw(importer.GetYawAdjustment());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1174,7 +1278,36 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
     return DropMe::Yes; // this scheduled change has been processed, so remove it.
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::Aspect> DgnElement::Aspect::_CloneForImport(DgnElementCR el, DgnImportContext& importer) const
+    {
+    DgnClassId classid = GetECClassId(el.GetDgnDb());
+    if (!el.GetElementId().IsValid() || !classid.IsValid())
+        return nullptr;
 
+    dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
+    if (nullptr == handler)
+        return nullptr;
+
+    RefCountedPtr<DgnElement::Aspect> aspect = handler->_CreateInstance().get();
+    if (!aspect.IsValid())
+        return nullptr;
+
+    // *** WIP_IMPORTER - we read the *persistent* properties -- we don't copy the in-memory copies -- pending changes are ignored!
+
+    if (DgnDbStatus::Success != aspect->_LoadProperties(el))
+        return nullptr;
+
+    // Assume that there are no IDs to be remapped.
+
+    return aspect;
+    }
+
+/*=================================================================================**//**
+* @bsimethod                                    Sam.Wilson      06/15
++===============+===============+===============+===============+===============+======*/
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
 {

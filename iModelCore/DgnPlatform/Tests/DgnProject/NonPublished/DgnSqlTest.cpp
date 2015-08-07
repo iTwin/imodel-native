@@ -235,37 +235,20 @@ TEST_F(SqlFunctionsTest, placement_angles)
     ASSERT_EQ( BE_SQLITE_DONE, stmt.Step() );
 
     //  Now add an additional where clause, so that we find only elem2At90
-#ifndef DONT_USE_ECSQL
-    if (true)
-        {
-        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
-        // This query looks for "Obstacles" that are oriented at 90 degrees in the X-Y plane.
-        // It is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
-        // This example also shows how to combine tests on geometry and business properties in a single query. 
-        // This example uses ECSql.
-        ECSqlStatement estmt;
-        estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
-                                DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
-                                DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " AS o"
-                             " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
-        //__PUBLISH_EXTRACT_END__
-        ASSERT_EQ( EC::ECSqlStepStatus::HasRow , estmt.Step() );
-        ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
-        ASSERT_EQ( EC::ECSqlStepStatus::Done, estmt.Step() );
-        }
-#else
-    if (true)
-        {
-        Statement estmt;
-        estmt.Prepare(*m_db, "SELECT o.Id FROM " 
-                                DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g,"
-                                DGN_TABLE(DGN_CLASSNAME_Element) " AS o"
-                             " WHERE (o.Id=g.ElementId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
-        ASSERT_EQ( BE_SQLITE_ROW , estmt.Step() );
-        ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
-        ASSERT_EQ( BE_SQLITE_DONE, estmt.Step() );
-        }
-#endif
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
+    // This query looks for "Obstacles" that are oriented at 90 degrees in the X-Y plane.
+    // It is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
+    // This example also shows how to combine tests on geometry and business properties in a single query. 
+    // This example uses ECSql.
+    ECSqlStatement estmt;
+    estmt.Prepare(*m_db, "SELECT o.ECInstanceId FROM " 
+                            DGN_SCHEMA(DGN_CLASSNAME_ElementGeom) " AS g,"
+                            DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " AS o"
+                            " WHERE (o.ECInstanceId=g.ECInstanceId) AND (o.SomeProperty = 'B') AND (DGN_angles_maxdiff(DGN_placement_angles(g.Placement),DGN_Angles(90.0,0,0)) < 1.0)");
+    //__PUBLISH_EXTRACT_END__
+    ASSERT_EQ( EC::ECSqlStepStatus::HasRow , estmt.Step() );
+    ASSERT_EQ( elem2At90->GetElementId() , estmt.GetValueId<DgnElementId>(0) );
+    ASSERT_EQ( EC::ECSqlStepStatus::Done, estmt.Step() );
     }
 
 /*---------------------------------------------------------------------------------**//**

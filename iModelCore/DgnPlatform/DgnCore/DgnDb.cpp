@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include <DgnPlatform/DgnGeoCoord.h>
 
 #define WSTR(astr) WString(astr,BentleyCharEncoding::Utf8).c_str()
 
@@ -263,9 +264,9 @@ DgnAnnotationFrameStyles& DgnStyles::AnnotationFrameStyles() {if (NULL == m_anno
 DgnAnnotationLeaderStyles& DgnStyles::AnnotationLeaderStyles() {if (NULL == m_annotationLeaderStyles) m_annotationLeaderStyles = new DgnAnnotationLeaderStyles(m_dgndb); return *m_annotationLeaderStyles;}
 DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnnotationSeeds) m_textAnnotationSeeds = new DgnTextAnnotationSeeds(m_dgndb); return *m_textAnnotationSeeds;}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
     {
     ECN::ECValue v;
@@ -297,9 +298,9 @@ BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstance
     return BSISUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
     {
     size_t offset = 0;
@@ -313,9 +314,9 @@ BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstance
     return BSISUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
     {
     Statement stmt;
@@ -333,9 +334,9 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
     return (BE_SQLITE_DONE == res)? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred)
     {
     Statement stmt;
@@ -352,9 +353,9 @@ DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& styp
     return DgnDbStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnScriptLibrary::ReadText(Utf8StringR jsprog, BeFileNameCR jsFileName)
     {
     uint64_t fileSize;
@@ -369,4 +370,75 @@ DgnDbStatus DgnScriptLibrary::ReadText(Utf8StringR jsprog, BeFileNameCR jsFileNa
     fclose(fp);
     jsprog[nread] = 0;
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+    DgnClassId dest = m_remap.Find(source);
+    if (dest.IsValid())
+        return dest;
+
+    ECN::ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source.GetValue());
+    if (nullptr == sourceecclass)
+        return DgnClassId();
+
+    ECN::ECClassCP destecclass = GetDestinationDb().Schemas().GetECClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
+    if (nullptr == destecclass)
+        return DgnClassId();
+
+    return m_remap.Add(source, DgnClassId(destecclass->GetId()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) 
+    : m_sourceDb(source), m_destDb(dest) 
+    {
+    DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
+    DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();
+
+    m_xyOffset = DPoint2d::FromZero();
+    m_yawAdj = AngleInDegrees::FromDegrees(0);
+
+    if (!IsBetweenDbs() || nullptr == sourceGcs || nullptr == destGcs)
+        {
+        m_areCompatibleDbs = true;
+        return;
+        }
+
+    WString spn, dpn;
+    if (0 != wcscmp(sourceGcs->GetProjectionName(spn), destGcs->GetProjectionName(dpn)))
+        {
+        m_areCompatibleDbs = false;
+        return;
+        }
+
+    GeoPoint sourceOrgLatLng;
+    if (REPROJECT_Success != sourceGcs->LatLongFromUors(sourceOrgLatLng, DPoint3d::FromZero()))
+        {
+        m_areCompatibleDbs = false;
+        return;
+        }
+    DPoint3d destCoordinates;
+    if (REPROJECT_Success != destGcs->UorsFromLatLong(destCoordinates, sourceOrgLatLng))
+        {
+        m_areCompatibleDbs = false;
+        return;
+        }
+    
+    if (0 != BeNumerical::Compare(0.0, destCoordinates.z))
+        {
+        BeDataAssert(false && "different elevations??");
+        m_areCompatibleDbs = false;
+        return;
+        }
+
+    m_xyOffset = DPoint2d::From(destCoordinates.x, destCoordinates.y);
+    m_yawAdj = AngleInDegrees::FromRadians(destGcs->GetAzimuth() - sourceGcs->GetAzimuth());
     }
