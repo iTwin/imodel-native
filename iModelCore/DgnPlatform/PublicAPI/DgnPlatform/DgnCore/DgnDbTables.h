@@ -155,7 +155,7 @@ struct DgnCategories : DgnDbTable
             double          m_transparency;
 
         public:
-            void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate();}
+            void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
             Appearance() {Init();}
             explicit Appearance(Utf8StringCR val) {FromJson(val);}
 
