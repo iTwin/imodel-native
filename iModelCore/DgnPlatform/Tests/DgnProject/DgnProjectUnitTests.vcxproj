@@ -61,6 +61,7 @@
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
     <ClCompile Include="Published\DgnECNavigator_Test.cpp" />
+    <ClCompile Include="Published\DgnElement_Test.cpp" />
     <ClCompile Include="Published\DgnGraphics_Test.cpp" />
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />

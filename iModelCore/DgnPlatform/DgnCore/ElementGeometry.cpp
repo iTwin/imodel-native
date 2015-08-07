@@ -2702,15 +2702,10 @@ bool GeometricElement::_DrawHit(HitDetailCR hit, ViewContextR context) const
             return false;
         }
 
-    GeometricElementCPtr element = hit.GetElement();
-
-    if (!element.IsValid())
-        return false;
-
-    context.SetCurrentElement(element.get());
+    context.SetCurrentElement(this);
 
     // Get the ElemDisplayParams for this hit from the GeomStream...
-    ElementGeometryCollection collection(*element);
+    ElementGeometryCollection collection(*this);
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh);
 
@@ -2757,6 +2752,14 @@ bool GeometricElement::_DrawHit(HitDetailCR hit, ViewContextR context) const
     context.SetCurrentElement(nullptr);
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+SnapStatus GeometricElement::_OnSnap (SnapContextR context) const
+    {
+    return context.DoDefaultDisplayableSnap();
     }
 
 /*---------------------------------------------------------------------------------**//**

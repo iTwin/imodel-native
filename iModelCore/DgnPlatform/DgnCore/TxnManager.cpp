@@ -839,9 +839,9 @@ void TxnManager::DeleteReversedTxns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::GetChangeSummary(ECChangeSummary& ecChangeSummary, TxnId startTxnId)
+DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId startTxnId)
     {
-    BeAssert(&ecChangeSummary.GetDb() == &m_dgndb);
+    BeAssert(&changeSummary.GetDb() == &m_dgndb);
 
     TxnId endTxnId = GetCurrentTxnId();
     if (!startTxnId.IsValid() || startTxnId >= endTxnId)
@@ -883,8 +883,8 @@ DgnDbStatus TxnManager::GetChangeSummary(ECChangeSummary& ecChangeSummary, TxnId
         return DgnDbStatus::SQLiteError;
         }
 
-    ecChangeSummary.Free();
-    BentleyStatus status = ecChangeSummary.FromSqlChangeSet(mergedSqlChangeSet);
+    changeSummary.Free();
+    BentleyStatus status = changeSummary.FromSqlChangeSet(mergedSqlChangeSet);
     BeAssert(status == SUCCESS);
     UNUSED_VARIABLE(status);
 

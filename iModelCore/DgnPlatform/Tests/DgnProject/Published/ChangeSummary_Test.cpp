@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/ECChangeSummary_Test.cpp $
+|  $Source: Tests/DgnProject/Published/ChangeSummary_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,9 +13,9 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //=======================================================================================
-//! ECChangeSummaryTestFixture
+//! ChangeSummaryTestFixture
 //=======================================================================================
-struct ECChangeSummaryTestFixture : public GenericDgnModelTestFixture
+struct ChangeSummaryTestFixture : public GenericDgnModelTestFixture
     {
     protected:
         DgnDbPtr m_testDb;
@@ -31,17 +31,17 @@ struct ECChangeSummaryTestFixture : public GenericDgnModelTestFixture
         void DeleteElement();
 
         void DumpSqlChangeSet(ChangeSet const& sqlChangeSet, Utf8CP label);
-        void DumpECChangeSummary(ECChangeSummary const& ecChangeSummary, Utf8CP label);
+        void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
 
-        void GetECChangeSummaryFromCurrentTransaction(ECChangeSummary& ecChangeSummary);
-        void GetECChangeSummaryFromSavedTransactions(ECChangeSummary& ecChangeSummary);
+        void GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary);
+        void GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary);
 
-        bool ECChangeSummaryHasChange(ECChangeSummary const& ecChangeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
+        bool ChangeSummaryHasChange(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
         BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
 
     public:
-        ECChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
-        virtual ~ECChangeSummaryTestFixture() {}
+        ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
+        virtual ~ChangeSummaryTestFixture() {}
         virtual void SetUp() override {}
         virtual void TearDown() override {}
     };
@@ -62,23 +62,23 @@ struct SqlChangeSet : BeSQLite::ChangeSet
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::CreateProject()
+void ChangeSummaryTestFixture::CreateProject()
     {
     CreateDgnDbParams createProjectParams;
     createProjectParams.SetOverwriteExisting(true);
 
     //Deleting the project file if it exists already
-    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"ECChangeSummaryTest.dgndb"));
+    BeFileName::BeDeleteFile(DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"));
 
     DbResult createStatus;
-    m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ECChangeSummaryTest.dgndb"), createProjectParams);
+    m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"), createProjectParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not create test project";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::InsertModel()
+void ChangeSummaryTestFixture::InsertModel()
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId classId = m_testDb->Domains().GetClassId(handler);
@@ -91,7 +91,7 @@ void ECChangeSummaryTestFixture::InsertModel()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::InsertCategory()
+void ChangeSummaryTestFixture::InsertCategory()
     {
     DgnCategories::Category category("ChangeSetTestCategory", DgnCategories::Scope::Physical);
     category.SetRank(DgnCategories::Rank::Application);
@@ -108,7 +108,7 @@ void ECChangeSummaryTestFixture::InsertCategory()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::InsertElement()
+void ChangeSummaryTestFixture::InsertElement()
     {
     PhysicalModelP physicalTestModel = dynamic_cast<PhysicalModelP> (m_testModel.get());
     BeAssert(physicalTestModel != nullptr);
@@ -135,7 +135,7 @@ void ECChangeSummaryTestFixture::InsertElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::ModifyElement()
+void ChangeSummaryTestFixture::ModifyElement()
     {
     RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(m_testElementId);
     BeAssert(testElement.IsValid());
@@ -151,7 +151,7 @@ void ECChangeSummaryTestFixture::ModifyElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::DeleteElement()
+void ChangeSummaryTestFixture::DeleteElement()
     {
     DgnDbStatus dbStatus = m_testDb->Elements().Delete(m_testElementId);
     BeAssert(dbStatus == DgnDbStatus::Success);
@@ -160,16 +160,16 @@ void ECChangeSummaryTestFixture::DeleteElement()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::DumpECChangeSummary(ECChangeSummary const& ecChangeSummary, Utf8CP label)
+void ChangeSummaryTestFixture::DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label)
     {
     printf("%s:\n", label);
-    ecChangeSummary.Dump();
+    changeSummary.Dump();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Utf8CP label)
+void ChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Utf8CP label)
     {
     printf("%s:\n", label);
     
@@ -238,9 +238,9 @@ void ECChangeSummaryTestFixture::DumpSqlChangeSet(ChangeSet const& changeSet, Ut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    072015
 //---------------------------------------------------------------------------------------
-bool ECChangeSummaryTestFixture::ECChangeSummaryHasChange(ECChangeSummary const& ecChangeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode)
+bool ChangeSummaryTestFixture::ChangeSummaryHasChange(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode)
     {
-    Utf8String tableName = ecChangeSummary.GetChangeSummaryTableName();
+    Utf8String tableName = changeSummary.GetChangeSummaryTableName();
     ECClassId classId = m_testDb->Schemas().GetECClassId(schemaName, className);
 
     Utf8PrintfString sql("SELECT NULL FROM %s WHERE ClassId=? AND InstanceId=? AND DbOpcode=?", tableName.c_str());
@@ -258,7 +258,7 @@ bool ECChangeSummaryTestFixture::ECChangeSummaryHasChange(ECChangeSummary const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECChangeSummaryTestFixture::ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb)
+BentleyStatus ChangeSummaryTestFixture::ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb)
     {
     ECClassCR ecClass = instance.GetClass();
     ECInstanceInserter inserter(dgndb, ecClass);
@@ -271,46 +271,46 @@ BentleyStatus ECChangeSummaryTestFixture::ImportECInstance(ECInstanceKey& instan
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::GetECChangeSummaryFromCurrentTransaction(ECChangeSummary& ecChangeSummary)
+void ChangeSummaryTestFixture::GetChangeSummaryFromCurrentTransaction(ChangeSummary& changeSummary)
     {
     SqlChangeSet sqlChangeSet;
     DbResult result = sqlChangeSet.FromChangeTrack(m_testDb->Txns(), ChangeSet::SetType::Full);
     ASSERT_TRUE(BE_SQLITE_OK == result);
 
-    ecChangeSummary.Free();
-    BentleyStatus status = ecChangeSummary.FromSqlChangeSet(sqlChangeSet);
+    changeSummary.Free();
+    BentleyStatus status = changeSummary.FromSqlChangeSet(sqlChangeSet);
     ASSERT_TRUE(SUCCESS == status);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-void ECChangeSummaryTestFixture::GetECChangeSummaryFromSavedTransactions(ECChangeSummary& ecChangeSummary)
+void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSummary& changeSummary)
     {
-    DgnDbStatus status = m_testDb->Txns().GetChangeSummary(ecChangeSummary, m_testDb->Txns().GetSessionStartId());
+    DgnDbStatus status = m_testDb->Txns().GetChangeSummary(changeSummary, m_testDb->Txns().GetSessionStartId());
     ASSERT_TRUE(status == DgnDbStatus::Success);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
+TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     {
     CreateProject();
     m_testDb->Txns().EnableTracking(true);
 
-    ECChangeSummary ecChangeSummary(*m_testDb);
+    ChangeSummary changeSummary(*m_testDb);
 
     m_testDb->SaveChanges();
     InsertModel();
     InsertCategory();
     InsertElement();
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserts");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
 
-    ECChangeSummary after inserts:
+    ChangeSummary after inserts:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;148;dgn:ElementGeom;Insert;No
     1;160;dgn:ElementOwnsGeom;Insert;No
@@ -322,30 +322,30 @@ TEST_F(ECChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     1;132;dgn:Category;Insert;No
     1;171;dgn:PhysicalModel;Insert;No
     */
-    ASSERT_EQ(9, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
+    ASSERT_EQ(9, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
     ModifyElement();
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
     
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after updates");
+    DumpChangeSummary(changeSummary, "ChangeSummary after updates");
 
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;169;dgn:PhysicalElement;Update;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update));
 
     m_testDb->SaveChanges();
     DeleteElement();
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
     
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after deletes");
+    DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
 
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;148;dgn:ElementGeom;Delete;Yes
@@ -354,19 +354,19 @@ TEST_F(ECChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     1;167;dgn:ModelContainsElements;Delete;No
     1;169;dgn:PhysicalElement;Delete;No
     */
-    ASSERT_EQ(5, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
+    ASSERT_EQ(5, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
+TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     {
     CreateProject();
     m_testDb->Txns().EnableTracking(true);
     
-    ECChangeSummary ecChangeSummary(*m_testDb);
+    ChangeSummary changeSummary(*m_testDb);
 
     InsertModel();
     InsertCategory();
@@ -374,10 +374,10 @@ TEST_F(ECChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /* 
-    DumpECChangeSummary(ecChangeSummary, "After inserts");
+    DumpChangeSummary(changeSummary, "After inserts");
 
     After inserts:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
@@ -391,16 +391,16 @@ TEST_F(ECChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     1;148;dgn:ElementGeom;Insert;No
     1;160;dgn:ElementOwnsGeom;Insert;No
     */
-    ASSERT_EQ(9, ecChangeSummary.MakeIterator().QueryCount());
+    ASSERT_EQ(9, changeSummary.MakeIterator().QueryCount());
 
     ModifyElement();
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "After updates");
+    DumpChangeSummary(changeSummary, "After updates");
 
     After updates:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
@@ -414,16 +414,16 @@ TEST_F(ECChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     1;148;dgn:ElementGeom;Insert;No
     1;160;dgn:ElementOwnsGeom;Insert;No
     */
-    ASSERT_EQ(9, ecChangeSummary.MakeIterator().QueryCount());
+    ASSERT_EQ(9, changeSummary.MakeIterator().QueryCount());
 
     DeleteElement();
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "After deletes");
+    DumpChangeSummary(changeSummary, "After deletes");
 
     After deletes:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
@@ -432,13 +432,13 @@ TEST_F(ECChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     1;133;dgn:CategoryOwnsSubCategories;Insert;No
     1;134;dgn:SubCategory;Insert;No
     */
-    ASSERT_EQ(4, ecChangeSummary.MakeIterator().QueryCount());
+    ASSERT_EQ(4, changeSummary.MakeIterator().QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, ValidateIterator)
+TEST_F(ChangeSummaryTestFixture, ValidateIterator)
     {
     CreateProject();
     m_testDb->Txns().EnableTracking(true);
@@ -447,18 +447,18 @@ TEST_F(ECChangeSummaryTestFixture, ValidateIterator)
     InsertCategory();
     InsertElement();
 
-    ECChangeSummary ecChangeSummary(*m_testDb);
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    ChangeSummary changeSummary(*m_testDb);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     int countIter = 0;
-    for (ECChangeSummary::Iterator::const_iterator const& entry : ecChangeSummary.MakeIterator())
+    for (ChangeSummary::Iterator::const_iterator const& entry : changeSummary.MakeIterator())
         {
         countIter++;
         UNUSED_VARIABLE(entry);
         }
     ASSERT_EQ(countIter, 9);
 
-    int countQuery = ecChangeSummary.MakeIterator().QueryCount();
+    int countQuery = changeSummary.MakeIterator().QueryCount();
     ASSERT_EQ(countQuery, 9);
     }
 
@@ -469,7 +469,7 @@ extern IECInstancePtr CreateStartupCompanyInstance(ECSchemaCR startupSchema);
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
+TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     {
     CreateProject();
 
@@ -487,23 +487,23 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 
     m_testDb->Txns().EnableTracking(true);
 
-    ECChangeSummary ecChangeSummary(*m_testDb);
+    ChangeSummary changeSummary(*m_testDb);
 
     ECInstanceKey instanceKey;
     BentleyStatus status = ImportECInstance(instanceKey, *instance, *m_testDb);
     ASSERT_TRUE(SUCCESS == status);
 
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting instance with struct array");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting instance with struct array");
 
-    ECChangeSummary after inserting instance with struct array:
+    ChangeSummary after inserting instance with struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Insert;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
 
@@ -513,17 +513,17 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
 
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after updating one row in the struct array table");
+    DumpChangeSummary(changeSummary, "ChangeSummary after updating one row in the struct array table");
 
-    ECChangeSummary after updating one row in the struct array table:
+    ChangeSummary after updating one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Update;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
 
     m_testDb->SaveChanges();
 
@@ -533,17 +533,17 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     result = stmt.Step();
     ASSERT_TRUE(BE_SQLITE_DONE == result);
 
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after deleting one row in the struct array table");
+    DumpChangeSummary(changeSummary, "ChangeSummary after deleting one row in the struct array table");
 
-    ECChangeSummary after deleting one row in the struct array table:
+    ChangeSummary after deleting one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Update;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Update));
 
     m_testDb->SaveChanges();
     
@@ -558,17 +558,17 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     ECSqlStepStatus stepStatus = ecSqlStmt.Step();
     ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
 
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after deleting instance that contains a struct array");
+    DumpChangeSummary(changeSummary, "ChangeSummary after deleting instance that contains a struct array");
 
-    ECChangeSummary after deleting instance that contains a struct array:
+    ChangeSummary after deleting instance that contains a struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Delete;Yes
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Delete));
 
     m_testDb->SaveChanges();
 
@@ -579,23 +579,23 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     stepStatus = ecSqlStmt.Step (structInstanceKey);
     ASSERT_TRUE(ECSqlStepStatus::Done == stepStatus);
 
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting a plain struct that gets stored in a struct array table");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting a plain struct that gets stored in a struct array table");
 
-    ECChangeSummary after inserting a plain struct that gets stored in a struct array table:
+    ChangeSummary after inserting a plain struct that gets stored in a struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     5;197;StartupCompany:AnglesStruct;Insert;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
+TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     {
     CreateProject();
 
@@ -613,7 +613,7 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     m_testDb->Txns().EnableTracking(true);
 
-    ECChangeSummary ecChangeSummary(*m_testDb);
+    ChangeSummary changeSummary(*m_testDb);
 
     ECInstanceKey instanceKey;
     BentleyStatus status = ImportECInstance(instanceKey, *instance, *m_testDb);
@@ -621,17 +621,17 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting instance with struct array");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting instance with struct array");
 
-    ECChangeSummary after inserting instance with struct array:
+    ChangeSummary after inserting instance with struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Insert;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     Statement stmt;
     DbResult result = stmt.Prepare(*m_testDb, "UPDATE sc_ArrayOfAnglesStruct SET Alpha=1, Beta=2, Theta=3 WHERE ECArrayIndex=2");
@@ -641,17 +641,17 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after updating one row in the struct array table");
+    DumpChangeSummary(changeSummary, "ChangeSummary after updating one row in the struct array table");
 
-    ECChangeSummary after updating one row in the struct array table:
+    ChangeSummary after updating one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Insert;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     stmt.Finalize();
     result = stmt.Prepare(*m_testDb, "DELETE FROM sc_ArrayOfAnglesStruct WHERE ECArrayIndex=2");
@@ -661,17 +661,17 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
     
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after deleting one row in the struct array table");
+    DumpChangeSummary(changeSummary, "ChangeSummary after deleting one row in the struct array table");
 
-    ECChangeSummary after deleting one row in the struct array table:
+    ChangeSummary after deleting one row in the struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;235;StartupCompany:Foo;Insert;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, instanceKey.GetECInstanceId(), "StartupCompany", "Foo", DbOpcode::Insert));
 
     ECClassCP ecClass = ecClass = m_testDb->Schemas().GetECClass(instanceKey.GetECClassId());
     ASSERT_TRUE(ecClass != nullptr);
@@ -686,15 +686,15 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after deleting instance that contains a struct array");
+    DumpChangeSummary(changeSummary, "ChangeSummary after deleting instance that contains a struct array");
 
-    ECChangeSummary after deleting instance that contains a struct array:
+    ChangeSummary after deleting instance that contains a struct array:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     */
-    ASSERT_EQ(0, ecChangeSummary.MakeIterator().QueryCount());
+    ASSERT_EQ(0, changeSummary.MakeIterator().QueryCount());
 
     ecSqlStmt.Finalize();
     ecSqlStatus = ecSqlStmt.Prepare(*m_testDb, "INSERT INTO StartupCompany.AnglesStruct (Alpha,Beta,Theta) VALUES(1.1,2.2,3.3)");
@@ -705,23 +705,23 @@ TEST_F(ECChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 
     m_testDb->SaveChanges();
 
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting a plain struct that gets stored in a struct array table");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting a plain struct that gets stored in a struct array table");
 
-    ECChangeSummary after inserting a plain struct that gets stored in a struct array table:
+    ChangeSummary after inserting a plain struct that gets stored in a struct array table:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     5;197;StartupCompany:AnglesStruct;Insert;No
     */
-    ASSERT_EQ(1, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
+    ASSERT_EQ(1, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, structInstanceKey.GetECInstanceId(), "StartupCompany", "AnglesStruct", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
+TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
     CreateProject();
 
@@ -772,24 +772,24 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     stepStatus = statement.Step(hardwareKey2);
     ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
 
-    ECChangeSummary ecChangeSummary(*m_testDb);
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    ChangeSummary changeSummary(*m_testDb);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting instances");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
 
-    ECChangeSummary after inserting instances:
+    ChangeSummary after inserting instances:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     3;219;StartupCompany:Hardware;Insert;No
     2;215;StartupCompany:Company;Insert;No
     1;224;StartupCompany:Employee;Insert;No
     */
-    ASSERT_EQ(5, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    ASSERT_EQ(5, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
 
@@ -815,20 +815,20 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     stepStatus = statement.Step(employeeHardwareKey);
     ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
 
-    ecChangeSummary.Free();
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    changeSummary.Free();
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting relationships");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
 
-    ECChangeSummary after inserting relationships:
+    ChangeSummary after inserting relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     6;229;StartupCompany:EmployeeHardware;Insert;No
     1;226;StartupCompany:EmployeeCompany;Insert;No
     */
-    ASSERT_EQ(2, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    ASSERT_EQ(2, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
     m_testDb->SaveChanges();
 
@@ -869,28 +869,28 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     stepStatus = statement.Step(employeeCompanyKey2);
     ASSERT_TRUE(stepStatus == ECSqlStepStatus::Done);
 
-    ecChangeSummary.Free();
-    GetECChangeSummaryFromCurrentTransaction(ecChangeSummary);
+    changeSummary.Free();
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after updating (deleting and inserting different) relationships");
+    DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
 
-    ECChangeSummary after updating (deleting and inserting different) relationships:
+    ChangeSummary after updating (deleting and inserting different) relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;226;StartupCompany:EmployeeCompany;Update;No
     6;229;StartupCompany:EmployeeHardware;Delete;Yes
     7;229;StartupCompany:EmployeeHardware;Insert;No
     */
-    ASSERT_EQ(3, ecChangeSummary.MakeIterator().QueryCount());
+    ASSERT_EQ(3, changeSummary.MakeIterator().QueryCount());
     ASSERT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
+TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     {
     CreateProject();
 
@@ -943,13 +943,13 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     m_testDb->SaveChanges();
 
-    ECChangeSummary ecChangeSummary(*m_testDb);
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    ChangeSummary changeSummary(*m_testDb);
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting instances");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting instances");
 
-    ECChangeSummary after inserting instances:
+    ChangeSummary after inserting instances:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     1;224;StartupCompany:Employee;Insert;No
     2;215;StartupCompany:Company;Insert;No
@@ -957,12 +957,12 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     4;219;StartupCompany:Hardware;Insert;No
     5;219;StartupCompany:Hardware;Insert;No
     */
-    ASSERT_EQ(5, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    ASSERT_EQ(5, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(companyKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(companyKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(hardwareKey1.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(hardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
     statement.Finalize();
     statement.Prepare(*m_testDb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
@@ -988,11 +988,11 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     m_testDb->SaveChanges();
 
-    ecChangeSummary.Free();
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    changeSummary.Free();
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after inserting relationships");
+    DumpChangeSummary(changeSummary, "ChangeSummary after inserting relationships");
 
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     6;229;StartupCompany:EmployeeHardware;Insert;No
@@ -1003,9 +1003,9 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     4;219;StartupCompany:Hardware;Insert;No
     5;219;StartupCompany:Hardware;Insert;No
     */
-    ASSERT_EQ(7, ecChangeSummary.MakeIterator().QueryCount());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    ASSERT_EQ(7, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeHardwareKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
     /*
     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
@@ -1046,13 +1046,13 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 
     m_testDb->SaveChanges();
 
-    ecChangeSummary.Free();
-    GetECChangeSummaryFromSavedTransactions(ecChangeSummary);
+    changeSummary.Free();
+    GetChangeSummaryFromSavedTransactions(changeSummary);
 
     /*
-    DumpECChangeSummary(ecChangeSummary, "ECChangeSummary after updating (deleting and inserting different) relationships");
+    DumpChangeSummary(changeSummary, "ChangeSummary after updating (deleting and inserting different) relationships");
 
-    ECChangeSummary after updating (deleting and inserting different) relationships:
+    ChangeSummary after updating (deleting and inserting different) relationships:
     InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
     7;229;StartupCompany:EmployeeHardware;Insert;No
     1;224;StartupCompany:Employee;Insert;No
@@ -1062,8 +1062,8 @@ TEST_F(ECChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     4;219;StartupCompany:Hardware;Insert;No
     5;219;StartupCompany:Hardware;Insert;No
     */
-    ASSERT_EQ(7, ecChangeSummary.MakeIterator().QueryCount());
+    ASSERT_EQ(7, changeSummary.MakeIterator().QueryCount());
     ASSERT_TRUE(employeeCompanyKey.GetECInstanceId() == employeeCompanyKey2.GetECInstanceId());
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    ASSERT_TRUE(ECChangeSummaryHasChange(ecChangeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
