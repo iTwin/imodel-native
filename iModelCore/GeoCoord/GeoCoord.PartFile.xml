@@ -22,6 +22,7 @@
         <Bindings>
             <PublicAPI Domain="GeoCoord" />
             <Libs>Delivery\$(shlibprefix)BaseGeoCoord$(libext)</Libs>
+            <Libs ProductDirectoryName="PowerPlatformSdkLibs" Required="false">Delivery\$(shlibprefix)BaseGeoCoord$(libext)</Libs>
             <Assemblies ProductDirectoryName="GeoCoordNativeAssemblies">Delivery\$(shlibprefix)BaseGeoCoord$(ApiNumber)$(shlibext)
                 <TransKit SourceDirectory="Delivery\GeoCoord\transkit" />
             </Assemblies>
@@ -35,6 +36,7 @@
         <SubPart PartName="BentleyGeometryNetAssembly"  PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet"/>
         <Bindings>
             <Libs>Delivery\Bentley.GeoCoord.lib</Libs>
+            <Libs ProductDirectoryName="PowerPlatformSdkLibs" Required="false">Delivery\Bentley.GeoCoord.lib</Libs>
             <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery\Bentley.GeoCoord$(ApiNumber).dll
                 <TransKit SourceDirectory="Delivery\GeoCoordManaged\transkit" />
             </Assemblies>
