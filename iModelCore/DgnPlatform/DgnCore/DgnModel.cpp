@@ -1272,7 +1272,7 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
-    DgnModel::CreateParams params = GetCreateParamsForImport(importer);
+    DgnModel::CreateParams params = GetCreateParamsForImport(importer); // remaps classid
 
     if (params.m_name.empty())
         params.m_name = GetModelName();
@@ -1288,11 +1288,8 @@ DgnModelPtr DgnModel::_CloneForImport(DgnDbStatus* stat, DgnImportContext& impor
     if (!model.IsValid())
         return nullptr;
 
-    // telling the output model to read its properties from the props of the input model takes care of most model members
-    //  It's rare, then, that a subclass will have to override _Clone.
-    Json::Value propJson(Json::objectValue);
-    _ToPropertiesJson(propJson);
-    model->_FromPropertiesJson(propJson);
+    model->_InitFrom(*this);
+
     return model;
     }
 
@@ -1392,31 +1389,36 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, bvector<Utf8CP> const& cols, bool thirdIsECClassId = false)
+static void appendToColsLists(Utf8StringR colsList, Utf8StringR placeholderList, Utf8CP colname)
     {
-    BeAssert((cols.size() >= 2) && "cols must be {sourceid, targetid, othercols...}");
+    if (nullptr == colname)
+        return;
 
-    Utf8CP sep;
-
-    Utf8String colsList;
-    sep="";
-    for (auto colname : cols)
+    if (!colsList.empty())
         {
-        colsList.append(sep).append("[").append(colname).append("]");
-        sep=",";
+        colsList.append(",");
+        placeholderList.append(",");
         }
 
-    Utf8String placeholderList;
-    sep="";
-    for (int i=0; i<(int)cols.size(); ++i)
-        {
-        placeholderList.append(sep).append("?");
-        sep=",";
-        }
+    colsList.append("[").append(colname).append("]");
+    placeholderList.append("?");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceModel, DgnImportContext& importer, Utf8CP relname, Utf8CP sourcecol, Utf8CP targetcol, Utf8CP classcol = nullptr, bvector<Utf8CP> const& othercols = bvector<Utf8CP>())
+    {
+    Utf8String colsList, placeholderList;
+    appendToColsLists(colsList, placeholderList, sourcecol);        // [0] sourcecol
+    appendToColsLists(colsList, placeholderList, targetcol);        // [1] targetcolo
+    appendToColsLists(colsList, placeholderList, classcol);         // [2] classcol  (optional)
+    for (auto othercolname : othercols)
+        appendToColsLists(colsList, placeholderList, othercolname);
 
     Statement sstmt(sourceModel.GetDgnDb(), Utf8PrintfString(
         "WITH elems(id) AS (SELECT Id from " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ModelId=?))"
-        " SELECT %s FROM %s rel WHERE (rel.%s IN elems AND rel.%s IN elems)", colsList.c_str(), relname, cols[0], cols[1]));
+        " SELECT %s FROM %s rel WHERE (rel.%s IN elems AND rel.%s IN elems)", colsList.c_str(), relname, sourcecol, targetcol));
     sstmt.BindId(1, sourceModel.GetModelId());
 
     Statement istmt(destDb, Utf8PrintfString(
@@ -1427,18 +1429,21 @@ static DgnDbStatus importECRelationshipsFrom(DgnDbR destDb, DgnModelCR sourceMod
         istmt.Reset();
         istmt.ClearBindings();
         int icol = 0;
-        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)));
+        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol))); // [0] sourcecol
         ++icol;
-        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol)));
+        istmt.BindId(icol+1, importer.FindElementId(sstmt.GetValueId<DgnElementId>(icol))); // [1] targetcol
         ++icol;
-        if (thirdIsECClassId)
+        if (nullptr != classcol)
             {
-            istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol)));
+            istmt.BindId(icol+1, importer.RemapClassId(sstmt.GetValueId<DgnClassId>(icol))); // [2] classcol (optional)
             ++icol;
             }
 
-        for ( ; icol < (int)cols.size(); ++icol)
+        for (size_t iothercol=0; iothercol < (int)othercols.size(); ++iothercol)
+            {
             istmt.BindText(icol+1, sstmt.GetValueText(icol), Statement::MakeCopy::No);
+            ++icol;
+            }
 
         if (BE_SQLITE_DONE != istmt.Step())
             {
@@ -1457,13 +1462,13 @@ DgnDbStatus DgnModel::_ImportECRelationshipsFrom(DgnModelCR sourceModel, DgnImpo
     // Copy ECRelationships where source and target are both in this model, and where the relationship is implemented as a link table.
     // Note: this requires domain-specific knowledge of what ECRelationships exist.
 
-    // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
-
     // ElementGeomUsesParts are created automatically as a side effect of inserting GeometricElements 
 
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers), {"GroupId", "MemberId"});
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), {"RootElementId", "DependentElementId", "ECClassId", "Status", "Priority"}, true);
-    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementUsesStyles), {"ElementId", "StyleId"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers), "GroupId", "MemberId");
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementDrivesElement), "RootElementId", "DependentElementId", "ECClassId", {"Status", "Priority"});
+    importECRelationshipsFrom(GetDgnDb(), sourceModel, importer, DGN_TABLE(DGN_RELNAME_ElementUsesStyles), "ElementId", "StyleId");
+
+    // *** WIP_IMPORT *** ElementHasLinks -- should we deep-copy links?
 
     return DgnDbStatus::Success;
     }
@@ -1514,6 +1519,24 @@ DgnModelPtr DgnModel::ImportModel(DgnDbStatus* statIn, DgnModelCR sourceModel, D
 
     stat = DgnDbStatus::Success;
     return newModel;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+DgnModelPtr DgnModel::CopyModel(DgnModelCR model, Utf8CP newName)
+    {
+    DgnDbR db = model.GetDgnDb();
+
+    DgnModelPtr model2 = model.Clone(newName);
+    if (DgnDbStatus::Success != model2->Insert())   
+        return nullptr;
+
+    DgnImportContext nopimport(db, db);
+    if (DgnDbStatus::Success != model2->_ImportContentsFrom(model, nopimport))
+        return nullptr;
+
+    return model2;
     }
 
 /*---------------------------------------------------------------------------------**//**

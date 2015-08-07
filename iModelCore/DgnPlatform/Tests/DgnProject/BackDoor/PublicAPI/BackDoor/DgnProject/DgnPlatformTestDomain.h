@@ -17,6 +17,7 @@
 
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define DPTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
+#define DPTEST_DUMMY_SCHEMA_NAMEW                       L"DgnPlatformTestDummy"
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
@@ -274,6 +275,7 @@ private:
 public:
     static Dgn::DgnDbStatus Register();
     static Dgn::DgnDbStatus ImportSchema(Dgn::DgnDbR);
+    static Dgn::DgnDbStatus ImportDummySchema(Dgn::DgnDbR);
     };
 
 END_BENTLEY_DPTEST_NAMESPACE

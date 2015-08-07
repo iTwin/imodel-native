@@ -579,7 +579,14 @@ public:
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
     //! @param[in] newName The name for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
+    //! @see CopyModel, Import
     DGNPLATFORM_EXPORT DgnModelPtr Clone(Utf8CP newName) const;
+
+    //! Make a persitent copy of the specified DgnModel and its contents.
+    //! @param[in] model The model to copy
+    //! @param[in] newName The name for the new DgnModel.
+    //! @see Import
+    DGNPLATFORM_EXPORT static DgnModelPtr CopyModel(DgnModelCR model, Utf8CP newName);
 
     //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
@@ -617,27 +624,23 @@ public:
     //! @return non-zero if the copy failed
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ImportContentsFrom(DgnModelCR sourceModel, DgnImportContext& importer);
 
-    //! Make a copy of the specified model, including all of the contents of the model. The destination may be a different DgnDb.
+    //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
     //! This is just a convenience method that calls the follow methods, in order:
     //!     -# _CloneForImport
     //!     -# Insert
     //!     -# _CopyContentsFrom
-    //! Note that ECRelationships between elements in the model and elements outside the model are \em not copied.
-    //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
     //! @param sourceModel The model to copy
     //! @return the copied model, already inserted into the destination Db.
     DGNPLATFORM_EXPORT static DgnModelPtr ImportModel(DgnDbStatus* stat, DgnModelCR sourceModel, DgnImportContext& importer);
 
-    //! Make a copy of the specified model, including all of the contents of the model. The destination may be a different DgnDb.
-    //! This is just a convenience method that calls Clone, Insert, and then _CopyContentsFrom.
-    //! Note that ECRelationships between elements in the model and elements outside the model are \em not copied.
-    //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
+    //! Make a copy of the specified model, including all of the contents of the model, where the destination may be a different DgnDb.
     //! @param[out] stat        Optional status to describe failures, a valid DgnModelPtr will only be returned if successful.
     //! @param sourceModel  The model to copy
     //! @param importer     Enables the model to copy the resources that it needs (if copying between DgnDbs)
     //! @return the copied model
+    //! @see ImportModel
     template<typename T>
     static RefCountedPtr<T> Import(DgnDbStatus* stat, T const& sourceModel, DgnImportContext& importer) {return dynamic_cast<T*>(ImportModel(stat, sourceModel, importer).get());}
 
