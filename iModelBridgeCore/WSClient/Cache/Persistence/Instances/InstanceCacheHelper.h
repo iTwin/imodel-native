@@ -146,7 +146,7 @@ struct InstanceCacheHelper::PartialCachingState
         static ECRelatedInstanceDirection GetDirection(Utf8StringCR directionString);
 
     public:
-        //! param[in] query -   [optional] select options will be parsed and used to indentify if all properties were selected for given class. 
+        //! param[in] query -   [optional] select options will be parsed and used to indentify if all properties were selected for given class.
         //!                     Null will identify that not all properties were selected for all instances.
         PartialCachingState
             (

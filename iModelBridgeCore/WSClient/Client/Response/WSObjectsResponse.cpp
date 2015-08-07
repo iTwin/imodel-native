@@ -12,30 +12,29 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsResponse::WSObjectsResponse () :
-m_httpBody (HttpStringBody::Create ()),
-m_isModified (true),
-m_eTag (),
-m_reader (WSObjectsReaderV2::Create ())
+WSObjectsResponse::WSObjectsResponse() :
+m_httpBody(HttpStringBody::Create()),
+m_isModified(true),
+m_eTag(),
+m_reader(WSObjectsReaderV2::Create())
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WSObjectsResponse::WSObjectsResponse(std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag) :
+m_httpBody(httpBody),
+m_isModified(HttpStatus::OK == status),
+m_eTag(eTag),
+m_reader(reader)
     {
+    BeAssert(m_httpBody != nullptr);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsResponse::WSObjectsResponse (std::shared_ptr<WSObjectsReader> reader, HttpBodyPtr httpBody, HttpStatus status, Utf8String eTag) :
-m_httpBody (httpBody),
-m_isModified (HttpStatus::OK == status),
-m_eTag (eTag),
-m_reader (reader)
-    {
-    BeAssert (m_httpBody != nullptr);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSObjectsResponse::GetETag () const
+Utf8StringCR WSObjectsResponse::GetETag() const
     {
     return m_eTag;
     }
@@ -43,7 +42,7 @@ Utf8StringCR WSObjectsResponse::GetETag () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsResponse::IsModified () const
+bool WSObjectsResponse::IsModified() const
     {
     return m_isModified;
     }
@@ -51,11 +50,11 @@ bool WSObjectsResponse::IsModified () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueR WSObjectsResponse::GetJsonValuePrivate () const
+JsonValueR WSObjectsResponse::GetJsonValuePrivate() const
     {
     if (!m_jsonValue)
         {
-        m_jsonValue = std::make_shared<Json::Value> (m_httpBody->AsJson ());
+        m_jsonValue = std::make_shared<Json::Value>(m_httpBody->AsJson());
         }
     return *m_jsonValue;
     }
@@ -63,12 +62,12 @@ JsonValueR WSObjectsResponse::GetJsonValuePrivate () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<rapidjson::Document> WSObjectsResponse::GetRapidJsonDocumentPrivate () const
+std::shared_ptr<rapidjson::Document> WSObjectsResponse::GetRapidJsonDocumentPrivate() const
     {
     if (!m_rapidJsonDocument)
         {
-        m_rapidJsonDocument = std::make_shared<rapidjson::Document> ();
-        m_httpBody->AsRapidJson (*m_rapidJsonDocument);
+        m_rapidJsonDocument = std::make_shared<rapidjson::Document>();
+        m_httpBody->AsRapidJson(*m_rapidJsonDocument);
         }
     return m_rapidJsonDocument;
     }
@@ -76,12 +75,12 @@ std::shared_ptr<rapidjson::Document> WSObjectsResponse::GetRapidJsonDocumentPriv
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-const WSObjectsReader::Instances& WSObjectsResponse::GetInstances () const
+const WSObjectsReader::Instances& WSObjectsResponse::GetInstances() const
     {
     if (!m_readerInstances)
         {
-        std::shared_ptr<rapidjson::Document> json = GetRapidJsonDocumentPrivate ();
-        m_readerInstances = std::make_shared<WSObjectsReader::Instances> (m_reader->ReadInstances (json));
+        std::shared_ptr<rapidjson::Document> json = GetRapidJsonDocumentPrivate();
+        m_readerInstances = std::make_shared<WSObjectsReader::Instances>(m_reader->ReadInstances(json));
         }
     return *m_readerInstances;
     }
@@ -89,31 +88,31 @@ const WSObjectsReader::Instances& WSObjectsResponse::GetInstances () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueCR WSObjectsResponse::GetJsonValue () const
+JsonValueCR WSObjectsResponse::GetJsonValue() const
     {
-    return GetJsonValuePrivate ();
+    return GetJsonValuePrivate();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueR WSObjectsResponse::GetJsonValue ()
+JsonValueR WSObjectsResponse::GetJsonValue()
     {
-    return GetJsonValuePrivate ();
+    return GetJsonValuePrivate();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-const rapidjson::Document& WSObjectsResponse::GetRapidJsonDocument () const
+const rapidjson::Document& WSObjectsResponse::GetRapidJsonDocument() const
     {
-    return *GetRapidJsonDocumentPrivate ();
+    return *GetRapidJsonDocumentPrivate();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document& WSObjectsResponse::GetRapidJsonDocument ()
+rapidjson::Document& WSObjectsResponse::GetRapidJsonDocument()
     {
-    return *GetRapidJsonDocumentPrivate ();
+    return *GetRapidJsonDocumentPrivate();
     }

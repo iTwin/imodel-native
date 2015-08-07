@@ -19,11 +19,11 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
-void WebServices::Authenticate (JsonValueCR messageDataObj)
+void WebServices::Authenticate(JsonValueCR messageDataObj)
     {
     Utf8String username = messageDataObj[AuthenticationData::USERNAME].asString();
     Utf8String password = messageDataObj[AuthenticationData::PASSWORD].asString();
-    MOBILEDGN_LOGI ("NavigatorApp::Msg_SignIn::Username:: %s!!", username.c_str());
+    MOBILEDGN_LOGI("NavigatorApp::Msg_SignIn::Username:: %s!!", username.c_str());
     SamlToken token;
     StatusInt result = Connect::BC_ERROR;
     bool isSignOut = false;
@@ -34,7 +34,7 @@ void WebServices::Authenticate (JsonValueCR messageDataObj)
         }
     else
         {
-        result = Connect::Login (Credentials (username, password), token);
+        result = Connect::Login(Credentials(username, password), token);
         }
 
     if (Connect::BC_SUCCESS != result)
@@ -48,11 +48,11 @@ void WebServices::Authenticate (JsonValueCR messageDataObj)
         data[AuthenticationData::USERNAME] = username;
         setupData["Data"] = data;
 
-        MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move (setupData));
+        MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move(setupData));
 
         if (isSignOut)
             {
-            MobileDgnApplication::App ().Messages ().Send (NotificationMessage ("FieldApps.Message.Connect.SignOut_Succeeded"));
+            MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignOut_Succeeded"));
             }
         else
             {
@@ -69,17 +69,17 @@ void WebServices::Authenticate (JsonValueCR messageDataObj)
                 }
             Json::Value messageValue(Json::objectValue);
             messageValue["message"] = message;
-            MobileDgnApplication::App ().Messages ().Send (JsonMessage ("FieldApps.Message.Connect.SignIn_Failed", messageValue));
+            MobileDgnApplication::App().Messages().Send(JsonMessage("FieldApps.Message.Connect.SignIn_Failed", messageValue));
             }
         return;
         }
 
-    MobileDgnApplication::App ().Messages ().Send (NotificationMessage ("FieldApps.Message.Connect.SignIn_Succeeded"));
+    MobileDgnApplication::App().Messages().Send(NotificationMessage("FieldApps.Message.Connect.SignIn_Succeeded"));
     Json::Value userData(Json::objectValue);
     userData[AuthenticationData::USERNAME] = username;
     userData[AuthenticationData::PASSWORD] = password;
     userData[AuthenticationData::TOKEN] = token.AsString();
-    MobileDgnApplication::App ().Messages ().Send (JsonMessage (CONNECT_COMMAND_SHOW_USER_DATA, userData));
+    MobileDgnApplication::App().Messages().Send(JsonMessage(CONNECT_COMMAND_SHOW_USER_DATA, userData));
 
     Json::Value setupData(messageDataObj);
     setupData[AuthenticationData::TOKEN] = token.AsString();

@@ -227,23 +227,23 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
     if (nullptr == m_findRelationshipClassesStatement)
         {
         // SQL supplied by Affan Khan
-        Utf8CP sql = R"(WITH RECURSIVE 
-           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel) AS 
-           ( 
-           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0 
-               FROM ec_RelationshipConstraint RC 
-                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] 
-           UNION 
-           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1 
-               FROM RelationshipConstraintClasses RCC 
-                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId 
+        Utf8CP sql = R"(WITH RECURSIVE
+           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel) AS
+           (
+           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0
+               FROM ec_RelationshipConstraint RC
+                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd]
+           UNION
+           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1
+               FROM RelationshipConstraintClasses RCC
+                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId
                WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC 
-           ) 
+               ORDER BY 2 DESC
+           )
         SELECT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId   
-                WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ?                
+           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
+                WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ?
                       AND TRG.ECRelationshipEnd = 1 AND TRG.RelationECClassId = ? )";
 
         m_findRelationshipClassesStatement = std::make_shared<Statement>();
@@ -282,22 +282,22 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
 
     if (nullptr == m_findRelationshipClassesWithSourceStatement)
         {
-        Utf8CP sql = R"(WITH RECURSIVE 
+        Utf8CP sql = R"(WITH RECURSIVE
            RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel, SchemaName) AS
-           ( 
+           (
            SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0, ES.Name
-               FROM ec_RelationshipConstraint RC 
+               FROM ec_RelationshipConstraint RC
                    INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-           UNION 
+           UNION
            SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1, ES.Name
-               FROM RelationshipConstraintClasses RCC 
+               FROM RelationshipConstraintClasses RCC
                    INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
                WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC 
-           ) 
+               ORDER BY 2 DESC
+           )
         SELECT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId   
+           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
                 WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ? OR TRG.RelationECClassId = ?
                       AND TRG.ECRelationshipEnd = 1 AND SRC.SchemaName = ?)";
 
@@ -337,20 +337,20 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
         {
         Utf8CP sql = R"(WITH RECURSIVE
            RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel, SchemaName) AS
-           ( 
+           (
            SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0, ES.Name
-               FROM ec_RelationshipConstraint RC 
+               FROM ec_RelationshipConstraint RC
                    INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-           UNION 
+           UNION
            SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1, ES.Name
-               FROM RelationshipConstraintClasses RCC 
+               FROM RelationshipConstraintClasses RCC
                    INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
                WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC 
-           ) 
+               ORDER BY 2 DESC
+           )
         SELECT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId   
+           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
                 WHERE SRC.ECRelationshipEnd = 0 AND TRG.ECRelationshipEnd = 1
                       AND ((SRC.RelationECClassId = ? AND TRG.RelationECClassId = ?)
                           OR (TRG.RelationECClassId = ? AND SRC.RelationECClassId = ?))
@@ -794,7 +794,7 @@ ECInstanceKey ECDbAdapter::RelateInstances(ECRelationshipClassCP relClass, ECIns
         return ECInstanceKey(relClass->GetId(), ECInstanceId());
         }
 
-    // EC Preffered way for checking existing relationship (don't rely on INSERT_ConstraintViolation)    
+    // EC Preffered way for checking existing relationship (don't rely on INSERT_ConstraintViolation)
     ECInstanceKey relationshipKey = FindRelationship(relClass, source, target);
     if (relationshipKey.IsValid())
         {

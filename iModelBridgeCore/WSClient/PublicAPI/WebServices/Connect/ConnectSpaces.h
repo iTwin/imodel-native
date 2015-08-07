@@ -74,95 +74,95 @@ namespace Bentley
 //=======================================================================================
 struct ConnectSpaces
     {
-public:
-    //! Initialize once in app lifetime
-    WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo);
-    WSCLIENT_EXPORT static bool IsInitialized();
-    WSCLIENT_EXPORT static void Uninitialize();
+    public:
+        //! Initialize once in app lifetime
+        WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo);
+        WSCLIENT_EXPORT static bool IsInitialized();
+        WSCLIENT_EXPORT static void Uninitialize();
 
-    WSCLIENT_EXPORT static bool ParseLastModified(const std::string &lastModified, Bentley::DateTime &dateTime);
+        WSCLIENT_EXPORT static bool ParseLastModified(const std::string &lastModified, Bentley::DateTime &dateTime);
 
-    WSCLIENT_EXPORT bool OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj);
+        WSCLIENT_EXPORT bool OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj);
 
-public:
-    enum StatusCode
-        {
-        OK,
-        UnknownError,
-        NetworkError,
-        UnexpectedResponseError,
-        CredentialsError,
-        };
-    enum StatusAction
-        {
-        FetchFileListAction,
-        FetchDatasourceListAction,
-        FetchObjectListAction,
-        DownloadFileAction,
-        SetCredentialsAction,
-        GetFileStatusAction,
-        CheckEulaAction,
-        AcceptEulaAction,
-        SetEulaTokenAction,
-        ResetEulaAction,
+    public:
+        enum StatusCode
+            {
+            OK,
+            UnknownError,
+            NetworkError,
+            UnexpectedResponseError,
+            CredentialsError,
+            };
+        enum StatusAction
+            {
+            FetchFileListAction,
+            FetchDatasourceListAction,
+            FetchObjectListAction,
+            DownloadFileAction,
+            SetCredentialsAction,
+            GetFileStatusAction,
+            CheckEulaAction,
+            AcceptEulaAction,
+            SetEulaTokenAction,
+            ResetEulaAction,
 #ifdef DEBUG
-        DecreaseDatesAction,
+            DecreaseDatesAction,
 #endif
-        };
-    enum FileStatus
-        {
-        UpToDateStatus,
-        NeedsUpdateStatus,
-        MissingStatus,
-        };
-    WSCLIENT_EXPORT ConnectSpaces();
-    WSCLIENT_EXPORT ConnectSpaces(const ConnectSpaces& other);
-    WSCLIENT_EXPORT ~ConnectSpaces();
-   
-private:
-    static bool ParseFixedNumber(const std::string &numberString, int &result, int min = 0, int max = 0);
-    void FetchFileList(Utf8StringCR dsId, Utf8StringCR folderId, bool getNewToken = false);
-    void FetchObjectList(Utf8StringCR dsId, Utf8StringCR objectClass, bool getNewToken = false);
-    void FetchDatasourceList(bool getNewToken = false);
-    void ResetEula(bool getNewToken = false);
-    void CheckEula(bool getNewToken = false);
-    void AcceptEula(bool getNewToken = false);
-    bool DownloadEula(Utf8StringR eulaString, bool getNewToken = false);
-    void DownloadFile(JsonValueCR messageObj, bool getNewToken);
-    void Cancel();
-    BentleyStatus GetNewTokenIfNeeded (bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
-    HttpRequest CreateGetRequest (Utf8StringCR url, bool acceptJson = true, bool includeToken = true);
-    void SetJsonDocData(JsonValueR data, Utf8StringCR datasourceId, Utf8StringCR docId, Utf8StringCR filename);
-    void SendStatusToUIThread(StatusAction action, StatusCode statusCode, JsonValueCR data = Json::Value());
-    void SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR response = Json::Value());
+            };
+        enum FileStatus
+            {
+            UpToDateStatus,
+            NeedsUpdateStatus,
+            MissingStatus,
+            };
+        WSCLIENT_EXPORT ConnectSpaces();
+        WSCLIENT_EXPORT ConnectSpaces(const ConnectSpaces& other);
+        WSCLIENT_EXPORT ~ConnectSpaces();
 
-    void SetCredentials(Credentials credentials, Utf8StringCR token);
-    void SetEulaToken(Utf8StringCR token);
-    void FetchDatasourceListAsync();
-    void ResetEulaAsync();
-    void CheckEulaAsync();
-    void AcceptEulaAsync();
-    void FetchFileListAsync(Utf8StringCR dsId, Utf8StringCR folderId);
-    void FetchObjectListAsync(Utf8StringCR dsId, Utf8StringCR objectClass);
-    void DownloadFile(JsonValueCR messageObj);
-    void DownloadFileAsync(JsonValueCR messageObj);
-    void GetFileStatus(JsonValueCR messageObj);
-    Json::Value AppendFileStatus(JsonValueCR itemObj);
+    private:
+        static bool ParseFixedNumber(const std::string &numberString, int &result, int min = 0, int max = 0);
+        void FetchFileList(Utf8StringCR dsId, Utf8StringCR folderId, bool getNewToken = false);
+        void FetchObjectList(Utf8StringCR dsId, Utf8StringCR objectClass, bool getNewToken = false);
+        void FetchDatasourceList(bool getNewToken = false);
+        void ResetEula(bool getNewToken = false);
+        void CheckEula(bool getNewToken = false);
+        void AcceptEula(bool getNewToken = false);
+        bool DownloadEula(Utf8StringR eulaString, bool getNewToken = false);
+        void DownloadFile(JsonValueCR messageObj, bool getNewToken);
+        void Cancel();
+        BentleyStatus GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
+        HttpRequest CreateGetRequest(Utf8StringCR url, bool acceptJson = true, bool includeToken = true);
+        void SetJsonDocData(JsonValueR data, Utf8StringCR datasourceId, Utf8StringCR docId, Utf8StringCR filename);
+        void SendStatusToUIThread(StatusAction action, StatusCode statusCode, JsonValueCR data = Json::Value());
+        void SendJsonMessageToUiThread(Utf8CP messageType, JsonValueCR response = Json::Value());
+
+        void SetCredentials(Credentials credentials, Utf8StringCR token);
+        void SetEulaToken(Utf8StringCR token);
+        void FetchDatasourceListAsync();
+        void ResetEulaAsync();
+        void CheckEulaAsync();
+        void AcceptEulaAsync();
+        void FetchFileListAsync(Utf8StringCR dsId, Utf8StringCR folderId);
+        void FetchObjectListAsync(Utf8StringCR dsId, Utf8StringCR objectClass);
+        void DownloadFile(JsonValueCR messageObj);
+        void DownloadFileAsync(JsonValueCR messageObj);
+        void GetFileStatus(JsonValueCR messageObj);
+        Json::Value AppendFileStatus(JsonValueCR itemObj);
 
 #ifdef DEBUG
-    void DecreaseDates();
+        void DecreaseDates();
 #endif
 
-    Credentials m_credentials;
-    SamlToken m_token;
-    SamlToken m_eulaToken;
+        Credentials m_credentials;
+        SamlToken m_token;
+        SamlToken m_eulaToken;
 
-    SimpleCancellationTokenPtr m_cancelToken;
-    HttpClient m_client;
+        SimpleCancellationTokenPtr m_cancelToken;
+        HttpClient m_client;
 
-    BeCriticalSection m_credentialsCriticalSection;
-    static std::map<Utf8String, StatusAction> sm_actionMap;
-    static std::map<std::string, int> sm_monthMap;
-    static std::set<std::string> sm_dayNames;
-    static Utf8String sm_eulaUrlBase;
+        BeCriticalSection m_credentialsCriticalSection;
+        static std::map<Utf8String, StatusAction> sm_actionMap;
+        static std::map<std::string, int> sm_monthMap;
+        static std::set<std::string> sm_dayNames;
+        static Utf8String sm_eulaUrlBase;
     };

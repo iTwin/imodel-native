@@ -32,21 +32,21 @@ struct SyncCachedDataTask : public CachingTaskBase
         ICachingDataSource::ProgressCallback    m_onProgress;
 
     protected:
-        virtual void _OnExecute ();
+        virtual void _OnExecute();
 
-        void StartCaching ();
-        void CacheInstances (CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys);
+        void StartCaching();
+        void CacheInstances(CacheTransactionCR txn, const bset<ECInstanceKey>& instanceKeys);
 
-        void ContinueCachingQueries (CacheTransactionCR txn);
-        void PrepareCachingQueries (CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively);
+        void ContinueCachingQueries(CacheTransactionCR txn);
+        void PrepareCachingQueries(CacheTransactionCR txn, ECInstanceKeyCR instanceKey, bool syncRecursively);
 
-        void InvalidatePersistentInstances ();
-        bool IsInstancePersistent (CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
+        void InvalidatePersistentInstances();
+        bool IsInstancePersistent(CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
 
-        void CacheRejectedInstances ();
-        void CacheFiles ();
+        void CacheRejectedInstances();
+        void CacheFiles();
 
-        void RegisterError (CacheTransactionCR txn, CachedResponseKeyCR responseKey, WSErrorCR error);
+        void RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, WSErrorCR error);
 
     public:
         SyncCachedDataTask

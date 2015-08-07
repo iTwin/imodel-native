@@ -22,13 +22,13 @@ struct CacheEnvironment
     BeFileName persistentFileCacheDir;
     BeFileName temporaryFileCacheDir;
 
-    WSCACHE_EXPORT CacheEnvironment ();
-    WSCACHE_EXPORT CacheEnvironment (BeFileNameCR persistentDir, BeFileNameCR temporaryDir);
+    WSCACHE_EXPORT CacheEnvironment();
+    WSCACHE_EXPORT CacheEnvironment(BeFileNameCR persistentDir, BeFileNameCR temporaryDir);
 
     // For accessing cached files through ExternalFileInfo
-    WSCACHE_EXPORT static int GetPersistentRootFolderId ();
+    WSCACHE_EXPORT static int GetPersistentRootFolderId();
     // For accessing cached files through ExternalFileInfo
-    WSCACHE_EXPORT static int GetTemporaryRootFolderId ();
+    WSCACHE_EXPORT static int GetTemporaryRootFolderId();
     };
 
 typedef const CacheEnvironment& CacheEnvironmentCR;

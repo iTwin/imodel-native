@@ -30,16 +30,16 @@ struct CachedResponseKey
         //! param[in] parent - response will be kept as long as parent instance is available. Is also holder if not specified other way.
         //! param[in] name - is unique for same parent. Using same key second time will override previous results.
         //! param[in] holder - [optional] allows specifying different instance that will have holding relationship for response instances.
-        //!             If specified, will have holding relationship to results and parent will only have referencing relationship. 
+        //!             If specified, will have holding relationship to results and parent will only have referencing relationship.
         //!             Parent deletion and name uniquality still applies.
-        WSCACHE_EXPORT CachedResponseKey (ECInstanceKeyCR parent, Utf8StringCR name, ECInstanceKeyCR holder = ECInstanceKey ());
+        WSCACHE_EXPORT CachedResponseKey(ECInstanceKeyCR parent, Utf8StringCR name, ECInstanceKeyCR holder = ECInstanceKey());
 
-        WSCACHE_EXPORT ECInstanceKeyCR GetParent () const;
-        WSCACHE_EXPORT Utf8StringCR GetName () const;
-        WSCACHE_EXPORT ECInstanceKeyCR GetHolder () const;
-        WSCACHE_EXPORT void SetHolder (ECInstanceKey holder);
+        WSCACHE_EXPORT ECInstanceKeyCR GetParent() const;
+        WSCACHE_EXPORT Utf8StringCR GetName() const;
+        WSCACHE_EXPORT ECInstanceKeyCR GetHolder() const;
+        WSCACHE_EXPORT void SetHolder(ECInstanceKey holder);
 
-        WSCACHE_EXPORT bool IsValid () const;
+        WSCACHE_EXPORT bool IsValid() const;
 
         WSCACHE_EXPORT bool operator== (const CachedResponseKey& other) const;
     };

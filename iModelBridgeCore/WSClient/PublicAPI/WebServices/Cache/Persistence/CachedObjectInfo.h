@@ -27,19 +27,19 @@ struct CachedObjectInfo
         std::shared_ptr<struct ObjectInfo> m_info;
 
     public:
-        WSCACHE_EXPORT CachedObjectInfo ();
-        WSCACHE_EXPORT CachedObjectInfo (std::shared_ptr<struct ObjectInfo> info);
+        WSCACHE_EXPORT CachedObjectInfo();
+        WSCACHE_EXPORT CachedObjectInfo(std::shared_ptr<struct ObjectInfo> info);
 
-        WSCACHE_EXPORT bool IsInCache () const;
-        WSCACHE_EXPORT bool IsFullyCached () const;
+        WSCACHE_EXPORT bool IsInCache() const;
+        WSCACHE_EXPORT bool IsFullyCached() const;
 
-        WSCACHE_EXPORT Utf8String GetObjectCacheTag () const;
+        WSCACHE_EXPORT Utf8String GetObjectCacheTag() const;
 
-        WSCACHE_EXPORT IChangeManager::ChangeStatus  GetChangeStatus () const;
-        WSCACHE_EXPORT ChangeManager::SyncStatus    GetSyncStatus () const;
+        WSCACHE_EXPORT IChangeManager::ChangeStatus  GetChangeStatus() const;
+        WSCACHE_EXPORT ChangeManager::SyncStatus    GetSyncStatus() const;
 
-        WSCACHE_EXPORT ECInstanceKey GetCachedInstanceKey () const;
-        WSCACHE_EXPORT ObjectIdCR GetObjectId () const;
+        WSCACHE_EXPORT ECInstanceKey GetCachedInstanceKey() const;
+        WSCACHE_EXPORT ObjectIdCR GetObjectId() const;
     };
 
 typedef CachedObjectInfo& CachedObjectInfoR;

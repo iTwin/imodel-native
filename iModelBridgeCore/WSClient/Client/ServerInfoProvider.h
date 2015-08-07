@@ -34,22 +34,22 @@ struct ServerInfoProvider
         mutable uint64_t m_serverInfoUpdated;
 
     private:
-        bool CanUseCachedInfo () const;
-        void UpdateInfo (WSInfoCR info) const;
-        void NotifyServerInfoUpdated (WSInfoCR info) const;
+        bool CanUseCachedInfo() const;
+        void UpdateInfo(WSInfoCR info) const;
+        void NotifyServerInfoUpdated(WSInfoCR info) const;
 
-        AsyncTaskPtr<WSInfoResult> GetInfo (ICancellationTokenPtr cancellationToken) const;
-        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage (Utf8StringCR page, ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<WSInfoHttpResult> GetInfoFromPage(Utf8StringCR page, ICancellationTokenPtr cancellationToken) const;
 
     public:
-        ServerInfoProvider (std::shared_ptr<const ClientConfiguration> configuration);
-        ~ServerInfoProvider ();
+        ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration);
+        ~ServerInfoProvider();
 
-        void RegisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
-        void UnregisterServerInfoListener (std::weak_ptr<IWSClient::IServerInfoListener> listener);
+        void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
+        void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
-        AsyncTaskPtr<WSInfoResult> GetServerInfo (bool forceQuery, ICancellationTokenPtr cancellationToken) const;
-        AsyncTaskPtr<void> InvalidateInfo () const;
+        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<void> InvalidateInfo() const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

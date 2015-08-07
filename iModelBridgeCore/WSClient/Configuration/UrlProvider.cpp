@@ -28,11 +28,10 @@ const Utf8CP UrlProvider::s_urlNames[6] = {
     "Mobile.Passport"
     };
 
-
 const UrlData UrlProvider::s_punchListWsgUrl[3] = {
-        {"https://dev-wsg20-eus.cloudapp.net", 103},
-        {"https://qa-wsg20-eus.cloudapp.net", 102},
-        {"https://connect-wsg20.bentley.com", 1230}
+    {"https://dev-wsg20-eus.cloudapp.net", 103},
+    {"https://qa-wsg20-eus.cloudapp.net", 102},
+    {"https://connect-wsg20.bentley.com", 1230}
     };
 
 // CONNECT 1.1
@@ -43,33 +42,33 @@ const UrlData UrlProvider::s_punchListWsgUrl[3] = {
 //    };
 
 const UrlData UrlProvider::s_connectWsgUrl[3] = {
-        {"https://dev-wsg20-eus.cloudapp.net", 103},
-        {"https://qa-wsg20-eus.cloudapp.net", 102},
-        {"https://connect-wsg20.bentley.com", 1231}
+    {"https://dev-wsg20-eus.cloudapp.net", 103},
+    {"https://qa-wsg20-eus.cloudapp.net", 102},
+    {"https://connect-wsg20.bentley.com", 1231}
     };
 
 const UrlData UrlProvider::s_connectEulaUrl[3] = {
-        {"https://dev-agreement-eus.cloudapp.net/rest", 103},
-        {"https://dev-agreement-eus.cloudapp.net/rest", 102},
-        {"https://connect-agreement.bentley.com/rest", 1232}
+    {"https://dev-agreement-eus.cloudapp.net/rest", 103},
+    {"https://dev-agreement-eus.cloudapp.net/rest", 102},
+    {"https://connect-agreement.bentley.com/rest", 1232}
     };
 
 const UrlData UrlProvider::s_connectLearnStsAuthUri[3] = {
-        {"https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx", 103},
-        {"https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx", 102},
-        {"https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx", 1233}
+    {"https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx", 103},
+    {"https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx", 102},
+    {"https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx", 1233}
     };
 
 const UrlData UrlProvider::s_usageTrackingUrl[3] = {
-        {"https://licenseXM.bentley.com/bss/ws/mobile", 103},
-        {"https://licenseXM.bentley.com/bss/ws/mobile", 102},
-        {"https://SELECTserver.bentley.com/bss/ws/mobile", 1234}
+    {"https://licenseXM.bentley.com/bss/ws/mobile", 103},
+    {"https://licenseXM.bentley.com/bss/ws/mobile", 102},
+    {"https://SELECTserver.bentley.com/bss/ws/mobile", 1234}
     };
 
 const UrlData UrlProvider::s_passportUrl[3] = {
-        {"https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 103},
-        {"https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 102},
-        {"https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 1235}
+    {"https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 103},
+    {"https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 102},
+    {"https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 1235}
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -88,7 +87,7 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
         CleanUpUrlCache();
         }
     if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
-        {    
+        {
         s_localState->SaveValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
         }
     }

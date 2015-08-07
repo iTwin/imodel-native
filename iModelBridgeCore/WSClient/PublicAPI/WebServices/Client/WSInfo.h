@@ -40,43 +40,43 @@ struct WSInfo
         BeVersion m_webApiVersion;
 
     private:
-        static void ParseHeaders (HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseInfoPage (HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static void ParseAboutPage (HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
-        static BeVersion DeduceWebApiVersion (BeVersionCR serverVersion);
+        static void ParseHeaders(HttpResponseHeadersCR headers, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseInfoPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static void ParseAboutPage(HttpResponseCR response, Type& typeOut, BeVersion& serverVersionOut, BeVersion& webApiVersionOut);
+        static BeVersion DeduceWebApiVersion(BeVersionCR serverVersion);
 
     public:
         struct WebApiVersion;
 
         //! Create invalid info
-        WSCLIENT_EXPORT WSInfo ();
+        WSCLIENT_EXPORT WSInfo();
         //! Construct info with values
-        WSCLIENT_EXPORT WSInfo (BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
+        WSCLIENT_EXPORT WSInfo(BeVersion serverVersion, BeVersion webApiVersion, Type serverType);
         //! Create info from server response
-        WSCLIENT_EXPORT WSInfo (HttpResponseCR response);
+        WSCLIENT_EXPORT WSInfo(HttpResponseCR response);
         //! Deserialize string info
-        WSCLIENT_EXPORT WSInfo (Utf8StringCR serialized);
+        WSCLIENT_EXPORT WSInfo(Utf8StringCR serialized);
 
         //! Returns true if server type and version is known
-        WSCLIENT_EXPORT bool IsValid () const;
+        WSCLIENT_EXPORT bool IsValid() const;
 
         //! Returns type of server detected
-        WSCLIENT_EXPORT Type GetType () const;
+        WSCLIENT_EXPORT Type GetType() const;
 
         //! Returns version of WSG used
-        WSCLIENT_EXPORT BeVersionCR GetVersion () const;
+        WSCLIENT_EXPORT BeVersionCR GetVersion() const;
 
-        WSCLIENT_EXPORT bool IsR2OrGreater () const;
-        WSCLIENT_EXPORT bool IsR3OrGreater () const;
+        WSCLIENT_EXPORT bool IsR2OrGreater() const;
+        WSCLIENT_EXPORT bool IsR3OrGreater() const;
 
-        WSCLIENT_EXPORT BeVersionCR GetWebApiVersion () const;
-        WSCLIENT_EXPORT bool IsWebApiSupported (BeVersionCR version) const;
+        WSCLIENT_EXPORT BeVersionCR GetWebApiVersion() const;
+        WSCLIENT_EXPORT bool IsWebApiSupported(BeVersionCR version) const;
 
-        WSCLIENT_EXPORT bool IsNavigationPropertySelectForAllClassesSupported () const;
-        WSCLIENT_EXPORT bool IsSchemaDownloadFullySupported () const;
+        WSCLIENT_EXPORT bool IsNavigationPropertySelectForAllClassesSupported() const;
+        WSCLIENT_EXPORT bool IsSchemaDownloadFullySupported() const;
 
         //! Serialize info to string
-        WSCLIENT_EXPORT Utf8String ToString () const;
+        WSCLIENT_EXPORT Utf8String ToString() const;
     };
 
 typedef WSInfo& WSInfoR;

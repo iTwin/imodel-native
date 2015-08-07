@@ -96,7 +96,7 @@ struct CachedResponseManager : public IDeleteHandler
         BentleyStatus DeleteResponses(Utf8StringCR name, DateTimeCR accessedBeforeDateUtc, const ECInstanceKeyMultiMap& instancesToLeave);
         //! Delete responses with same name
         BentleyStatus DeleteResponses(Utf8StringCR name);
-        //! Save query info instance 
+        //! Save query info instance
         BentleyStatus SaveInfo(CachedResponseInfoR queryInfo);
         //! Save query info instance and relate response instances
         BentleyStatus SaveInfo(CachedResponseInfoR queryInfo, const InstanceCacheHelper::CachedInstances& cachedInstances);
