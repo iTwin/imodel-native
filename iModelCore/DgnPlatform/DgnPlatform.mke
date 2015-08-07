@@ -95,7 +95,12 @@ o = $(coreObjs)
 #----------------------------------------------------------------------
 %include $(dgnScriptContextDir)GenerateTypeScript.mki
 
-cIncs + -I$(dgnScriptContextGen)
+# When a platform defines BENTLEYCONFIG_NO_JAVASCRIPT, like LinuxX64, GenerateTypeScript.mki will not define dgnScriptContextGen, and adding a blank -I to to the compiler eats the next argument and the build will break
+%if defined(dgnScriptContextGen)
+%if "" != $(dgnScriptContextGen)
+    cIncs + -I$(dgnScriptContextGen)
+%endif
+%endif
 
 #----------------------------------------------------------------------
 #   Make sure that DgnPlatformInternal.pch is up-to-date.
