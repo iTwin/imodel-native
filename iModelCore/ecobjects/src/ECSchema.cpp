@@ -543,7 +543,7 @@ ECClassP ECSchema::GetClassP (WCharCP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
     {
-    wprintf(L"ECSchema: this=0x%llx  %ls.%02d.%02d, nClasses=%" PRIu64 "\n", (uint64_t)this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, (uint64_t)m_classMap.size());
+    printf("ECSchema: this=0x%llx  %s.%02d.%02d, nClasses=%" PRIu64 "\n", (uint64_t)this, Utf8String(m_key.m_schemaName.c_str()).c_str(), m_key.m_versionMajor, m_key.m_versionMinor, (uint64_t)m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<WCharCP, ECClassP>const& entry = *it;
