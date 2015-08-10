@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScript/ts/ts/DgnJsApiProjectionTemplate.h $
+|     $Source: DgnScript/DgnJsApi/ts/DgnJsApiProjectionTemplate.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

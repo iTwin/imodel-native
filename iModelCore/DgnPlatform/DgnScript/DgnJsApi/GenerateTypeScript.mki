@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: DgnScript/GenerateTypeScript.mki $
+#     $Source: DgnScript/DgnJsApi/GenerateTypeScript.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -29,20 +29,18 @@ always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
 
-dgnScriptTsDir = $(dgnScriptDir)ts/ts/
-
-#cUser + -EP
+dgnJsApiTsDir = $(dgnScriptDir)DgnJsApi/ts/
 
 # ---------------------------------------------------------------------------------------------------------------
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-$(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnScriptTsDir)DgnJsApi.d.ts $(dgnScriptTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnScriptTsDir)DgnJsApiProjectionTemplate.h $(DgnPlatformAPISrc)DgnJsApi.h
+$(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnJsApiTsDir)DgnJsApi.d.ts $(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h $(DgnPlatformAPISrc)DgnJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
-        --declarationPath "$(dgnScriptTsDir)DgnJsApi.d.ts" \
-        --nativeOutputTemplatePath "$(dgnScriptTsDir)DgnJsApiCallbacksTemplate.cpp" \
-        --nativeOutputHeaderTemplatePath "$(dgnScriptTsDir)DgnJsApiProjectionTemplate.h" \
+        --declarationPath "$(dgnJsApiTsDir)DgnJsApi.d.ts" \
+        --nativeOutputTemplatePath "$(dgnJsApiTsDir)DgnJsApiCallbacksTemplate.cpp" \
+        --nativeOutputHeaderTemplatePath "$(dgnJsApiTsDir)DgnJsApiProjectionTemplate.h" \
         --nativeSourcePaths "$(DgnPlatformAPISrc)DgnPlatform.h" \
         --typeScriptOutputPath "$(dgnScriptGen)DgnJsApi.ts" \
         --nativeOutputPath "$(dgnScriptGen)DgnJsApiCallbacks.cpp" \
@@ -56,7 +54,7 @@ $(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnScriptTsDir)DgnJsApi.d.ts $(dgnScrip
     ~time
 
 
-tsSourceFiles = $(dgnScriptGen)DgnJsApi.ts $(dgnScriptTsDir)_references.ts $(dgnScriptGen)GeomJsApi.d.ts
+tsSourceFiles = $(dgnScriptGen)DgnJsApi.ts $(dgnJsApiTsDir)_references.ts $(BuildContext)Delivery/GeomJsApi.d.ts
 
 # The rule below *also* outputs $(dgnScriptGen)DgnJsApi.d.ts
 # I didn't list that as an output, because ~time won't update it
@@ -71,11 +69,11 @@ $(dgnScriptGen)DgnJsApi.js : $(tsSourceFiles)
     $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnJsApi.js
     ~time
 
-$(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js
+$(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js $(dgnJsApiTsDir)DgnJsApiBootstrap.cpp
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__DGNSCRIPTJSSOURCE__=$(dgnScriptGen)DgnJsApi.js" \
-                                          --nativeSourceFile $(dgnScriptDir)ts/DgnScriptBootstrapper.cpp \
-                                          --outputPath $(dgnScriptGen)DgnScriptBootstrap.cpp
+                                          --nativeSourceFile $(dgnJsApiTsDir)DgnJsApiBootstrap.cpp \
+                                          --outputPath $(dgnScriptGen)DgnJsApiBootstrap.cpp
     ~time
 
 

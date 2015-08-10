@@ -1,6 +1,6 @@
     /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScript/ts/ts/DgnJsApiCallbacksTemplate.cpp $
+|     $Source: DgnScript/DgnJsApi/ts/DgnJsApiCallbacksTemplate.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -30,6 +30,7 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 dimensionDir    = $(DgnHandlersDir)Dimension/
 
 dgnScriptDir = $(_MakeFilePath)DgnScript/
+dgnJsApiDir = $(dgnScriptDir)DgnJsApi/
 geomJsApiDir = $(dgnScriptDir)GeomJsApi/
 
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
@@ -92,11 +93,11 @@ o = $(coreObjs)
 
 #----------------------------------------------------------------------
 # Generate the TypeScript portion of the DgnScript.
-# This also generates $(dgnScriptGen)DgnScriptBootstrap.cpp, which we compile below.
+# This also generates $(dgnScriptGen)DgnJsApiBootstrap.cpp, which we compile below.
 #----------------------------------------------------------------------
-%include $(dgnScriptDir)GeomJsApi/GenerateTypeScript.mki
+%include $(geomJsApiDir)GenerateTypeScript.mki
 
-%include $(dgnScriptDir)GenerateTypeScript.mki
+%include $(dgnJsApiDir)GenerateTypeScript.mki
 
 %ifdef dgnScriptGen
 cIncs + -I$(dgnScriptGen)
@@ -326,12 +327,14 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 
 $(o)DgnScript$(oext) : $(dgnScriptDir)DgnScript.cpp $(DgnCoreAPISrc)DgnScript.h ${MultiCompileDepends}
 
-$(o)DgnJsApi$(oext) : $(dgnScriptDir)DgnJsApi.cpp $(DgnPlatformAPISrc)DgnJsApi.h ${MultiCompileDepends}
+#   Core Dgn JS Api
+$(o)DgnJsApi$(oext) : $(dgnJsApiDir)DgnJsApi.cpp $(DgnPlatformAPISrc)DgnJsApi.h ${MultiCompileDepends}
 
-$(o)DgnScriptBootstrap$(oext) : $(dgnScriptGen)DgnScriptBootstrap.cpp ${MultiCompileDepends}
+$(o)DgnJsApiBootstrap$(oext) : $(dgnScriptGen)DgnJsApiBootstrap.cpp ${MultiCompileDepends}
 
 $(o)DgnJsApiCallbacks$(oext) : $(dgnScriptGen)DgnJsApiCallbacks.cpp $(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h ${MultiCompileDepends}
 
+#   Geom JS Api
 $(o)GeomJsApi$(oext) : $(geomJsApiDir)GeomJsApi.cpp $(DgnPlatformAPISrc)GeomJsApi.h ${MultiCompileDepends}
 
 $(o)GeomJsApiBootstrap$(oext) : $(dgnScriptGen)GeomJsApiBootstrap.cpp ${MultiCompileDepends}

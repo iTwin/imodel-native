@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScript/ts/DgnScriptBootstrapper.cpp $
+|     $Source: DgnScript/DgnJsApi/ts/DgnJsApiBootstrap.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
