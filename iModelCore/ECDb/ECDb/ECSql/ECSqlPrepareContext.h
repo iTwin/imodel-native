@@ -28,27 +28,27 @@ public:
     struct SelectionOptions
         {
         private:            
-            static bool IsSystemProperty (WCharCP accessString)
+            static bool IsSystemProperty (Utf8CP accessString)
                 {
-                static std::set<WCharCP, CompareIWChar> s_systemProperties
+                static std::set<Utf8CP, CompareUtf8> s_systemProperties
                     {
-                    ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME_W,
-                    ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME_W,
-                    ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W
+                    ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME,
+                    ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME,
+                    ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME,
+                    ECDbSystemSchemaHelper::OWNERECINSTANCEID_PROPNAME,
+                    ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME,
+                    ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME,
+                    ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME,
+                    ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME
                 };
                 return s_systemProperties.find (accessString) != s_systemProperties.end ();
                 }
-            static const std::vector<WString> Split (WCharCP accessString, WChar seperator)
+            static const std::vector<Utf8String> Split (Utf8CP accessString, Utf8Char seperator)
                 {
-                WString s = accessString;
-                std::vector<WString> output;
+                Utf8String s = accessString;
+                std::vector<Utf8String> output;
                 std::string::size_type prev_pos = 0, pos = 0;
-                while ((pos = s.find (seperator, pos)) != WString::npos)
+                while ((pos = s.find (seperator, pos)) != Utf8String::npos)
                     {
                     output.push_back (s.substr (prev_pos, pos - prev_pos));
                     prev_pos = ++pos;
@@ -58,7 +58,7 @@ public:
                 return output;
                 }
         private:
-            std::set<WString> m_selection;
+            std::set<Utf8String> m_selection;
         public:
              SelectionOptions ()
                 {
@@ -68,20 +68,20 @@ public:
                 {}
 
 
-            void AddProperty (WCharCP accessString)
+            void AddProperty (Utf8CP accessString)
                 {
-                WString path;
+                Utf8String path;
                 for (auto const& subPath : Split (accessString, L'.'))
                     {
                     if (path.empty ())
                         path.assign (subPath);
                     else
-                        path.append (L".").append (subPath);
+                        path.append (".").append (subPath);
 
                     m_selection.insert (path);
                     }
                 }
-            bool IsSelected (WCharCP accessString) const
+            bool IsSelected (Utf8CP accessString) const
                 {
 
                 if (m_selection.find (accessString) != m_selection.end ())

@@ -1855,15 +1855,6 @@ std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const
     return GetTable ().GetColumnWeakPtr (GetName ().c_str ());
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-BentleyStatus DependentPropertyCollection::Add (ECClassId ecClassId, WCharCP accessString)
-    {
-    return Add (ecClassId, Utf8String (accessString).c_str());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------

@@ -226,18 +226,18 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
         return "";
 
     ECSchemaCP schema = nullptr;
-    WString violatingClassesStr;
+    Utf8String violatingClassesStr;
     bool isFirstSet = true;
     for (auto const& kvPair : GetInvalidClasses ())
         {
         if (!isFirstSet)
-            violatingClassesStr.append (L" - ");
+            violatingClassesStr.append (" - ");
 
         bool isFirstClass = true;
         for (auto violatingClass : kvPair.second)
             {
             if (!isFirstClass)
-                violatingClassesStr.append (L", ");
+                violatingClassesStr.append (", ");
             else
                 //capture schema (which is the same for all violating classes) for output reasons
                 schema = &violatingClass->GetSchema ();
@@ -257,7 +257,7 @@ Utf8String CaseInsensitiveClassNamesRule::Error::_ToString () const
         strTemplate = "ECSchema '%s' contains ECClasses for which names only differ by case. ECDb does not support case sensitive class names. Conflicting ECClasses: %s.";
 
     Utf8String str;
-    str.Sprintf (strTemplate, Utf8String (schema->GetName ()).c_str (), Utf8String (violatingClassesStr).c_str ());
+    str.Sprintf (strTemplate, schema->GetName ().c_str (), violatingClassesStr.c_str ());
 
     return std::move (str);
     }
@@ -333,19 +333,19 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
     if (GetInvalidProperties ().empty ())
         return "";
 
-    WString violatingPropsStr;
+    Utf8String violatingPropsStr;
 
     bool isFirstSet = true;
     for (auto const& kvPair : GetInvalidProperties ())
         {
         if (!isFirstSet)
-            violatingPropsStr.append (L" - ");
+            violatingPropsStr.append (" - ");
 
         bool isFirstProp = true;
         for (auto violatingProp : kvPair.second)
             {
             if (!isFirstProp)
-                violatingPropsStr.append (L", ");
+                violatingPropsStr.append (", ");
 
             violatingPropsStr.append (violatingProp->GetName ());
             isFirstProp = false;
@@ -361,7 +361,7 @@ Utf8String CaseInsensitivePropertyNamesRule::Error::_ToString () const
         strTemplate = "ECClass '%s' contains ECProperties for which names only differ by case. ECDb does not support case sensitive property names. Conflicting ECProperties: %s.";
 
     Utf8String str;
-    str.Sprintf (strTemplate, Utf8String (m_ecClass.GetFullName ()).c_str (), Utf8String (violatingPropsStr).c_str ());
+    str.Sprintf (strTemplate, m_ecClass.GetFullName (), violatingPropsStr.c_str ());
 
     return std::move (str);
     }
@@ -428,13 +428,13 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString () const
     if (GetInvalidProperties ().empty ())
         return "";
 
-    WString violatingPropsStr;
+    Utf8String violatingPropsStr;
 
     bool isFirstProp = true;
     for (auto violatingProp : GetInvalidProperties ())
         {
         if (!isFirstProp)
-            violatingPropsStr.append (L", ");
+            violatingPropsStr.append (", ");
 
         violatingPropsStr.append (violatingProp->GetName ());
         isFirstProp = false;
@@ -443,7 +443,7 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString () const
     Utf8CP strTemplate = "ECClass '%s' contains struct or array ECProperties which are of the same type or a derived type than the ECClass. Conflicting ECProperties: %s.";
 
     Utf8String str;
-    str.Sprintf (strTemplate, Utf8String (m_ecClass.GetFullName ()).c_str (), Utf8String (violatingPropsStr).c_str ());
+    str.Sprintf (strTemplate, m_ecClass.GetFullName (), violatingPropsStr.c_str ());
 
     return std::move (str);
     }
@@ -523,7 +523,7 @@ Utf8String RelationshipConstraintIsNotARelationshipClassRule::Error::_ToString()
         if (!isFirstItem)
             str.append("; ");
 
-        str.append("(Relationship: ").append(Utf8String(inconsistency.first->GetFullName())).append(" , Constraint: ").append(Utf8String(inconsistency.second->GetFullName())).append(")");
+        str.append("(Relationship: ").append(Utf8String(inconsistency.first->GetFullName())).append(" , Constraint: ").append(inconsistency.second->GetFullName()).append(")");
         isFirstItem = false;
         }
 

@@ -1174,8 +1174,8 @@ IECInstanceR caInstance
 
     if (serializerStat != INSTANCE_WRITE_STATUS_Success)
         {
-        LOG.errorv (L"Serializing custom attribute instance to XML failed with error code: %d", serializerStat);
-        BeAssert (false && L"Serializing custom attribute instance to XML failed.");
+        LOG.errorv ("Serializing custom attribute instance to XML failed with error code: %d", serializerStat);
+        BeAssert (false && "Serializing custom attribute instance to XML failed.");
         return ERROR;
         }
 
@@ -1198,8 +1198,8 @@ ECSchemaCR schema
 
     if (deserializeStat != INSTANCE_READ_STATUS_Success)
         {
-        LOG.errorv (L"Deserializing custom attribute instance from XML failed with error code: %d", deserializeStat);
-        BeAssert (false && L"Deserializing custom attribute instance from XML failed.");
+        LOG.errorv ("Deserializing custom attribute instance from XML failed with error code: %d", deserializeStat);
+        BeAssert (false && "Deserializing custom attribute instance from XML failed.");
         return ERROR;
         }
 

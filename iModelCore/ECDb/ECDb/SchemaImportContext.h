@@ -8,8 +8,13 @@
 #pragma once
 #include <ECDb/ECDbSchemaManager.h>
 #include "ECDbSql.h"
+#include "ClassMap.h"
+#include "ClassMapInfo.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//struct ClassMapInfo;
+
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -19,6 +24,8 @@ private:
     ECDbSchemaManager::IImportIssueListener const& m_importIssueListener;
 
     mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
+
+    mutable std::vector<std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>>> m_classMapInfoCache;
     bmap<ECDbSqlIndex const*, ECN::ECClassId> m_classIdFilteredIndices;
 
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
@@ -32,6 +39,8 @@ public:
     UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
     UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
 
+    void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMapInfo>&) const;
+    std::vector<std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
     void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
     bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;
 

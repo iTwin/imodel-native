@@ -122,7 +122,7 @@ BentleyStatus ECDb_ECSqlSelectStructProps ()
             ECSqlColumnInfoCR addressMemberColumnInfo = addressMemberValue.GetColumnInfo ();
             
             //print out name of address member
-            WStringCR addressMemberColumnName = addressMemberColumnInfo.GetProperty ()->GetName ();
+            Utf8StringCR addressMemberColumnName = addressMemberColumnInfo.GetProperty ()->GetName ();
             printf ("   %s: ", Utf8String (addressMemberColumnName).c_str ());
             //print out value of address member
             PrimitiveType type = addressMemberColumnInfo.GetDataType ().GetPrimitiveType ();
@@ -247,7 +247,7 @@ BentleyStatus ECDb_ECSqlSelectStructArrayProps ()
                 ECSqlColumnInfoCR certMemberColumnInfo = certMember.GetColumnInfo ();
 
                 //print out name of cert member
-                WStringCR certMemberColumnName = certMemberColumnInfo.GetProperty ()->GetName ();
+                Utf8StringCR certMemberColumnName = certMemberColumnInfo.GetProperty ()->GetName ();
                 printf ("   %s: ", Utf8String (certMemberColumnName).c_str ());
                 //print out value of cert member
                 PrimitiveType type = certMemberColumnInfo.GetDataType ().GetPrimitiveType ();
@@ -296,10 +296,10 @@ BentleyStatus ECDb_ECSqlStatementAndDateTime ()
 
         DateTime::Info const& birthdayInfo = birthday.GetInfo ();
         DateTime::Info const& lastModifiedInfo = lastModified.GetInfo ();
-        wprintf (L"Birthday: Kind %ls, Component %ls\n", 
+        printf ("Birthday: Kind %s, Component %s\n", 
         DateTime::Info::KindToString (birthdayInfo.GetKind ()).c_str (), 
         DateTime::Info::ComponentToString (birthdayInfo.GetComponent ()).c_str ());
-        wprintf (L"LastModified: Kind %ls, Component %ls\n", 
+        printf ("LastModified: Kind %s, Component %s\n", 
         DateTime::Info::KindToString (lastModifiedInfo.GetKind ()).c_str (), 
         DateTime::Info::ComponentToString (lastModifiedInfo.GetComponent ()).c_str ());
         }
@@ -485,15 +485,15 @@ BentleyStatus ECDb_ECSqlStatementBindingStructs ()
     if (statement.GetLastStatus () != ECSqlStatus::Success)
         return ERROR;
 
-    stat = addressBinder.GetMember (L"Street").BindText ("2000 Main Street", IECSqlBinder::MakeCopy::Yes);
+    stat = addressBinder.GetMember ("Street").BindText ("2000 Main Street", IECSqlBinder::MakeCopy::Yes);
     if (stat != ECSqlStatus::Success)
         return ERROR;
 
-    stat = addressBinder.GetMember (L"Zip").BindInt (10014);
+    stat = addressBinder.GetMember ("Zip").BindInt (10014);
     if (stat != ECSqlStatus::Success)
         return ERROR;
 
-    stat = addressBinder.GetMember (L"City").BindText ("New York", IECSqlBinder::MakeCopy::Yes);
+    stat = addressBinder.GetMember ("City").BindText ("New York", IECSqlBinder::MakeCopy::Yes);
     if (stat != ECSqlStatus::Success)
         return ERROR;
 
@@ -584,12 +584,12 @@ BentleyStatus ECDb_ECSqlStatementBindingStructArrays ()
     //AddArrayElement gets a binder for the array element. As the array element is a struct, we need to call
     //BindStruct (just as with other struct properties)
     IECSqlStructBinder& firstCertBinder = certificationsBinder.AddArrayElement ().BindStruct ();
-    firstCertBinder.GetMember (L"Name").BindText ("Certified Engineer Assoc.", IECSqlBinder::MakeCopy::Yes);
-    firstCertBinder.GetMember (L"StartsOn").BindDateTime (DateTime (2014, 01, 28));
+    firstCertBinder.GetMember ("Name").BindText ("Certified Engineer Assoc.", IECSqlBinder::MakeCopy::Yes);
+    firstCertBinder.GetMember ("StartsOn").BindDateTime (DateTime (2014, 01, 28));
 
     IECSqlStructBinder& secondCertBinder = certificationsBinder.AddArrayElement ().BindStruct ();
-    secondCertBinder.GetMember (L"Name").BindText ("Professional Engineers", IECSqlBinder::MakeCopy::Yes);
-    secondCertBinder.GetMember (L"StartsOn").BindDateTime (DateTime (2011, 05, 14));
+    secondCertBinder.GetMember ("Name").BindText ("Professional Engineers", IECSqlBinder::MakeCopy::Yes);
+    secondCertBinder.GetMember ("StartsOn").BindDateTime (DateTime (2011, 05, 14));
 
     //now bind to parameter 2 and 3 (primitive binding) (skipping error handling for better readability)
     statement.BindText (2, "Patty", IECSqlBinder::MakeCopy::Yes);

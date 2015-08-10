@@ -24,7 +24,7 @@ struct ECSqlParseContext
 private:
     ECDbCR m_ecdb;
     std::vector<void const*> m_finalizeParseArgs;
-    bmap<WString, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
+    bmap<Utf8String, std::shared_ptr<ClassNameExp::Info>> m_classNameExpInfoList;
     int m_currentECSqlParameterIndex;
     bvector<ParameterExp*> m_parameterExpList;
     bmap<Utf8CP, int, CompareUtf8> m_ecsqlParameterNameToIndexMapping;

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECDbDateTime_Test.cpp $
+|  $Source: Tests/Published/ECDbDateTime_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -41,44 +41,44 @@ Utf8CP assertMessage
 void PopulateTestInstanceWithNonArrayValues
 (
 IECInstancePtr& testInstance,
-bvector<WString>& propertyAccessStringList,
+bvector<Utf8String>& propertyAccessStringList,
 bvector<DateTime>& expectedDateTimeList,
 bvector<bool>& expectedMatchesDateTimeInfoList
 )
     {
     //primitive properties
-    propertyAccessStringList.push_back (L"nodatetimeinfo");
+    propertyAccessStringList.push_back ("nodatetimeinfo");
     expectedDateTimeList.push_back (DateTime::GetCurrentTimeUtc ());
     expectedMatchesDateTimeInfoList.push_back (false);
 
-    propertyAccessStringList.push_back (L"emptydatetimeinfo");
+    propertyAccessStringList.push_back ("emptydatetimeinfo");
     expectedDateTimeList.push_back (DateTime::GetCurrentTimeUtc ());
     expectedMatchesDateTimeInfoList.push_back (false);
 
-    propertyAccessStringList.push_back (L"utc");
+    propertyAccessStringList.push_back ("utc");
     expectedDateTimeList.push_back (DateTime::GetCurrentTimeUtc ());
     expectedMatchesDateTimeInfoList.push_back (true);
 
-    propertyAccessStringList.push_back (L"unspecified");
+    propertyAccessStringList.push_back ("unspecified");
     DateTime utc = DateTime::GetCurrentTimeUtc ();
     DateTime dt (DateTime::Kind::Unspecified, utc.GetYear (), utc.GetMonth (), utc.GetDay (), utc.GetHour (), utc.GetMinute (), utc.GetSecond (), utc.GetHectoNanosecond ());
     expectedDateTimeList.push_back (dt);
     expectedMatchesDateTimeInfoList.push_back (true);
 
-    propertyAccessStringList.push_back (L"dateonly");
+    propertyAccessStringList.push_back ("dateonly");
     expectedDateTimeList.push_back (DateTime (2012, 10, 31));
     expectedMatchesDateTimeInfoList.push_back (true);
 
     //datetime props in struct member
-    propertyAccessStringList.push_back (L"structwithdatetimes.nodatetimeinfo");
+    propertyAccessStringList.push_back ("structwithdatetimes.nodatetimeinfo");
     expectedDateTimeList.push_back (DateTime::GetCurrentTimeUtc ());
     expectedMatchesDateTimeInfoList.push_back (false);
  
-    propertyAccessStringList.push_back (L"structwithdatetimes.utc");
+    propertyAccessStringList.push_back ("structwithdatetimes.utc");
     expectedDateTimeList.push_back (DateTime::GetCurrentTimeUtc ());
     expectedMatchesDateTimeInfoList.push_back (true);
 
-    propertyAccessStringList.push_back (L"structwithdatetimes.dateonly");
+    propertyAccessStringList.push_back ("structwithdatetimes.dateonly");
     expectedDateTimeList.push_back (DateTime (2013, 2, 22));
     expectedMatchesDateTimeInfoList.push_back (true);
 
@@ -87,9 +87,9 @@ bvector<bool>& expectedMatchesDateTimeInfoList
         {
         const DateTime dateTime = expectedDateTimeList[i];
         ECValue value (dateTime);
-        WCharCP propAccessString = propertyAccessStringList[i].c_str ();
+        Utf8CP propAccessString = propertyAccessStringList[i].c_str ();
         ECObjectsStatus stat = testInstance->SetValue (propAccessString, value);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"IECInstance::SetValue ('" << propAccessString << L"', "  << dateTime.ToString ().c_str () << L")";
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue ('" << propAccessString << "', "  << dateTime.ToString ().c_str () << ")";
         }
     }
 
@@ -100,7 +100,7 @@ void PopulateTestInstanceWithDateTimeArray
 (
 IECInstancePtr& testInstance,
 bvector<DateTime>& expectedDateTimeArrayElements,
-WCharCP arrayPropertyName,
+Utf8CP arrayPropertyName,
 DateTime::Info const& targetMetadata
 )
     {
@@ -129,7 +129,7 @@ DateTime::Info const& targetMetadata
 
         ECValue arrayElementValue (datetime);
         ECObjectsStatus stat = testInstance->SetValue (arrayPropertyName, arrayElementValue, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"IECInstance::SetValue ('" << arrayPropertyName << L"', " << arrayElementValue.ToString ().c_str () << L", " << i << L") failed";
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::SetValue ('" << arrayPropertyName << "', " << arrayElementValue.ToString ().c_str () << ", " << i << ") failed";
         }
     }
 
@@ -143,7 +143,7 @@ bvector<IECInstancePtr>& expectedStructArrayElements,
 ECClassCP testClass
 )
     {
-    WCharCP structArrayPropName = L"arrayofstructwithdatetimes";
+    Utf8CP structArrayPropName = "arrayofstructwithdatetimes";
     ArrayECPropertyCP arrayProp = testClass->GetPropertyP (structArrayPropName)->GetAsArrayProperty ();
     ECClassCP structType = arrayProp->GetStructElementType ();
     ASSERT_TRUE (structType != nullptr);
@@ -156,23 +156,23 @@ ECClassCP testClass
         IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler ()->CreateInstance ();
         ECValue v;
         v.SetDateTime (DateTime::GetCurrentTimeUtc ());
-        ECObjectsStatus stat = structInstance->SetValue (L"nodatetimeinfo", v);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"StructInstance::SetValue failed";
+        ECObjectsStatus stat = structInstance->SetValue ("nodatetimeinfo", v);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "StructInstance::SetValue failed";
 
         v.SetDateTime (DateTime::GetCurrentTimeUtc ());
-        stat = structInstance->SetValue (L"utc", v);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"StructInstance::SetValue failed";
+        stat = structInstance->SetValue ("utc", v);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "StructInstance::SetValue failed";
 
         v.SetDateTime (DateTime (2013, 2, 22));
-        stat = structInstance->SetValue (L"dateonly", v);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"StructInstance::SetValue failed";
+        stat = structInstance->SetValue ("dateonly", v);
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "StructInstance::SetValue failed";
 
         ECValue structValue;
         BentleyStatus bstat = structValue.SetStruct (structInstance.get ());
-        EXPECT_EQ (SUCCESS, bstat) << L"ECValue::SetStruct failed";
+        EXPECT_EQ (SUCCESS, bstat) << "ECValue::SetStruct failed";
 
         stat = testInstance->SetValue (structArrayPropName, structValue, i);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"ECInstance::SetValue (StructValue) failed";
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "ECInstance::SetValue (StructValue) failed";
         expectedStructArrayElements.push_back (structInstance);
         }
     }
@@ -182,7 +182,7 @@ ECClassCP testClass
 //+---------------+---------------+---------------+---------------+---------------+------
 ECInstanceKey InsertTestInstance
 (
-bvector<WString>& nonArrayPropertyAccessStringList,
+bvector<Utf8String>& nonArrayPropertyAccessStringList,
 bvector<DateTime>& expectedNonArrayDateTimeList,
 bvector<bool>& expectedNonArrayDateTimeInfoMatchesList,
 bvector<DateTime>& expectedDateTimeArrayElements,
@@ -195,12 +195,12 @@ ECClassCP testClass
     EXPECT_TRUE (testInstance.IsValid ());
 
     PopulateTestInstanceWithNonArrayValues (testInstance, nonArrayPropertyAccessStringList, expectedNonArrayDateTimeList, expectedNonArrayDateTimeInfoMatchesList);
-    PopulateTestInstanceWithDateTimeArray (testInstance, expectedDateTimeArrayElements, L"utcarray", DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime));
+    PopulateTestInstanceWithDateTimeArray (testInstance, expectedDateTimeArrayElements, "utcarray", DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime));
     PopulateTestInstanceWithStructArray (testInstance, expectedStructArrayElements, testClass);
 
     ECInstanceKey instanceId;
     testProject.InsertECInstance (instanceId, testInstance);
-    EXPECT_GT (instanceId.GetECInstanceId ().GetValue (), 0LL) << L"Inserting ECInstance with DateTime values failed.";
+    EXPECT_GT (instanceId.GetECInstanceId ().GetValue (), 0LL) << "Inserting ECInstance with DateTime values failed.";
 
     return instanceId;
     }
@@ -214,10 +214,10 @@ TEST(ECDbDateTime, InsertDateTimeValues)
     ECDbTestProject testProject;
     testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
-    WCharCP const testClassName = L"PSADateTime";
+    Utf8CP const testClassName = "PSADateTime";
     ECClassP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
 
-    bvector<WString> nonArrayPropertyAccessStringList;
+    bvector<Utf8String> nonArrayPropertyAccessStringList;
     bvector<DateTime> expectedNonArrayDateTimeList;
     bvector<bool> expectedNonArrayDateTimeInfoMatchesList;
     bvector<DateTime> expectedArrayDateTimeElements;
@@ -252,14 +252,14 @@ TEST(Performance_ECDbDateTime, InsertDateTimeValues)
     ECDbTestProject testProject;
     testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
-    WCharCP const testClassName = L"PSADateTime";
+    Utf8CP const testClassName = "PSADateTime";
     ECClassP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
 
     const int iterationCount = 20000;
     StopWatch timer (true);
     for (int i = 0; i < iterationCount; i++)
         {
-        bvector<WString> nonArrayPropertyAccessStringList;
+        bvector<Utf8String> nonArrayPropertyAccessStringList;
         bvector<DateTime> expectedNonArrayDateTimeList;
         bvector<bool> expectedNonArrayDateTimeInfoMatchesList;
         bvector<DateTime> expectedArrayDateTimeElements;
@@ -268,7 +268,7 @@ TEST(Performance_ECDbDateTime, InsertDateTimeValues)
         }
 
     timer.Stop ();
-    LOG.infov (L"Inserting %d '%ls' instances took %.4lf msecs.", iterationCount, testClassName, timer.GetElapsedSeconds () * 1000.0);
+    LOG.infov ("Inserting %d '%s' instances took %.4lf msecs.", iterationCount, testClassName, timer.GetElapsedSeconds () * 1000.0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,11 +280,11 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
     ECDbTestProject testProject;
     ECDbR db = testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
-    WCharCP const testClassName = L"PSADateTime";
+    Utf8CP const testClassName = "PSADateTime";
     ECClassP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
 
     //test set up -> insert test data
-    bvector<WString> nonArrayPropertyAccessStringList;
+    bvector<Utf8String> nonArrayPropertyAccessStringList;
     bvector<DateTime> expectedNonArrayDateTimeList;
     bvector<bool> expectedNonArrayDateTimeInfoMatchesList;
     bvector<DateTime> expectedArrayDateTimeElements;
@@ -344,7 +344,7 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
 
         IECInstancePtr expectedStructInstance = expectedStructArrayElements[actualArrayElementCount];
         ECValue v;
-        expectedStructInstance->GetValue (v, L"nodatetimeinfo");
+        expectedStructInstance->GetValue (v, "nodatetimeinfo");
         DateTime expected = v.GetDateTime ();
 
         DateTime actual = structArrayElement.GetValue (0).GetDateTime ();
@@ -352,14 +352,14 @@ TEST(ECDbDateTime, ECSqlStatementGetValueDateTime)
         assertMessage.Sprintf ("Unexpected date time for struct property 'nodatetimeinfo' for array element %d.", actualArrayElementCount);
         AssertDateTime (expected, actual, true, assertMessage.c_str ());
 
-        expectedStructInstance->GetValue (v, L"utc");
+        expectedStructInstance->GetValue (v, "utc");
         expected = v.GetDateTime ();
         actual = structArrayElement.GetValue (1).GetDateTime ();
 
         assertMessage.Sprintf ("Unexpected date time for struct property 'utc' for array element %d.", actualArrayElementCount);
         AssertDateTime (expected, actual, false, assertMessage.c_str ());
 
-        expectedStructInstance->GetValue (v, L"dateonly");
+        expectedStructInstance->GetValue (v, "dateonly");
         expected = v.GetDateTime ();
         actual = structArrayElement.GetValue (2).GetDateTime ();
         assertMessage.Sprintf ("Unexpected date time for struct property 'dateonly' for array element %d.", actualArrayElementCount);
@@ -384,7 +384,7 @@ TEST(Performance_ECDbDateTime, ECSqlStatementGetValueDateTime)
     ECDbTestProject testProject;
     ECDbR db = testProject.Create ("ecdbdatetime.ecdb", L"ECSqlTest.01.00.ecschema.xml", false);
 
-    WCharCP const testClassName = L"PSADateTime";
+    Utf8CP const testClassName = "PSADateTime";
     ECClassP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
     //number of props in StructWithDateTimes struct
     const int testStructPropertyCount = 3;
@@ -398,7 +398,7 @@ TEST(Performance_ECDbDateTime, ECSqlStatementGetValueDateTime)
     for (int i = 0; i < expectedRowCount; i++)
         {
         //test set up -> insert test data
-        bvector<WString> nonArrayPropertyAccessStringList;
+        bvector<Utf8String> nonArrayPropertyAccessStringList;
         bvector<DateTime> expectedNonArrayDateTimeList;
         bvector<bool> expectedNonArrayDateTimeInfoMatchesList;
         bvector<DateTime> expectedArrayDateTimeElements;
@@ -485,7 +485,7 @@ TEST(ECDbDateTime, DateTimeStorageAccuracyTest)
     ECDbTestProject testProject;
     ECDbR db = testProject.Create ("ecdbdatetime.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
-    WCharCP const testClassName = L"AAA";
+    Utf8CP const testClassName = "AAA";
     Utf8CP const dateTimePropertyName = "t";
 
     ECClassCP testClass = testProject.GetTestSchemaManager ().GetTestSchema ()->GetClassP (testClassName);
@@ -501,12 +501,11 @@ TEST(ECDbDateTime, DateTimeStorageAccuracyTest)
     testDateList.push_back (ECValue (DateTime (DateTime::Kind::Utc, -1000, 2, 28, 4, 4, 13, 5555555)));
 
     bmap<ECInstanceId, ECValue> testDataset;
-    WString dateTimePropertyNameW (dateTimePropertyName, BentleyCharEncoding::Utf8);
     for (ECValueCR testECValue : testDateList)
         {
         IECInstancePtr testInstance = testProject.CreateECInstance (*testClass);
 
-        testInstance->SetValue (dateTimePropertyNameW.c_str (), testECValue);
+        testInstance->SetValue (dateTimePropertyName, testECValue);
         ECInstanceKey instanceKey;
         testProject.InsertECInstance (instanceKey, testInstance);
 

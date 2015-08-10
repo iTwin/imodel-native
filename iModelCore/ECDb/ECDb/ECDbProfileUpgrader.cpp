@@ -191,7 +191,7 @@ bool ECDbProfileUpgrader::IsView (ECDbCR ecdb, Utf8CP tableOrViewName)
 
 //*************************************** ECDbProfileSchemaUpgrader *********************************
 //static
-SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey (L"ECDb_FileInfo", 1, 0);
+SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECDb_FileInfo", 1, 0);
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        07/2012
@@ -252,8 +252,8 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbSystemSchema (ECSchemaReadCon
         else
             {
             //other error codes are considered programmer errors and therefore have an assertion, too
-            LOG.errorv ("Creating / upgrading ECDb file %s failed because ECDbSystem ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, deserializeStat);
-            BeAssert (false && "ECDb upgrade: Failed to deserialize ECDbSystem ECSchema");
+            LOG.errorv ("Creating / upgrading ECDb file %s failed because ECDb_System ECSchema could not be deserialized. Error code SchemaReadStatus::%d", ecdbFileName, deserializeStat);
+            BeAssert (false && "ECDb upgrade: Failed to deserialize ECDb_System ECSchema");
             }
 
         return ERROR;
@@ -286,7 +286,7 @@ BentleyStatus ECDbProfileECSchemaUpgrader::ReadECDbFileInfoSchema (ECSchemaReadC
 Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
     {
     return "<?xml version='1.0' encoding='utf-8'?> "
-        "<ECSchema schemaName='ECDbSystem' nameSpacePrefix='ecdbsys' version='2.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
+        "<ECSchema schemaName='ECDb_System' nameSpacePrefix='ecdbsys' version='2.0'  xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'> "
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' /> "
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' /> "
         "    <ECCustomAttributes> "

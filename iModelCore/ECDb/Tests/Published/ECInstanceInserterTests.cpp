@@ -210,10 +210,9 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         ASSERT_EQ ((int) ECSqlStepStatus::HasRow, (int) stmt.Step ());
 
         IECSqlValue const& colVal = stmt.GetValue (0);
-        WString propPath (colVal.GetColumnInfo ().GetPropertyPath ().ToString ().c_str (), BentleyCharEncoding::Utf8);
 
         ECValue v;
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance.GetValue (v, propPath.c_str ()));
+        ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance.GetValue (v, colVal.GetColumnInfo ().GetPropertyPath ().ToString ().c_str ()));
         ASSERT_EQ (v.IsNull (), colVal.IsNull ());
         if (!v.IsNull ())
             ASSERT_EQ (v.GetInteger (), colVal.GetInt ());
@@ -238,11 +237,11 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
         status = inserter.Insert (generatedKey, testInstance, false);
         ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance without instance id is expected to fail if auto generation is disabled";
 
-        testInstance.SetInstanceId (L"blabla");
+        testInstance.SetInstanceId ("blabla");
         status = inserter.Insert (generatedKey, testInstance, false);
         ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance with instance id which is not of type ECInstanceId is expected to fail if auto generation is disabled";
 
-        testInstance.SetInstanceId (L"-1111");
+        testInstance.SetInstanceId ("-1111");
         status = inserter.Insert (generatedKey, testInstance, false);
         ASSERT_EQ (ERROR, status) << testScenario << ": Inserting instance with instance id which is not of type ECInstanceId is expected to fail if auto generation is disabled";
 
@@ -256,7 +255,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
 
         //now set a valid instance id in test instance
         userProvidedId = ECInstanceId (userProvidedId.GetValue () + 100LL);
-        WChar instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+        Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
         ASSERT_TRUE (ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, userProvidedId));
         testInstance.SetInstanceId (instanceIdStr);
 
@@ -277,7 +276,7 @@ TEST_F (ECInstanceInserterTests, InsertWithUserProvidedECInstanceId)
     //Test #2: insert non-empty instance
     testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ECValue v (123);
-    testInstance->SetValue (L"I", v);
+    testInstance->SetValue ("I", v);
     runInsertTest (*testInstance, "Non-empty instance");
     }
 
@@ -379,11 +378,11 @@ TEST_F (ECInstanceInserterTests, InsertWithCurrentTimeStampTrigger)
     auto testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
     ECValue v (1);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"I", v));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("I", v));
 
     v.Clear ();
     v.SetUtf8CP ("ECInstanceInserter");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue (L"S", v));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testInstance->SetValue ("S", v));
 
     ECInstanceInserter inserter (ecdb, *testClass);
     ASSERT_TRUE (inserter.IsValid ());
@@ -499,14 +498,14 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
     ECSchemaPtr testSchema;
     ECClassP testClass = nullptr;
     PrimitiveECPropertyP premitiveProperty = nullptr;
-    ECSchema::CreateSchema (testSchema, L"TestSchema", 1, 0);
+    ECSchema::CreateSchema (testSchema, "TestSchema", 1, 0);
     ASSERT_TRUE (testSchema.IsValid ());
-    testSchema->SetNamespacePrefix (L"ts");
-    testSchema->SetDescription (L"Dynamic Test Schema");
-    testSchema->SetDisplayLabel (L"Test Schema");
+    testSchema->SetNamespacePrefix ("ts");
+    testSchema->SetDescription ("Dynamic Test Schema");
+    testSchema->SetDisplayLabel ("Test Schema");
 
-    ASSERT_TRUE (testSchema->CreateClass (testClass, L"TestClass") == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (testClass->CreatePrimitiveProperty (premitiveProperty, L"TestProperty", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (testSchema->CreateClass (testClass, "TestClass") == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (testClass->CreatePrimitiveProperty (premitiveProperty, "TestProperty", PrimitiveType::PRIMITIVETYPE_String) == ECOBJECTS_STATUS_Success);
 
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*testSchema));
@@ -515,7 +514,7 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 
     StandaloneECEnablerPtr enabler = testClass->GetDefaultStandaloneEnabler ();
     ECN::StandaloneECInstancePtr testClassInstance = enabler->CreateInstance ();
-    testClassInstance->SetValue (L"TestProperty", ECValue (L"firstProperty"));
+    testClassInstance->SetValue ("TestProperty", ECValue ("firstProperty"));
 
         {
         //wrap inserter in a nested block to make sure it (and its internal ECSqlStatement) is destroyed before the DB is closed
@@ -535,64 +534,64 @@ TEST_F (ECInstanceInserterTests, CloseDbAfterInstanceInsertion)
 TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassIds)
     {
     auto const schema =
-        L"<?xml version='1.0' encoding='utf-8'?>"
-        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-        L"    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        L"    <ECClass typeName='ClassA' isDomainClass='True'>"
-        L"        <ECCustomAttributes>"
-        L"            <ClassMap xmlns='ECDbMap.01.00'>"
-        L"                <MapStrategy>"
-        L"                   <Strategy>SharedTable</Strategy>"
-        L"                   <IsPolymorphic>True</IsPolymorphic>"
-        L"                </MapStrategy>"
-        L"            </ClassMap>"
-        L"        </ECCustomAttributes>"
-        L"        <ECProperty propertyName='P1' typeName='string' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='ClassAB' isDomainClass='True'>"
-        L"        <BaseClass>ClassA</BaseClass>"
-        L"        <ECProperty propertyName='P2' typeName='double' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='ClassC' isDomainClass='True'>"
-        L"        <ECProperty propertyName='P3' typeName='int' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='ClassD' isDomainClass='True'>"
-        L"        <ECProperty propertyName='P4' typeName='int' />"
-        L"    </ECClass>"
-        L"      <ECRelationshipClass typeName = 'RelationshipClassA' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
-        L"          <Source cardinality = '(0,1)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassA'/> "
-        L"          </Source> "
-        L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassC'/> "
-        L"          </Target> "
-        L"      </ECRelationshipClass> "
-        L"      <ECRelationshipClass typeName = 'RelationshipClassB' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
-        L"          <Source cardinality = '(0,1)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassA'/> "
-        L"          </Source> "
-        L"          <Target cardinality = '(0,1)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassC'/> "
-        L"          </Target> "
-        L"      </ECRelationshipClass> "
-        L"      <ECRelationshipClass typeName = 'RelationshipClassC' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "//relationship Constaining polymorphic Constraint
-        L"          <Source cardinality = '(0,N)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassA'/> "
-        L"          </Source> "
-        L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassC'/> "
-        L"          </Target> "
-        L"      </ECRelationshipClass> "
-        L"      <ECRelationshipClass typeName = 'RelationshipClassD' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
-        L"          <Source cardinality = '(0,N)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassC'/> "
-        L"          </Source> "
-        L"          <Target cardinality = '(0,N)' polymorphic = 'True'> "
-        L"              <Class class = 'ClassD'/> "
-        L"          </Target> "
-        L"      </ECRelationshipClass> "
-        L"</ECSchema>";
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='ClassA' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <IsPolymorphic>True</IsPolymorphic>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P1' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        "        <BaseClass>ClassA</BaseClass>"
+        "        <ECProperty propertyName='P2' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ClassC' isDomainClass='True'>"
+        "        <ECProperty propertyName='P3' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ClassD' isDomainClass='True'>"
+        "        <ECProperty propertyName='P4' typeName='int' />"
+        "    </ECClass>"
+        "      <ECRelationshipClass typeName = 'RelationshipClassA' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        "          <Source cardinality = '(0,1)' polymorphic = 'True'> "
+        "              <Class class = 'ClassA'/> "
+        "          </Source> "
+        "          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+        "              <Class class = 'ClassC'/> "
+        "          </Target> "
+        "      </ECRelationshipClass> "
+        "      <ECRelationshipClass typeName = 'RelationshipClassB' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        "          <Source cardinality = '(0,1)' polymorphic = 'True'> "
+        "              <Class class = 'ClassA'/> "
+        "          </Source> "
+        "          <Target cardinality = '(0,1)' polymorphic = 'True'> "
+        "              <Class class = 'ClassC'/> "
+        "          </Target> "
+        "      </ECRelationshipClass> "
+        "      <ECRelationshipClass typeName = 'RelationshipClassC' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "//relationship Constaining polymorphic Constraint
+        "          <Source cardinality = '(0,N)' polymorphic = 'True'> "
+        "              <Class class = 'ClassA'/> "
+        "          </Source> "
+        "          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+        "              <Class class = 'ClassC'/> "
+        "          </Target> "
+        "      </ECRelationshipClass> "
+        "      <ECRelationshipClass typeName = 'RelationshipClassD' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'> "
+        "          <Source cardinality = '(0,N)' polymorphic = 'True'> "
+        "              <Class class = 'ClassC'/> "
+        "          </Source> "
+        "          <Target cardinality = '(0,N)' polymorphic = 'True'> "
+        "              <Class class = 'ClassD'/> "
+        "          </Target> "
+        "      </ECRelationshipClass> "
+        "</ECSchema>";
 
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create ("InsertRelationshipInstances.ecdb");

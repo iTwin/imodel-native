@@ -46,7 +46,7 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
         schemaKey                        = new DbECSchemaEntry();
         schemaKey->m_ecSchemaId          = ecSchemaId;
         schemaKey->m_resolvedECSchema    = const_cast<ECSchemaP>(&schema);
-        schemaKey->m_schemaName.Assign (schema.GetName().c_str());
+        schemaKey->m_schemaName          = schema.GetName().c_str();
         schemaKey->m_versionMajor        = schema.GetVersionMajor();
         schemaKey->m_versionMinor        = schema.GetVersionMinor();
         schemaKey->m_nClassesInSchema = schemaKey->m_nClassesLoaded = 0;
@@ -58,11 +58,11 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
             if (!ecClass->HasId())
                 const_cast<ECClassP>(ecClass)->SetId (
                     ECDbSchemaPersistence::GetECClassId(m_db, 
-                        Utf8String(ecClass->GetSchema().GetName()).c_str(),
-                        Utf8String(ecClass->GetName()).c_str(), ResolveSchema::BySchemaName));
+                        ecClass->GetSchema().GetName().c_str(),
+                        ecClass->GetName().c_str(), ResolveSchema::BySchemaName));
             classKey->m_ecClassId       = ecClass->GetId();
             classKey->m_ecSchemaId      = ecSchemaId;
-            classKey->m_className.Assign (ecClass->GetName().c_str());
+            classKey->m_className       = ecClass->GetName().c_str();
 
             classKey->m_resolvedECClass = const_cast<ECClassP>(ecClass);
             m_ecClassKeyByECClassIdLookup[classKey->m_ecClassId] = classKey;
@@ -324,17 +324,17 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECS
     if (BE_SQLITE_ROW != ECDbSchemaPersistence::Step(info, *stmt))
         return ERROR;
 
-    if (ECSchema::CreateSchema(ecSchemaOut, WString(info.m_name.c_str(), true), info.m_versionMajor, info.m_versionMinor) 
+    if (ECSchema::CreateSchema(ecSchemaOut, info.m_name.c_str(), info.m_versionMajor, info.m_versionMinor) 
         != ECOBJECTS_STATUS_Success )
         return ERROR;
 
     ecSchemaOut->SetId(ecSchemaId);
     m_cache.AddSchema(*ecSchemaOut); 
-    ecSchemaOut->SetNamespacePrefix (WString (info.m_namespacePrefix.c_str(), true));
+    ecSchemaOut->SetNamespacePrefix(info.m_namespacePrefix.c_str());
     if (!(info.ColsNull & DbECSchemaInfo::COL_DisplayLabel))
-        ecSchemaOut->SetDisplayLabel    (WString (info.m_displayLabel.c_str(), true));
+        ecSchemaOut->SetDisplayLabel(info.m_displayLabel.c_str());
     if (!(info.ColsNull & DbECSchemaInfo::COL_Description))
-        ecSchemaOut->SetDescription     (WString (info.m_description.c_str(), true));      
+        ecSchemaOut->SetDescription(info.m_description.c_str());      
 
     return SUCCESS;
     }
@@ -368,7 +368,7 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
     ECRelationshipClassP ecRelationshipClass = nullptr;
     if (info.m_isRelationship)
         {
-        if ( ecSchemaIn.CreateRelationshipClass (ecRelationshipClass, WString(info.m_name.c_str(), true)) != ECOBJECTS_STATUS_Success )
+        if ( ecSchemaIn.CreateRelationshipClass (ecRelationshipClass, info.m_name.c_str()) != ECOBJECTS_STATUS_Success )
             return ERROR;
         ecClassOut = ecRelationshipClass;
         ecRelationshipClass->SetStrength          (info.m_relationStrength);
@@ -376,18 +376,18 @@ BentleyStatus ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECClassI
         }
     else
         {
-        if ( ecSchemaIn.CreateClass (ecClassOut, WString(info.m_name.c_str(), true)) != ECOBJECTS_STATUS_Success )
+        if ( ecSchemaIn.CreateClass (ecClassOut, info.m_name.c_str()) != ECOBJECTS_STATUS_Success )
             return ERROR;
         }
 
     if (!(info.ColsNull & DbECClassInfo::COL_DisplayLabel))
-        ecClassOut->SetDisplayLabel       (WString (info.m_displayLabel.c_str(), true));
+        ecClassOut->SetDisplayLabel(info.m_displayLabel.c_str());
 
     ecClassOut->SetId (ecClassId);
-    ecClassOut->SetDescription            (WString (info.m_description.c_str(), true));
-    ecClassOut->SetIsStruct               (info.m_isStruct);
-    ecClassOut->SetIsCustomAttributeClass (info.m_isCustomAttribute);
-    ecClassOut->SetIsDomainClass          (info.m_isDomainClass);
+    ecClassOut->SetDescription(info.m_description.c_str());
+    ecClassOut->SetIsStruct(info.m_isStruct);
+    ecClassOut->SetIsCustomAttributeClass(info.m_isCustomAttribute);
+    ecClassOut->SetIsDomainClass(info.m_isDomainClass);
 
     if (SUCCESS != LoadBaseClassesFromDb(ecClassOut, ecClassId))
         return ERROR;
@@ -444,13 +444,11 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
     while (ECDbSchemaPersistence::Step(info, *stmt) == BE_SQLITE_ROW)
         {
         ECPropertyP ecProperty = nullptr;
-        WString name;
-        BeStringUtilities::Utf8ToWChar(name, info.m_name.c_str());
         if (info.m_isArray)
             {
             if (~info.ColsNull & DbECPropertyInfo::COL_PrimitiveType)
                 {
-                if (ECOBJECTS_STATUS_Success != ecClass->CreateArrayProperty (ecArrayProperty, name, info.m_primitiveType))
+                if (ECOBJECTS_STATUS_Success != ecClass->CreateArrayProperty (ecArrayProperty, info.m_name, info.m_primitiveType))
                     return ERROR;
                 }
             else if (~info.ColsNull & DbECPropertyInfo::COL_StructType)
@@ -459,7 +457,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 if (SUCCESS != ReadECClass (structType, info.m_structType))
                     return ERROR;
 
-                if (ECOBJECTS_STATUS_Success != ecClass->CreateArrayProperty (ecArrayProperty, name, structType))
+                if (ECOBJECTS_STATUS_Success != ecClass->CreateArrayProperty (ecArrayProperty, info.m_name, structType))
                     return ERROR;
                 }
 
@@ -475,7 +473,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
             {
             if (~info.ColsNull & DbECPropertyInfo::COL_PrimitiveType)
                 {
-                if (ECOBJECTS_STATUS_Success != ecClass->CreatePrimitiveProperty(ecPrimitiveProperty, name, info.m_primitiveType))
+                if (ECOBJECTS_STATUS_Success != ecClass->CreatePrimitiveProperty(ecPrimitiveProperty, info.m_name, info.m_primitiveType))
                     return ERROR;
 
                 ecProperty = ecPrimitiveProperty;
@@ -486,7 +484,7 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
                 if (SUCCESS != ReadECClass(structType, info.m_structType))
                     return ERROR;
 
-                if (ECOBJECTS_STATUS_Success != ecClass->CreateStructProperty(ecStructProperty, name, *structType))
+                if (ECOBJECTS_STATUS_Success != ecClass->CreateStructProperty(ecStructProperty, info.m_name, *structType))
                     return ERROR;
 
                 ecProperty = ecStructProperty;
@@ -495,10 +493,10 @@ BentleyStatus ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, ECClas
         BeAssert(ecProperty != nullptr);
         ecProperty->SetId(info.m_ecPropertyId); // WIP_FNV
         ecProperty->SetIsReadOnly(info.m_isReadOnly);
-        ecProperty->SetDescription (WString(info.m_description.c_str(), true));
+        ecProperty->SetDescription (info.m_description.c_str());
 
         if (!(info.ColsNull & DbECPropertyInfo::COL_DisplayLabel))
-            ecProperty->SetDisplayLabel (WString(info.m_displayLabel.c_str(), true));
+            ecProperty->SetDisplayLabel (info.m_displayLabel.c_str());
 
         if (SUCCESS != LoadCAFromDb (*ecProperty, info.m_ecPropertyId, ECContainerType::Property))
             return ERROR;
@@ -561,13 +559,13 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
             {
             if (SUCCESS != readerInfo.DeserializeCaInstance (inst, caClass->GetSchema ()))
                 {
-                LOG.errorv(L"Deserializing custom attribute instance from XML failed.");
+                LOG.error("Deserializing custom attribute instance from XML failed.");
                 return ERROR;
                 }
             }
         else
             {
-            LOG.errorv(L"Custom attribute defined but its content is missing. It doesn't have a ECInstanceId or corresponding xml.");
+            LOG.error("Custom attribute defined but its content is missing. It doesn't have a ECInstanceId or corresponding xml.");
             return ERROR;
             }
 
@@ -575,7 +573,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
             caConstainer.SetCustomAttribute(*inst);
         else
             {
-            LOG.errorv(L"Error getting Custom attribute for a container");
+            LOG.error("Error getting Custom attribute for a container");
             return ERROR;
             }
         readerInfo.Clear();
@@ -617,7 +615,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshi
     constraint.SetIsPolymorphic(info.m_isPolymorphic);
 
     if (!(info.ColsNull & DbECRelationshipConstraintInfo::COL_RoleLabel))
-        constraint.SetRoleLabel (WString(info.m_roleLabel.c_str(), true));
+        constraint.SetRoleLabel(info.m_roleLabel);
 
     if (SUCCESS != LoadECRelationshipConstraintClassesFromDb(constraint, relationshipClassId, relationshipEnd))
         return ERROR;
@@ -668,7 +666,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
             statement->BindInt(3, relationshipEnd);
             while (statement->Step() == BE_SQLITE_ROW)
                 {
-                constraintClassObj->AddKey(WString(statement->GetValueText(0),BentleyCharEncoding::Utf8).c_str());
+                constraintClassObj->AddKey(statement->GetValueText(0));
                 }
             }
         }

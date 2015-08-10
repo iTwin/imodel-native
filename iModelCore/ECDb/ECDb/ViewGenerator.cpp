@@ -115,8 +115,8 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 return BentleyStatus::ERROR;
                 }
              
-            BuildColumnExpression (fragments, tablePrefix, columns[0]->GetName ().c_str (), Utf8String (accessString + ".X").c_str (), addECPropertyPathAlias, nullValue);
-            BuildColumnExpression (fragments, tablePrefix, columns[1]->GetName ().c_str (), Utf8String (accessString + ".Y").c_str (), addECPropertyPathAlias, nullValue);
+            BuildColumnExpression (fragments, tablePrefix, columns[0]->GetName ().c_str (),  (accessString + ".X").c_str (), addECPropertyPathAlias, nullValue);
+            BuildColumnExpression (fragments, tablePrefix, columns[1]->GetName ().c_str (),  (accessString + ".Y").c_str (), addECPropertyPathAlias, nullValue);
             }
         else if (!primitiveProperty->GetIsArray () && primitiveProperty->GetType () == PrimitiveType::PRIMITIVETYPE_Point3D)
             {
@@ -126,9 +126,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 return BentleyStatus::ERROR;
                 }
 
-            BuildColumnExpression (fragments, tablePrefix, columns[0]->GetName ().c_str (), Utf8String (accessString + ".X").c_str (), addECPropertyPathAlias, nullValue);
-            BuildColumnExpression (fragments, tablePrefix, columns[1]->GetName ().c_str (), Utf8String (accessString + ".Y").c_str (), addECPropertyPathAlias, nullValue);
-            BuildColumnExpression (fragments, tablePrefix, columns[2]->GetName ().c_str (), Utf8String (accessString + ".Z").c_str (), addECPropertyPathAlias, nullValue);
+            BuildColumnExpression (fragments, tablePrefix, columns[0]->GetName ().c_str (),  (accessString + ".X").c_str (), addECPropertyPathAlias, nullValue);
+            BuildColumnExpression (fragments, tablePrefix, columns[1]->GetName ().c_str (),  (accessString + ".Y").c_str (), addECPropertyPathAlias, nullValue);
+            BuildColumnExpression (fragments, tablePrefix, columns[2]->GetName ().c_str (),  (accessString + ".Z").c_str (), addECPropertyPathAlias, nullValue);
             }
 
         for (auto const& fragment : fragments)
@@ -384,9 +384,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
      Utf8String SqlGenerator::BuildSchemaQualifiedClassName (ECClassCR ecClass)
         {
         Utf8String name;
-        name.append (Utf8String (ecClass.GetSchema ().GetNamespacePrefix ().c_str ()));
+        name.append (ecClass.GetSchema ().GetNamespacePrefix ());
         name.append ("_");
-        name.append (Utf8String (ecClass.GetName ().c_str ()));
+        name.append (ecClass.GetName ());
         return name;
         }
      //---------------------------------------------------------------------------------------
@@ -730,7 +730,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 }
 
             Utf8String createSql;
-            createSql.append ("--> ").append (Utf8String (scpm.second->GetClassMap ().GetClass().GetFullName()).c_str()).append("\n");
+            createSql.append ("--> ").append (scpm.second->GetClassMap ().GetClass().GetFullName()).append("\n");
             createSql.append ("--> ").append (scpm.second->GetClassMap ().GetDMLPolicy ().ToString ()).append ("\n");;
             createSql.append(scpm.second->ToString (SqlOption::Create));
 
@@ -811,7 +811,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 {
                 for (auto propertyMap : pair.second)
                     {
-                    deleteTriggerBody.Append ("\t-- > ").Append (Utf8String (propertyMap->GetPropertyAccessString ()).c_str ()).AppendEOL ();
+                    deleteTriggerBody.Append ("\t-- > ").Append (propertyMap->GetPropertyAccessString ()).AppendEOL ();
                     }
 
                 auto refClassMap = m_map.GetClassMapCP (pair.first->GetClass ());
@@ -1411,6 +1411,8 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggers (SqlClassPersistenceMethod& scpm)
         {
+        if (scpm.GetClassMap ().GetClass ().GetName ().EndsWithI ("InstanceHasFileInfo"))
+            printf ("");
         if (BuildDeleteTriggersForRelationships (scpm) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
 
@@ -2324,7 +2326,7 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
 
         bool includeEntireTable = tableToIncludeEntirly.find (tableP) != tableToIncludeEntirly.end ();
         IClassMap const* classMap = classMaps[0];
-        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap (L"ECInstanceId")->GetFirstColumn ();
+        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap ("ECInstanceId")->GetFirstColumn ();
         ECDbSqlColumn const* ecClassIdColumn = tableP->FindColumnCP ("ECClassId");
 
         if (tableP->GetPersistenceType() == PersistenceType::Virtual)

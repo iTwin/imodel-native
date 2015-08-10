@@ -330,9 +330,9 @@ void ECInstanceFinder::DumpInstanceKeyMap (const ECInstanceKeyMultiMap& instance
 
         ECClassCP ecClass = ecDb.Schemas ().GetECClass (classId);
 
-        LOG.tracev (L"Class: %ls, Instances:%d", ecClass->GetName().c_str(), ids.size());
+        LOG.tracev ("Class: %s, Instances:%d", ecClass->GetName().c_str(), ids.size());
         for (ECInstanceId& id : ids)
-            LOG.tracev (L"Instance %lld", id.GetValue());
+            LOG.tracev ("Instance %lld", id.GetValue());
         }
     }
 
@@ -495,7 +495,7 @@ uint8_t& currentDepth
         if (instanceKeyMap.end() != std::find (instanceKeyMap.begin(), instanceKeyMap.end(), instanceEntry))
             {
             ECClassCP ecClass = m_ecDb.Schemas ().GetECClass (iter->first);
-            LOG.warningv (L"Detected a relationship cycle with instance id %lld of class %ls", iter->second.GetValue(),
+            LOG.warningv ("Detected a relationship cycle with instance id %lld of class %s", iter->second.GetValue(),
                 ecClass->GetName().c_str());
             iter = newSeedInstanceKeyMap.erase (iter); // C++ 11 returns the next entry after erase
             }

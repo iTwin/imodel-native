@@ -245,7 +245,278 @@ bool Exp::SystemPropertyExpIndexMap::IsUnset (ECSqlSystemProperty systemProperty
     }
 
 
+//****************************** PropertyPath *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyPath& PropertyPath::operator=(PropertyPath const& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_path = rhs.m_path;
+        m_classMap = rhs.m_classMap;
+        }
+
+    return *this;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyPath& PropertyPath::operator=(PropertyPath&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_path = std::move(rhs.m_path);
+        m_classMap = std::move(rhs.m_classMap);
+        }
+
+    return *this;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PropertyPath::IsResolved() const
+    {
+    for (Location const& entry : m_path)
+        {
+        if (!entry.IsResolved())
+            return false;
+        }
+
+    return true;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyPath::Push(Utf8CP propertyName, size_t arrayIndex)
+    {
+    m_path.push_back(Location(propertyName, (int) arrayIndex));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyPath::Push(Utf8CP propertyName)
+    {
+    m_path.push_back(Location(propertyName, Location::NOT_ARRAY));
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyPath::Pop()
+    {
+    m_path.pop_back();
+    if (IsEmpty())
+        Clear();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PropertyPath::Resolve(IClassMap const& classMap, Utf8String* errorMessage)
+    {
+    if (IsEmpty())
+        return ERROR;
+
+    ECClassCP cursorClass = &classMap.GetClass();
+    const size_t leafIndex = m_path.size() - 1;
+    bool isLeafEntry = false;
+    for (size_t i = 0; i < m_path.size(); i++)
+        {
+        if (i == leafIndex)
+            isLeafEntry = true;
+
+        Location& element = m_path[i];
+        Utf8CP propertyName = element.GetPropertyName();
+        if (element.HasArrayIndex())
+            {
+            Reset();
+            if (errorMessage != nullptr)
+                errorMessage->Sprintf("Array indices are not yet supported in ECSQL. Invalid property access string: %s", ToString().c_str());
+            return ERROR;
+            }
+
+        ECPropertyCP property = cursorClass->GetPropertyP(propertyName, true);
+
+        if (property == nullptr && i == 0)
+            {
+            PropertyMapCP propertyMap = classMap.GetPropertyMap(propertyName);
+            if (propertyMap != nullptr)
+                property = &propertyMap->GetProperty();
+            }
+
+        if (property == nullptr)
+            {
+            Reset();
+            if (errorMessage != nullptr)
+                errorMessage->Sprintf("ECProperty '%s' in property access string '%s' does not exist.", propertyName, ToString().c_str());
+            
+            return ERROR;
+            }
+
+        element.SetProperty(*property);
+
+        if (property->GetIsPrimitive())
+            {
+            if (!isLeafEntry || element.HasArrayIndex())
+                {
+                Reset();
+                if (errorMessage != nullptr)
+                    errorMessage->Sprintf("Invalid property access string '%s'.", ToString().c_str());
+                return ERROR;
+                }
+            }
+        else if (property->GetIsStruct())
+            {
+            if (element.HasArrayIndex())
+                {
+                Reset();
+                if (errorMessage != nullptr)
+                    errorMessage->Sprintf("Invalid property access string '%s'.", ToString().c_str());
+                return ERROR;
+                }
+
+            cursorClass = &property->GetAsStructProperty()->GetType();
+            }
+        else if (property->GetIsArray())
+            {
+            auto arrayProperty = property->GetAsArrayProperty();
+            if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
+                {
+                if (!isLeafEntry)
+                    {
+                    Reset();
+                    if (errorMessage != nullptr)
+                        errorMessage->Sprintf("Invalid property access string '%s'.", ToString().c_str());
+                    return ERROR;
+                    }
+                }
+            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+                {
+                cursorClass = arrayProperty->GetStructElementType();
+                }
+            }
+        }
+
+    BeAssert(IsResolved() && "Must be resolved by now");
+    m_classMap = &classMap;
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyPath::Clear()
+    {
+    m_path.clear();
+    m_classMap = nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String PropertyPath::ToString(bool includeArrayIndexes /*= true*/) const
+    {
+    Utf8String str;
+    bool isFirstLoc = true;
+    for (Location const& loc : m_path)
+        {
+        if (!isFirstLoc)
+            str.append(".");
+
+        str.append(loc.ToString(includeArrayIndexes));
+
+        isFirstLoc = false;
+        }
+
+    return std::move(str);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+BentleyStatus PropertyPath::TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbCR ecdb)
+    {
+    resolvedPropertyPath.Clear();
+    bvector<Utf8String> subParts;
+    BeStringUtilities::Split(qualifedPath.c_str(), ":", nullptr, subParts);
+    if (subParts.size() != 3)
+        {
+        BeAssert(false && "Invalid qualified path");
+        return ERROR;
+        }
+
+    auto& schemaName = subParts.at(0);
+    auto& className = subParts.at(1);
+    auto& propertyPath = subParts.at(2);
+
+    bvector<Utf8String> propertyNames;
+    BeStringUtilities::Split(propertyPath.c_str(), ".", nullptr, propertyNames);
+    for (Utf8StringCR propertyName : propertyNames)
+        resolvedPropertyPath.Push(propertyName.c_str());
+
+    ECClassCP targetClass = ecdb.Schemas().GetECClass(schemaName.c_str(), className.c_str(), ResolveSchema::AutoDetect);
+    if (targetClass == nullptr)
+        {
+        BeAssert(false && "Failed to find ECClass");
+        return ERROR;
+        }
+
+    IClassMap const* targetClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*targetClass);
+    if (targetClassMap == nullptr)
+        {
+        BeAssert(false && "No class map found for class.");
+        return ERROR;
+        }
+
+    return resolvedPropertyPath.Resolve(*targetClassMap);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PropertyPath::TryGetQualifiedPath(Utf8StringR qualifiedPath) const
+    {
+    if (m_classMap == nullptr)
+        {
+        BeAssert(false && "Invalid property path");
+        return ERROR;
+        }
+
+    qualifiedPath.assign(GetClassMap()->GetClass().GetFullName());
+    qualifiedPath.append(":");
+    qualifiedPath.append(ToString(false));
+    return SUCCESS;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyPath::Reset()
+    {
+    m_classMap = nullptr;
+    for (Location& loc : m_path)
+        loc.ClearResolvedProperty();
+    }
+
+
 //****************************** PropertyPath::Location *****************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void PropertyPath::Location::SetProperty(ECPropertyCR property)
+    {
+    BeAssert(property.GetName().Equals(GetPropertyName()));
+    m_property = &property;
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -258,6 +529,7 @@ Utf8String PropertyPath::Location::ToString(bool includeArrayIndexes) const
     tmp.Sprintf("%s[%d]", m_propertyName.c_str(), GetArrayIndex());
     return tmp;
     }
+
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

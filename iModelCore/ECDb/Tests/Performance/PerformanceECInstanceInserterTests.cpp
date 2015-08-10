@@ -293,13 +293,6 @@ private:
         if (stepStat != ECSqlStepStatus::Done)
             return false;
 
-        /*        if (instanceKey.IsValid ())
-        {
-        WChar instanceIdStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ECInstanceIdHelper::ToString (instanceIdStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId ());
-        testInstance.SetInstanceId (instanceIdStrBuffer);
-        }*/
-
         return true;
     }
 

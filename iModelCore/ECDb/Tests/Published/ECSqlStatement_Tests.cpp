@@ -34,73 +34,73 @@ struct ECSqlSelectTests : public ::testing::Test
         /*---------------------------------------------------------------------------------**//**
         * @bsiclass                             Muhammad Hassan                         06/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void setProductsValues(StandaloneECInstancePtr instance, int ProductId, WCharCP ProductName, double price, bool ProductAvailable)
+        void setProductsValues(StandaloneECInstancePtr instance, int ProductId, Utf8CP ProductName, double price, bool ProductAvailable)
             {
-            instance->SetValue(L"ProductId", ECValue(ProductId));
-            instance->SetValue(L"ProductName", ECValue(ProductName));
-            instance->SetValue(L"Price", ECValue(price));
-            instance->SetValue(L"ProductAvailable", ECValue(ProductAvailable));
+            instance->SetValue("ProductId", ECValue(ProductId));
+            instance->SetValue("ProductName", ECValue(ProductName));
+            instance->SetValue("Price", ECValue(price));
+            instance->SetValue("ProductAvailable", ECValue(ProductAvailable));
             }
 
-        void setEmployeeValues(StandaloneECInstancePtr instance, int EmployeeId, WCharCP FirstName, WCharCP LastName, DateTimeCR DOB, WCharCP Notes)
+        void setEmployeeValues(StandaloneECInstancePtr instance, int EmployeeId, Utf8CP FirstName, Utf8CP LastName, DateTimeCR DOB, Utf8CP Notes)
             {
-            instance->SetValue(L"EmployeeId", ECValue(EmployeeId));
-            instance->SetValue(L"FirstName", ECValue(FirstName));
-            instance->SetValue(L"LastName", ECValue(LastName));
-            instance->SetValue(L"DOB", ECValue(DOB));
-            instance->SetValue(L"Notes", ECValue(Notes));
+            instance->SetValue("EmployeeId", ECValue(EmployeeId));
+            instance->SetValue("FirstName", ECValue(FirstName));
+            instance->SetValue("LastName", ECValue(LastName));
+            instance->SetValue("DOB", ECValue(DOB));
+            instance->SetValue("Notes", ECValue(Notes));
             }
 
-        void setSupplierValues(StandaloneECInstancePtr instance, int SupplierId, WCharCP SupplierName, WCharCP ContactName, WCharCP City, WCharCP Country, WCharCP Address, int64_t PostalCode)
+        void setSupplierValues(StandaloneECInstancePtr instance, int SupplierId, Utf8CP SupplierName, Utf8CP ContactName, Utf8CP City, Utf8CP Country, Utf8CP Address, int64_t PostalCode)
             {
-            instance->SetValue(L"SupplierId", ECValue(SupplierId));
-            instance->SetValue(L"SupplierName", ECValue(SupplierName));
-            instance->SetValue(L"ContactName", ECValue(ContactName));
-            instance->SetValue(L"City", ECValue(City));
-            instance->SetValue(L"Country", ECValue(Country));
-            instance->SetValue(L"Address", ECValue(Address));
-            instance->SetValue(L"PostalCode", ECValue(PostalCode));
+            instance->SetValue("SupplierId", ECValue(SupplierId));
+            instance->SetValue("SupplierName", ECValue(SupplierName));
+            instance->SetValue("ContactName", ECValue(ContactName));
+            instance->SetValue("City", ECValue(City));
+            instance->SetValue("Country", ECValue(Country));
+            instance->SetValue("Address", ECValue(Address));
+            instance->SetValue("PostalCode", ECValue(PostalCode));
             }
 
-        void setShipperValues(StandaloneECInstancePtr instance, int shipperId, WCharCP ShipperName, int64_t Phone)
+        void setShipperValues(StandaloneECInstancePtr instance, int shipperId, Utf8CP ShipperName, int64_t Phone)
             {
-            instance->SetValue(L"ShipperId", ECValue(shipperId));
-            instance->SetValue(L"ShipperName", ECValue(ShipperName));
-            instance->SetValue(L"Phone", ECValue(Phone));
+            instance->SetValue("ShipperId", ECValue(shipperId));
+            instance->SetValue("ShipperName", ECValue(ShipperName));
+            instance->SetValue("Phone", ECValue(Phone));
             }
 
         void setOrderValues(StandaloneECInstancePtr instance, DateTimeCR datetime, int id, bool ProductDelivered)
             {
-            instance->SetValue(L"OrderDate", ECValue(datetime));
-            instance->SetValue(L"OrderId", ECValue(id));
-            instance->SetValue(L"ProductDelivered", ECValue(ProductDelivered));
+            instance->SetValue("OrderDate", ECValue(datetime));
+            instance->SetValue("OrderId", ECValue(id));
+            instance->SetValue("ProductDelivered", ECValue(ProductDelivered));
             }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                             Muhammad Hassan                         06/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void setCustomerValues(StandaloneECInstancePtr instance, WCharCP CustomerName, int64_t PostalCode, WCharCP Address, WCharCP ContactName, WCharCP City, WCharCP Country, int CustomerId, StandaloneECInstancePtr OrderInstance1, StandaloneECInstancePtr OrderInstance2, StandaloneECInstancePtr OrderInstance3)
+        void setCustomerValues(StandaloneECInstancePtr instance, Utf8CP CustomerName, int64_t PostalCode, Utf8CP Address, Utf8CP ContactName, Utf8CP City, Utf8CP Country, int CustomerId, StandaloneECInstancePtr OrderInstance1, StandaloneECInstancePtr OrderInstance2, StandaloneECInstancePtr OrderInstance3)
             {
-            instance->SetValue(L"CustomerId", ECValue(CustomerId));
-            instance->SetValue(L"CustomerName", ECValue(CustomerName));
-            instance->SetValue(L"ContactName", ECValue(ContactName));
-            instance->SetValue(L"City", ECValue(City));
-            instance->SetValue(L"Country", ECValue(Country));
-            instance->SetValue(L"PostalCode", ECValue(PostalCode));
-            instance->SetValue(L"Address", ECValue(Address));
-            instance->AddArrayElements(L"OrderArray", 3);
+            instance->SetValue("CustomerId", ECValue(CustomerId));
+            instance->SetValue("CustomerName", ECValue(CustomerName));
+            instance->SetValue("ContactName", ECValue(ContactName));
+            instance->SetValue("City", ECValue(City));
+            instance->SetValue("Country", ECValue(Country));
+            instance->SetValue("PostalCode", ECValue(PostalCode));
+            instance->SetValue("Address", ECValue(Address));
+            instance->AddArrayElements("OrderArray", 3);
 
             ECValue structVal1;
             structVal1.SetStruct(OrderInstance1.get());
-            instance->SetValue(L"OrderArray", structVal1, 0);
+            instance->SetValue("OrderArray", structVal1, 0);
 
             ECValue structVal2;
             structVal2.SetStruct(OrderInstance2.get());
-            instance->SetValue(L"OrderArray", structVal2, 1);
+            instance->SetValue("OrderArray", structVal2, 1);
 
             ECValue structVal3;
             structVal3.SetStruct(OrderInstance3.get());
-            instance->SetValue(L"OrderArray", structVal3, 2);
+            instance->SetValue("OrderArray", structVal3, 2);
             }
 
         /*---------------------------------------------------------------------------------**//**
@@ -114,9 +114,9 @@ struct ECSqlSelectTests : public ::testing::Test
             StandaloneECInstancePtr EmployeeInstance1 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr EmployeeInstance2 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr EmployeeInstance3 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setEmployeeValues(EmployeeInstance1, 1, L"Nancy", L"Davolio", DateTime::GetCurrentTimeUtc(), L"Education includes a BA in psychology...");
-            setEmployeeValues(EmployeeInstance2, 2, L"Andrew", L"Fuller", DateTime::GetCurrentTimeUtc(), L"Andrew received his BTS commercial and...");
-            setEmployeeValues(EmployeeInstance3, 3, L"Janet", L"Leverling", DateTime::GetCurrentTimeUtc(), L"Janet has a BS degree in chemistry...");
+            setEmployeeValues(EmployeeInstance1, 1, "Nancy", "Davolio", DateTime::GetCurrentTimeUtc(), "Education includes a BA in psychology...");
+            setEmployeeValues(EmployeeInstance2, 2, "Andrew", "Fuller", DateTime::GetCurrentTimeUtc(), "Andrew received his BTS commercial and...");
+            setEmployeeValues(EmployeeInstance3, 3, "Janet", "Leverling", DateTime::GetCurrentTimeUtc(), "Janet has a BS degree in chemistry...");
             ECInstanceInserter EmployeeInserter(ecdb, *EmployeeClass);
             ASSERT_TRUE(EmployeeInserter.IsValid());
             ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance1, true));
@@ -135,15 +135,15 @@ struct ECSqlSelectTests : public ::testing::Test
             StandaloneECInstancePtr ProductsInstance7 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr ProductsInstance8 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr ProductsInstance9 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setProductsValues(ProductsInstance1, 1, L"Pencil", 189.05, true);
-            setProductsValues(ProductsInstance2, 2, L"Binder", 999.50, true);
-            setProductsValues(ProductsInstance3, 3, L"Pen", 539.73, false);
-            setProductsValues(ProductsInstance4, 4, L"Binder", 299.40, true);
-            setProductsValues(ProductsInstance5, 5, L"Desk", 150.00, true);
-            setProductsValues(ProductsInstance6, 6, L"Pen Set", 255.84, false);
-            setProductsValues(ProductsInstance7, 7, L"Pen Set", 479.04, false);
-            setProductsValues(ProductsInstance8, 8, L"Pen", 539.73, true);
-            setProductsValues(ProductsInstance9, 9, L"Pen", 539.73, true);
+            setProductsValues(ProductsInstance1, 1, "Pencil", 189.05, true);
+            setProductsValues(ProductsInstance2, 2, "Binder", 999.50, true);
+            setProductsValues(ProductsInstance3, 3, "Pen", 539.73, false);
+            setProductsValues(ProductsInstance4, 4, "Binder", 299.40, true);
+            setProductsValues(ProductsInstance5, 5, "Desk", 150.00, true);
+            setProductsValues(ProductsInstance6, 6, "Pen Set", 255.84, false);
+            setProductsValues(ProductsInstance7, 7, "Pen Set", 479.04, false);
+            setProductsValues(ProductsInstance8, 8, "Pen", 539.73, true);
+            setProductsValues(ProductsInstance9, 9, "Pen", 539.73, true);
             ECInstanceInserter ProductInserter(ecdb, *ProductsClass);
             ASSERT_TRUE(ProductInserter.IsValid());
             ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance1, true));
@@ -162,9 +162,9 @@ struct ECSqlSelectTests : public ::testing::Test
             StandaloneECInstancePtr ShipperInstance1 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr ShipperInstance2 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr ShipperInstance3 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setShipperValues(ShipperInstance1, 1, L"Rio Grand", 19783482);
-            setShipperValues(ShipperInstance2, 2, L"Rue Perisnon", 26422096);
-            setShipperValues(ShipperInstance3, 3, L"Salguero", 39045213);
+            setShipperValues(ShipperInstance1, 1, "Rio Grand", 19783482);
+            setShipperValues(ShipperInstance2, 2, "Rue Perisnon", 26422096);
+            setShipperValues(ShipperInstance3, 3, "Salguero", 39045213);
             ECInstanceInserter ShipperInserter(ecdb, *ShipperClass);
             ASSERT_TRUE(ShipperInserter.IsValid());
             ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance1, true));
@@ -177,9 +177,9 @@ struct ECSqlSelectTests : public ::testing::Test
             StandaloneECInstancePtr SupplierInstance1 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr SupplierInstance2 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr SupplierInstance3 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setSupplierValues(SupplierInstance1, 1, L"John", L"Snow", L"CA", L"USA", L"5089 CALERO AVENUE", 95123);
-            setSupplierValues(SupplierInstance2, 2, L"Trion", L"Lannistor", L"NC", L"USA", L"198 FAYETTEVILLE ROAD", 27514);
-            setSupplierValues(SupplierInstance3, 3, L"Stannis", L"Brathion", L"MD", L"USA", L"1598 PICCARD DRIVE", 20850);
+            setSupplierValues(SupplierInstance1, 1, "John", "Snow", "CA", "USA", "5089 CALERO AVENUE", 95123);
+            setSupplierValues(SupplierInstance2, 2, "Trion", "Lannistor", "NC", "USA", "198 FAYETTEVILLE ROAD", 27514);
+            setSupplierValues(SupplierInstance3, 3, "Stannis", "Brathion", "MD", "USA", "1598 PICCARD DRIVE", 20850);
             ECInstanceInserter SupplierInserter(ecdb, *SupplierClass);
             ASSERT_TRUE(SupplierInserter.IsValid());
             ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance1, true));
@@ -227,9 +227,9 @@ struct ECSqlSelectTests : public ::testing::Test
             StandaloneECInstancePtr CustomerInstance1 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr CustomerInstance2 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
             StandaloneECInstancePtr CustomerInstance3 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
-            setCustomerValues(CustomerInstance1, L"Charles Baron", 78701, L"44 PRINCESS GATE, HYDE PARK", L"Brathion", L"SAN JOSE", L"USA", 1, OrderInstance1, OrderInstance2, OrderInstance3);
-            setCustomerValues(CustomerInstance2, L"Gunther Spielmann", 22090, L"5063 RICHMOND MALL", L"SPIELMANN", L"AUSTIN", L"USA", 2, OrderInstance4, OrderInstance5, OrderInstance6);
-            setCustomerValues(CustomerInstance3, L"A.D.M. Bryceson", 93274, L"3-2-7 ETCHUJMA, KOTO-KU", L"Adm", L"SAN JOSE", L"USA", 3, OrderInstance7, OrderInstance8, OrderInstance9);
+            setCustomerValues(CustomerInstance1, "Charles Baron", 78701, "44 PRINCESS GATE, HYDE PARK", "Brathion", "SAN JOSE", "USA", 1, OrderInstance1, OrderInstance2, OrderInstance3);
+            setCustomerValues(CustomerInstance2, "Gunther Spielmann", 22090, "5063 RICHMOND MAL", "SPIELMANN", "AUSTIN", "USA", 2, OrderInstance4, OrderInstance5, OrderInstance6);
+            setCustomerValues(CustomerInstance3, "A.D.M. Bryceson", 93274, "3-2-7 ETCHUJMA, KOTO-KU", "Adm", "SAN JOSE", "USA", 3, OrderInstance7, OrderInstance8, OrderInstance9);
 
             ECInstanceInserter CustomerInserter(ecdb, *CustomerClass);
             ASSERT_TRUE(CustomerInserter.IsValid());
@@ -245,7 +245,7 @@ struct ECSqlSelectTests : public ::testing::Test
             ASSERT_TRUE(EmployeeCustomerInserter.IsValid());
             EmployeeCustomerInstance->SetSource(EmployeeInstance1.get());
             EmployeeCustomerInstance->SetTarget(CustomerInstance1.get());
-            EmployeeCustomerInstance->SetInstanceId(L"source->target");
+            EmployeeCustomerInstance->SetInstanceId("source->target");
             ASSERT_EQ(SUCCESS, EmployeeCustomerInserter.Insert(*EmployeeCustomerInstance));
 
             //Create and Insert Instances of Relationship ProductSupplier
@@ -256,15 +256,15 @@ struct ECSqlSelectTests : public ::testing::Test
             ASSERT_TRUE(ProductSupplierInserter.IsValid());
             ProductSupplierInstance->SetSource(ProductsInstance1.get());
             ProductSupplierInstance->SetTarget(SupplierInstance1.get());
-            ProductSupplierInstance->SetInstanceId(L"source->target");
+            ProductSupplierInstance->SetInstanceId("source->target");
             ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
             ProductSupplierInstance->SetSource(ProductsInstance2.get());
             ProductSupplierInstance->SetTarget(SupplierInstance2.get());
-            ProductSupplierInstance->SetInstanceId(L"source->target");
+            ProductSupplierInstance->SetInstanceId("source->target");
             ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
             ProductSupplierInstance->SetSource(ProductsInstance3.get());
             ProductSupplierInstance->SetTarget(SupplierInstance3.get());
-            ProductSupplierInstance->SetInstanceId(L"source->target");
+            ProductSupplierInstance->SetInstanceId("source->target");
             ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
             }
 
@@ -293,7 +293,6 @@ struct ECSqlSelectTests : public ::testing::Test
                 public:
                     PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
                 };
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -577,17 +576,20 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n)
+bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n, Utf8CP className)
     {
     ECClassCP s4 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S4");
-    BeAssert (s4 != nullptr);
+    EXPECT_TRUE (s4 != nullptr);
+
+    Utf8String stringValue;
+    stringValue.Sprintf ("testData_S4_%s", className);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s4->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        inst->SetValue (L"I", ECValue (j));
-        inst->SetValue (L"T", ECValue (L"testData_S4"));
+        StandaloneECInstancePtr inst = s4->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str()))) << "Set String Value failed for "<< className;
         vect.push_back (inst);
         }
 
@@ -597,25 +599,28 @@ bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n)
+bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP s3 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S3");
-    BeAssert (s3 != nullptr);
+    EXPECT_TRUE (s3 != nullptr);
+
+    Utf8String stringValue;
+    stringValue.Sprintf ("testData_S3_%s", className);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s3->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"T", ECValue (L"testData_S3")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements (L"S4ARRAY", m));
+        StandaloneECInstancePtr inst = s3->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S4ARRAY", m));
         int v = 0;
-        for (auto elm : CreateECInstance_S4 (ecdb, m))
+        for (auto elm : CreateECInstance_S4 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"S4ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S4ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -627,25 +632,28 @@ bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n)
+bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP s2 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S2");
-    BeAssert (s2 != nullptr);
+    EXPECT_TRUE (s2 != nullptr);
+
+    Utf8String stringValue;
+    stringValue.Sprintf ("testData_S2_%s", className);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s2->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"T", ECValue (L"testData_S2")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements (L"S3ARRAY", m));
+        StandaloneECInstancePtr inst = s2->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S3ARRAY", m));
         int v = 0;
-        for (auto elm : CreateECInstance_S3 (ecdb, m))
+        for (auto elm : CreateECInstance_S3 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"S3ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S3ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -657,25 +665,28 @@ bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n)
+bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
     ECClassCP s1 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S1");
-    BeAssert (s1 != nullptr);
+    EXPECT_TRUE (s1 != nullptr);
+
+    Utf8String stringValue;
+    stringValue.Sprintf ("testData_S1_%s", className);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s1->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"T", ECValue (L"testData_S1")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements (L"S2ARRAY", m));
+        StandaloneECInstancePtr inst = s1->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S2ARRAY", m));
         int v = 0;
-        for (auto elm : CreateECInstance_S2 (ecdb, m))
+        for (auto elm : CreateECInstance_S2 (ecdb, m, className))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"S2ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S2ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -685,27 +696,30 @@ bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Affan.Khan                 07/14
+// @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-bvector<IECInstancePtr> CreateECInstance_ClassP (ECDbR ecdb, int n)
+//Methods are specific to only few classes of Schema NestedStructArryTest.
+bvector<IECInstancePtr> CreateECInstance (ECDbR ecdb, int n, Utf8CP className)
     {
     int m = n + 1;
-    ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
-    BeAssert (classP != nullptr);
+    ECClassCP ecClassCP = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", className);
+    EXPECT_TRUE (ecClassCP != nullptr);
+    Utf8String stringValue;
+    stringValue.Sprintf ("testData_%s", className);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = classP->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"T", ECValue (L"testData_ClassP")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements (L"S1ARRAY", m));
+        StandaloneECInstancePtr inst = ecClassCP->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S1ARRAY", m));
         int v = 0;
-        for (auto elm : CreateECInstance_S1 (ecdb, m))
+        for (auto elm : CreateECInstance_S1 (ecdb, m, className))
             {
-            ECValue elmV; 
+            ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue (L"S1ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S1ARRAY", elmV, v++)) << "Set Struct Value failed for " << className;
             }
 
         vect.push_back (inst);
@@ -713,30 +727,263 @@ bvector<IECInstancePtr> CreateECInstance_ClassP (ECDbR ecdb, int n)
 
     return vect;
     }
-//
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<IECInstancePtr> CreateECInstanceWithOutStructArrayProperty (ECDbR ecdb, int n, Utf8CP className)
+    {
+    ECClassCP ecClassCP = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", className);
+    EXPECT_TRUE (ecClassCP != nullptr);
+    Utf8String stringValue;
+    stringValue.Sprintf ("testData_%s", className);
+
+    bvector<IECInstancePtr> vect;
+    for (int j = 0; j < n; j++)
+        {
+        StandaloneECInstancePtr inst = ecClassCP->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for " << className;
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue (stringValue.c_str ()))) << "Set String Value failed for " << className;
+
+        vect.push_back (inst);
+        }
+
+    return vect;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void InsertRelationshipInstance (ECDbR ecdb, IECInstancePtr sourceInstance, IECInstancePtr targetInstance, ECRelationshipClassCP relClass)
+    {
+    ECN::StandaloneECRelationshipInstancePtr relationshipInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass)->CreateRelationshipInstance ();
+    ECInstanceInserter relationshipInserter (ecdb, *relClass);
+    relationshipInstance->SetSource (sourceInstance.get ());
+    relationshipInstance->SetTarget (targetInstance.get ());
+    relationshipInstance->SetInstanceId ("source->target");
+    EXPECT_EQ (SUCCESS, relationshipInserter.Insert (*relationshipInstance, true));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void PopulateTestDb (ECDbR ecdb)
+    {
+    //Insert Instances for each class in the Hierarchy Seperately.
+    bvector<IECInstancePtr> instances = CreateECInstanceWithOutStructArrayProperty (ecdb, 1, "ClassA");
+    for (auto instance : instances)
+        {
+        ECInstanceInserter sourceInserter (ecdb, instance->GetClass ());
+        ASSERT_TRUE (sourceInserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, sourceInserter.Insert (*instance, true));
+        }
+
+    instances = CreateECInstance (ecdb, 1, "DerivedA");
+    for (auto instance : instances)
+        {
+        ECInstanceInserter inserter (ecdb, instance->GetClass ());
+        ASSERT_TRUE (inserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, inserter.Insert (*instance, true));
+        }
+
+    instances = CreateECInstanceWithOutStructArrayProperty (ecdb, 1, "DerivedB");
+    for (auto instance : instances)
+        {
+        ECInstanceInserter inserter (ecdb, instance->GetClass ());
+        ASSERT_TRUE (inserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, inserter.Insert (*instance, true));
+        }
+
+    instances = CreateECInstance (ecdb, 1, "DoubleDerivedA");
+    for (auto instance : instances)
+        {
+        ECInstanceInserter inserter (ecdb, instance->GetClass ());
+        ASSERT_TRUE (inserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, inserter.Insert (*instance, true));
+        }
+
+    instances = CreateECInstance (ecdb, 1, "DoubleDerivedC");
+    for (auto instance : instances)
+        {
+        ECInstanceInserter inserter (ecdb, instance->GetClass ());
+        ASSERT_TRUE (inserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, inserter.Insert (*instance, true));
+        }
+
+    //Create and Insert Constraint Classes Instances and then for relationship class BaseHasDerivedA
+    ECRelationshipClassCP baseHasDerivedA = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "BaseHasDerivedA")->GetRelationshipClassCP ();
+
+    instances = CreateECInstanceWithOutStructArrayProperty (ecdb, 1, "ClassA");
+    for (auto sourceInstance : instances)
+        {
+        ECInstanceInserter sourceInserter (ecdb, sourceInstance->GetClass ());
+        ASSERT_TRUE (sourceInserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, sourceInserter.Insert (*sourceInstance, true));
+
+        bvector<IECInstancePtr> targetInstances = CreateECInstance (ecdb, 2, "DerivedA");
+        for (auto targetInstance : targetInstances)
+            {
+            ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());
+            ASSERT_TRUE (targetInserter.IsValid ());
+            ASSERT_EQ (BentleyStatus::SUCCESS, targetInserter.Insert (*targetInstance, true));
+            InsertRelationshipInstance (ecdb, sourceInstance, targetInstance, baseHasDerivedA);
+            }
+        }
+
+    //Create and Insert Constraint Classes Instances and then for relationship class DerivedBOwnsChilds, relationship contains multiple target classes also containing structArray properties.
+    ECRelationshipClassCP derivedBOwnsChilds = ecdb.Schemas ().GetECClass ("NestedStructArrayTest", "DerivedBOwnsChilds")->GetRelationshipClassCP ();
+    instances = CreateECInstanceWithOutStructArrayProperty (ecdb, 1, "DerivedB");
+    for (auto sourceInstance : instances)
+        {
+        ECInstanceInserter sourceInserter (ecdb, sourceInstance->GetClass ());
+        ASSERT_TRUE (sourceInserter.IsValid ());
+        ASSERT_EQ (BentleyStatus::SUCCESS, sourceInserter.Insert (*sourceInstance, true));
+
+        bvector<IECInstancePtr> targetInstances = CreateECInstanceWithOutStructArrayProperty (ecdb, 2, "DoubleDerivedB");
+        for (auto targetInstance : targetInstances)
+            {
+            ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());
+            ASSERT_TRUE (targetInserter.IsValid ());
+            ASSERT_EQ (BentleyStatus::SUCCESS, targetInserter.Insert (*targetInstance, true));
+            InsertRelationshipInstance (ecdb, sourceInstance, targetInstance, derivedBOwnsChilds);
+            }
+
+        targetInstances = CreateECInstance (ecdb, 2, "DoubleDerivedA");
+        for (auto targetInstance : targetInstances)
+            {
+            ECInstanceInserter targetInserter (ecdb, targetInstance->GetClass ());
+            ASSERT_TRUE (targetInserter.IsValid ());
+            ASSERT_EQ (BentleyStatus::SUCCESS, targetInserter.Insert (*targetInstance, true));
+            InsertRelationshipInstance (ecdb, sourceInstance, targetInstance, derivedBOwnsChilds);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, PolymorphicDelete_PolymorphicSharedTable)
+    {
+    ECDbTestProject test;
+    ECDbR ecdb = test.Create ("PolymorphicDeleteTest.ecdb");
+
+    ECSchemaPtr nestedStructArraySchema;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext();
+    schemaReadContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
+    ECDbTestUtility::ReadECSchemaFromDisk (nestedStructArraySchema, schemaReadContext, L"NestedStructArrayTest.01.00.ecschema.xml");
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
+    ECSchemaPtr ecdbMapSchema = schemaReadContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ASSERT_TRUE (ecdbMapSchema != nullptr) << "Reference Schema not found";
+
+    ECClassP baseClass = nestedStructArraySchema->GetClassP ("ClassA");
+    ASSERT_TRUE (baseClass != nullptr);
+
+    ECClassCP ca = ecdbMapSchema->GetClassCP ("ClassMap");
+    EXPECT_TRUE (ca != nullptr);
+    StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    EXPECT_TRUE (customAttribute != nullptr);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == baseClass->SetCustomAttribute(*customAttribute));
+    nestedStructArraySchema->AddReferencedSchema (*ecdbMapSchema);
+
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
+    schemaCache->AddSchema (*nestedStructArraySchema);
+
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
+    PopulateTestDb (ecdb);
+
+    //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM nsat.ClassA"));
+    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+
+    ASSERT_FALSE (ecdb.TableExists ("nsat_DerivedA"));
+    ASSERT_FALSE (ecdb.TableExists ("nsat_DoubleDerivedA"));
+    ASSERT_FALSE (ecdb.TableExists ("nsat_DoubleDerivedC"));
+
+    bvector<Utf8String> tableNames;
+    tableNames.push_back ("nsat_ClassA");
+    tableNames.push_back ("nsat_ArrayOfS1");
+    tableNames.push_back ("nsat_ArrayOfS2");
+    tableNames.push_back ("nsat_ArrayOfS3");
+    tableNames.push_back ("nsat_ArrayOfS4");
+    tableNames.push_back ("nsat_BaseHasDerivedA");
+    tableNames.push_back ("nsat_DerivedBOwnsChilds");
+
+    BeSQLite::Statement readStatement;
+    for (auto tableName : tableNames)
+        {
+        Utf8String selectSql = "SELECT * FROM ";
+        selectSql.append (tableName);
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStatement.Prepare (ecdb, selectSql.c_str ())) << "Select prepare failed for " << selectSql.c_str ();
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, readStatement.Step ()) << "step failed for " << selectSql.c_str ();
+        readStatement.Finalize ();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, PolymorphicDeleteTest)
+    {
+    // Create and populate a sample project
+    ECDbR ecdb = SetUp ("PolymorphicDeleteTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
+
+    PopulateTestDb (ecdb);
+
+    //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM nsat.ClassA"));
+    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+
+    bvector<Utf8String> tableNames;
+    tableNames.push_back ("nsat_ClassA");
+    tableNames.push_back ("nsat_DerivedA");
+    tableNames.push_back ("nsat_DerivedB");
+    tableNames.push_back ("nsat_DoubleDerivedA");
+    tableNames.push_back ("nsat_DoubleDerivedB");
+    tableNames.push_back ("nsat_DoubleDerivedC");
+    tableNames.push_back ("nsat_ArrayOfS1");
+    tableNames.push_back ("nsat_ArrayOfS2");
+    tableNames.push_back ("nsat_ArrayOfS3");
+    tableNames.push_back ("nsat_ArrayOfS4");
+    tableNames.push_back ("nsat_BaseHasDerivedA");
+    tableNames.push_back ("nsat_DerivedBOwnsChilds");
+    
+    BeSQLite::Statement readStatement;
+    for (auto tableName : tableNames)
+        {
+        Utf8String selectSql = "SELECT * FROM ";
+        selectSql.append (tableName);
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStatement.Prepare (ecdb, selectSql.c_str ())) << "Select prepare failed for " << selectSql.c_str ();
+        ASSERT_EQ (DbResult::BE_SQLITE_DONE, readStatement.Step ()) << "step failed for " << selectSql.c_str ();
+        readStatement.Finalize ();
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
     {
-    const auto perClassRowCount = 0;
+    const int perClassRowCount = 0;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("NestedStructArrayTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetUp ("NestedStructArrayTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
     
-    auto in = CreateECInstance_ClassP (ecdb, 1);
+    auto in = CreateECInstance (ecdb, 1, "ClassP");
 
-    WString inXml, outXml;
+    Utf8String inXml, outXml;
     for (auto inst : in)
         {
         ECInstanceInserter inserter (ecdb, inst->GetClass ());
-        auto st = inserter.Insert (*inst);
-        ASSERT_TRUE (st == BentleyStatus::SUCCESS);
+        ASSERT_TRUE (inserter.IsValid ());
+        ASSERT_EQ(BentleyStatus::SUCCESS, inserter.Insert (*inst, true));
         inst->WriteToXmlString (inXml, true, true);
-        inXml += L"\r\n";
+        inXml += "\r\n";
         }
     
     bvector<IECInstancePtr> out;
-
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
@@ -746,10 +993,39 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
         auto inst = classPReader.GetInstance ();
         out.push_back (inst);
         inst->WriteToXmlString (outXml, true, true);
-        outXml += L"\r\n";
+        outXml += "\r\n";
         }
+
     ASSERT_EQ (in.size (), out.size ());
     ASSERT_TRUE (inXml == outXml);
+
+    //Verify Values have also been Inserted for StructArray properties of the Class
+    bmap<Utf8String, int> selectStatements;
+    int i = 2;
+    int j = 1;
+    ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
+    for (ECClassCP testClass : ecSchema->GetClasses ())
+        {
+        if (testClass->GetIsStruct())
+            {
+            Utf8String selectSql = "SELECT COUNT(*) FROM nsat_ArrayOf";
+            selectSql.append (testClass->GetName ());
+            selectStatements[selectSql] = i*j;
+            j = i*j;
+            i++;
+            }
+        }
+
+    BeSQLite::Statement readStmt;
+    for (auto kvPair : selectStatements)
+        {
+        Utf8String selectSql = kvPair.first;
+        int noOfRows = kvPair.second;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStmt.Prepare (ecdb, selectSql.c_str ())) << "Preparation failed for " << selectSql.c_str ();
+        ASSERT_EQ (readStmt.Step (), DbResult::BE_SQLITE_ROW) << "step failed for " << selectSql.c_str ();
+        ASSERT_EQ (readStmt.GetValueInt (0), noOfRows) << "No of Rows Mis-Match: Expected = " << readStmt.GetValueInt (0) << "Actual = " << noOfRows;
+        readStmt.Finalize ();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -761,31 +1037,59 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
     // Create and populate a sample project
     auto& ecdb = SetUp ("NestedStructArrayTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
-    auto in = CreateECInstance_ClassP (ecdb, 1);
+    auto in = CreateECInstance (ecdb, 1, "ClassP");
 
+    int insertCount = 0;
     for (auto inst : in)
         {
         ECInstanceInserter inserter (ecdb, inst->GetClass ());
         auto st = inserter.Insert (*inst);
         ASSERT_TRUE (st == BentleyStatus::SUCCESS);
+        insertCount++;
         }
-
+    printf ("InsertCount = %d", insertCount);
 
     ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
-    BeAssert (classP != nullptr);
+    ASSERT_TRUE (classP != nullptr);
 
     ECInstanceDeleter deleter(ecdb, *classP);
+
+    int deleteCount = 0;
     for (auto& inst : in)
         {
         ASSERT_TRUE (deleter.Delete (*inst) == BentleyStatus::SUCCESS);
+        deleteCount++;
         }
+    printf ("DeleteCount = %d", deleteCount);
 
+    //Verify Inserted Instance have been deleted.
     bvector<IECInstancePtr> out;
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader (stmt);
-    ASSERT_TRUE (stmt.Step () != ECSqlStepStatus::HasRow);
+    ASSERT_FALSE (stmt.Step () == ECSqlStepStatus::HasRow);
+
+    //Verify Nested StructArray values have also been deleted.
+    bvector<Utf8String> selectStatements;
+    ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
+    for (ECClassCP testClass : ecSchema->GetClasses ())
+        {
+        if (testClass->GetIsStruct())
+            {
+            Utf8String selectSql = "SELECT * FROM nsat_ArrayOf";
+            selectSql.append (testClass->GetName ());
+            selectStatements.push_back (selectSql);
+            }
+        }
+
+    BeSQLite::Statement readStmt;
+    for (auto selectSql : selectStatements)
+        {
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStmt.Prepare (ecdb, selectSql.c_str ())) << "preparation failed for " << selectSql.c_str ();
+        ASSERT_EQ (readStmt.Step (), DbResult::BE_SQLITE_DONE) << "step failed for " << selectSql.c_str ();
+        readStmt.Finalize ();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -874,18 +1178,18 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_ECInstanceIdColumnInfo)
 
     ASSERT_FALSE (value1.IsNull ());
     ASSERT_FALSE (columnInfo1.IsGeneratedProperty ());
-    ASSERT_STREQ (L"ECSqlSystemProperties", columnInfo1.GetProperty ()->GetClass ().GetName ().c_str ());
+    ASSERT_STREQ ("ECSqlSystemProperties", columnInfo1.GetProperty ()->GetClass ().GetName ().c_str ());
     ASSERT_STREQ ("c1", columnInfo1.GetRootClassAlias ());
-    ASSERT_STREQ (L"PSA", columnInfo1.GetRootClass ().GetName ().c_str ());
+    ASSERT_STREQ ("PSA", columnInfo1.GetRootClass ().GetName ().c_str ());
 
     auto const& value2 = statement.GetValue (1);
     auto const& columnInfo2 = value2.GetColumnInfo ();
 
     ASSERT_FALSE (value2.IsNull ());
     ASSERT_FALSE (columnInfo2.IsGeneratedProperty ());
-    ASSERT_STREQ (L"ECSqlSystemProperties", columnInfo2.GetProperty ()->GetClass ().GetName ().c_str ());
+    ASSERT_STREQ ("ECSqlSystemProperties", columnInfo2.GetProperty ()->GetClass ().GetName ().c_str ());
     ASSERT_STREQ ("c2", columnInfo2.GetRootClassAlias ());
-    ASSERT_STREQ (L"P", columnInfo2.GetRootClass ().GetName ().c_str ());
+    ASSERT_STREQ ("P", columnInfo2.GetRootClass ().GetName ().c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -910,17 +1214,17 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayInsert)
         {        
         auto& structBinder = arrayBinder.AddArrayElement ().BindStruct ();
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "AddArrayElement failed: " << statement.GetLastStatusMessage ();
-        auto stat = structBinder.GetMember (L"d").BindDouble (i * PI);
+        auto stat = structBinder.GetMember ("d").BindDouble (i * PI);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"i").BindInt (i * 2);
+        stat = structBinder.GetMember ("i").BindInt (i * 2);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"l").BindInt64 (i * 3);
+        stat = structBinder.GetMember ("l").BindInt64 (i * 3);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
+        //stat = structBinder.GetMember ("l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"p2d").BindPoint2D (DPoint2d::From (i, i + 1));
+        stat = structBinder.GetMember ("p2d").BindPoint2D (DPoint2d::From (i, i + 1));
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
+        stat = structBinder.GetMember ("p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
         }
 
@@ -950,17 +1254,17 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
         {
         auto& structBinder = arrayBinder.AddArrayElement ().BindStruct ();
         ASSERT_EQ ((int)ECSqlStatus::Success, (int)statement.GetLastStatus ()) << "AddArrayElement failed: " << statement.GetLastStatusMessage ();
-        auto stat = structBinder.GetMember (L"d").BindDouble (i * PI);
+        auto stat = structBinder.GetMember ("d").BindDouble (i * PI);
         ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"i").BindInt (i * 2);
+        stat = structBinder.GetMember ("i").BindInt (i * 2);
         ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"l").BindInt64 (i * 3);
+        stat = structBinder.GetMember ("l").BindInt64 (i * 3);
         ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
+        //stat = structBinder.GetMember ("l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"p2d").BindPoint2D (DPoint2d::From (i, i + 1));
+        stat = structBinder.GetMember ("p2d").BindPoint2D (DPoint2d::From (i, i + 1));
         ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember (L"p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
+        stat = structBinder.GetMember ("p3d").BindPoint3D (DPoint3d::From (i, i + 1, i + 2));
         ASSERT_EQ ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
         }
 
@@ -1062,11 +1366,11 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindECInstanceId)
         auto stat = statement.Prepare (ecdb, "INSERT INTO ecsql.PSAHasP (SourceECInstanceId, TargetECInstanceId) VALUES(?,?)");
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat);
 
-        WChar idStrW[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
-        ECInstanceIdHelper::ToString (idStrW, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, psaKey.GetECInstanceId ());
-        Utf8String psaIdStr (idStrW);
-        ECInstanceIdHelper::ToString (idStrW, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, pKey.GetECInstanceId ());
-        Utf8String pIdStr (idStrW);
+        Utf8Char idStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+        ECInstanceIdHelper::ToString (idStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, psaKey.GetECInstanceId ());
+        Utf8String psaIdStr (idStr);
+        ECInstanceIdHelper::ToString (idStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, pKey.GetECInstanceId ());
+        Utf8String pIdStr (idStr);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (1, psaIdStr.c_str (), IECSqlBinder::MakeCopy::No));
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.BindText (2, pIdStr.c_str (), IECSqlBinder::MakeCopy::No));
 
@@ -1164,7 +1468,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimitiveArray)
             auto& elementBinder = arrayBinderS.AddArrayElement ();
             elementBinder.BindText (arrayElement.c_str (), IECSqlBinder::MakeCopy::No);
             }
-
 
         auto stepStat = statement.Step (ecInstanceKey);
         ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat);
@@ -1560,7 +1863,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
           "       }"
           "}");
 
-
     //**** Test 1 *****
     Utf8CP newStructValueJson = "{"
         " \"b\" : false,"
@@ -1749,8 +2051,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertColumnInfo (WCharCP expectedPropertyName, bool expectedIsGenerated, Utf8CP expectedPropPathStr, WCharCP expectedRootClassName, Utf8CP expectedRootClassAlias,
-                       ECSqlColumnInfoCR actualColumnInfo)
+void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Utf8CP expectedPropPathStr, Utf8CP expectedRootClassName, Utf8CP expectedRootClassAlias, ECSqlColumnInfoCR actualColumnInfo)
     {
     auto actualProperty = actualColumnInfo.GetProperty ();
     if (expectedPropertyName == nullptr)
@@ -1796,7 +2097,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForPrimitiveArrays)
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo (0);
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"Dt_Array", false, "Dt_Array", L"PSA", "c", topLevelColumnInfo);
+    AssertColumnInfo ("Dt_Array", false, "Dt_Array", "PSA", "c", topLevelColumnInfo);
     auto const& topLevelArrayValue = stmt.GetValueArray (0);
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
 
@@ -1818,7 +2119,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForPrimitiveArrays)
         ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "Primitive array element IECSqlValue::GetColumnInfo failed.";
         Utf8String expectedPropPath;
         expectedPropPath.Sprintf ("Dt_Array[%d]", arrayIndex);
-        AssertColumnInfo (nullptr, false, expectedPropPath.c_str (), L"PSA", "c", arrayElementColumnInfo);
+        AssertColumnInfo (nullptr, false, expectedPropPath.c_str (), "PSA", "c", arrayElementColumnInfo);
 
         arrayIndex++;
         }
@@ -1843,7 +2144,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructs)
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo (0);
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"SAStructProp", false, "SAStructProp", L"SA", nullptr, topLevelColumnInfo);
+    AssertColumnInfo ("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
@@ -1860,7 +2161,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructs)
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
     auto const& nestedStructPropColumnInfo = topLevelStructValue.GetValue (0).GetColumnInfo (); //0 refers to first member in SAStructProp which is PStructProp
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "Struct IECSqlValue::GetColumnInfo ()";
-    AssertColumnInfo (L"PStructProp", false, "SAStructProp.PStructProp", L"SA", nullptr, nestedStructPropColumnInfo);
+    AssertColumnInfo ("PStructProp", false, "SAStructProp.PStructProp", "SA", nullptr, nestedStructPropColumnInfo);
     auto const& nestedStructValue = topLevelStructValue.GetValue (0).GetStruct ();
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ())) << "Struct IECSqlValue::GetStruct ()";;
 
@@ -1877,15 +2178,15 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructs)
     //SAStructProp.PStructProp.XXX level
     auto const& firstStructMemberColumnInfo = nestedStructValue.GetValue (0).GetColumnInfo ();
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"b", false, "SAStructProp.PStructProp.b", L"SA", nullptr, firstStructMemberColumnInfo);
+    AssertColumnInfo ("b", false, "SAStructProp.PStructProp.b", "SA", nullptr, firstStructMemberColumnInfo);
 
     auto const& secondStructMemberColumnInfo = nestedStructValue.GetValue (1).GetColumnInfo ();
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"bi", false, "SAStructProp.PStructProp.bi", L"SA", nullptr, secondStructMemberColumnInfo);
+    AssertColumnInfo ("bi", false, "SAStructProp.PStructProp.bi", "SA", nullptr, secondStructMemberColumnInfo);
 
     auto const& eighthStructMemberColumnInfo = nestedStructValue.GetValue (8).GetColumnInfo ();
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"p2d", false, "SAStructProp.PStructProp.p2d", L"SA", nullptr, eighthStructMemberColumnInfo);
+    AssertColumnInfo ("p2d", false, "SAStructProp.PStructProp.p2d", "SA", nullptr, eighthStructMemberColumnInfo);
 
     //out of bounds test
     BeTest::SetFailOnAssert (false);
@@ -1917,7 +2218,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
     //Top level column
     auto const& topLevelColumnInfo = stmt.GetColumnInfo (0);
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"SAStructProp", false, "SAStructProp", L"SA", nullptr, topLevelColumnInfo);
+    AssertColumnInfo ("SAStructProp", false, "SAStructProp", "SA", nullptr, topLevelColumnInfo);
     auto const& topLevelStructValue = stmt.GetValueStruct (0);
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
     
@@ -1935,7 +2236,7 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
     int columnIndex = 1;
     auto const& pstructArrayColumnInfo = topLevelStructValue.GetValue (columnIndex).GetColumnInfo ();
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
-    AssertColumnInfo (L"PStruct_Array", false, "SAStructProp.PStruct_Array", L"SA", nullptr, pstructArrayColumnInfo);
+    AssertColumnInfo ("PStruct_Array", false, "SAStructProp.PStruct_Array", "SA", nullptr, pstructArrayColumnInfo);
     auto const& pstructArrayValue = topLevelStructValue.GetValue (columnIndex).GetArray ();
     ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
 
@@ -1960,13 +2261,13 @@ TEST_F (ECSqlTestFixture, ColumnInfoForStructArrays)
         ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
 
         expectedPropPath.Sprintf ("SAStructProp.PStruct_Array[%d].b", arrayIndex);
-        AssertColumnInfo (L"b", false, expectedPropPath.c_str (), L"SA", nullptr, arrayElementFirstColumnInfo);
+        AssertColumnInfo ("b", false, expectedPropPath.c_str (), "SA", nullptr, arrayElementFirstColumnInfo);
 
         //second struct member
         auto const& arrayElementSecondColumnInfo = pstructArrayElement.GetValue (1).GetColumnInfo ();
         ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stmt.GetLastStatus ()));
         expectedPropPath.Sprintf ("SAStructProp.PStruct_Array[%d].bi", arrayIndex);
-        AssertColumnInfo (L"bi", false, expectedPropPath.c_str (), L"SA", nullptr, arrayElementSecondColumnInfo);
+        AssertColumnInfo ("bi", false, expectedPropPath.c_str (), "SA", nullptr, arrayElementSecondColumnInfo);
 
         //out of bounds test
         BeTest::SetFailOnAssert (false);
@@ -2379,9 +2680,9 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         IECSqlStructBinder& structBinder = statement.BindStruct (1);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "ECSqlStatement::BindStruct is expected to succeed";
 
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) structBinder.GetMember (L"Geometry").BindGeometry (*expectedGeomSingle));
+        ASSERT_EQ ((int) ECSqlStatus::Success, (int) structBinder.GetMember ("Geometry").BindGeometry (*expectedGeomSingle));
 
-        IECSqlArrayBinder& arrayBinder = structBinder.GetMember (L"Geometry_Array").BindArray (3);
+        IECSqlArrayBinder& arrayBinder = structBinder.GetMember ("Geometry_Array").BindArray (3);
         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ()) << "IECSqlBinder::BindArray is expected to succeed";
         for (auto& geom : expectedGeoms)
             {
@@ -2460,13 +2761,13 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         for (int i = 0; i < structVal.GetMemberCount (); i++)
             {
             IECSqlValue const& structMemberVal = structVal.GetValue (0);
-            WStringCR structMemberName = structMemberVal.GetColumnInfo ().GetProperty ()->GetName ();
-            if (structMemberName.Equals (L"Geometry"))
+            Utf8StringCR structMemberName = structMemberVal.GetColumnInfo ().GetProperty ()->GetName ();
+            if (structMemberName.Equals ("Geometry"))
                 {
                 IGeometryPtr actualGeom = structMemberVal.GetGeometry ();
                 AssertGeometry (*expectedGeomSingle, *actualGeom, "SSpatial.PASpatialProp > Geometry");
                 }
-            else if (structMemberName.Equals (L"Geometry_Array"))
+            else if (structMemberName.Equals ("Geometry_Array"))
                 {
                 IECSqlArrayValue const& arrayVal = structMemberVal.GetArray ();
                 int i = 0;
@@ -2484,7 +2785,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         }
     ASSERT_EQ (2, rowCount);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/15
@@ -2531,30 +2831,30 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsert)
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
     IECSqlStructBinder& saStructBinder = statement.BindStruct(1); //SAStructProp
     ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
-    IECSqlStructBinder& pStructBinder = saStructBinder.GetMember(L"PStructProp").BindStruct();
+    IECSqlStructBinder& pStructBinder = saStructBinder.GetMember("PStructProp").BindStruct();
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-    stat = pStructBinder.GetMember(L"i").BindInt(99);
+    stat = pStructBinder.GetMember("i").BindInt(99);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
 
     //add three array elements
     const int count = 3;
-    auto& arrayBinder = saStructBinder.GetMember(L"PStruct_Array").BindArray((uint32_t)count);
+    auto& arrayBinder = saStructBinder.GetMember("PStruct_Array").BindArray((uint32_t)count);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "BindArray failed: " << statement.GetLastStatusMessage();
     for (int i = 0; i < count; i++)
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"d").BindDouble(i * PI);
+        stat = structBinder.GetMember("d").BindDouble(i * PI);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"i").BindInt(i * 2);
+        stat = structBinder.GetMember("i").BindInt(i * 2);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"l").BindInt64(i * 3);
+        stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
+        //stat = structBinder.GetMember ("l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember(L"p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
         }
 
@@ -2592,17 +2892,17 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructArrayInsertWithParametersLongAndAr
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
-        auto stat = structBinder.GetMember(L"d").BindDouble(i * PI);
+        auto stat = structBinder.GetMember("d").BindDouble(i * PI);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"i").BindInt(i * 2);
+        stat = structBinder.GetMember("i").BindInt(i * 2);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"l").BindInt64(i * 3);
+        stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
         //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember(L"p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
         }
 
@@ -2617,9 +2917,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructArrayInsertWithParametersLongAndAr
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
-        inst->GetValue(v, L"L");
+        inst->GetValue(v, "L");
         ASSERT_EQ(123,v.GetLong());
-        inst->GetValue(v, L"PStruct_Array");
+        inst->GetValue(v, "PStruct_Array");
         ASSERT_EQ(count, v.GetArrayInfo().GetCount());
         }
     }
@@ -2649,9 +2949,9 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_InsertWithMixParametersIntAndInt)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
-        inst->GetValue(v, L"I");
+        inst->GetValue(v, "I");
         ASSERT_EQ(123, v.GetInteger());
-        inst->GetValue(v, L"Sub1I");
+        inst->GetValue(v, "Sub1I");
         ASSERT_EQ(123, v.GetInteger());
         }
     }
@@ -2683,16 +2983,16 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_InsertWithMixParameters)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
-        inst->GetValue(v, L"B");
+        inst->GetValue(v, "B");
         ASSERT_EQ(true, v.GetBoolean());
-        inst->GetValue(v, L"D");
+        inst->GetValue(v, "D");
         ASSERT_EQ(2.22, v.GetDouble());
-        inst->GetValue(v, L"I");
+        inst->GetValue(v, "I");
         ASSERT_EQ(123, v.GetInteger());
-        inst->GetValue(v, L"L");
+        inst->GetValue(v, "L");
         ASSERT_EQ(123, v.GetLong());
-        inst->GetValue(v, L"S");
-        ASSERT_STREQ(L"Test Test", v.GetString());
+        inst->GetValue(v, "S");
+        ASSERT_STREQ("Test Test", v.GetUtf8CP());
         }
     }
 
@@ -2717,17 +3017,17 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayInsertWit
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         ASSERT_EQ((int)ECSqlStatus::Success, (int)statement.GetLastStatus()) << "AddArrayElement failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"d").BindDouble(i * PI);
+        stat = structBinder.GetMember("d").BindDouble(i * PI);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"i").BindInt(i * 2);
+        stat = structBinder.GetMember("i").BindInt(i * 2);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"l").BindInt64(i * 3);
+        stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
         //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember(L"p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage();
         }
 
@@ -2781,7 +3081,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
             {
             auto inst = classPReader.GetInstance();
             ECValue v;
-            inst->GetValue(v, L"PStructProp.i");
+            inst->GetValue(v, "PStructProp.i");
             ASSERT_EQ(2, v.GetInteger());
             }
         }
@@ -2800,7 +3100,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StructUpdateWithDotoperator)
         {
         auto inst = classPReader.GetInstance();
         ECValue v;
-        inst->GetValue(v, L"PStructProp.i");
+        inst->GetValue(v, "PStructProp.i");
         ASSERT_EQ(3, v.GetInteger());
         }
     }
@@ -2826,17 +3126,17 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
         {
         auto& structBinder = arrayBinder.AddArrayElement().BindStruct();
         ASSERT_EQ((int)ECSqlStatus::Success, (int)insertStatement.GetLastStatus()) << "AddArrayElement failed: " << insertStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"d").BindDouble(i * PI);
+        stat = structBinder.GetMember("d").BindDouble(i * PI);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"i").BindInt(i * 2);
+        stat = structBinder.GetMember("i").BindInt(i * 2);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"l").BindInt64(i * 3);
+        stat = structBinder.GetMember("l").BindInt64(i * 3);
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
         //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember(L"p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << insertStatement.GetLastStatusMessage();
         }
 
@@ -2862,17 +3162,17 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ClassWithStructHavingSructArrayUpdateWit
         {
         auto& structBinder = updateArrayBinder.AddArrayElement().BindStruct();
         ASSERT_EQ((int)ECSqlStatus::Success, (int)updateStatement.GetLastStatus()) << "AddArrayElement failed: " << updateStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"d").BindDouble(-count );
+        stat = structBinder.GetMember("d").BindDouble(-count );
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"i").BindInt(-count );
+        stat = structBinder.GetMember("i").BindInt(-count );
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"l").BindInt64(-count );
+        stat = structBinder.GetMember("l").BindInt64(-count );
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
         //stat = structBinder.GetMember (L"l").BindText ("Hello", IECSqlBinder::MakeCopy::No);
         //ASSERT_EQ ((int) ECSqlStatus::Success, (int) stat) << "Bind to struct member failed: " << statement.GetLastStatusMessage ();
-        stat = structBinder.GetMember(L"p2d").BindPoint2D(DPoint2d::From(i, i + 1));
+        stat = structBinder.GetMember("p2d").BindPoint2D(DPoint2d::From(i, i + 1));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
-        stat = structBinder.GetMember(L"p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
+        stat = structBinder.GetMember("p3d").BindPoint3D(DPoint3d::From(i, i + 1, i + 2));
         ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Bind to struct member failed: " << updateStatement.GetLastStatusMessage();
         }
 

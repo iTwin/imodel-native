@@ -84,8 +84,8 @@ public:
     typedef PropertyTreeNode& PropertyTreeNodeR;
     typedef const PropertyTreeNode& PropertyTreeNodeCR;
 
-    typedef bmap<WString, PropertyTreeNodeP > PropertyTreeNodeByName;
-    typedef bmap<WString, bvector<PropertyTreeNodeCP > > PropertyTreeNodesByCategory;
+    typedef bmap<Utf8String, PropertyTreeNodeP > PropertyTreeNodeByName;
+    typedef bmap<Utf8String, bvector<PropertyTreeNodeCP > > PropertyTreeNodesByCategory;
 
     struct PropertyTree;
     typedef const PropertyTree& PropertyTreeCR;
@@ -185,9 +185,9 @@ private:
     static Utf8String GetClassKey (ECN::ECClassCR ecClass);
     void JsonFromClass (JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
 
-    static bool GetIntegerValue (int& value, ECN::IECInstanceCR instance, WCharCP propertyName);
-    static bool GetStringValue (WString& value, ECN::IECInstanceCR instance, WCharCP propertyName);
-    static bool GetBooleanValue (bool& value, ECN::IECInstanceCR instance, WCharCP propertyName);
+    static bool GetIntegerValue (int& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
+    static bool GetStringValue (Utf8String& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
+    static bool GetBooleanValue (bool& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
     static bool GetPriorityFromCustomAttribute (int& priority, ECN::IECInstancePtr priorityCA);
     static ECN::ECClassCP GetClassFromStructOrStructArray (ECN::ECPropertyCR ecProperty);
     static bool GetPriorityFromProperty (int& priority, ECN::ECPropertyCR ecProperty);
@@ -324,15 +324,15 @@ public:
     //!     Integer:  2, 
     //!     Double: 3.5
     //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-    //!     Point3d: {“x” : 1.1, “y” : 2.2, “z” : 3.3} (JSON object value)
-    //!     String: “Test”
+    //!     Point3d: {"x" : 1.1, "y" : 2.2, "z" : 3.3} (JSON object value)
+    //!     String: "Test"
     //!     
     //!  FormattedValue: e.g., 
-    //!     Integer: “2”
-    //!     Double: “3 feet 6 inches”
+    //!     Integer: "2"
+    //!     Double: "3 feet 6 inches"
     //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-    //!     Point3D: “1.1, 2.2, 3.3”
-    //!     String: “Test”
+    //!     Point3D: "1.1, 2.2, 3.3"
+    //!     String: "Test"
     //! @endcode
     ECDB_EXPORT bool GetRow (JsonValueR currentRow) const;
 

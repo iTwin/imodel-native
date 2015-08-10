@@ -241,24 +241,21 @@ struct ECDbSqlDb : NonCopyableClass
         std::map<Utf8CP, std::unique_ptr<ECDbSqlIndex>, CompareIUtf8> m_index;
 
         bool HasObject (Utf8CP name);
-        // clang says not used - bool m_enableIdGeneration;
-        Utf8String m_name;
         ECDbVersion m_version;
         StringPool m_stringPool;
         ECDbSQLManager& m_sqlManager;
 
     public:
         ECDbSqlDb (ECDbSQLManager& manager)
-            : m_nameGenerator ("ECDbObj_%03d"), m_name ("ECDb"), m_version (ECDbVersion (1, 0)), /*clang says not used - m_enableIdGeneration (true),*/ m_sqlManager (manager)
+            : m_nameGenerator ("ec_%03d"), m_version (ECDbVersion (1, 0)), m_sqlManager (manager)
             {}
  
         ECDbSQLManager& GetManager () const { return m_sqlManager; }
         ECDbSQLManager & GetManagerR ()  { return m_sqlManager; }
 
-        Utf8StringCR GetName () const { return m_name; }
         //! Create a table with a given name or if name is null a name will be generated
         ECDbSqlTable* CreateTable (Utf8CP name, PersistenceType type = PersistenceType::Persisted);
-        ECDbSqlTable* CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName);
+        ECDbSqlTable* CreateTableForExistingTableMapStrategy (ECDbCR, Utf8CP existingTableName);
         ECDbSqlTable* CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
         ECDbVersion const& GetVersion () const { return m_version; }
         //! Find a table with a given name
@@ -359,7 +356,6 @@ struct DependentPropertyCollection : NonCopyableClass
         ECDbSqlColumn& GetColumnR () { return m_column; }
         ECDbSqlColumn const& GetColumn () const { return m_column; }
         BentleyStatus Add (ECN::ECClassId ecClassId, Utf8CP accessString);
-        BentleyStatus Add (ECN::ECClassId ecClassId, WCharCP accessString);
         BentleyStatus Remove (ECN::ECClassId ecClassId);
         Utf8CP Find (ECN::ECClassId ecClassId) const;
         bool Contains (ECN::ECClassId ecClassId) const;

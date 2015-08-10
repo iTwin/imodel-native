@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColumnInfo ColumnInfo::Create(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString)
+ColumnInfo ColumnInfo::Create(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString)
     {
     ColumnInfo info;
     if (SUCCESS != info.Initialize(ecProperty, propertyAccessString))
@@ -33,7 +33,7 @@ m_collation (ECDbSqlColumn::Constraint::Collation::Default)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, WCharCP propertyAccessString)
+BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, Utf8CP propertyAccessString)
     {
     // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
@@ -62,7 +62,7 @@ BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, WCharCP propertyAc
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(m_collation, collationStr.c_str()))
             {
             LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
-                       Utf8String(ecProperty.GetClass().GetFullName()).c_str(), Utf8String(ecProperty.GetName()).c_str(),
+                       ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str(),
                        collationStr.c_str());
             return ERROR;
             }
@@ -72,7 +72,7 @@ BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, WCharCP propertyAc
     // we use the ECProperty's propertyAccessString (and replace . by _)
     if (Utf8String::IsNullOrEmpty(m_columnName.c_str()))
         {
-        m_columnName = Utf8String(propertyAccessString);
+        m_columnName.assign (propertyAccessString);
         m_columnName.ReplaceAll(".", "_");
         BeAssert(m_columnName.find(".") == Utf8String::npos);
         }

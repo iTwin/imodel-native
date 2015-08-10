@@ -192,9 +192,7 @@ private:
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
 
 public:
-    PopulateCommand () 
-        : ConsoleCommand () 
-        {}
+    PopulateCommand () : ConsoleCommand () {}
 
     ~PopulateCommand() {}
     };
@@ -219,11 +217,26 @@ private:
     static Utf8String StructToString (BeSQLite::EC::IECSqlValue const& structValue);
 
 public:
-    ECSqlCommand () 
-        : ConsoleCommand ()
-        {}
-
+    ECSqlCommand ()  : ConsoleCommand () {}
     ~ECSqlCommand() {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                                   Krischan.Eberle    10/2013
+//---------------------------------------------------------------------------------------
+struct SqliteCommand : public ConsoleCommand, NonCopyableClass
+    {
+private:
+    virtual Utf8String _GetName() const override;
+    virtual Utf8String _GetUsage() const override;
+    virtual void _Run(ECSqlConsoleSession&, std::vector<Utf8String> const& args) const override;
+
+    void ExecuteSelect(BeSQLite::Statement&) const;
+    void ExecuteNonSelect(ECSqlConsoleSession&, BeSQLite::Statement&) const;
+
+public:
+    SqliteCommand() : ConsoleCommand() {}
+    ~SqliteCommand() {}
     };
 
 //---------------------------------------------------------------------------------------
@@ -237,10 +250,7 @@ private:
     virtual void _Run (ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const override;
 
 public:
-    CommitCommand ()
-        : ConsoleCommand ()
-        {}
-
+    CommitCommand () : ConsoleCommand () {}
     ~CommitCommand () {}
     };
 

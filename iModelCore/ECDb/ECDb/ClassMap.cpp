@@ -55,7 +55,7 @@ PropertyMapCollection const& IClassMap::GetPropertyMaps () const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan      09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-PropertyMapCP IClassMap::GetPropertyMap (WCharCP propertyName) const
+PropertyMapCP IClassMap::GetPropertyMap (Utf8CP propertyName) const
     {
     PropertyMapCP propMap = nullptr;
     if (GetPropertyMaps ().TryGetPropertyMap (propMap, propertyName, true))
@@ -209,7 +209,7 @@ bool IClassMap::IsAbstractECClass (ECClassCR ecclass)
 //static
 bool IClassMap::IsAnyClass (ECClassCR ecclass)
     {
-    return ecclass.GetSchema ().IsStandardSchema () && ecclass.GetName ().Equals (L"AnyClass");
+    return ecclass.GetSchema ().IsStandardSchema () && ecclass.GetName ().Equals ("AnyClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -261,10 +261,8 @@ Utf8String IClassMap::ToString () const
             break;
         }
 
-    Utf8String strategyName = GetMapStrategy ().ToString ();
-
     Utf8String str;
-    str.Sprintf ("ClassMap '%s' - Type: %s - Map strategy: %ls", GetClass ().GetFullName (), typeStr, strategyName.c_str());
+    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
 
     return str;
     }
@@ -429,7 +427,7 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
                 Utf8String whenCondtion;
                 whenCondtion.Sprintf("old.%s=new.%s", column->GetName().c_str(), column->GetName().c_str());
                 Utf8String body;
-                Utf8CP instanceID = GetPropertyMap(L"ECInstanceId")->GetFirstColumn()->GetName().c_str();
+                Utf8CP instanceID = GetPropertyMap("ECInstanceId")->GetFirstColumn()->GetName().c_str();
                 body.Sprintf ("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s AND (%s IS NULL OR julianday('now') > %s); END", column->GetTableR ().GetName ().c_str (), column->GetName ().c_str (), instanceID, instanceID, column->GetName ().c_str (), column->GetName ().c_str ());
                 Utf8String triggerName;
                 triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
@@ -437,11 +435,8 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
                 }
             }
         }
-    stat = ProcessIndices (mapInfo);
-    if (stat != MapStatus::Success)
-        return stat;
 
-    return MapStatus::Success;
+    return ProcessStandardKeySpecifications(mapInfo) == SUCCESS ? MapStatus::Success : MapStatus::Error;
     }
 
 //---------------------------------------------------------------------------------------
@@ -462,7 +457,7 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 
     for (auto property : m_ecClass.GetProperties (true))
         {
-        WCharCP propertyAccessString = property->GetName ().c_str ();
+        Utf8CP propertyAccessString = property->GetName ().c_str ();
         propMap = nullptr;
         if (&property->GetClass () != &m_ecClass && parentClassMap != nullptr)
             parentClassMap->GetPropertyMaps ().TryGetPropertyMap (propMap, propertyAccessString);
@@ -478,7 +473,7 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 
     for (auto property : propertiesToMap)
         {
-        WCharCP propertyAccessString = property->GetName ().c_str ();
+        Utf8CP propertyAccessString = property->GetName ().c_str ();
         propMap = PropertyMap::CreateAndEvaluateMapping (*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetTable(), nullptr);
         if (propMap == nullptr)
             return MapStatus::Error;
@@ -504,129 +499,100 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
     return MapStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      12/2013
-//---------------------------------------------------------------------------------------
-MapStatus ClassMap::ProcessIndices (ClassMapInfo const& mapInfo)
-    {
-    //! we delay the index create tell mapping finishes
-    SetUserProvidedIndex (mapInfo.GetIndexInfo ());
-    ProcessStandardKeySpecifications (mapInfo);
-    return MapStatus::Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMap::ProcessStandardKeySpecifications (ClassMapInfo const& mapInfo)
+BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& mapInfo)
     {
     std::set<PropertyMapCP> doneList;
-    std::set<WString> specList;
-    for (StandardKeySpecificationPtr spec : mapInfo.GetStandardKeys ())
+    std::set<Utf8String> specList;
+    for (StandardKeySpecificationPtr spec : mapInfo.GetStandardKeys())
         {
-        BeAssert (spec->GetKeyProperties ().size () > 0);
+        BeAssert(spec->GetKeyProperties().size() > 0);
 
-        if (spec->GetKeyProperties ().size () == 0)
+        if (spec->GetKeyProperties().size() == 0)
             continue;
 
-        Utf8String propertyName = spec->GetKeyProperties ().front ();
-        WString propertyNameW (propertyName.c_str (), true);
-        WString typeString = StandardKeySpecification::TypeToString (spec->GetType ());
-        if (specList.find (typeString) != specList.end ())
+        Utf8String propertyName = spec->GetKeyProperties().front();
+        Utf8String typeString = StandardKeySpecification::TypeToString(spec->GetType());
+        if (specList.find(typeString) != specList.end())
             continue;
 
-        specList.insert (typeString);
-        auto propertyMap = GetPropertyMap (propertyNameW.c_str ());
+        specList.insert(typeString);
+        auto propertyMap = GetPropertyMap(propertyName.c_str());
         if (propertyMap == nullptr)
             {
-            LOG.warningv (L"Column index creation is ignoring %ls on %ls because map for ECProperty '%ls' cannot be found", typeString.c_str (), GetClass ().GetFullName (), WString (propertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+            LOG.warningv("Column index creation is ignoring %s on %s because map for ECProperty '%s' cannot be found", typeString.c_str(), GetClass().GetFullName(), propertyName.c_str());
             continue;
             }
-        //We dont want to create multiple indexes on same column.
-        if (doneList.find (propertyMap) != doneList.end ())
+        //We don't want to create multiple indexes on same column.
+        if (doneList.find(propertyMap) != doneList.end())
             {
-            LOG.warningv (L"Ignoring %ls for property %ls.%ls. It is already part of another index.", typeString.c_str (), GetClass ().GetFullName (), WString (propertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+            LOG.warningv("Ignoring %s for property %s.%s. It is already part of another index.", typeString.c_str(), GetClass().GetFullName(), propertyName.c_str());
             continue;
             }
-        doneList.insert (propertyMap);
+        doneList.insert(propertyMap);
 
         std::vector<ECDbSqlColumn const*> columns;
-        propertyMap->GetColumns (columns);
+        propertyMap->GetColumns(columns);
 
-        auto index = m_table->CreateIndex (nullptr);
-        index->SetIsUnique (false);
+        auto index = m_table->CreateIndex(nullptr);
+        index->SetIsUnique(false);
         for (auto column : columns)
-            index->Add (column->GetName ().c_str ());
+            index->Add(column->GetName().c_str());
 
         //!ECDbSqlToDo add check to make sure index is not empty
-        if (!index->IsValid ())
+        if (!index->IsValid())
             {
-            BeAssert (false && "Index was not created correctly");
-            index->Drop ();
+            BeAssert(false && "Index was not created correctly");
+            index->Drop();
+            return ERROR;
             }
         }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMap::CreateIndices ()
+BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapInfo) const
     {
     int i = 0;
-    for (ClassIndexInfoPtr indexInfo : m_indexes)
+    for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
-        i = i + 1;
-        //***************************************************************************
-        //Todo : Fix this code 
-        //Following happen because index is recreated in case of upgrade. This should be handle
-        //in someother way. 
-        auto existingIndex = m_table->GetDbDef ().FindIndex (indexInfo->GetName ());
-        if (existingIndex)
-            {
-            if (&existingIndex->GetTable () == &GetTable ())
-                {
-                if (existingIndex->GetColumns ().size () != indexInfo->GetProperties ().size ())
-                    {
-                    //ERROR
-                    }
-                }
-            else
-                {
-                //ERROR
-                }
+        i++;
+        auto index = m_table->CreateIndex(indexInfo->GetName());
+        if (index == nullptr)
+            return ERROR;
 
-            return;
-            }
-        //***************************************************************************
-
-        auto index = m_table->CreateIndex (indexInfo->GetName ());
-        index->SetIsUnique (indexInfo->GetIsUnique ());
+        index->SetIsUnique(indexInfo->GetIsUnique());
 
         Utf8String whereExpression;
         bool error = false;
 
-        for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties ())
+        for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties())
             {
-            WString resolvePropertyName;
+            Utf8String resolvePropertyName;
             Utf8String resolveClassName, resolveSchemaName;
 
             std::vector<Utf8String> parts;
-            auto beginItor = classQualifiedPropertyName.begin ();
+            auto beginItor = classQualifiedPropertyName.begin();
             auto itor = beginItor;
-            for (; itor != classQualifiedPropertyName.end (); ++itor)
+            for (; itor != classQualifiedPropertyName.end(); ++itor)
                 {
                 if (*itor == '.')
                     {
-                    auto part = Utf8String (beginItor, itor - beginItor);
-                    part.Trim ();
-                    if (part.empty ())
+                    auto part = Utf8String(beginItor, itor - beginItor);
+                    part.Trim();
+                    if (part.empty())
                         {
-                        BeDataAssert (false && "Qualified property name provided in ECDbIndex contain invalid format name");
-                        LOG.errorv (L"Reject user defined index on %ls. Fail to find property map for property %ls", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                        BeDataAssert(false && "Qualified property name provided in ECDbIndex contain invalid format name");
+                        LOG.errorv("Reject user defined index on %s. Fail to find property map for property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
                         error = true;
                         }
 
-                    parts.push_back (part);
+                    parts.push_back(part);
                     beginItor = itor + 1;
                     }
                 }
@@ -636,112 +602,112 @@ void ClassMap::CreateIndices ()
 
             if (beginItor != itor)
                 {
-                parts.push_back (Utf8String (beginItor, itor - beginItor));
+                parts.push_back(Utf8String(beginItor, itor - beginItor));
                 }
 
-            resolveSchemaName = Utf8String (GetClass ().GetSchema ().GetName ().c_str ());
-            resolveClassName = Utf8String (GetClass ().GetName ().c_str ());
-            switch (parts.size ())
+            resolveSchemaName = GetClass().GetSchema().GetName().c_str();
+            resolveClassName = GetClass().GetName().c_str();
+            switch (parts.size())
                 {
-                case 1:
-                    resolvePropertyName = WString (parts.at (0).c_str (), BentleyCharEncoding::Utf8);
-                    break;
-                case 2:
-                    resolveClassName = parts.at (0);
-                    resolvePropertyName = WString (parts.at (1).c_str (), BentleyCharEncoding::Utf8);
-                    break;
-                case 3:
-                    resolveSchemaName = parts.at (0);
-                    resolveClassName = parts.at (1);
-                    resolvePropertyName = WString (parts.at (2).c_str (), BentleyCharEncoding::Utf8);
-                    break;
-                default:
-                    {
-                    BeDataAssert (false && "Qualified property name provided in ECDbIndex contain invalid format name");
-                    LOG.errorv (L"Reject user defined index on %ls. Invalid format to describe property qualified name %ls", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
-                    error = true;
-                    }
+                    case 1:
+                        resolvePropertyName = Utf8String(parts.at(0).c_str());
+                        break;
+                    case 2:
+                        resolveClassName = parts.at(0);
+                        resolvePropertyName = Utf8String(parts.at(1).c_str());
+                        break;
+                    case 3:
+                        resolveSchemaName = parts.at(0);
+                        resolveClassName = parts.at(1);
+                        resolvePropertyName = Utf8String(parts.at(2).c_str());
+                        break;
+                    default:
+                        {
+                        BeDataAssert(false && "Qualified property name provided in ECDbIndex contain invalid format name");
+                        LOG.errorv("Reject user defined index on %s. Invalid format to describe property qualified name %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
+                        error = true;
+                        }
                 }
 
             if (error)
                 break;
 
-            auto resolveClass = GetECDbMap ().GetECDbR ().Schemas ().GetECClass (resolveSchemaName.c_str (), resolveClassName.c_str ());
+            auto resolveClass = GetECDbMap().GetECDbR().Schemas().GetECClass(resolveSchemaName.c_str(), resolveClassName.c_str());
             if (resolveClass == nullptr)
                 {
-                LOG.errorv (L"Reject user defined index on %ls. Failed to find class associated with property %ls", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                LOG.errorv("Reject user defined index on %s. Failed to find class associated with property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
                 break;
                 }
 
-            auto resolveClassMap = GetECDbMap ().GetClassMapCP (*resolveClass);
+            auto resolveClassMap = GetECDbMap().GetClassMapCP(*resolveClass);
             if (resolveClassMap == nullptr)
                 {
-                BeAssert (false && "One reason could be that this method is called during mapping. It should be called after every thing is mapped");
-                LOG.errorv (L"Reject user defined index on %ls. Failed to find classMap associated with property %ls", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                BeAssert(false && "One reason could be that this method is called during mapping. It should be called after every thing is mapped");
+                LOG.errorv("Reject user defined index on %s. Failed to find classMap associated with property %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
                 break;
                 }
 
-            if (&resolveClassMap->GetTable () != &GetTable ())
+            if (&resolveClassMap->GetTable() != &GetTable())
                 {
-                BeAssert (false && "User define class qualified property string point to a class that is mapped into a different table then current class");
-                LOG.errorv (L"Reject user defined index on %ls. Property %ls belong to a class that is not mapped into table %s", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str (), WString (GetTable ().GetName ().c_str (), BentleyCharEncoding::Utf8).c_str ());
+                BeAssert(false && "User define class qualified property string point to a class that is mapped into a different table then current class");
+                LOG.errorv("Reject user defined index on %s. Property %s belong to a class that is not mapped into table %s", GetClass().GetFullName(), classQualifiedPropertyName.c_str(), GetTable().GetName().c_str());
                 break;
                 }
 
-            auto propertyMap = resolveClassMap->GetPropertyMap (resolvePropertyName.c_str ());
+            auto propertyMap = resolveClassMap->GetPropertyMap(resolvePropertyName.c_str());
             if (propertyMap == nullptr)
                 {
-                LOG.errorv (L"Rejecting index[%d] specified in ClassMap custom attribute on class %ls because property specified in index '%ls' doesn't exist in class or its not mapped", i, GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                LOG.errorv("Rejecting index[%d] specified in ClassMap custom attribute on class %s because property specified in index '%s' doesn't exist in class or its not mapped", i, GetClass().GetFullName(), classQualifiedPropertyName.c_str());
                 error = true;
                 break;
                 }
 
-            if (!propertyMap->GetProperty ().GetAsPrimitiveProperty ())
+            if (!propertyMap->GetProperty().GetAsPrimitiveProperty())
                 {
-                LOG.errorv (L"Rejecting index[%d] specified in ClassMap custom attribute on class %ls because specified property is not primitive.", i, GetClass ().GetFullName ());
+                LOG.errorv("Rejecting index[%d] specified in ClassMap custom attribute on class %s because specified property is not primitive.", i, GetClass().GetFullName());
                 error = true; // skip this index and continue with rest
                 break;
                 }
 
-            switch (propertyMap->GetProperty ().GetAsPrimitiveProperty ()->GetType ())
+            switch (propertyMap->GetProperty().GetAsPrimitiveProperty()->GetType())
                 {
-                case PRIMITIVETYPE_String:
-                case PRIMITIVETYPE_Boolean:
-                case PRIMITIVETYPE_Integer:
-                case PRIMITIVETYPE_Long:
-                case PRIMITIVETYPE_DateTime:
-                case PRIMITIVETYPE_Double:
-                case PRIMITIVETYPE_Binary:
-                case PRIMITIVETYPE_Point2D:
-                case PRIMITIVETYPE_Point3D:
-                    // allowed index
-                    break;
-                    //not supported for indexing
-                case PRIMITIVETYPE_IGeometry:
-                    LOG.errorv (L"Rejecting user specified index[%d] specified in ClassMap custom attribute on class %ls because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double, Binary, Point2d and Point3d", i, GetClass ().GetFullName ());
-                    error = true; // skip this index and continue with rest
-                    break;
+                    case PRIMITIVETYPE_String:
+                    case PRIMITIVETYPE_Boolean:
+                    case PRIMITIVETYPE_Integer:
+                    case PRIMITIVETYPE_Long:
+                    case PRIMITIVETYPE_DateTime:
+                    case PRIMITIVETYPE_Double:
+                    case PRIMITIVETYPE_Binary:
+                    case PRIMITIVETYPE_Point2D:
+                    case PRIMITIVETYPE_Point3D:
+                        // allowed index
+                        break;
+                        //not supported for indexing
+                    case PRIMITIVETYPE_IGeometry:
+                        LOG.errorv("Rejecting user specified index[%d] specified in ClassMap custom attribute on class %s because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double, Binary, Point2d and Point3d", i, GetClass().GetFullName());
+                        error = true; // skip this index and continue with rest
+                        break;
 
-                default:
-                    LOG.errorv (L"Rejecting user specified index[%d] specified in ClassMap custom attribute on class %ls because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double and Binary", i, GetClass ().GetFullName ());
-                    error = true; // skip this index and continue with rest
-                    break;
+                    default:
+                        LOG.errorv("Rejecting user specified index[%d] specified in ClassMap custom attribute on class %s because specified property type not supported. Supported types are String, Boolean, Integer, DateTime, Double and Binary", i, GetClass().GetFullName());
+                        error = true; // skip this index and continue with rest
+                        break;
                 }
 
             std::vector<ECDbSqlColumn const*> columns;
-            propertyMap->GetColumns (columns);
-            if (0 == columns.size ())
+            propertyMap->GetColumns(columns);
+            if (0 == columns.size())
                 {
-                LOG.errorv (L"Reject user defined index on %ls. Fail to find column property map for property %ls. Something wrong with mapping", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                LOG.errorv("Reject user defined index on %s. Fail to find column property map for property %s. Something wrong with mapping", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
                 error = true;
                 break;
                 }
 
             for (ECDbSqlColumn const* column : columns)
                 {
-                if (column->GetPersistenceType () == PersistenceType::Virtual)
+                if (column->GetPersistenceType() == PersistenceType::Virtual)
                     {
-                    LOG.errorv (L"Reject user defined index on %ls. One of the column assoicated with property %ls is virtual column.", GetClass ().GetFullName (), WString (classQualifiedPropertyName.c_str (), BentleyCharEncoding::Utf8).c_str ());
+                    LOG.errorv("Reject user defined index on %s. One of the column associated with property %s is virtual column.", GetClass().GetFullName(), classQualifiedPropertyName.c_str());
                     error = true;
                     break;
                     }
@@ -749,24 +715,25 @@ void ClassMap::CreateIndices ()
                     {
                     switch (indexInfo->GetWhere())
                         {
-                        case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                            if (whereExpression.length() != 0)
-                                whereExpression.append(" AND");
-                            whereExpression.append(" [");
-                            whereExpression.append(column->GetName().c_str());
-                            whereExpression.append("]");
-                            whereExpression.append(" IS NOT NULL");
-                            
-                        default:
-                            break;
+                            case EC::ClassIndexInfo::WhereConstraint::NotNull:
+                                if (whereExpression.length() != 0)
+                                    whereExpression.append(" AND");
+                                whereExpression.append(" [");
+                                whereExpression.append(column->GetName().c_str());
+                                whereExpression.append("]");
+                                whereExpression.append(" IS NOT NULL");
+
+                            default:
+                                break;
                         }
                     }
                 }
             }
-            index->SetWhereExpression(whereExpression.c_str());
-        if (error || !index->IsValid ())
+        index->SetWhereExpression(whereExpression.c_str());
+        if (error || !index->IsValid())
             {
-            index->Drop ();
+            index->Drop();
+            return ERROR;
             }
         else
             {
@@ -775,6 +742,8 @@ void ClassMap::CreateIndices ()
             GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
             }
         }
+
+    return SUCCESS;
     }
 
 
@@ -942,14 +911,14 @@ BentleyStatus ClassMap::_Load (std::set<ClassMap const*>& loadGraph, ECDbClassMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-ECPropertyCP ClassMap::GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAccessString)
+ECPropertyCP ClassMap::GetECProperty (ECN::ECClassCR ecClass, Utf8CP propertyAccessString)
     {
-    bvector<WString> tokens;
-    BeStringUtilities::Split (propertyAccessString, L".", NULL, tokens);
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split (propertyAccessString, ".", NULL, tokens);
 
     //for recursive lambdas, iOS requires us to efine the lambda variable before assigning the actual function to it.
-    std::function<ECPropertyCP (ECClassCR, bvector<WString>&, int)> getECPropertyFromTokens;
-    getECPropertyFromTokens = [&getECPropertyFromTokens] (ECClassCR ecClass, bvector<WString>& tokens, int iCurrentToken) -> ECPropertyCP
+    std::function<ECPropertyCP (ECClassCR, bvector<Utf8String>&, int)> getECPropertyFromTokens;
+    getECPropertyFromTokens = [&getECPropertyFromTokens] (ECClassCR ecClass, bvector<Utf8String>& tokens, int iCurrentToken) -> ECPropertyCP
         {
         ECPropertyCP ecProperty = ecClass.GetPropertyP (tokens[iCurrentToken].c_str (), true);
         if (!ecProperty)
@@ -1070,7 +1039,7 @@ ColumnFactory::Specification::Specification (
     m_isUnique(isUnique), m_collation(collation), m_generateColumnNameOptions(generateColumnNameOptions),
     m_columnUserData (columnUserData), m_persistenceType (persistenceType), m_strategy (strategy)
     {
-    m_accessString = Utf8String (propertyMap.GetPropertyAccessString ());
+    m_accessString = propertyMap.GetPropertyAccessString ();
     if (!Utf8String::IsNullOrEmpty (accessStringPrefix))
         m_accessString.append (".").append (accessStringPrefix);
 
@@ -1149,9 +1118,9 @@ ColumnFactory::ColumnFactory (ClassMapCR classMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ColumnFactory::RegisterColumnInUse (ECDbSqlColumn const& column)
+void ColumnFactory::RegisterColumnInUse(ECDbSqlColumn const& column)
     {
-    columnsInUseSet.insert (column.GetFullName ());
+    columnsInUseSet.insert(column.GetFullName());
     }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
@@ -1285,7 +1254,7 @@ BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, C
                 }
                 break;
             case Specification::GenerateColumnNameOptions::NameBasedOnClassAndPropertyName:
-                resolvedColumName = Utf8String (specifications.GetPropertyMap ().GetProperty ().GetClass ().GetName ().c_str ());
+                resolvedColumName = specifications.GetPropertyMap ().GetProperty ().GetClass ().GetName ().c_str ();
                 resolvedColumName.append ("_").append (specifications.GetColumnName ());
                 break;
             case Specification::GenerateColumnNameOptions::NeverGenerate:
@@ -1463,7 +1432,7 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications, EC
             outColumn = ApplyCreateOrReuseSharedColumnStrategy (specifications, targetTable, persistenceClassId); break;
         }
 
-    Utf8String className = Utf8String (m_classMap.GetClass ().GetName ().c_str ());
+    Utf8String const& className = m_classMap.GetClass ().GetName ();
     if (outColumn)
         LOG.tracev ("Property -> '%s:%s' mapped to '%s'", className.c_str(), specifications.GetAccessString ().c_str (), outColumn->GetName ().c_str ());
     else

@@ -96,7 +96,7 @@ ECSchemaReadContextPtr ecSchemaReadContext
     stopwatch.Stop();
     ASSERT_EQ (SUCCESS, stat);
     
-    LOG.infov (L"PerformanceTestFixture::ImportSchema> Importing ECSchema '%ls' into DgnDb file took %.4lf ms.", 
+    LOG.infov ("PerformanceTestFixture::ImportSchema> Importing ECSchema '%s' into DgnDb file took %.4lf ms.", 
         schema->GetFullSchemaName ().c_str (),
         stopwatch.GetElapsedSeconds() * 1000);
     }
@@ -129,7 +129,7 @@ int instanceCount
         }
 
     stopwatch.Stop();
-    LOG.infov (L"PerformanceTestFixture::InsertTestData> Inserting %d rows of random data into class '%ls' in DgnDb file took %.4lf ms.", 
+    LOG.infov ("PerformanceTestFixture::InsertTestData> Inserting %d rows of random data into class '%s' in DgnDb file took %.4lf ms.", 
         instanceCount,
         ecClass->GetName ().c_str (),
         stopwatch.GetElapsedSeconds() * 1000);
@@ -181,9 +181,9 @@ ECPropertyCR ecProperty
         {
         case PRIMITIVETYPE_String: 
             {
-            WString text;
-            text.Sprintf (L"Sample text with random number: %d", randomNumber);
-            ecValue.SetString(text.c_str (), true); 
+            Utf8String text;
+            text.Sprintf ("Sample text with random number: %d", randomNumber);
+            ecValue.SetUtf8CP(text.c_str (), true); 
             }
             break;
 

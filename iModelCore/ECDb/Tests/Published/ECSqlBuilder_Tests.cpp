@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECSqlBuilder_Tests.cpp $
+|  $Source: Tests/Published/ECSqlBuilder_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -45,7 +45,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_CopySemantics)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     ECSqlSelectBuilder b1;
     b1.Select ("bla").From (*testClass, "myalias").Where ("i = 123").OrderBy ("d").Limit ("40");
@@ -70,7 +70,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_Comparisons)
     ECDbTestProject::Initialize ();
 
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
         {
         //empty builders
@@ -136,7 +136,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_Comparisons)
         lhs = ECSqlSelectBuilder ();
         rhs = ECSqlSelectBuilder ();
         lhs.From (*testClass);
-        auto anotherClass = testSchema->GetClassCP (L"AAFoo");
+        auto anotherClass = testSchema->GetClassCP ("AAFoo");
         rhs.From (*anotherClass);
         AssertEquals (lhs, rhs, false);
 
@@ -233,7 +233,7 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_IncompleteBuilder)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     ECSqlSelectBuilder ecsql;
 
@@ -257,11 +257,11 @@ TEST (ECSqlBuilderTests, ECSqlSelectBuilder_ToString)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
-    auto pClass = testSchema->GetClassCP (L"P");
-    auto psaClass = testSchema->GetClassCP (L"PSA");
-    auto nonDomainStructWithPrims = testSchema->GetClassCP (L"PStruct");
-    auto psaHasPsaRelClass = testSchema->GetClassCP (L"PSAHasPSA")->GetRelationshipClassCP ();
-    auto psaHasPRelClass = testSchema->GetClassCP (L"PSAHasP")->GetRelationshipClassCP ();
+    auto pClass = testSchema->GetClassCP ("P");
+    auto psaClass = testSchema->GetClassCP ("PSA");
+    auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
+    auto psaHasPsaRelClass = testSchema->GetClassCP ("PSAHasPSA")->GetRelationshipClassCP ();
+    auto psaHasPRelClass = testSchema->GetClassCP ("PSAHasP")->GetRelationshipClassCP ();
 
     ECSqlSelectBuilder builder;
     EXPECT_STREQ ("", builder.ToString ().c_str ());
@@ -457,7 +457,7 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_CopySemantics)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     ECSqlInsertBuilder b1;
     b1.InsertInto (*testClass).AddValue ("i", "123").AddValue ("d", "3.14");
@@ -482,7 +482,7 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_Comparisons)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
         {
         //empty builders
@@ -500,7 +500,7 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_Comparisons)
         lhs = ECSqlInsertBuilder ();
         rhs = ECSqlInsertBuilder ();
         lhs.InsertInto (*testClass);
-        ECClassCP anotherClass = testSchema->GetClassCP (L"AAFoo");
+        ECClassCP anotherClass = testSchema->GetClassCP ("AAFoo");
         rhs.InsertInto (*anotherClass);
         AssertEquals (lhs, rhs, false);
 
@@ -551,8 +551,8 @@ TEST (ECSqlBuilderTests, ECSqlInsertBuilder_ToString)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
-    auto psaClass = testSchema->GetClassCP (L"PSA");
-    auto nonDomainStructWithPrims = testSchema->GetClassCP (L"PStruct");
+    auto psaClass = testSchema->GetClassCP ("PSA");
+    auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
 
     ECSqlInsertBuilder builder;
     EXPECT_STREQ ("", builder.ToString ().c_str ());
@@ -591,7 +591,7 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_CopySemantics)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     ECSqlUpdateBuilder b1;
     b1.Update (*testClass).AddSet ("i", "123").AddSet ("d", "3.14").Where ("l = 10000");
@@ -611,7 +611,7 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_Comparisons)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     //empty builders
     ECSqlUpdateBuilder lhs;
@@ -635,7 +635,7 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_Comparisons)
     lhs = ECSqlUpdateBuilder ();
     rhs = ECSqlUpdateBuilder ();
     lhs.Update (*testClass);
-    auto anotherClass = testSchema->GetClassCP (L"AAFoo");
+    auto anotherClass = testSchema->GetClassCP ("AAFoo");
     rhs.Update (*anotherClass);
     AssertEquals (lhs, rhs, false);
 
@@ -731,8 +731,8 @@ TEST (ECSqlBuilderTests, ECSqlUpdateBuilder_ToString)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
-    auto psaClass = testSchema->GetClassCP (L"PSA");
-    auto nonDomainStructWithPrims = testSchema->GetClassCP (L"PStruct");
+    auto psaClass = testSchema->GetClassCP ("PSA");
+    auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
 
     ECSqlUpdateBuilder builder;
     EXPECT_STREQ ("", builder.ToString ().c_str ());
@@ -775,7 +775,7 @@ TEST (ECSqlBuilderTests, ECSqlDeleteBuilder_CopySemantics)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     ECSqlDeleteBuilder b1;
     b1.DeleteFrom (*testClass).Where ("l = 10000");
@@ -795,7 +795,7 @@ TEST (ECSqlBuilderTest, ECSqlDeleteBuilder_Comparisons)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"StartupCompany.02.00.ecschema.xml");
-    auto testClass = testSchema->GetClassCP (L"AAA");
+    auto testClass = testSchema->GetClassCP ("AAA");
 
     //empty builders
     ECSqlDeleteBuilder lhs;
@@ -819,7 +819,7 @@ TEST (ECSqlBuilderTest, ECSqlDeleteBuilder_Comparisons)
     lhs = ECSqlDeleteBuilder ();
     rhs = ECSqlDeleteBuilder ();
     lhs.DeleteFrom (*testClass);
-    auto anotherClass = testSchema->GetClassCP (L"AAFoo");
+    auto anotherClass = testSchema->GetClassCP ("AAFoo");
     rhs.DeleteFrom (*anotherClass);
     AssertEquals (lhs, rhs, false);
 
@@ -887,8 +887,8 @@ TEST (ECSqlBuilderTests, ECSqlDeleteBuilder_ToString)
     {
     ECDbTestProject::Initialize ();
     auto testSchema = ECDbTestUtility::ReadECSchemaFromDisk (L"ECSqlTest.01.00.ecschema.xml");
-    auto psaClass = testSchema->GetClassCP (L"PSA");
-    auto nonDomainStructWithPrims = testSchema->GetClassCP (L"PStruct");
+    auto psaClass = testSchema->GetClassCP ("PSA");
+    auto nonDomainStructWithPrims = testSchema->GetClassCP ("PStruct");
 
     ECSqlDeleteBuilder builder;
     EXPECT_STREQ ("", builder.ToString ().c_str ());

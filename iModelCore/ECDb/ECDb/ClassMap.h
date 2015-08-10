@@ -223,7 +223,7 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    PropertyMapCP GetPropertyMap (WCharCP propertyName) const;
+    PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
     //! @return Collection of property maps of this class map
@@ -389,7 +389,6 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbSqlTable*               m_table;
         ECDbMapStrategy             m_mapStrategy;
         bool                        m_isDirty;
-        bvector<ClassIndexInfoPtr>  m_indexes;
         ECDbClassMapId              m_id;
         DMLPolicy             m_crudPolicy;
     protected:
@@ -398,15 +397,11 @@ struct ClassMap : public IClassMap, RefCountedBase
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
     private:
-        MapStatus ProcessIndices (ClassMapInfo const& classMapInfo);
-        void ProcessStandardKeySpecifications (ClassMapInfo const& mapInfo);
-        void SetUserProvidedIndex (bvector<ClassIndexInfoPtr> const& indexes)
-            {
-            m_indexes = indexes;
-            }
+        BentleyStatus ProcessStandardKeySpecifications(ClassMapInfo const&);
+
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
-        ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAccessString);
+        ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, Utf8CP propertyAccessString);
 
         virtual MapStatus _OnInitialized ();
         virtual Type _GetClassMapType () const override;
@@ -459,6 +454,8 @@ struct ClassMap : public IClassMap, RefCountedBase
     PropertyMapCP GetECInstanceIdPropertyMap () const;
     bool TryGetECInstanceIdPropertyMap (PropertyMapPtr& ecIstanceIdPropertyMap) const;
     
+    BentleyStatus CreateUserProvidedIndices(ClassMapInfo const&) const;
+
     bool IsDirty () const { return m_isDirty; }
     ECDbClassMapId GetId () const { return m_id; }
     void SetId (ECDbClassMapId id) { m_id = id; }
@@ -466,7 +463,6 @@ struct ClassMap : public IClassMap, RefCountedBase
     BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
 
 
-    void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
     BentleyStatus EvaluateDMLPolicy () { return  _EvaluateDMLPolicy (); }

@@ -42,7 +42,7 @@ private:
     //column handlers
     BentleyStatus SetInstanceId (ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetPropertyData (ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    BentleyStatus SetPropertyData (ECN::IECInstanceR instance, WCharCP parentPropertyAccessString, IECSqlValue const& value) const;
+    BentleyStatus SetPropertyData (ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipSource (ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget (ECN::IECInstanceR instance, IECSqlValue const& value) const;
 

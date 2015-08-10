@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlTestFixture.cpp $
+|     $Source: Tests/Published/ECSqlTestFixture.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
@@ -122,8 +122,7 @@ void ECSqlTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement co
                     for (Utf8StringCR memberName : jsonValue.getMemberNames ())
                         {
                         Json::Value const& member = jsonValue[memberName.c_str ()];
-                        WString memberNameW (memberName.c_str (), BentleyCharEncoding::Utf8);
-                        auto& memberBinder = structBinder.GetMember (memberNameW.c_str ());
+                        auto& memberBinder = structBinder.GetMember (memberName.c_str ());
                         ASSERT_EQ ((int) ECSqlStatus::Success, (int) statement.GetLastStatus ());
 
                         BindFromJson (succeeded, statement, member, memberBinder);

@@ -40,7 +40,7 @@ private:
     uint64_t    m_currentDateTimeJulian, m_incrementDateTimeJulian;
     DPoint2d    m_seedPoint2d, m_currentPoint2d, m_incrementPoint2d;
     DPoint3d    m_seedPoint3d, m_currentPoint3d, m_incrementPoint3d;
-    WString     m_stringPrefix;
+    Utf8String  m_stringPrefix;
     bool        m_seedBoolean, m_currentBoolean;
     size_t      m_binaryLength;
     ECN::ECPropertyCP m_property;
@@ -67,7 +67,7 @@ public:
     void SetSeedPoint2D(DPoint2dCR seed, DPoint2d increment);
     void SetSeedPoint3D(DPoint3dCR seed, DPoint3d increment);
     void SetBinaryLength(size_t length);
-    void SetStringPrefix(WStringCR prefix);
+    void SetStringPrefix(Utf8CP prefix);
     void SetSeedDateTime(DateTime seed, uint64_t julianHectoSecondsIncrement);
     void SetSeedBoolean(bool seed);
     ECN::ECPropertyCP GetProperty() const { return m_property; }
@@ -210,8 +210,8 @@ private:
     BentleyStatus SetPrimitiveValue(ECN::ECValueR value, ECN::PrimitiveType primitiveType, IPropertyValueGenerator* gen);
     BentleyStatus SetStructValue(ECN::IECInstanceR generatedECInstance, ECN::ECClassCR structType, ECN::ECPropertyCP ecProperty);
     BentleyStatus SetInstanceData(ECN::IECInstanceR generatedECInstance);
-    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, WCharCP propertyName);
-    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, WCharCP baseAccessPath);
+    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
+    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, Utf8CP baseAccessPath);
 
 public:
     explicit RandomECInstanceGenerator(std::vector<ECN::ECClassCP> const& classList)

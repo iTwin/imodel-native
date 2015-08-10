@@ -74,7 +74,7 @@ private:
     ~ECValueBindingInfoFactory ();
 
 public:
-    static std::unique_ptr<ECValueBindingInfo> CreateBindingInfo (ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, int ecsqlParameterIndex);
+    static std::unique_ptr<ECValueBindingInfo> CreateBindingInfo (ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, int ecsqlParameterIndex);
     static std::unique_ptr<ECValueBindingInfo> CreateSystemBindingInfo (ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex);
     };
 
@@ -125,10 +125,10 @@ struct StructECValueBindingInfo : ECValueBindingInfo
 private:
     std::map<ECN::ECPropertyId, std::unique_ptr<ECValueBindingInfo>> m_memberBindingInfos;
 
-    StructECValueBindingInfo (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, WCharCP parentPropertyAccessString, int ecsqlParameterIndex);
+    StructECValueBindingInfo (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
 
 public:
-    static std::unique_ptr<StructECValueBindingInfo> Create (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, WCharCP parentPropertyAccessString, int ecsqlParameterIndex);
+    static std::unique_ptr<StructECValueBindingInfo> Create (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex);
     static std::unique_ptr<StructECValueBindingInfo> CreateForNestedStruct (ECN::ECClassCR structType);
 
     ~StructECValueBindingInfo () {}
@@ -237,7 +237,7 @@ public:
     //!Generates and adds a new binding info for the given parameter.
     //!@return SUCCESS in case of success, ERROR otherwise
     BentleyStatus AddBindingInfo (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty, int ecsqlParameterIndex);
-    BentleyStatus AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, WCharCP accessString, int ecsqlParameterIndex);
+    BentleyStatus AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex);
     //!Generates and adds a new binding info for the specified ECSQL System property for the given parameter.
     //!@return binding info in case of success, nullptr otherwise
     ECSqlSystemPropertyBindingInfo* AddBindingInfo (ECValueBindingInfo::SystemPropertyKind kind, int ecsqlParameterIndex);

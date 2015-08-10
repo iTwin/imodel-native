@@ -47,13 +47,13 @@ public:
 struct PropertyMapECInstanceId : PropertyMapSystem
     {
 public:
-    static WCharCP const PROPERTYACCESSSTRING;
+    static Utf8CP const PROPERTYACCESSSTRING;
 
 private:
     PropertyMapECInstanceId (ECN::ECPropertyCR ecInstanceIdProperty, ECDbSqlColumn* column);
 
     virtual bool _IsECInstanceIdPropertyMap () const override;
-    virtual WString _ToString () const override;
+    virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapECInstanceId () {}
@@ -71,7 +71,7 @@ struct PropertyMapSecondaryTableKey : PropertyMapSystem
 private:
     explicit PropertyMapSecondaryTableKey (ECN::ECPropertyCR systemProperty, ECDbSqlColumn* column, ECSqlSystemProperty kind);
 
-    virtual WString _ToString () const override;
+    virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapSecondaryTableKey () {}
@@ -115,7 +115,7 @@ private:
 
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
 
-    virtual WString _ToString () const override;
+    virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapRelationshipConstraintECInstanceId () {}
@@ -135,7 +135,7 @@ private:
 
     virtual NativeSqlBuilder::List _ToNativeSql(Utf8CP classIdentifier, ECSqlType ecsqlType, bool wrapInParentheses) const override;
 
-    virtual WString _ToString () const override;
+    virtual Utf8String _ToString () const override;
 
 public:
     ~PropertyMapRelationshipConstraintClassId () {}
