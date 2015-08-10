@@ -825,7 +825,7 @@ void LandXMLImporter::ReadContour ()
                     m_reader->GetCurrentNodeName (nodeName);
                     if (nodeName == cDefinition)
                         {
-                        adjust.Finish ();
+                        m_dtm = adjust.Finish ();
                         return;
                         }
                     }

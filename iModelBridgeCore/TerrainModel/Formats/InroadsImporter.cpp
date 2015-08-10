@@ -65,6 +65,12 @@ struct InroadsTriangulationPreserver : TriangulationPreserver
 
     int SendTriangleCallback (CIVdtmtin* t)
         {
+        // Check for colinear triangle.
+        int side = bcdtmMath_sideOf (t->p1->cor.x, t->p1->cor.y, t->p3->cor.x, t->p3->cor.y, t->p2->cor.x, t->p2->cor.y);
+
+        if (side == 0)
+            return DTM_SUCCESS;
+
         m_numTriangles++;
         if (!HasPoint (t->op1))
             AddPoint (t->p1->cor, t->op1);
@@ -77,6 +83,9 @@ struct InroadsTriangulationPreserver : TriangulationPreserver
         ptIds[0] = t->op1;
         ptIds[1] = t->op2;
         ptIds[2] = t->op3;
+
+        if (side < 0)
+            std::swap (ptIds[1], ptIds[2]);
 
         AddTriangle (ptIds, 3);
         return SUCCESS;
@@ -167,9 +176,10 @@ static int SendFeaturesCallback (void* dat, struct CIVdtmsrf* srf, int ftrTyp, s
             {
             for (int i = 0; i < ftrP->numPnts; i++)
                 {
-                if (i > 0 && (ftrP->p1[i].flg & DTM_C_PNTPUD) == FALSE && !(ftrTyp != DTM_C_DTMREGFTR || ftrTyp != DTM_C_DTMEXTFTR))
+                if (i > 0 && !(ftrP->p1[i].flg & DTM_C_PNTPUD) && (ftrTyp != DTM_C_DTMREGFTR && ftrTyp != DTM_C_DTMEXTFTR))
                     {
                     AddFeature (dat, points, type, ftrP);
+                    points.clear ();
                     }
 
                 if ((ftrP->p1[i].flg & DTM_C_PNTDEL) == FALSE)
@@ -192,10 +202,6 @@ static int SendFeaturesCallback (void* dat, struct CIVdtmsrf* srf, int ftrTyp, s
 static int SendTriangleCallback (void* dat, long, DPoint3d*,  struct CIVdtmtin* t, unsigned long)
     {
     ImporterArg* pArg = (ImporterArg*)dat;
-    // Check for colinear triangle.
-    if (bcdtmMath_sideOf (t->p1->cor.x, t->p1->cor.y, t->p3->cor.x, t->p3->cor.y, t->p2->cor.x, t->p2->cor.y) == 0)
-        return DTM_SUCCESS;
-
     return pArg->adjustTriangulation->SendTriangleCallback (t);
     }
 
@@ -246,7 +252,7 @@ ImportedTerrain InroadsImporter::_ImportTerrain (WCharCP name) const
                 InroadsTriangulationPreserver adjustTriangulation (*dtm);
                 arg.adjustTriangulation = &adjustTriangulation;
                 inroadsTM_sendAllTriangles (NULL, pSrf, DTM_C_NOBREK, SendTriangleCallback, &arg);
-                adjustTriangulation.Finish ();
+                dtm = adjustTriangulation.Finish ();
                 inroadsTM_deleteSurface (NULL, pSrf, FALSE);
                 if (m_callback)
                     m_callback->EndTerrain (name, dtm.get ());

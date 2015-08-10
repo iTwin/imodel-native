@@ -13,6 +13,8 @@
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
+const double MAXAREAFORVOIDORISLANDS = 0.001;
+
 TriangulationPreserver::TriangulationPreserver (BcDTMR dtm) : m_dtm (&dtm), m_dtmObj (nullptr), m_stmDtm (nullptr)
     {
     m_useGraphicBreaks = true;
@@ -66,13 +68,15 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
     m_stmDtm->AddLinearFeature (DTMFeatureType::GraphicBreak, pts, 4, dtmUserTag, &id);
     }
 
-void TriangulationPreserver::Finish ()
+BcDTMPtr TriangulationPreserver::Finish ()
     {
     if (m_stmDtm.IsNull ())
-        return;
+        return m_dtm;
 
     // Recreate the triangulation.
     bcdtmObject_triangulateStmTrianglesDtmObject (m_stmDtm->GetTinHandle ());
+    if (m_dtm->GetPointCount () == 0)
+        return m_stmDtm;
 
     // Add the void features to the TM.
     DTMFeatureEnumerator features (*m_stmDtm);
@@ -83,6 +87,23 @@ void TriangulationPreserver::Finish ()
         {
         DTMFeatureId id;
         feature.GetFeaturePoints (pts);
+
+        if (pts.size () <= 2)
+            continue;
+        if (pts.size () == 3)
+             {
+            int side = bcdtmMath_sideOf (pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+            if (side == 0)
+                continue;
+            }
+
+        DTMDirection direction;
+        double area;
+        if (bcdtmMath_getPolygonDirectionP3D (pts.data(), (long)pts.size (), &direction, &area) != DTM_SUCCESS)
+            continue;
+        if (area < MAXAREAFORVOIDORISLANDS)
+            continue;
+
         m_dtm->AddLinearFeature (feature.FeatureType (), pts.data (), (int)pts.size (), &id);
         }
 
@@ -94,6 +115,7 @@ void TriangulationPreserver::Finish ()
         DTMFeatureId id;
         m_dtm->AddLinearFeature (DTMFeatureType::Hull, boundary.data (), (int)boundary.size (), &id);
         }
+
     // For now we will just add the Graphic Breaks, so no need to triangulate here.
     //// Triangulate the DTM.
     if (!m_useGraphicBreaks)
@@ -102,56 +124,57 @@ void TriangulationPreserver::Finish ()
         m_dtm->AddPoints (m_pts);
         m_dtm->Triangulate ();
         }
-
-    DTMMeshEnumerator meshEnum (*m_stmDtm);
-
-    for (auto mesh : meshEnum)
+    if (0)
         {
-        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh, false);
+        DTMMeshEnumerator meshEnum (*m_stmDtm);
 
-        if (m_useGraphicBreaks)
+        for (auto mesh : meshEnum)
             {
-            bvector<DPoint3d> &facePoint = visitor->Point ();
-            for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh, false);
+
+            if (m_useGraphicBreaks)
                 {
-                DTMFeatureId id;
-                m_dtm->AddLinearFeature (DTMFeatureType::GraphicBreak, facePoint.data (), (int)facePoint.size (), &id);
-                }
-            }
-        else
-            {
-            bvector<long> ptMapper;
-            // Create
-            DPoint3dCP pts = mesh->GetPointCP ();
-            for (int i = 0; i < (int)mesh->GetPointCount (); i++)
-                {
-                long ptNum = 0;
-                if (bcdtmFind_closestPointDtmObject (m_dtmObj, pts[i].x, pts[i].y, &ptNum) == 1)
-                    ptMapper[i] = ptNum;
-                else
+                bvector<DPoint3d> &facePoint = visitor->Point ();
+                for (visitor->Reset (); visitor->AdvanceToNextFace ();)
                     {
-                    // Error....
-                    BeAssert (false);
+                    DTMFeatureId id;
+                    m_dtm->AddLinearFeature (DTMFeatureType::GraphicBreak, facePoint.data (), (int)facePoint.size (), &id);
                     }
                 }
-            for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+            else
                 {
-                const int* ptIndexes = visitor->GetClientPointIndexCP ();
-                long ptNums[3];
-                ptNums[0] = ptMapper[ptIndexes[0]];
-                ptNums[1] = ptMapper[ptIndexes[1]];
-                ptNums[2] = ptMapper[ptIndexes[2]];
-                CheckTriangle (ptNums, 3);
+                bvector<long> ptMapper;
+                // Create
+                DPoint3dCP pts = mesh->GetPointCP ();
+                for (int i = 0; i < (int)mesh->GetPointCount (); i++)
+                    {
+                    long ptNum = 0;
+                    if (bcdtmFind_closestPointDtmObject (m_dtmObj, pts[i].x, pts[i].y, &ptNum) == 1)
+                        ptMapper[i] = ptNum;
+                    else
+                        {
+                        // Error....
+                        BeAssert (false);
+                        }
+                    }
+                for (visitor->Reset (); visitor->AdvanceToNextFace ();)
+                    {
+                    const int* ptIndexes = visitor->GetClientPointIndexCP ();
+                    long ptNums[3];
+                    ptNums[0] = ptMapper[ptIndexes[0]];
+                    ptNums[1] = ptMapper[ptIndexes[1]];
+                    ptNums[2] = ptMapper[ptIndexes[2]];
+                    CheckTriangle (ptNums, 3);
+                    }
                 }
+
             }
-
         }
-
     if (m_useGraphicBreaks)
         {
         // Triangulate the DTM.
         m_dtm->Triangulate ();
-        return;
+        return m_dtm;
         }
 
     long numPoints = m_dtmObj->numPoints;
@@ -199,6 +222,7 @@ void TriangulationPreserver::Finish ()
         }
 //    l->Save (L"d:\\temp\\failedToSwap.tin");
 //    m_dtm->Save (L"d:\\temp\\newDTM.tin");
+    return m_dtm;
     }
 
 void TriangulationPreserver::CheckTriangle (long* ptNums, int numPts)

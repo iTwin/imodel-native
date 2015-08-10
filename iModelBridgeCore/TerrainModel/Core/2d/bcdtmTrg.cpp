@@ -7725,6 +7725,13 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     // Delete all breaklines.
     bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject (dtmP, DTMFeatureType::Breakline);
 
+    // Remove the deleted flag from the nodes.
+    for (int i = 0; i < dtmP->numNodes; i++)
+        {
+        nodeAddrP (dtmP, i)->PCWD = 0;
+        nodeAddrP (dtmP, i)->PRGN = 0;
+        }
+
     if( dbg )bcdtmWrite_message(0,0,0,"Compacting Circular List") ;
     if( bcdtmTin_compactCircularListDtmObject(dtmP)  ) goto errexit ;
     if( dbg )bcdtmWrite_message(0,0,0,"Compacting Feature Table") ;

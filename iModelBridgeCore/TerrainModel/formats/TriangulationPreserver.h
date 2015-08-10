@@ -62,7 +62,7 @@ class TriangulationPreserver
         //int FindPointNum (DPoint3dCR pt);
         //void AddTriangle (DPoint3dCP pts, int numPts);
         //void AddTriangle (const long* pts, int numPts);
-        void Finish ();
+        BcDTMPtr Finish ();
 
         void CheckTriangle (long* ptNums, int numPoints);
     };
