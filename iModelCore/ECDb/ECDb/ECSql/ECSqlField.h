@@ -22,12 +22,13 @@ struct ECSqlField : public IECSqlValue
 public:
     typedef std::vector<std::unique_ptr<ECSqlField>> Collection;
 
-private:
-    ECSqlStatementBase& m_ecsqlStatement;
+protected:
     ECSqlColumnInfo m_ecsqlColumnInfo;
 
-    virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
+private:
+    ECSqlStatementBase& m_ecsqlStatement;
 
+    virtual ECSqlColumnInfoCR _GetColumnInfo () const override;
 
     virtual ECSqlStatus _Reset (ECSqlStatusContext& statusContext);
     virtual ECSqlStatus _Init (ECSqlStatusContext& statusContext);
@@ -36,6 +37,7 @@ private:
 
 protected:
     ECSqlField (ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo&& ecsqlColumnInfo);
+
 
     ECSqlStatus SetError (ECSqlStatus status, Utf8CP errorMessage) const;
     void ResetStatus () const;

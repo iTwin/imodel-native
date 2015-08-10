@@ -27,10 +27,9 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus PrimitiveMappedToSingleColumnECSqlField::_Init (ECSqlStatusContext& statusContext)
     {
-    auto const& columnInfo = GetColumnInfo ();
-    if (columnInfo.GetDataType ().GetPrimitiveType () == PRIMITIVETYPE_DateTime)
+    if (m_ecsqlColumnInfo.GetDataType ().GetPrimitiveType () == PRIMITIVETYPE_DateTime)
         {
-        auto property = columnInfo.GetProperty ();
+        auto property = m_ecsqlColumnInfo.GetProperty();
         BeAssert (property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
         DateTimeInfo dateTimeInfo;
         if (StandardCustomAttributeHelper::GetDateTimeInfo (dateTimeInfo, *property) != ECOBJECTS_STATUS_Success)
@@ -250,7 +249,7 @@ bool PrimitiveMappedToSingleColumnECSqlField::CanGetValue (PrimitiveType testTyp
     {
     //For DateTimes and Geometry column type and GetValueXXX type must match. All other types are implicitly
     //converted to each other by SQLite.
-    const auto fieldDataType = GetColumnInfo ().GetDataType ().GetPrimitiveType ();
+    const auto fieldDataType = m_ecsqlColumnInfo.GetDataType().GetPrimitiveType();
     if (fieldDataType == testType && requestedType != testType)
         {
         Utf8String error;
