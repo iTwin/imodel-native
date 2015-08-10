@@ -31,8 +31,9 @@ struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
         bmap<ECN::ECClassCP, ECSqlTestItem> m_sqlTestItems;
         virtual void InitializeTestDb () override {}
         void CreateClassHierarchy (ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass);
-        void CreatePrimitiveProperties (ECClassR ecClass, size_t noOfProperties);
-        void GenerateCRUDTestStatements (ECSchemaR ecSchema);
+        void CreatePrimitiveProperties (ECClassR ecClass);
+        void GenerateECSqlCRUDTestStatements (ECSchemaR ecSchema);
+        void GenerateSqlCRUDTestStatements (ECSchemaR ecSchema, ECClassR ecClass, Utf8StringR insertSql, Utf8StringR selectSql, Utf8StringR updateSql, Utf8StringR deleteSql);
         void InsertInstances (ECDbR ecdb);
         void ReadInstances (ECDbR ecdb);
         void UpdateInstances (ECDbR ecdb);
