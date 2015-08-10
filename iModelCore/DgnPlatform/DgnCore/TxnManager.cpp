@@ -27,7 +27,7 @@ END_UNNAMED_NAMESPACE
 
 #if !defined (NDEBUG)
 //=======================================================================================
-//! for debugging, BeAssert if anyone tries to write a transactionable change while this object is on the stack.
+//! for debugging, fail if anyone tries to write a transactionable change while this object is on the stack.
 //! @bsiclass                                                     Keith.Bentley   03/07
 //=======================================================================================
 struct  IllegalTxnMark
@@ -279,8 +279,6 @@ BentleyStatus TxnManager::PropagateChanges()
     {
     if (!m_propagateChanges)
         return BSISUCCESS;
-
-    ILLEGAL_TXN_MARK(m_dgndb);
 
     SetIndirectChanges(true);
     for (auto table :  m_tables)
