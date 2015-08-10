@@ -42,7 +42,7 @@ struct UrlProvider
         static const Utf8String s_punchListWsgUrl[3];
         static const Utf8String s_connectWsgUrl[3];
         static const Utf8String s_connectEulaUrl[3];
-        static const Utf8String s_connectLearnStsAuthUri[3];
+        static const Utf8String s_imsStsAuthUrl[3];
         static const Utf8String s_usageTrackingUrl[3];
         static const Utf8String s_passportUrl[3];
 
@@ -58,7 +58,7 @@ struct UrlProvider
         WSCLIENT_EXPORT static Utf8String GetPunchlistWsgUrl();
         WSCLIENT_EXPORT static Utf8String GetConnectWsgUrl();
         WSCLIENT_EXPORT static Utf8String GetConnectEulaUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectLearnStsAuthUri();
+        WSCLIENT_EXPORT static Utf8String GetImsStsAuthUrl();
         WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl();
         WSCLIENT_EXPORT static Utf8String GetPassportUrl();
 

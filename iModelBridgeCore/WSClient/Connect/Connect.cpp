@@ -75,7 +75,7 @@ Utf8String Connect::GetEulaUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Connect::GetStsUrl()
     {
-    return UrlProvider::GetConnectLearnStsAuthUri();
+    return UrlProvider::GetImsStsAuthUrl();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -189,7 +189,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        stsUrlString = UrlProvider::GetConnectLearnStsAuthUri().c_str();
+        stsUrlString = UrlProvider::GetImsStsAuthUrl().c_str();
         }
 
     return GetStsToken(creds, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());

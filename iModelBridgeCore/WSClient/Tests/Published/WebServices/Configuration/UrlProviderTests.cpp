@@ -97,14 +97,14 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectWsgUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectEulaUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectLearnStsAuthUri().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::GetImsStsAuthUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetUsageTrackingUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPassportUrl().c_str());
 
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectWsgUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectEulaUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectLearnStsAuthUri().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::GetImsStsAuthUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetUsageTrackingUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPassportUrl().c_str());
 
@@ -126,7 +126,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectWsgUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectEulaUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectLearnStsAuthUri().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::GetImsStsAuthUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetUsageTrackingUrl().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPassportUrl().c_str());
 
@@ -139,7 +139,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::GetPunchlistWsgUrl().c_str();
     UrlProvider::GetConnectWsgUrl().c_str();
     UrlProvider::GetConnectEulaUrl().c_str();
-    UrlProvider::GetConnectLearnStsAuthUri().c_str();
+    UrlProvider::GetImsStsAuthUrl().c_str();
     UrlProvider::GetUsageTrackingUrl().c_str();
     UrlProvider::GetPassportUrl().c_str();
     }
