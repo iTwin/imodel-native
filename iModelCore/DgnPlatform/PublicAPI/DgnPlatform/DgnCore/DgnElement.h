@@ -19,6 +19,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 struct Graphic : RefCountedBase {};
+
 DEFINE_REF_COUNTED_PTR(Graphic)
 
 END_BENTLEY_RENDER_NAMESPACE
@@ -32,6 +33,7 @@ struct MultiAspectMux;
 
 DEFINE_REF_COUNTED_PTR(ElementGeometry)
 
+//=======================================================================================
 //! Holds ID remapping tables
 //=======================================================================================
 struct DgnRemapTables
@@ -298,7 +300,6 @@ public:
 
         //! The subclass should override this method if it holds any IDs that must be remapped when it is copied (perhaps between DgnDbs)
         DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapIds(DgnElementCR el, DgnImportContext& context) {return DgnDbStatus::Success;}
-
     };
 
     //! Represents an ElementAspect subclass for the case where the host Element can have multiple instances of the subclass.
@@ -503,7 +504,6 @@ public:
         //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
         //! @see BentleyApi::Dgn::DgnScriptContext for an explanation of script-based EGAs.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
-    
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -563,7 +563,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
 
     //! Called after a DgnElement that was previously deleted has been reinstated by an undo.
-    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    //! @note If you override this method, you @em must call T_Super::_OnReversedDelete.
     DGNPLATFORM_EXPORT virtual void _OnReversedDelete() const;
 
     //! Called when this element is about to be replace an original element in the DgnDb.
@@ -598,7 +598,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
     //! Called after a DgnElement that was previously added has been removed by an undo.
-    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    //! @note If you override this method, you @em must call T_Super::_OnReversedAdd.
     DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
@@ -1087,8 +1087,9 @@ protected:
 
 public:
     DGNPLATFORM_EXPORT Render::GraphicPtr FindGraphic(DgnViewportCR) const;
-    DGNPLATFORM_EXPORT void CacheGraphic(Render::Graphic const&, DgnViewportCR) const;
-    DGNPLATFORM_EXPORT bool RemoveGraphic(Render::Graphic const&, DgnViewportCR) const;
+    DGNPLATFORM_EXPORT void CacheGraphic(DgnViewportCR, Render::Graphic const&) const;
+    DGNPLATFORM_EXPORT bool DropGraphic(DgnViewportCR) const;
+    DGNPLATFORM_EXPORT bool ClearGraphics() const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;

@@ -42,6 +42,7 @@ PickOutput::PickOutput()
     m_doLocateSilhouettes   = false;
     m_doLocateInteriors     = true;
     }
+PickOutput::~PickOutput() {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
@@ -1251,7 +1252,6 @@ void            PickContext::_OutputElement(GeometricElementCR element)
 QvElem* PickContext::_DrawCached(IStrokeForCache& stroker)
     {
     bool    testStroke = stroker._WantLocateByStroker();
-    bool    testCached = stroker._WantLocateByQvElem();
 
     m_output.InitStrokeForCache();
 
@@ -1261,8 +1261,10 @@ QvElem* PickContext::_DrawCached(IStrokeForCache& stroker)
     if (CheckStop())
         return nullptr;
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (testCached || m_output.GetLocateSilhouettes())
         return T_Super::_DrawCached(stroker);
+#endif
 
     return nullptr;
     }

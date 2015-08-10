@@ -806,16 +806,17 @@ virtual void    _DrawAreaPattern (ClipStencil& boundary) override
 virtual QvElem* _DrawCached (IStrokeForCache& stroker) override
     {
     bool    testStroke = stroker._WantLocateByStroker ();
-    bool    testCached = stroker._WantLocateByQvElem ();
 
     if (testStroke)
         stroker._StrokeForCache (*this);
 
+#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
     if (CheckStop ())
         return nullptr;
 
     if (testCached && nullptr != GetViewport ())
         return T_Super::_DrawCached (stroker);
+#endif
 
     return nullptr;
     }

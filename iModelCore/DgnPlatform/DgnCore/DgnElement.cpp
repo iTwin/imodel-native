@@ -1025,8 +1025,11 @@ void DgnElements::DropListener(Listener* listener)
         m_listeners->DropHandler(listener);
     }
 
-static const double s_smallVal = .0005;
-inline static void fixRange(double& low, double& high) {if (low==high) {low-=s_smallVal; high+=s_smallVal;}}
+
+BEGIN_UNNAMED_NAMESPACE
+static const double halfMillimeter() {return .5 * DgnUnits::OneMillimeter();}
+static void fixRange(double& low, double& high) {if (low==high) {low-=halfMillimeter(); high+=halfMillimeter();}}
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
@@ -1061,8 +1064,8 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
     // low and high are not allowed to be equal
     fixRange(range.low.x, range.high.x);
     fixRange(range.low.y, range.high.y);
-    range.low.z = -s_smallVal;
-    range.high.z = s_smallVal;
+    range.low.z = -halfMillimeter();
+    range.high.z = halfMillimeter();
 
     return range;
     }
