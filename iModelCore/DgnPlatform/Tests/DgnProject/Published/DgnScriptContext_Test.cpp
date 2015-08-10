@@ -197,7 +197,7 @@ TEST(DgnScriptTest, Test2)
 
     BeFileName jsFileName;
     BeTest::GetHost().GetDocumentsRoot (jsFileName);
-    jsFileName.AppendToPath(L"DgnScriptTest.js");
+    jsFileName.AppendToPath(L"DgnDb/DgnScriptTest.js");
 
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
