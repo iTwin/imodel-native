@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
