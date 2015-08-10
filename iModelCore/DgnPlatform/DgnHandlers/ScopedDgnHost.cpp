@@ -76,7 +76,7 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      07/15
 //=======================================================================================
-struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptingAdmin
+struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
 {
     ScopedDgnHost::FetchScriptCallback* m_callback;
 
@@ -106,7 +106,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     LineStyleAdmin& _SupplyLineStyleAdmin() override;
     NotificationAdmin& _SupplyNotificationAdmin () override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-    ScriptingAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
+    ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 

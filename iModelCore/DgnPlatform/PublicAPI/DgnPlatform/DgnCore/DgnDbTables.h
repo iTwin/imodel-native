@@ -155,7 +155,7 @@ struct DgnCategories : DgnDbTable
             double          m_transparency;
 
         public:
-            void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate();}
+            void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
             Appearance() {Init();}
             explicit Appearance(Utf8StringCR val) {FromJson(val);}
 
@@ -1621,7 +1621,7 @@ public:
 //! @see ComponentModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct DgnComponentSolutions : DgnDbTable
+struct ComponentModelSolution : DgnDbTable
 {
     DEFINE_T_SUPER(DgnDbTable)
 
@@ -1635,7 +1635,7 @@ public:
         DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
         };
 
-    DgnComponentSolutions(DgnDbR db) : T_Super(db) {;}
+    ComponentModelSolution(DgnDbR db) : T_Super(db) {;}
 
     //! @name Capturing Solutions
     //@{

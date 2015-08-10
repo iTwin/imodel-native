@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 
 DgnElement::Item::Key   DgnElement::Item::s_key;
 
@@ -298,6 +298,25 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     CallAppData(OnUpdatedCaller(*this, original));
 
     GetModel()->_OnUpdatedElement(*this, original);
+    }
+
+struct OnUpdateReversedCaller
+    {
+    DgnElementCR m_updated, m_original;
+    OnUpdateReversedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnReversedUpdate(m_updated, m_original);}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnReversedUpdate(DgnElementCR original) const
+    {
+    // we need to call the events on BOTH sets of appdata
+    original.CallAppData(OnUpdateReversedCaller(*this, original));
+    CallAppData(OnUpdateReversedCaller(*this, original));
+
+    GetModel()->_OnReversedUpdateElement(*this, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1849,9 +1868,8 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
         return DgnDbStatus::BadArg;
 
-    DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
     int retval;
-    DgnDbStatus xstatus = som.ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
+    DgnDbStatus xstatus = DgnScript::ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
     if (xstatus != DgnDbStatus::Success)
         return xstatus;
 

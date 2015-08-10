@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnCore/DgnScriptContext.h $
+|     $Source: PublicAPI/DgnPlatform/DgnCore/DgnScript.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,30 +12,18 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
-struct DgnScriptContextImpl;
-
 //=======================================================================================
 //! Enables JavaScript programs to access the DgnPlatform API.
-//! DgnScriptContext creates a set of JavaScript types and functions that expose native Dgn and BentleyApi types to JavaScript functions. These types and functions are collectively known as the DgnPlatform API for JavaScript.
-//! DgnScriptContext also provides functions to allow native code to invoke JavaScript functions. See DgnScriptContext::ExecuteJavaScriptEga.
+//! DgnScript creates a set of JavaScript types and functions that expose native Dgn and BentleyApi types to JavaScript functions. These types and functions are collectively known as the DgnPlatform API for JavaScript.
+//! DgnScript also provides functions to allow native code to invoke JavaScript functions. See DgnScript::ExecuteJavaScriptEga.
 //! @section JavaScriptLibrary The JavaScript Library
 //! JavaScript programs are loaded from the JavaScript library. The \a myNamespace portion of the myNamespace.myEgaPublicName EGA identifier string must identify a program in the library.
 //! <p>The JavaScript library is a virtual storage. An application may use the DgnJavaScriptLibrary class to store a JavaScript program inside a DgnDb. 
-//! Or, an application may override the Dgn::DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
+//! Or, an application may override the Dgn::DgnPlatformLib::Host::ScriptAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct DgnScriptContext
+struct DgnScript
 {
-private:
-    friend struct DgnScriptContextImpl;
-    DgnScriptContextImpl* m_pimpl;
-
-public:
-    DGNPLATFORM_EXPORT DgnScriptContext(BeJsEnvironmentR);
-    DGNPLATFORM_EXPORT ~DgnScriptContext();
-   
-    DgnScriptContextImpl* GetImpl() {return m_pimpl;}
-
     /**
     Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. 
     An EGA is identified by a two-part name, of the form namespace.function. 
@@ -90,7 +78,7 @@ public:
     @param[in] parms        Any additional parameters to pass to the EGA function. 
     @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
     /**
     Call a DgnModel validation solver function that is implemented in JavaScript.
@@ -132,7 +120,7 @@ public:
     @param[in] parms        The parameters to pass to the solver. 
     @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
 }; 
 
 END_BENTLEY_DGN_NAMESPACE

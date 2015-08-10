@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/ts/DgnScriptContextBootstrapper.cpp $
+|     $Source: DgnScript/ts/DgnScriptBootstrapper.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,6 +13,6 @@
 //---------------------------------------------------------------------------------------
 Utf8CP dgnScriptContext_GetBootstrappingSource()
     {
-    static Utf8Char source[] = __OBJECTMODELJSSOURCE__;
+    static Utf8Char source[] = __DGNSCRIPTJSSOURCE__;
     return source;
     }

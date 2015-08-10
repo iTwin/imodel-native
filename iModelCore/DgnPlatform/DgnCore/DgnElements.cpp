@@ -1049,6 +1049,8 @@ void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& c
         {
         DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
         BeAssert(postModified.IsValid());
+        postModified->_OnReversedUpdate(*el);
+
         elements.FinishUpdate(*postModified.get(), *el);
         }
     }
@@ -1275,8 +1277,6 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
     {
-    replacement._OnUpdated(original);
-
     uint32_t oldSize = original._GetMemSize(); // save current size
     (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
     ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
@@ -1328,6 +1328,7 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     if (parent.IsValid())
         parent->_OnChildUpdated(replacement);
 
+    replacement._OnUpdated(element);
     FinishUpdate(replacement, element);
     return &element;
     }

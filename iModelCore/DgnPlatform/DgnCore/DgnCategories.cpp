@@ -476,7 +476,7 @@ template<typename T>
 static DgnSubCategoryId importSubCategory(DgnDbR targetDb, DgnCategoryId targetcatid, T const& sourceSubCat)
     {
     DgnCategories::SubCategory::Appearance sourceAppearance = sourceSubCat.GetAppearance();
-    // *** TBD: Translate style IDS in sourceAppearance
+    // *** WIP_IMPORT: Translate style IDS in sourceAppearance
 
     DgnCategories::SubCategory targetsubcat(targetcatid, DgnSubCategoryId(), sourceSubCat.GetCode(), sourceAppearance, sourceSubCat.GetDescription(), ToUtf8CP(sourceSubCat.GetLabel()));
     targetDb.Categories().InsertSubCategory(targetsubcat);
@@ -514,7 +514,7 @@ static DgnSubCategoryId importSubCategory(DgnRemapTables& remap, DgnDbR destDb, 
 static DgnCategoryId importCategory(DgnDbR targetDb, DgnDbR sourceDb, DgnCategories::Category const& sourcecat)
     {
     DgnCategories::SubCategory::Appearance targetAppearance = sourceDb.Categories().QuerySubCategory(DgnCategories::DefaultSubCategoryId(sourcecat.GetCategoryId())).GetAppearance();
-    // *** TBD: Translate style IDS in targetAppearance
+    // *** WIP_IMPORT: Translate style IDS in targetAppearance
 
     DgnCategories::Category targetcat(sourcecat.GetCode(), DgnCategories::Scope::Physical, sourcecat.GetDescription());
     targetDb.Categories().Insert(targetcat, targetAppearance);

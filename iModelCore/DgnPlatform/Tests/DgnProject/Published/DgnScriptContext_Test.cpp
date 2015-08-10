@@ -8,7 +8,7 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -75,7 +75,7 @@ static void checkGeomStream(GeometricElementCR gel, ElementGeometry::GeometryTyp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnScriptContextTest, Test1)
+TEST(DgnScriptTest, Test1)
     {
     ScopedDgnHost  autoDgnHost;
 
@@ -101,20 +101,16 @@ TEST(DgnScriptContextTest, Test1)
     YawPitchRollAngles angles;
     Json::Value parms (Json::objectValue);
 
-    DgnPlatformLib::Host& host = T_HOST;
-    DgnPlatformLib::Host::ScriptingAdmin& admin = host.GetScriptingAdmin();
-    DgnScriptContextR context = admin.GetDgnScriptContext();
-
     for (int i=0; i<2; ++i)
         {
         int sres = -1;
-        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
+        DgnDbStatus xstatus = DgnScript::ExecuteEga(sres, *el, "DgnScriptTest.TestEga", org, angles, parms);
         ASSERT_NE( DgnDbStatus::Success , xstatus ) << "Haven't registered the EGA yet";
         ASSERT_NE( 0 , sres );
         }
 
     JsProg jsProg;
-    jsProg.m_jsProgramName = "DgnScriptContextTest";
+    jsProg.m_jsProgramName = "DgnScriptTest";
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
@@ -124,8 +120,8 @@ TEST(DgnScriptContextTest, Test1)
         return 0;\
     } \
     function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\
-    BentleyApi.Dgn.RegisterEGA('DgnScriptContextTest.TestEga', testEga); \
-    BentleyApi.Dgn.RegisterEGA('DgnScriptContextTest.TestEgaBadReturn', testEgaBadReturn); \
+    BentleyApi.Dgn.RegisterEGA('DgnScriptTest.TestEga', testEga); \
+    BentleyApi.Dgn.RegisterEGA('DgnScriptTest.TestEgaBadReturn', testEgaBadReturn); \
 })();\
 ";
 
@@ -140,7 +136,7 @@ TEST(DgnScriptContextTest, Test1)
     for (int i=0; i<niters; ++i)
         {
         int sres;
-        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
+        DgnDbStatus xstatus = DgnScript::ExecuteEga(sres, *el, "DgnScriptTest.TestEga", org, angles, parms);
         ASSERT_EQ( DgnDbStatus::Success , xstatus );
         ASSERT_EQ( 0 , sres );
 
@@ -154,14 +150,14 @@ TEST(DgnScriptContextTest, Test1)
         parms["Z"] = parms["Z"].asDouble() + 1;
         }
     timeIt.Stop();
-    BeTest::Log("DgnScriptContextTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
+    BeTest::Log("DgnScriptTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
 
     // Check that attempting to call a non-registered function fails with a non-zero xstatus
     if (true)
         {
         int sres = -1;
         BeTest::SetFailOnAssert(false);
-        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEgaNotRegistered", org, angles, parms);
+        DgnDbStatus xstatus = DgnScript::ExecuteEga(sres, *el, "DgnScriptTest.TestEgaNotRegistered", org, angles, parms);
         BeTest::SetFailOnAssert(true);
         ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function is not registered so the attempt should fail";
         ASSERT_EQ( -1 , sres );
@@ -172,10 +168,41 @@ TEST(DgnScriptContextTest, Test1)
         {
         int sres = -1;
         BeTest::SetFailOnAssert(false);
-        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEgaBadReturn", org, angles, parms);
+        DgnDbStatus xstatus = DgnScript::ExecuteEga(sres, *el, "DgnScriptTest.TestEgaBadReturn", org, angles, parms);
         BeTest::SetFailOnAssert(true);
         ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function should not be callable so the attempt should fail";
         ASSERT_EQ( -1 , sres );
         }
     }
+
+/*=================================================================================**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++===============+===============+===============+===============+===============+======*/
+struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
+    {
+    void _HandleScriptError(BeJsContextR, Category category, Utf8CP description) override
+        {
+        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s", (int)category, description);
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(DgnScriptTest, Test2)
+    {
+    ScopedDgnHost  autoDgnHost;
+
+    T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
+
+    BeFileName jsFileName;
+    BeTest::GetHost().GetDocumentsRoot (jsFileName);
+    jsFileName.AppendToPath(L"DgnDb/DgnScriptTest.js");
+
+    Utf8String jsProgram;
+    DgnScriptLibrary::ReadText(jsProgram, jsFileName);
+
+    T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
+    }
+
 #endif

@@ -1,15 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/DgnScriptContextImpl.h $
+|     $Source: DgnScript/DgnJsApi.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifndef _DGN_SCRIPT_CONTEXT_IMPL_H_
-#define _DGN_SCRIPT_CONTEXT_IMPL_H_
+#ifndef _DGN_JS_API_H_
+#define _DGN_JS_API_H_
 
 #include <BeJavaScript/BeJavaScript.h>
 #include <DgnPlatform/DgnPlatform.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/DgnElement.h>
 #include <DgnPlatform/DgnCore/DgnModel.h>
 #include <Geom/DPoint3d.h>
@@ -20,15 +21,28 @@ extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                                    Steve.Wilson    7/15
+// Needed by generated callbacks to construct instances of wrapper classes.
+// @bsiclass                                                    Sam/Steve.Wilson    7/15
 //=======================================================================================
-struct RefCountedBaseWithCreate : public RefCountedBase
+struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
 {
     template <typename T, typename... Arguments>
     static RefCountedPtr<T> Create (Arguments&&... arguments)
         {
         return new T (std::forward<Arguments> (arguments)...);
         };
+
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsUtils : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derived from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
+{
+    static void ImportLibrary (Utf8StringCR libName);
+    static void ReportError(Utf8StringCR description);
 };
 
 //=======================================================================================
@@ -125,34 +139,19 @@ struct JsElementGeometryBuilder : RefCountedBaseWithCreate
 typedef JsElementGeometryBuilder* JsElementGeometryBuilderP;
 
 //=======================================================================================
-// This class holds the one and only BeJsEnvironment and BeJsContext for the session.
-// It defines all of the DgnScript Object Model proxies and registers them in Script.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct DgnScriptContextImpl : BeJsContext
+struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
 {
-    // -------------------------------
-    // Member variables
-    // -------------------------------
-    BeJsObject m_egaRegistry;
-    BeJsObject m_modelSolverRegistry;
-    bset<Utf8String> m_jsScriptsExecuted;
+    BeJsContextR m_context;
 
-    // -------------------------------
-    // Member functions
-    // -------------------------------
-    DgnScriptContextImpl(BeJsEnvironmentR);
-    ~DgnScriptContextImpl();
-    DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
-    DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
-    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
+    DgnJsApi(BeJsContextR);
+    ~DgnJsApi();
 
-    static BeJsContext::Projection* InitializeJsProjections (BeJsContext& context);
-
-    static void DestroyJsProjections (BeJsContext& context, BeJsContext::Projection*);
+    void _ImportScriptLibrary(BeJsContextR, Utf8CP) override;
 };
 
 END_BENTLEY_DGN_NAMESPACE
 
-#endif//ndef _DGN_SCRIPT_CONTEXT_IMPL_H_
+#endif//ndef _DGN_JS_API_H_
 

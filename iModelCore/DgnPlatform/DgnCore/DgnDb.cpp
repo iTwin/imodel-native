@@ -329,7 +329,7 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
     stmt.BindText(4, tsProgramText, Statement::MakeCopy::No);
     DbResult res = stmt.Step();
     
-    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("Registering %s -> %d", tsProgramName, res);
+    NativeLogging::LoggingManager::GetLogger("DgnScript")->infov ("Registering %s -> %d", tsProgramName, res);
     
     return (BE_SQLITE_DONE == res)? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
     }
