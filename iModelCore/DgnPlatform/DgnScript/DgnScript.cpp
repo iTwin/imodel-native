@@ -215,8 +215,10 @@ DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
     if (nullptr != m_jsContext)
         delete m_jsContext;
+#ifdef WIP_BEJAVASCRIPT // *** This triggers an assertion failure because JsDisposeRuntime returns JsErrorRuntimeInUse
     if (nullptr != m_jsenv)
         delete m_jsenv;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -259,8 +261,8 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     //  *************************************************************
     //  Register other core projections here
     //  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    RegisterScriptLibraryImporter("BentleyApi.Geom", *new DgnJsApi(*m_jsContext));
-    ImportScriptLibrary("BentleyApi.Geom");
+    //RegisterScriptLibraryImporter("BentleyApi.Geom", *new DgnJsApi(*m_jsContext));
+    //ImportScriptLibrary("BentleyApi.Geom");
 
 
 
