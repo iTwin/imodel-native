@@ -34,13 +34,6 @@ const UrlData UrlProvider::s_punchListWsgUrl[3] = {
     {"https://connect-wsg20.bentley.com", 1230}
     };
 
-// CONNECT 1.1
-//const Utf8String UrlProvider::s_connectWsgUrl[3] = {
-//    "https://qa-connectgateway-eus.cloudapp.net",
-//    "https://qa-connectgateway-eus.cloudapp.net",
-//    "https://prod-connectgateway-eus.cloudapp.net"
-//    };
-
 const UrlData UrlProvider::s_connectWsgUrl[3] = {
     {"https://dev-wsg20-eus.cloudapp.net", 103},
     {"https://qa-wsg20-eus.cloudapp.net", 102},
