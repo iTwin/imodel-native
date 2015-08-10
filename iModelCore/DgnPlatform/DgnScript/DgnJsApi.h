@@ -21,18 +21,6 @@ extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                                    Steve.Wilson    7/15
-//=======================================================================================
-struct RefCountedBaseWithCreate : RefCountedBase
-{
-    template <typename T, typename... Arguments>
-    static RefCountedPtr<T> Create (Arguments&&... arguments)
-        {
-        return new T (std::forward<Arguments> (arguments)...);
-        };
-};
-
-//=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 struct JsUtils : RefCountedBaseWithCreate
