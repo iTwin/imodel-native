@@ -786,7 +786,7 @@ public:
 * This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category before creating the ComponentModel.
 * See #GetElementCategoryName for the name of this category.
 * Elements in the ComponentModel that are not assigned to the Element Category are considered to be construction elements and are not harvested.
-* @see DgnScript, DgnComponentModelSolutions
+* @see DgnScript, ComponentModelSolution
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
