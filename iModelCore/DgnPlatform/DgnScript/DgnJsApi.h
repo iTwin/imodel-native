@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#ifndef _DGN_SCRIPT_CONTEXT_IMPL_H_
-#define _DGN_SCRIPT_CONTEXT_IMPL_H_
+#ifndef _DGN_JS_API_H_
+#define _DGN_JS_API_H_
 
 #include <BeJavaScript/BeJavaScript.h>
 #include <DgnPlatform/DgnPlatform.h>
@@ -137,5 +137,5 @@ struct DgnJsApi : DgnPlatformLib::Host::ScriptAdmin::ScriptLibraryImporter
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#endif//ndef _DGN_SCRIPT_CONTEXT_IMPL_H_
+#endif//ndef _DGN_JS_API_H_
 
