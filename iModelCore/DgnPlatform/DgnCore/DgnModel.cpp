@@ -563,6 +563,14 @@ void DgnModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnReversedUpdateElement(DgnElementCR modified, DgnElementCR original)
+    {
+    UpdateRangeIndex(modified, original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const

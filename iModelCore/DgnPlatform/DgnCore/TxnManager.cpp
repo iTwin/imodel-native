@@ -24,6 +24,24 @@ struct ChangesBlobHeader
 };
 END_UNNAMED_NAMESPACE
 
+
+#if !defined (NDEBUG)
+//=======================================================================================
+//! for debugging, BeAssert if anyone tries to write a transactionable change while this object is on the stack.
+//! @bsiclass                                                     Keith.Bentley   03/07
+//=======================================================================================
+struct  IllegalTxnMark
+{
+    DgnDbR m_db;
+    IllegalTxnMark(DgnDbR db) : m_db(db) {db.ExecuteSql("pragma query_only=TRUE");}
+    ~IllegalTxnMark() {m_db.ExecuteSql("pragma query_only=FALSE");}
+};
+
+#define ILLEGAL_TXN_MARK(db) IllegalTxnMark _v(db)
+#else
+#define ILLEGAL_TXN_MARK(db) 
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -261,6 +279,8 @@ BentleyStatus TxnManager::PropagateChanges()
     {
     if (!m_propagateChanges)
         return BSISUCCESS;
+
+    ILLEGAL_TXN_MARK(m_dgndb);
 
     SetIndirectChanges(true);
     for (auto table :  m_tables)
@@ -532,9 +552,11 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
     {
     BeAssert(!HasChanges());
 
+    ILLEGAL_TXN_MARK(m_dgndb);
+
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
-    BeAssert (rc == BE_SQLITE_OK);
+    BeAssert(rc == BE_SQLITE_OK);
     EnableTracking(wasTracking);
 
     OnChangesetApplied(changeset, action);

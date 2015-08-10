@@ -299,6 +299,25 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     GetModel()->_OnUpdatedElement(*this, original);
     }
 
+struct OnUpdateReversedCaller
+    {
+    DgnElementCR m_updated, m_original;
+    OnUpdateReversedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnReversedUpdate(m_updated, m_original);}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnReversedUpdate(DgnElementCR original) const
+    {
+    // we need to call the events on BOTH sets of appdata
+    original.CallAppData(OnUpdateReversedCaller(*this, original));
+    CallAppData(OnUpdateReversedCaller(*this, original));
+
+    GetModel()->_OnReversedUpdateElement(*this, original);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/

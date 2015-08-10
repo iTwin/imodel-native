@@ -361,6 +361,13 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
 
+    //! Called after an DgnElement that was previously updated has been reversed by undo.
+    //! @param[in] original The element in its original state. This is the state before the original change (the current state)
+    //! @param[in] modified The element in its post-changed (now reversed) state.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR original, DgnElementCR modified);
+
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
