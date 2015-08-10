@@ -462,7 +462,8 @@ bool Utf8String::StartsWith(Utf8CP value) const
     if (valueLen > size())
         return false;
     
-    return (0 == memcmp(c_str(), value, sizeof(Utf8CP) * valueLen));
+    Utf8String temp = this->substr (0, valueLen);
+    return (0 == temp.CompareTo (value));
     }
 
 //---------------------------------------------------------------------------------------
