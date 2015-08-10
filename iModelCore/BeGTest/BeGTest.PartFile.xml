@@ -1,52 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<!-- A note about how unit tests are provided and consumed.
-    A repository is typically associated with a separate repository that contains unit tests for it. The convention is to add "UnitTests" to the name of the repository when naming the unit tests repository.
-    So, for example, the BentleyUnitTests repository contains unit tests for the Bentley repository.
-    Each unit test repository has its own partfile, where it defines parts that provide access to its unit tests *as source files*.
-    Unit tests are *compiled* by parts in the associated repository.
-    Unit test objects are consumed by unit test runners. These are programs or projects that execute unit tests on a particular platform in its native unit test framework.
-    Unit test source is portable. The same unit test source is compiled, linked, and executed differently on different platforms.
-
-    Here is a simplified diagram showing how unit tests are compiled, linked, and run. It should be understood that the test runners sub-part unit test parts
-    from many repositories and link them all together. Only the Bentley unit tests are shown in this example diagram.
-
-                                                                                    .objs from other repos...
-                                                                                                |
-                                                                                                V
-                                         .cpp                                       .obj                            .exe
-                                           - > Bentley:GUnitTests_Published_Bentley - - > BeGTest:BeGTestExe        - - > Executed as a command line program.
-                                         /
-    BentleyUnitTests:UnitTests_Published
-                                         \ - > Bentley:BUnitTests_Published_Bentley - - > BeGTest:BeGTestStaticLib  - - > BeTestiOS:MakeSenTestProject - - >    Built and executed in XCode
-                                         .cpp                                       .a                              .a                               .xcodeproj
-                                                                                                ^
-                                                                                                |
-                                                                                    .a's from other repos ...
-
-    See BeTestiOS, BeTestAndroid, and BeTestWinRT
-
--->
-
-<!-- A note about "G" and "B" tests.
-
-    At the source level, our unit tests are portable to multiple platforms and unit testing frameworks .
-
-    One of the ways that we make our tests portable to various unit testing frameworks is to use macros to define the touch points between the test
-    logic and the test runner framework. See BeTest.h for these macros. When building for Windows, we use the native
-    gtest macros. When building for other unit testing frameworks such as SenTesting or JUnit, we re-define these macros to call portable functions that we implement.
-
--->
-
-
-<!-- Unit test documents
-
-    Some unit tests take .dgndb files as inputs. In a Windows build, we normally generate these files as part of the build by calling SampleIDgnToIDgnDbPublisher.exe.
-    On non-Windows platforms, we must get prebuilt .dgndb files as LKGs.
-    Therefore production of these documents is set up as a product.
-
--->
-
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
               xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd"
               >
@@ -54,7 +7,7 @@
     <!-- ********************************************************************************************** -->
     <!-- BeGtest
                 This produces a test runner that is a very thin wrapper around gtest. It currently
-                builds and runs only on Windows.
+                builds and runs on Windows, Linues, and MacOS.
     -->
     <!-- ********************************************************************************************** -->
 
