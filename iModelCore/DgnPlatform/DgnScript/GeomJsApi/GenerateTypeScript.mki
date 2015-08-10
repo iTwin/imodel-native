@@ -1,13 +1,13 @@
 #--------------------------------------------------------------------------------------
 #
-#     $Source: DgnScript/GenerateTypeScript.mki $
+#     $Source: DgnScript/GeomJsApi/GenerateTypeScript.mki $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %ifdef BENTLEYCONFIG_NO_JAVASCRIPT
 
-    $(BuildContext)Delivery/DgnJsApi.d.ts : $(_MakeFileSpec)
+    $(BuildContext)Delivery/GeomJsApi.d.ts : $(_MakeFileSpec)
         $(LinkFirstDepToFirstTarget)
 
     %return
@@ -29,25 +29,23 @@ always:
     !~@mkdir $(dgnScriptGen)
     !~@mkdir $(dgnScriptGen)DgnPlatform
 
-dgnScriptTsDir = $(dgnScriptDir)ts/ts/
-
-#cUser + -EP
+geomJsApiTsDir = $(dgnScriptDir)GeomJsApi/ts/
 
 # ---------------------------------------------------------------------------------------------------------------
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-$(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnScriptTsDir)DgnJsApi.d.ts $(dgnScriptTsDir)DgnJsApiCallbacksTemplate.cpp $(dgnScriptTsDir)DgnJsApiProjectionTemplate.h $(DgnPlatformAPISrc)DgnJsApi.h
+$(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts $(geomJsApiTsDir)GeomJsApiCallbacksTemplate.cpp $(geomJsApiTsDir)GeomJsApiProjectionTemplate.h $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
-        --declarationPath "$(dgnScriptTsDir)DgnJsApi.d.ts" \
-        --nativeOutputTemplatePath "$(dgnScriptTsDir)DgnJsApiCallbacksTemplate.cpp" \
-        --nativeOutputHeaderTemplatePath "$(dgnScriptTsDir)DgnJsApiProjectionTemplate.h" \
+        --declarationPath "$(geomJsApiTsDir)GeomJsApi.d.ts" \
+        --nativeOutputTemplatePath "$(geomJsApiTsDir)GeomJsApiCallbacksTemplate.cpp" \
+        --nativeOutputHeaderTemplatePath "$(geomJsApiTsDir)GeomJsApiProjectionTemplate.h" \
         --nativeSourcePaths "$(DgnPlatformAPISrc)DgnPlatform.h" \
-        --typeScriptOutputPath "$(dgnScriptGen)DgnJsApi.ts" \
-        --nativeOutputPath "$(dgnScriptGen)DgnJsApiCallbacks.cpp" \
-        --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h" \
-        --projectionTypeName "BentleyApi::Dgn::DgnJsApiProjection" \
+        --typeScriptOutputPath "$(dgnScriptGen)GeomJsApi.ts" \
+        --nativeOutputPath "$(dgnScriptGen)GeomJsApiCallbacks.cpp" \
+        --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/GeomJsApiProjection.h" \
+        --projectionTypeName "BentleyApi::Dgn::GeomJsApiProjection" \
         --refCountedBaseType "BentleyApi::Dgn::RefCountedBaseWithCreate" \
         --platformTsLibPath "$(BuildContext)SubParts/BeJavaScriptJs/BeJavaScriptTypes.ts" \
         --forceBuiltInTsTypes \
@@ -56,9 +54,9 @@ $(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnScriptTsDir)DgnJsApi.d.ts $(dgnScrip
     ~time
 
 
-tsSourceFiles = $(dgnScriptGen)DgnJsApi.ts $(dgnScriptTsDir)_references.ts $(dgnScriptGen)GeomJsApi.d.ts
+tsSourceFiles = $(dgnScriptGen)GeomJsApi.ts $(geomJsApiTsDir)_references.ts
 
-# The rule below *also* outputs $(dgnScriptGen)DgnJsApi.d.ts
+# The rule below *also* outputs $(dgnScriptGen)GeomJsApi.d.ts
 # I didn't list that as an output, because ~time won't update it
 
 %if !defined(NDEBUG)
@@ -66,19 +64,19 @@ tsSourceFiles = $(dgnScriptGen)DgnJsApi.ts $(dgnScriptTsDir)_references.ts $(dgn
 %endif
 
 
-$(dgnScriptGen)DgnJsApi.js : $(tsSourceFiles)
+$(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)DgnJsApi.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(dgnScriptGen)GeomJsApi.js
     ~time
 
-$(dgnScriptGen)DgnScriptBootstrap.cpp : $(dgnScriptGen)DgnJsApi.js
+$(dgnScriptGen)GeomJsApiBootstrap.cpp : $(dgnScriptGen)GeomJsApi.js $(geomJsApiTsDir)GeomJsApiBootstrap.cpp
     $(msg)
-    python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__DGNSCRIPTJSSOURCE__=$(dgnScriptGen)DgnJsApi.js" \
-                                          --nativeSourceFile $(dgnScriptDir)ts/DgnScriptBootstrapper.cpp \
-                                          --outputPath $(dgnScriptGen)DgnScriptBootstrap.cpp
+    python $(BuildContext)SubParts/BeJavaScriptTools/mergeJsSourceDeliveryFiles.py --jsSourceFiles "__GEOMSCRIPTJSSOURCE__=$(dgnScriptGen)GeomJsApi.js" \
+                                          --nativeSourceFile $(geomJsApiTsDir)GeomJsApiBootstrap.cpp \
+                                          --outputPath $(dgnScriptGen)GeomJsApiBootstrap.cpp
     ~time
 
 
 
-$(BuildContext)Delivery/DgnJsApi.d.ts : $(dgnScriptGen)DgnJsApi.d.ts
+$(BuildContext)Delivery/GeomJsApi.d.ts : $(dgnScriptGen)GeomJsApi.d.ts
     $(LinkFirstDepToFirstTarget)

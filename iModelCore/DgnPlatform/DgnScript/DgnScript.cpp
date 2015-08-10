@@ -12,7 +12,8 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include "DgnJsApi.h"
+#include <DgnPlatform/GeomJsApi.h>
+#include <DgnPlatform/DgnJsApi.h>
 #include <DgnPlatform/DgnJsApiProjection.h>
 
 extern Utf8CP dgnScriptContext_GetBootstrappingSource();
@@ -30,7 +31,7 @@ struct DgnScriptContext : BeJsContext
 
     void Initialize()
         {
-        EvaluateScript(dgnScriptContext_GetBootstrappingSource());
+        EvaluateScript(dgnScriptContext_GetBootstrappingSource(), "file:///DgnJsApi.js");
         
         m_egaRegistry = EvaluateScript("BentleyApi.Dgn.GetEgaRegistry()");
         m_modelSolverRegistry = EvaluateScript("BentleyApi.Dgn.GetModelSolverRegistry()");

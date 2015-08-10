@@ -12,7 +12,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include "DgnJsApi.h"
+#include <DgnPlatform/DgnJsApi.h>
 #include <DgnPlatform/DgnJsApiProjection.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
