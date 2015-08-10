@@ -400,7 +400,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
@@ -422,6 +421,12 @@
     </ClInclude>
     <ClInclude Include="ECDbPch.h">
       <Filter>Mke</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h">
+      <Filter>PublicApi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
