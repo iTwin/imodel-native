@@ -357,11 +357,11 @@ Utf8StringR Utf8String::TrimEnd()
     if (empty())
         return *this;
 
-    size_t lastNonSpaceIdx = length() - 1;
-    for (; (lastNonSpaceIdx > 0) && isspace(at(lastNonSpaceIdx)); --lastNonSpaceIdx)
+    size_t nonSpaceCharacterCount = length();
+    for (; (nonSpaceCharacterCount > 0) && isspace(at(nonSpaceCharacterCount - 1)); --nonSpaceCharacterCount)
         ;
 
-    erase((begin() + lastNonSpaceIdx + 1), end());
+    erase((begin() + nonSpaceCharacterCount), end());
     return *this;
     }
 

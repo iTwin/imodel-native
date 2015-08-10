@@ -108,10 +108,10 @@ public:
     typedef T element_type;
 
     RefCountedPtr() : m_p(nullptr) {}
-    ~RefCountedPtr() {if (m_p != nullptr) m_p->Release ();}
-    RefCountedPtr(T* p, bool add_ref = true) : m_p(p) {if (m_p != nullptr && add_ref) m_p->AddRef ();}
-    template<class U> RefCountedPtr(RefCountedPtr<U> const & rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef ();}
-    RefCountedPtr(RefCountedPtr const& rhs): m_p(rhs.m_p) {if (m_p != nullptr) m_p->AddRef ();}
+    ~RefCountedPtr() {if (m_p != nullptr) m_p->Release();}
+    RefCountedPtr(T* p, bool add_ref = true) : m_p(p) {if (m_p != nullptr && add_ref) m_p->AddRef();}
+    template<class U> RefCountedPtr(RefCountedPtr<U> const & rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef();}
+    RefCountedPtr(RefCountedPtr const& rhs): m_p(rhs.m_p) {if (m_p != nullptr) m_p->AddRef();}
     RefCountedPtr(RefCountedPtr&& rhs) : m_p(std::move(rhs.m_p)){rhs.m_p = nullptr;}
     RefCountedPtr& operator=(RefCountedPtr&& rhs) {RefCountedPtr(std::move(rhs)).swap(*this); return *this;}
 
@@ -147,11 +147,11 @@ public:
     typedef T element_type;
 
     RefCountedCPtr() : m_p(nullptr) {}
-    ~RefCountedCPtr() {if (m_p != nullptr) m_p->Release ();}
-    RefCountedCPtr(T const* p, bool add_ref = true) : m_p(p){if (m_p != nullptr && add_ref) m_p->AddRef ();}
-    template<class U> RefCountedCPtr(RefCountedCPtr<U> const & rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef ();}
-    RefCountedCPtr(RefCountedCPtr const& rhs) : m_p(rhs.m_p) {if (m_p != nullptr) m_p->AddRef ();}
-    RefCountedCPtr(RefCountedPtr<T> const& rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef ();}
+    ~RefCountedCPtr() {if (m_p != nullptr) m_p->Release();}
+    RefCountedCPtr(T const* p, bool add_ref = true) : m_p(p){if (m_p != nullptr && add_ref) m_p->AddRef();}
+    template<class U> RefCountedCPtr(RefCountedCPtr<U> const & rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef();}
+    RefCountedCPtr(RefCountedCPtr const& rhs) : m_p(rhs.m_p) {if (m_p != nullptr) m_p->AddRef();}
+    RefCountedCPtr(RefCountedPtr<T> const& rhs) : m_p(rhs.get()) {if (m_p != nullptr) m_p->AddRef();}
     RefCountedCPtr(RefCountedCPtr&& rhs) : m_p(std::move(rhs.m_p)) {rhs.m_p = nullptr;}
     RefCountedCPtr& operator=(RefCountedCPtr&& rhs) {RefCountedCPtr(std::move(rhs)).swap(*this); return *this;}
 

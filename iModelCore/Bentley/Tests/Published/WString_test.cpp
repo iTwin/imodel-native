@@ -531,6 +531,28 @@ TEST(Utf8String_Test, EndsWith_EndingLongerThanString_False)
     EXPECT_FALSE(Utf8String("AAA").EndsWith("AAAA"));
     }
 
+TEST(Utf8String_Test, TrimEnd_WhiteSpaceNotAtTheEnd_LeavesAsItIs)
+    {
+    EXPECT_STREQ("A B", Utf8String("A B").TrimEnd().c_str());
+    EXPECT_STREQ(" A", Utf8String(" A").TrimEnd().c_str());
+    EXPECT_STREQ("A\nB", Utf8String("A\nB").TrimEnd().c_str());
+    }
+
+TEST(Utf8String_Test, TrimEnd_WhiteSpaceAtTheEnd_TrimsWhiteSpace)
+    {
+    EXPECT_STREQ("A", Utf8String("A\n").TrimEnd().c_str());
+    EXPECT_STREQ("B", Utf8String("B ").TrimEnd().c_str());
+    EXPECT_STREQ("C", Utf8String("C \n  \t ").TrimEnd().c_str());
+    EXPECT_STREQ("\n D", Utf8String("\n D \n  \t ").TrimEnd().c_str());
+    }
+
+TEST(Utf8String_Test, TrimEnd_ContainsOnlyWhiteSpace_LeavesEmptyString)
+    {
+    EXPECT_STREQ("", Utf8String("").TrimEnd().c_str());
+    EXPECT_STREQ("", Utf8String(" ").TrimEnd().c_str());
+    EXPECT_STREQ("", Utf8String("\r\n").TrimEnd().c_str());
+    }
+
 TEST(WString_test, Operators)
     {
     WString a (L"abc");
