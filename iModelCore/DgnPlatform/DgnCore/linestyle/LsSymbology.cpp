@@ -7,6 +7,47 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+//  Logic to make a line style behave as a raster line style.
+//---------------------------------------------------------------------------------------
+// This color may possibly come from the element, or it may come from the line style.
+// If it comes from the element, do we need a different map for every color?
+//
+// The texture may also have to reflect differences in line style overrides.
+//
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+/* static */  void CreateGeometryMapMaterial(ViewContextR context, IStrokeForCache& stroker, intptr_t textureId)
+    {
+#if defined(WIP_LINESTYLES)
+    // NOTE: Need to setup pattern symbology on cell element and hide 0 length lines used as pattern cell extent markers, etc.
+    PatternHelper::CookPatternSymbology (*params, context);
+    symbCell.ApplyElemDisplayParams (*context.GetCurrentDisplayParams ());
+#endif
+
+    context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
+    return;
+    }
+
+//=======================================================================================
+//! Used to generate a texture based on a line style.
+// @bsiclass                                                    John.Gooding    08/2015
+//=======================================================================================
+struct          ComponentToTextureStroker
+{
+private:
+
+
+public:
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+static intptr_t  GetRasterTexture(LsDefinitionR lStyle)
+    {
+    intptr_t retval = lStyle.
+    }
+
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
