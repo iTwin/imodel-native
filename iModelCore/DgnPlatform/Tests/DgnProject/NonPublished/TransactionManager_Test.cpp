@@ -11,117 +11,22 @@
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
 #include <DgnPlatform/DgnCore/DgnElementDependency.h>
-
-#define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
-#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestPhysicalElement"
-#define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
-#define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
-#define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
-#define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
+#include <UnitTests/BackDoor/DgnProject/DgnPlatformTestDomain.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
 
 BEGIN_UNNAMED_NAMESPACE
-
-static bool s_abcShouldFail;
-
-//=======================================================================================
-//! A test IDgnElementDependencyHandler
-// @bsiclass                                                     Sam.Wilson      01/15
-//=======================================================================================
-struct ABCHandler : Dgn::DgnElementDependencyHandler
-    {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, Dgn::DgnDomain::Handler, )
-
-    bvector<EC::ECInstanceId> m_relIds;
-    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target) override;
-    void Clear() {m_relIds.clear();}
-    };
-
-HANDLER_DEFINE_MEMBERS(ABCHandler)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
 +===============+===============+===============+===============+===============+======*/
-struct AbcShouldFail
+struct TestElementDrivesElementHandlerShouldFail
     {
-    AbcShouldFail() {s_abcShouldFail = true;}
-    ~AbcShouldFail() {s_abcShouldFail = false;}
+    TestElementDrivesElementHandlerShouldFail() {TestElementDrivesElementHandler::SetShouldFail(true);}
+    ~TestElementDrivesElementHandlerShouldFail() {TestElementDrivesElementHandler::SetShouldFail(false);}
     };
-
-struct TestElementHandler;
-
-//=======================================================================================
-//! A test Element. Has an item.
-// @bsiclass                                                     Sam.Wilson      04/15
-//=======================================================================================
-struct TestElement : Dgn::PhysicalElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement)
-    friend struct TestElementHandler;
-
-private:
-    // Item caching states:
-    enum class ItemState
-        {
-        Unknown,        // don't know yet
-        DoesNotExist,   // no item exists in the Db, and nothing is cached in memory
-        Exists,         // item exists in the Db, is cached in memory, and is un-modified
-        Modified,       // item may or may not exist in the Db and is modified in memory
-        Deleted         // item exists in the Db and should be deleted
-        };
-    ItemState  m_itemState;
-    Utf8String m_testItemProperty;
-
-    virtual DgnDbStatus _InsertInDb() override;
-    virtual DgnDbStatus _UpdateInDb() override;
-    virtual DgnDbStatus _LoadFromDb() override;
-    virtual void _CopyFrom(DgnElementCR) override;
-
-public:
-    TestElement(CreateParams const& params) : T_Super(params), m_itemState(ItemState::Unknown) {}
-
-    static ECN::ECClassCP GetTestElementECClass(DgnDbR db) {return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME);}
-    static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-
-    // Provide an API for getting and modifying my item's properties.
-    bool HasTestItem() const {return ItemState::Exists == m_itemState || ItemState::Modified == m_itemState;}
-    Utf8String GetTestItemProperty() const {return HasTestItem()? m_testItemProperty: "";}
-    void SetTestItemProperty(Utf8CP value);
-    void DeleteTestItem() {if (HasTestItem()) m_itemState=ItemState::Deleted;}
-    void ChangeElement(double len);
-};
-
-typedef RefCountedPtr<TestElement> TestElementPtr;
-typedef RefCountedCPtr<TestElement> TestElementCPtr;
-typedef TestElement& TestElementR;
-typedef TestElement const& TestElementCR;
-
-//=======================================================================================
-//! A test ElementHandler
-// @bsiclass                                                     Sam.Wilson      01/15
-//=======================================================================================
-struct TestElementHandler : dgn_ElementHandler::Physical
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
-};
-
-HANDLER_DEFINE_MEMBERS(TestElementHandler)
-
-//=======================================================================================
-//! A test Domain
-// @bsiclass                                                     Sam.Wilson      01/15
-//=======================================================================================
-struct TransactionManagerTestDomain : DgnDomain
-    {
-    DOMAIN_DECLARE_MEMBERS(TransactionManagerTestDomain, )
-public:
-    TransactionManagerTestDomain();
-    };
-
-DOMAIN_DEFINE_MEMBERS(TransactionManagerTestDomain)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
@@ -261,29 +166,10 @@ void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
-    {
-    RegisterHandler(TestElementHandler::GetHandler());
-    RegisterHandler(ABCHandler::GetHandler());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-void ABCHandler::_OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target)
-    {
-    if (s_abcShouldFail)
-        db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Warning, "ABC failed"));
-    m_relIds.push_back(relationshipId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TransactionManagerTests::TransactionManagerTests()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(TransactionManagerTestDomain::GetDomain());
+    DgnPlatformTestDomain::Register();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -306,16 +192,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE( result == BE_SQLITE_OK);
 
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
-
-    auto status = TransactionManagerTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(DgnDbStatus::Success == status);
-
-    auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
-    ASSERT_NE( nullptr , schema );
-    ASSERT_NE( nullptr ,  TestElement::GetTestElementECClass(*m_db) );
-    ASSERT_NE( nullptr ,  m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME) );
+    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
@@ -363,7 +240,7 @@ WString ElementDependencyGraph::GetTestFileName(WCharCP testname)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
     {
-    return *m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME);//"dgn", DGN_RELNAME_ElementDrivesElement);
+    return TestElementDrivesElementHandler::GetECClass(*m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,12 +266,6 @@ void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
     SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
 
-    auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
-
-    auto dh = DgnElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId);
-    auto ah = &ABCHandler::GetHandler();
-    ASSERT_EQ((void*)dh,(void*)ah );
-
     m_db->Txns().EnableTracking(true);
     }
 
@@ -403,187 +274,7 @@ void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent)
     {
-    ECSqlInsertBuilder b;
-    b.InsertInto(GetElementDrivesElementClass());
-    b.AddValue("SourceECClassId", "?");
-    b.AddValue("SourceECInstanceId", "?");
-    b.AddValue("TargetECClassId", "?");
-    b.AddValue("TargetECInstanceId", "?");
-
-    CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(b.ToString().c_str());
-
-    stmt->BindId(1, root->GetElementClassId());
-    stmt->BindId(2, root->GetElementId());
-    stmt->BindId(3, dependent->GetElementClassId());
-    stmt->BindId(4, dependent->GetElementId());
-
-    ECInstanceKey rkey;
-    if (ECSqlStepStatus::Done != stmt->Step(rkey))
-        return ECInstanceKey();
-
-    return rkey;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-static CurveVectorPtr computeShape(double len)
-    {
-
-    DPoint3d pts[6];
-    pts[0] = DPoint3d::From(-len,-len);
-    pts[1] = DPoint3d::From(+len,-len);
-    pts[2] = DPoint3d::From(+len,+len);
-    pts[3] = DPoint3d::From(-len,+len);
-    pts[4] = pts[0];
-    pts[5] = pts[0];
-    pts[5].z = 1;
-
-    return CurveVector::CreateLinear(pts, _countof(pts), CurveVector::BOUNDARY_TYPE_Open);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
-    {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
-
-    static const double PLANE_LEN = 100;
-    //  Add some hard-wired geometry
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
-    builder->Append(*computeShape(PLANE_LEN));
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
-        return nullptr;
-
-    testElement->m_itemState = ItemState::DoesNotExist;
-
-    return testElement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::ChangeElement(double len)
-    {
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*this);
-    builder->Append(*computeShape(len));
-    builder->SetGeomStreamAndPlacement(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::SetTestItemProperty(Utf8CP value)
-    {
-    m_testItemProperty.AssignOrClear(value);
-    m_itemState = ItemState::Modified;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertInDb()
-    {
-    DgnDbStatus status = T_Super::_InsertInDb();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    if (HasTestItem())
-        {
-        CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
-        insertStmt->BindId(1, GetElementId());
-        insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-        if (ECSqlStepStatus::Done != insertStmt->Step())
-            return DgnDbStatus::WriteError;
-        }
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_UpdateInDb()
-    {
-    DgnDbStatus status = T_Super::_UpdateInDb();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    ECSqlStepStatus rc = ECSqlStepStatus::Done;
-    if (ItemState::Deleted == m_itemState)
-        {
-        CachedECSqlStatementPtr delStmt = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
-        delStmt->BindId(1, GetElementId());
-        rc = delStmt->Step();
-        if (ECSqlStepStatus::Done == rc)
-            m_itemState = ItemState::DoesNotExist;
-        }
-    else if (ItemState::Modified == m_itemState)
-        {
-#ifdef ECSQL_SUPPORTS_INSERT_OR_REPLACE
-        CachedECSqlStatementPtr writeStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT OR REPLACE INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
-        writeStmt->BindId(2, GetElementId());
-        writeStmt->BindText(1, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-        rc = writeStmt->Step();
-#else
-        CachedECSqlStatementPtr updStmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE(ECInstanceId=?)");
-        updStmt->BindId(2, GetElementId());
-        updStmt->BindText(1, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-        if (ECSqlStepStatus::Done !=(rc = updStmt->Step()))
-            {
-            // Update failed. There's no way to tell why. Maybe it's because the item doesn't exist yet in the DB. Try an insert.
-            CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
-            insertStmt->BindId(1, GetElementId());
-            insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
-            rc = insertStmt->Step();
-            }
-#endif
-        if (ECSqlStepStatus::Done == rc)
-            m_itemState = ItemState::Exists;
-        }
-
-    if (ECSqlStepStatus::Done != rc)
-        status = DgnDbStatus::WriteError;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_LoadFromDb()
-    {
-    DgnDbStatus status = T_Super::_LoadFromDb();
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    CachedECSqlStatementPtr itemStmt = GetDgnDb().GetPreparedECSqlStatement("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
-    itemStmt->BindId(1, GetElementId());
-
-    if (ECSqlStepStatus::HasRow == itemStmt->Step())
-        {
-        m_testItemProperty = itemStmt->GetValueText(0);
-        m_itemState = ItemState::Exists;
-        }
-    else
-        {
-        m_itemState = ItemState::DoesNotExist;
-        }
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TestElement::_CopyFrom(DgnElementCR rhs)
-    {
-    T_Super::_CopyFrom(rhs);
-
-    auto trhs = dynamic_cast<TestElement const*>(&rhs);
-    m_testItemProperty = trhs->m_testItemProperty;
-    m_itemState = trhs->m_itemState;
+    return TestElementDrivesElementHandler::Insert(*m_db, root->GetElementId(), dependent->GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -668,93 +359,6 @@ TEST_F(TransactionManagerTests, CRUD)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Test of element instance access
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(TransactionManagerTests, ElementInstance)
-    {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
-
-    auto key1 = InsertElement("E1");
-    ASSERT_TRUE( key1->GetElementId().IsValid() );
-
-    ASSERT_EQ( &key1->GetElementHandler(), &TestElementHandler::GetHandler() );
-
-#ifdef WIP_NEED_SOME_OTHER_WAY_TO_ACCESS_SUB_CLASS_PROPERTIES
-    ECN::IECInstanceCR e1props = el->GetSubclassProperties();
-    ECN::ECValue v;
-    ASSERT_EQ( e1props.GetValue(v, TMTEST_TEST_ELEMENT_TestElementProperty) , ECN::ECOBJECTS_STATUS_Success );
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void checkItemProperty(TestElementCR el, bool shouldBeThere, Utf8CP propValue)
-    {
-    if (!shouldBeThere)
-        {
-        ASSERT_TRUE( !el.HasTestItem() );
-        return;
-        }
-
-    Utf8String value = el.GetTestItemProperty();
-    ASSERT_TRUE( value.Equals(propValue) );
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Test of inserting, modifying, and deleting an element's item.
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(TransactionManagerTests, ElementItem)
-    {
-    Utf8CP initialTestPropValue = "Test";
-    Utf8CP changedTestPropValue = "Test - changed";
-
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
-
-    ECN::ECClassCP testItemClass = m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME);
-    ASSERT_NE( nullptr , testItemClass );
-
-    auto e1 = InsertElement("E1");
-    ASSERT_TRUE( e1.IsValid() );
-
-    TestElementCPtr el = m_db->Elements().Get<TestElement>(e1->GetElementId());
-    ASSERT_TRUE( el != nullptr );
-
-    ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
-
-    checkItemProperty(*el, false, nullptr);
-
-    TestElementPtr mod = m_db->Elements().GetForEdit<TestElement>(el->GetElementId());
-
-    DgnDbStatus mstatus;
-
-    //  Add an item
-    mod->SetTestItemProperty(initialTestPropValue);
-    mod->Update(&mstatus);
-    ASSERT_EQ( DgnDbStatus::Success , mstatus );
-
-    // *** NB: I am assuming that 'el' is still valid and still points to the REAL element!
-
-    checkItemProperty(*el, true, initialTestPropValue);
-
-    //  Update the item
-    mod->SetTestItemProperty(changedTestPropValue);
-    mod->Update(&mstatus);
-    ASSERT_EQ( DgnDbStatus::Success , mstatus );
-
-    checkItemProperty(*el, true, changedTestPropValue); // item should now be in the DB
-
-    //  Delete the item
-    mod->DeleteTestItem();
-    mod->Update(&mstatus);
-    ASSERT_EQ( DgnDbStatus::Success , mstatus );
-
-    checkItemProperty(*el, false, nullptr); // item should now be gone in the DB
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationships const& g)
@@ -783,11 +387,11 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     TwiddleTime(g.e99);
 
     monitor.Clear();
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     db.SaveChanges();
     if (true)
         {
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() ,5 );
         auto i99_3  = findRelId(rels, g.r99_3);    ASSERT_NE(i99_3 , rels.end());
         auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31, rels.end());
@@ -808,11 +412,11 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     TwiddleTime(g.e2);
 
     monitor.Clear();
-    ABCHandler::GetHandler().Clear();
-    db.SaveChanges();   // ==> Triggers callbacks to ABCHandler::GetHandler()
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
     if (true)
         {
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 5 );
         auto i99_3  = findRelId(rels, g.r99_3);    ASSERT_NE(i99_3 , rels.end());
         auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31, rels.end());
@@ -834,11 +438,11 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     TwiddleTime(g.e31);
 
     monitor.Clear();
-    ABCHandler::GetHandler().Clear();
-    db.SaveChanges();   // ==> Triggers callbacks to ABCHandler::GetHandler()
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
     if (true)
         {
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 4 );
         auto i99_31 = findRelId(rels, g.r99_31);   ASSERT_NE(i99_31  , rels.end());
         auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2  , rels.end());
@@ -859,11 +463,11 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     TwiddleTime(g.e31);
 
     monitor.Clear();
-    ABCHandler::GetHandler().Clear();
-    db.SaveChanges();   // ==> Triggers callbacks to ABCHandler::GetHandler()
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
     if (true)
         {
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 5 );
         auto i99_3  = findRelId(rels, g.r99_3);        ASSERT_NE(i99_3  , rels.end());
         auto i99_31 = findRelId(rels, g.r99_31);       ASSERT_NE(i99_31  , rels.end());
@@ -884,11 +488,11 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     TwiddleTime(g.e2);
 
     monitor.Clear();
-    ABCHandler::GetHandler().Clear();
-    db.SaveChanges();   // ==> Triggers callbacks to ABCHandler::GetHandler()
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
     if (true)
         {
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 3);
         auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
         auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2 , rels.end());
@@ -905,11 +509,11 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     TwiddleTime(g.e1);
 
     monitor.Clear();
-    ABCHandler::GetHandler().Clear();
-    db.SaveChanges();   // ==> Triggers callbacks to ABCHandler::GetHandler()
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
     if (true)
         {
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 1);
         auto i2_1   = findRelId(rels, g.r2_1);      ASSERT_NE(i2_1  , rels.end());
         }
@@ -1014,11 +618,11 @@ TEST_F(Performance_ElementDependencyGraph, PerformanceDeep1)
         {
         TwiddleTime(firstElement);
         StopWatch timer("Mod 1st", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod 1st: %lf seconds", timer.GetElapsedSeconds()));
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size()  , s_nElements-1);
         ASSERT_EQ( rels.front() , firstRel.GetECInstanceId() );
         ASSERT_EQ( rels.back()  , lastRel.GetECInstanceId() );
@@ -1029,11 +633,11 @@ TEST_F(Performance_ElementDependencyGraph, PerformanceDeep1)
         {
         TwiddleTime(lastElement);
         StopWatch timer("Mod last", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod last: %lf seconds", timer.GetElapsedSeconds()));
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 1);
         ASSERT_EQ( rels.front(), lastRel.GetECInstanceId() );
         }
@@ -1043,11 +647,11 @@ TEST_F(Performance_ElementDependencyGraph, PerformanceDeep1)
         {
         TwiddleTime(previousElement);
         StopWatch timer("Mod next to last", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod next to last: %lf seconds", timer.GetElapsedSeconds()));
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 2);
         ASSERT_EQ( rels.back() , lastRel.GetECInstanceId() );
         }
@@ -1098,11 +702,11 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         {
         TwiddleTime(rootElement);
         StopWatch timer("Mod Root", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod Root: %lf seconds", timer.GetElapsedSeconds()));
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size()  , depCount);
         ASSERT_EQ( rels.front() , firstRel.GetECInstanceId() );
         ASSERT_EQ( rels.back()  , lastRel.GetECInstanceId() );
@@ -1114,11 +718,11 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
         TwiddleTime(firstDependentElement);
         TwiddleTime(lastDependentElement);
         StopWatch timer("Mod dependents", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
         timer.Stop();
         BeTest::Log("ElementDependencyGraph", BeTest::LogPriority::PRIORITY_INFO, Utf8PrintfString("Mod dependents: %lf seconds", timer.GetElapsedSeconds()));
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
         ASSERT_EQ( rels.size() , 2);
         }
     }
@@ -1158,10 +762,10 @@ TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
         TwiddleTime(w2);
         TwiddleTime(w3);
 
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
 
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
 
         //  w3_c1 and w2_c1 are fired first. Then c1_w1 is fired.
         ASSERT_EQ( rels.size() , 3);
@@ -1189,10 +793,10 @@ TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
         {
         TwiddleTime(w2);
 
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
 
-        auto const& rels = ABCHandler::GetHandler().m_relIds;
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
 
         ASSERT_EQ( rels.size() , 4);
         auto iw2_c1    = findRelId(rels, w2_c1);     ASSERT_NE( iw2_c1,  rels.end() );
@@ -1220,10 +824,10 @@ void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, ECInstanceK
 
     TwiddleTime(r1);
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
 
-    auto const& rels = ABCHandler::GetHandler().m_relIds;
+    auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
     ASSERT_EQ( rels.size(), 2 );
     auto ir1_d3 = findRelId(rels, r1_d3);       ASSERT_NE( ir1_d3, rels.end() );
     auto ir2_d3 = findRelId(rels, r2_d3);       ASSERT_NE( ir2_d3, rels.end() );
@@ -1286,7 +890,7 @@ TEST_F(ElementDependencyGraph, FailureTest1)
     ASSERT_EQ( selectDepRel->Step(), ECSqlStepStatus::HasRow );
     ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Satisfied );
 
-    AbcShouldFail fail;
+    TestElementDrivesElementHandlerShouldFail fail;
     TwiddleTime(e1);
     m_db->SaveChanges();
 
@@ -1321,11 +925,11 @@ TEST_F(ElementDependencyGraph, CycleTest1)
         // Trigger graph evaluation, which will detect the cycle.
         TwiddleTime(e1);
 
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
 
 // It's still undecided as to whether handlers should be called or not.
-//        auto const& rels = ABCHandler::GetHandler().m_relIds;
+//        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
 //        ASSERT_EQ( rels.size() , 0) << L" my dependency handler should not have been called, because of the graph-building error";
 
 
@@ -1367,7 +971,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
         // Trigger graph evaluation, which will detect the cycle.
         TwiddleTime(e1);
 
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         m_db->SaveChanges();
 
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
@@ -1420,7 +1024,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
         {
         //  ------------------------------------------------
         StopWatch timer("change e1, propagate to e2", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         for (size_t i=0; i<ntimes; ++i)
             {
             TwiddleTime(e1);
@@ -1428,14 +1032,14 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
             }
         timer.Stop();
         printf("change e1, propagate to e2: %lf\n", ntimes/timer.GetElapsedSeconds());
-        ASSERT_EQ( ntimes, ABCHandler::GetHandler().m_relIds.size() );
+        ASSERT_EQ( ntimes, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
         }
 
     if (true)
         {
         //  ------------------------------------------------
         StopWatch timer("change e2", true);
-        ABCHandler::GetHandler().Clear();
+        TestElementDrivesElementHandler::GetHandler().Clear();
         for (size_t i=0; i<ntimes; ++i)
             {
             TwiddleTime(e2);
@@ -1443,7 +1047,7 @@ void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_
             }
         timer.Stop();
         printf("change e12: %lf\n", ntimes/timer.GetElapsedSeconds());
-        ASSERT_EQ( ntimes, ABCHandler::GetHandler().m_relIds.size() );
+        ASSERT_EQ( ntimes, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
         }
     }
 
@@ -1579,10 +1183,10 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     //  drive a change from e1 through the graph
     TwiddleTime(e1);
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
 
-    auto const& rels = ABCHandler::GetHandler().m_relIds;
+    auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
     ASSERT_TRUE( rels.size() == 4);
     auto i1_2 = findRelId(rels, e1_e2);
     auto i1_3 = findRelId(rels, e1_e3);
@@ -1718,10 +1322,10 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     //  drive a change from e1 through the graph to e2
     TwiddleTime(e1);
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
-    ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 1 );
-    ASSERT_EQ( ABCHandler::GetHandler().m_relIds.front(), e1_e2.GetECInstanceId() );
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.front(), e1_e2.GetECInstanceId() );
 
     //  Create an valid dependency
     //e1 <-- e22
@@ -1729,7 +1333,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
 
     TwiddleTime(e22);
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
     // Verify that the txn was rolled back. If so, my insert of e22_e1 should have been cancelled, and e22_e1 should not exist.
     ECSqlSelectBuilder b;
@@ -1767,8 +1371,8 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
     ASSERT_EQ( result, BE_SQLITE_OK );
 
     //  Make sure that the handler is still registered
-    auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
-    ASSERT_EQ( DgnElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId) , &ABCHandler::GetHandler() );
+    auto abcHandlerInternalId = m_db->Domains().GetClassId(TestElementDrivesElementHandler::GetHandler());
+    ASSERT_EQ( DgnElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId) , &TestElementDrivesElementHandler::GetHandler() );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1787,24 +1391,21 @@ TEST_F(ElementDependencyGraph, ChangeDepTest)
     //  Create dependency relationship in a separate txn
     auto rel = InsertElementDrivesElementRelationship(e1, e2);
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
 
-    // ABC should have gotten a callback, because it was created, even though neither of its targets was changed.
-    ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 1 );
+    // TestElementDrivesElement should have gotten a callback, because it was created, even though neither of its targets was changed.
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
 
     //  Modify a property of the dependency relationship itself
-    ECSqlStatement stmt;
-    stmt.Prepare(*m_db, "UPDATE ONLY " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " SET Property1='changed'  WHERE(ECInstanceId=?)");
-    stmt.BindId(1, rel.GetECInstanceId());
-    ASSERT_EQ( stmt.Step(), ECSqlStepStatus::Done );
+    TestElementDrivesElementHandler::UpdateProperty1(*m_db, rel);
 
     // Commit this change.
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
     m_db->SaveChanges();
 
-    // ABC should have gotten a callback, because it was changed, even though neither of its targets was changed.
-    ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 1 );
+    // TestElementDrivesElement should have gotten a callback, because it was changed, even though neither of its targets was changed.
+    ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1869,7 +1470,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     e2=nullptr;
 
     // Check that WhatIfChanged finds this edge and invokes processor on it
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
         DgnElementDependencyGraph graph(m_db->Txns());
@@ -1877,7 +1478,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
 
         ASSERT_EQ( proc.m_hadError , false );
         ASSERT_EQ( proc.m_relIds.size() , 1 );
-        ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
         }
     // Repeat the test, but show that we can do WhatIfChanged without writing to anything.
     BeFileName theFile = m_db->GetFileName();
@@ -1887,7 +1488,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     ASSERT_TRUE( m_db.IsValid() );
     ASSERT_EQ( result, BE_SQLITE_OK );
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
         DgnElementDependencyGraph graph(m_db->Txns());
@@ -1895,7 +1496,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
 
         ASSERT_EQ( proc.m_hadError , false );
         ASSERT_EQ( proc.m_relIds.size() , 1 );
-        ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
         }
     }
 
@@ -1925,13 +1526,13 @@ TEST_F(ElementDependencyGraph, TestPriority)
     changedEntities.push_back(e2->GetElementId());
 
     // Check that we get e11_e2, then e12_e2
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
         DgnElementDependencyGraph graph(m_db->Txns());
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
-        ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
         ASSERT_EQ( proc.m_hadError , false );
         auto rels = proc.m_relIds;
         ASSERT_EQ( rels.size() , 2 );
@@ -1950,13 +1551,13 @@ TEST_F(ElementDependencyGraph, TestPriority)
         ASSERT_EQ( graph.SetElementDrivesElementPriority(edge_e12_e2.GetECRelationshipId(), priority + 100), BSISUCCESS );
         }
 
-    ABCHandler::GetHandler().Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
         DgnElementDependencyGraph graph(m_db->Txns());
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
-        ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
         ASSERT_EQ( proc.m_hadError , false );
         auto rels = proc.m_relIds;
         ASSERT_EQ( rels.size() , 2 );
@@ -1973,21 +1574,19 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
-    DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
-
-    TestElement::CreateParams params(*m_db, m_defaultModelId, testClass, m_defaultCategoryId);
-    TestElementPtr e1 = new TestElement(params);
+    TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
 
     DgnElementCPtr el1 = e1->Insert();
     ASSERT_TRUE(el1.IsValid());
 
-    params.SetParentId(el1->GetElementId());     // set the parent id in the CreateParams
-    TestElementPtr e2 = new TestElement(params);
+    TestElementPtr e2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+    e2->SetParentId(el1->GetElementId());
     DgnElementCPtr el2 = e2->Insert();
     ASSERT_TRUE(el2.IsValid());
     ASSERT_EQ(el2->GetParentId(), el1->GetElementId());
 
-    e2 = new TestElement(params);
+    e2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
+    e2->SetParentId(el1->GetElementId());
     DgnElementCPtr el3 = e2->Insert(); // insert another element
     ASSERT_TRUE(el3.IsValid());
 
@@ -2275,7 +1874,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     auto& txns = m_db->Txns();
     txns.EnableTracking(true);
 
-    TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
+    TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "", 101.0);
 
     ASSERT_TRUE(!txns.IsUndoPossible()); // with no changes, you can't undo or redo
     ASSERT_TRUE(!txns.IsRedoPossible());

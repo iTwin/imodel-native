@@ -50,7 +50,10 @@ struct JsDgnElement : RefCountedBaseWithCreate
 
     JsDgnElement(DgnElementR el) : m_el(&el) {;}
 
-    Utf8String GetElementId() {return Utf8PrintfString("%lld", (long long)m_el->GetElementId().GetValueUnchecked());}
+    Utf8String GetElementId() {return Utf8PrintfString("%lld", m_el.IsValid()? (long long)m_el->GetElementId().GetValueUnchecked(): -1);}
+    int32_t Insert() {return m_el.IsValid()? m_el->Insert().IsValid()? 0: -1: -2;}
+    int32_t Update() {return m_el.IsValid()? m_el->Update().IsValid()? 0: -1: -2;}
+    void SetParent(JsDgnElement* parent) {if (m_el.IsValid() && (nullptr != parent)) m_el->SetParentId(parent->m_el->GetElementId());}
 };
 
 typedef JsDgnElement* JsDgnElementP;
@@ -66,7 +69,6 @@ struct JsDgnModel : RefCountedBaseWithCreate
 
     Utf8String GetModelId() {return Utf8PrintfString("%lld", m_model->GetModelId().GetValueUnchecked());}
     JsDgnElement* CreateElement(Utf8StringCR elType, Utf8StringCR categoryName);
-    void InsertElement(JsDgnElementP element);
     void DeleteAllElements();
 };
 

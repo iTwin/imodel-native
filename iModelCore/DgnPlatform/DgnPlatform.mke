@@ -95,7 +95,9 @@ o = $(coreObjs)
 #----------------------------------------------------------------------
 %include $(dgnScriptDir)GenerateTypeScript.mki
 
+%ifdef dgnScriptGen
 cIncs + -I$(dgnScriptGen)
+%endif
 
 #----------------------------------------------------------------------
 #   Make sure that DgnPlatformInternal.pch is up-to-date.

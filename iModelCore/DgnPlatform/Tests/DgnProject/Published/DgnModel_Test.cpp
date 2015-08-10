@@ -6,41 +6,43 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include <UnitTests/BackDoor/DgnProject/DgnPlatformTestDomain.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_DPTEST
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Julija.Suboc     07/2013
 //----------------------------------------------------------------------------------------
 struct DgnModelTests : public testing::Test
-    {
-     public:
-        ScopedDgnHost m_autoDgnHost;
-        DgnDbPtr m_dgndb;    
-        DgnModelPtr m_model;
-        //---------------------------------------------------------------------------------------
-        // @bsimethod                                                   Julija Suboc     07/13
-        // Prepares test data file
-        //---------------------------------------------------------------------------------------
-        void SetUp()
-            {
-            DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
-            m_dgndb = tdm.GetDgnProjectP();
-            }
-         //---------------------------------------------------------------------------------------
-        // @bsimethod                                                   Julija Suboc     07/13
-        //---------------------------------------------------------------------------------------
-        void LoadModel(Utf8CP name)
-            {
-            DgnModels& modelTable =  m_dgndb->Models();
-            DgnModelId id = modelTable.QueryModelId(name);
-            m_model =  modelTable.GetModel(id);
-            if (m_model.IsValid())
-                m_model->FillModel();
-            }
+{
+    ScopedDgnHost m_autoDgnHost;
+    DgnDbPtr m_dgndb;    
+    DgnModelPtr m_model;
 
-        void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
-    };
+    DgnModelTests()
+        {
+        // Must register my domain whenever I initialize a host
+        DgnPlatformTestDomain::Register(); 
+        }
+
+    void SetUp()
+        {
+        DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+        m_dgndb = tdm.GetDgnProjectP();
+        }
+
+    void LoadModel(Utf8CP name)
+        {
+        DgnModels& modelTable =  m_dgndb->Models();
+        DgnModelId id = modelTable.QueryModelId(name);
+        m_model =  modelTable.GetModel(id);
+        if (m_model.IsValid())
+            m_model->FillModel();
+        }
+
+    void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
+};
 
 //=======================================================================================
 // @bsiclass                                                    Majd.Uddin   04/12
@@ -334,6 +336,317 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
         i++;
     }
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static void checkGroupHasOneMemberInModel(DgnModelR model)
+    {
+    BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ECClassId=? AND ModelId=?)");
+    stmt.BindInt64(1, model.GetDgnDb().Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
+    stmt.BindId(2, model.GetModelId());
+    ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
+    DgnElementId gid = stmt.GetValueId<DgnElementId>(0);
+    ASSERT_EQ( BE_SQLITE_DONE , stmt.Step() );
+
+    ElementGroupCPtr group = model.GetDgnDb().Elements().Get<ElementGroup>(gid);
+    ASSERT_TRUE( group.IsValid() );
+
+    DgnElementIdSet members = group->QueryMembers();
+    ASSERT_EQ( 1 , members.size() );
+    DgnElementCPtr member = model.GetDgnDb().Elements().Get<DgnElement>(*members.begin());
+    ASSERT_TRUE( member.IsValid() );
+    ASSERT_EQ( model.GetModelId() , member->GetModelId() );
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static DgnElementCPtr getSingleElementInModel(DgnModelR model)
+    {
+    BeSQLite::Statement stmt(model.GetDgnDb(), "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE (ModelId=?)");
+    stmt.BindId(1, model.GetModelId());
+    if (BE_SQLITE_ROW != stmt.Step())   
+        return nullptr;
+    DgnElementId gid = stmt.GetValueId<DgnElementId>(0);
+    if (BE_SQLITE_DONE != stmt.Step())
+        return nullptr;
+
+    return model.GetDgnDb().Elements().Get<DgnElement>(gid);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileName copyDb (WCharCP inputFileName, WCharCP outputFileName)
+    {
+    BeFileName fullInputFileName;
+    BeTest::GetHost().GetDocumentsRoot (fullInputFileName);
+    fullInputFileName.AppendToPath (inputFileName);
+
+    BeFileName fullOutputFileName;
+    BeTest::GetHost().GetOutputRoot(fullOutputFileName);
+    fullOutputFileName.AppendToPath(outputFileName);
+
+    if (BeFileNameStatus::Success != BeFileName::BeCopyFile (fullInputFileName, fullOutputFileName))
+        return BeFileName();
+
+    return fullOutputFileName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void openDb (DgnDbPtr& db, BeFileNameCR name, DgnDb::OpenMode mode)
+    {
+    DbResult result = BE_SQLITE_OK;
+    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
+    ASSERT_TRUE( db.IsValid() ) << (WCharCP)WPrintfString(L"Failed to open %ls in mode %d => result=%x", name.c_str(), (int)mode, (int)result);
+    ASSERT_EQ( BE_SQLITE_OK , result );
+    db->Txns().EnableTracking(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static PhysicalModelPtr copyPhysicalModelSameDb(PhysicalModelCR model, Utf8CP newName)
+    {
+    return dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(model, newName).get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static PhysicalModelPtr createPhysicalModel(DgnDbR db, Utf8CP newName)
+    {
+    DgnClassId mclassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr model = new PhysicalModel(PhysicalModel::CreateParams(db, mclassId, newName));
+    if (!model.IsValid())
+        return nullptr;
+    if (DgnDbStatus::Success != model->Insert())
+        return nullptr;
+    return model;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+static DgnDbPtr openCopyOfDb(WCharCP sourceName, WCharCP destName, DgnDb::OpenMode mode, bool importDummySchemaFirst = true)
+    {
+    DgnDbPtr db2;
+    openDb(db2, copyDb(sourceName, destName), mode);
+    if (!db2.IsValid())
+        return nullptr;
+    if (importDummySchemaFirst)
+        DgnPlatformTestDomain::ImportDummySchema(*db2);
+    DgnPlatformTestDomain::ImportSchema(*db2);
+    return db2;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, ImportGroups)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP();
+
+    // ******************************
+    //  Create model1
+        
+    PhysicalModelPtr model1 = createPhysicalModel(*db, "Model1");
+    ASSERT_TRUE( model1.IsValid() );
+        {
+        // Put a group into moddel1
+        ElementGroupCPtr group;
+            {
+            DgnCategoryId gcatid = db->Categories().QueryHighestId();
+            DgnClassId gclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
+            DgnElementCPtr groupEl = ElementGroup::Create(ElementGroup::CreateParams(*db, model1->GetModelId(), gclassid, gcatid))->Insert();
+            group = dynamic_cast<ElementGroupCP>(groupEl.get());
+            ASSERT_TRUE( group.IsValid() );
+            }
+
+        //  Add a member
+        DgnElementCPtr member;
+        if (true)
+            {
+            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
+            DgnCategoryId mcatid = db->Categories().QueryHighestId();
+            member = DgnElement::Create(DgnElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, "member"))->Insert();
+            ASSERT_TRUE( member.IsValid() );
+            ASSERT_EQ( DgnDbStatus::Success , group->InsertMember(*member) );
+            }
+
+        checkGroupHasOneMemberInModel(*model1);
+        }
+
+    //  ******************************
+    //  Create model2 as a copy of model1
+    if (true)
+        {
+        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, "Model2");
+        ASSERT_TRUE( model2.IsValid() );
+
+        checkGroupHasOneMemberInModel(*model2);
+        }
+
+    //  ******************************
+    //  You can't "Import" a model into the same DgnDb. For one thing, the name will conflict.
+    if (true)
+        {
+        DgnImportContext import3(*db, *db);
+        DgnDbStatus stat;
+        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        ASSERT_TRUE( !model3.IsValid() );
+        ASSERT_NE( DgnDbStatus::Success , stat );
+        }
+
+    //  *******************************
+    //  Import into separate db
+    if (true)
+        {
+        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+        ASSERT_TRUE( db2.IsValid() );
+
+        DgnImportContext import3(*db, *db2);
+        DgnDbStatus stat;
+        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        ASSERT_TRUE( model3.IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , stat );
+
+        checkGroupHasOneMemberInModel(*model3);
+        }
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, ImportElementsWithItems)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP();
+
+    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    // ******************************
+    //  Create model1
+        
+    DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    ASSERT_EQ( DgnDbStatus::Success , model1->Insert() );
+
+    // Put an element with an Item into moddel1
+        {
+        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+        TestElementPtr tempEl = TestElement::Create(*db, model1->GetModelId(), gcatid, "TestElement");
+        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
+        ASSERT_TRUE( db->Elements().Insert(*tempEl).IsValid() );
+        db->SaveChanges();
+        }
+
+    if (true)
+        {
+        DgnElementCPtr el = getSingleElementInModel(*model1);
+        ASSERT_NE( nullptr , DgnElement::Item::GetItem(*el) );
+        }
+
+    //  ******************************
+    //  Create model2 as a copy of model1
+    if (true)
+        {
+        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, "Model2");
+        ASSERT_TRUE( model2.IsValid() );
+
+        DgnElementCPtr el = getSingleElementInModel(*model2);
+        ASSERT_NE( nullptr , DgnElement::Item::GetItem(*el) );
+        }
+
+    //  *******************************
+    //  Import into separate db
+    if (true)
+        {
+        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+        ASSERT_TRUE( db2.IsValid() );
+
+        DgnImportContext import3(*db, *db2);
+        DgnDbStatus stat;
+        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        ASSERT_TRUE( model3.IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , stat );
+
+        DgnElementCPtr el = getSingleElementInModel(*model3);
+        ASSERT_NE( nullptr , DgnElement::Item::GetItem(*el) );
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
+TEST_F(DgnModelTests, ImportElementsWithDependencies)
+    {
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
+    DgnDbP db = tdm.GetDgnProjectP();
+    db->Txns().EnableTracking(true);
+
+    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    // ******************************
+    //  Create model1
+        
+    DgnClassId mclassId = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel));
+    PhysicalModelPtr model1 = new PhysicalModel(PhysicalModel::CreateParams(*db, mclassId, "Model1"));
+    ASSERT_EQ( DgnDbStatus::Success , model1->Insert() );
+
+    // Create 2 elements and make the first depend on the second
+        {
+        DgnCategoryId gcatid = db->Categories().QueryHighestId();
+
+        TestElementPtr e1 = TestElement::Create(*db, model1->GetModelId(), gcatid, "e1");
+        ASSERT_TRUE( db->Elements().Insert(*e1).IsValid() );
+
+        TestElementPtr e2 = TestElement::Create(*db, model1->GetModelId(), gcatid, "e2");
+        ASSERT_TRUE( db->Elements().Insert(*e2).IsValid() );
+
+        TestElementDrivesElementHandler::Insert(*db, e2->GetElementId(), e1->GetElementId());
+
+        db->SaveChanges();
+
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        }
+
+    //  ******************************
+    //  Create model2 as a copy of model1
+    if (true)
+        {
+        PhysicalModelPtr model2 = copyPhysicalModelSameDb(*model1, "Model2");
+        ASSERT_TRUE( model2.IsValid() );
+
+        db->SaveChanges();
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        }
+
+    //  *******************************
+    //  Import into separate db
+    if (true)
+        {
+        DgnDbPtr db2 = openCopyOfDb(L"DgnDb/3dMetricGeneral.idgndb", L"3dMetricGeneralcc.idgndb", DgnDb::OpenMode::ReadWrite);
+        ASSERT_TRUE( db2.IsValid() );
+
+        DgnImportContext import3(*db, *db2);
+        DgnDbStatus stat;
+        PhysicalModelPtr model3 = DgnModel::Import(&stat, *model1, import3);
+        ASSERT_TRUE( model3.IsValid() );
+        ASSERT_EQ( DgnDbStatus::Success , stat );
+
+        db2->SaveChanges();
+        ASSERT_EQ( TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1 );
+        TestElementDrivesElementHandler::GetHandler().Clear();
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      07/15

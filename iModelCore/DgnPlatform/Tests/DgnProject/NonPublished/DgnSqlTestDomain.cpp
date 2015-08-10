@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnSqlTestDomain.h"
+#include <Bentley/BeTest.h>
 
 using namespace DgnSqlTestNamespace;
 
@@ -39,7 +40,7 @@ void DgnSqlTestDomain::RegisterDomainAndImportSchema(DgnDbR db, BeFileNameCR sch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICurvePrimitivePtr TestPhysicalElement::CreateBox (DPoint3dCR low, DPoint3dCR high)
+static ICurvePrimitivePtr createBox (DPoint3dCR low, DPoint3dCR high)
     {
     DPoint3d corners[8];
     DRange3d::From(low,high).Get8Corners(corners);
@@ -49,14 +50,13 @@ ICurvePrimitivePtr TestPhysicalElement::CreateBox (DPoint3dCR low, DPoint3dCR hi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestPhysicalElement::TestPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, DgnClassId ecClassId, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, Utf8CP elementCode)
-    : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), ecClassId, categoryId))
+static void setUpElement(PhysicalElementR el, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, Utf8CP elementCode)
     {
-    SetCode(elementCode);
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
+    el.SetCode(elementCode);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(el, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));
     builder->Append(curve);
-    StatusInt status = builder->SetGeomStreamAndPlacement(*this);
-    BeAssert( SUCCESS == status );
+    StatusInt status = builder->SetGeomStreamAndPlacement(el);
+    ASSERT_TRUE( SUCCESS == status );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,8 +64,9 @@ TestPhysicalElement::TestPhysicalElement(PhysicalModelR model, DgnCategoryId cat
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
-    : TestPhysicalElement(model, categoryId, QueryClassId(model.GetDgnDb()), origin, yaw, *CreateBox(DPoint3d::From(0,0,0), DPoint3d::From(1,1,1)), elementCode) 
+    : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
+    setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(1,1,1)), elementCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -73,8 +74,9 @@ RobotElement::RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoin
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ObstacleElement::ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
-    : TestPhysicalElement(model, categoryId, QueryClassId(model.GetDgnDb()), origin, yaw, *CreateBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode) 
+    : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId))
     {
+    setUpElement(*this, origin, yaw, *createBox(DPoint3d::From(0,0,0), DPoint3d::From(10,0.1,1)), elementCode);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -114,7 +116,7 @@ void ObstacleElement::SetTestItem(DgnDbR db, Utf8CP value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestPhysicalElement::Translate(DVec3dCR offset)
+void RobotElement::Translate(DVec3dCR offset)
     {
     Placement3d rplacement = GetPlacement();
     ASSERT_TRUE( rplacement.IsValid() );

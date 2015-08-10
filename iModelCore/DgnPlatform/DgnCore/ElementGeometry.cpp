@@ -2188,6 +2188,49 @@ static void Increment (ViewContextR context)
 }; // GeomStreamEntryIdHelper
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGeomIO::Import(GeomStreamR dest, GeomStreamCR source, DgnImportContext& importer)
+    {
+    Writer writer(importer.GetDestinationDb());
+    Reader reader(importer.GetSourceDb());
+    Collection collection(source.GetData(), source.GetSize());
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case ElementGeomIO::OpCode::BeginSubCategory:
+                {
+                DgnSubCategoryId subCategory;
+                Transform        geomToElem;
+
+                if (reader.Get(egOp, subCategory, geomToElem))
+                    writer.Append(importer.FindSubCategory(subCategory), geomToElem);   // Must assume that caller already imported the Category and its SubCategories
+                break;
+                }
+
+            case ElementGeomIO::OpCode::GeomPartInstance:
+                {
+                DgnGeomPartId geomPartId;
+
+                if (reader.Get(egOp, geomPartId))
+                    writer.Append(importer.RemapGeomPartId(geomPartId));    // Trigger deep-copy if necessary
+
+                break;
+                }
+
+            default:
+                writer.Append(egOp);
+                break;
+            }
+        }
+
+    dest.SaveData(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size());
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId category, ViewFlagsCR flags) const
@@ -3091,6 +3134,33 @@ static bool is3dGeometryType (ElementGeometry::GeometryType geomType)
         default:
             return false;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ElementGeometryBuilder::GetPlacement (Placement3dR placement)
+    {
+    if (!m_is3d)
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+    placement = m_placement3d;
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ElementGeometryBuilder::GetGeomStream (GeomStreamR geom)
+    {
+    if (0 == m_writer.m_buffer.size())
+        return ERROR;
+
+    geom.SaveData (&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

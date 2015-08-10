@@ -11,248 +11,11 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
 
-#define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
-#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
-#define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
-#define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
-#define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
-#define TMTEST_TEST_ITEM2_CLASS_NAME                      "TestItem2"
-#define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
-#define TMTEST_TEST_ITEM2_TestItem2Property                "TestItem2Property"
-#define TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME             "TestUniqueAspect"
-#define TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty     "TestUniqueAspectProperty"
-#define TMTEST_TEST_MULTI_ASPECT_CLASS_NAME              "TestMultiAspect"
-#define TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "TestMultiAspectProperty"
-
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
+USING_NAMESPACE_BENTLEY_DPTEST
 
 BEGIN_UNNAMED_NAMESPACE
-
-struct TestElementHandler;
-struct TestItemHandler;
-struct TestItem2Handler;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestElement : Dgn::PhysicalElement
-{
-    DEFINE_T_SUPER(Dgn::PhysicalElement)
-
-    friend struct TestElementHandler;
-public:
-    TestElement(CreateParams const& params) : T_Super(params) {} 
-
-    static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME));}
-    static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-};
-
-typedef RefCountedPtr<TestElement> TestElementPtr;
-typedef RefCountedCPtr<TestElement> TestElementCPtr;
-typedef TestElement& TestElementR;
-typedef TestElement const& TestElementCR;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestElementHandler : Dgn::dgn_ElementHandler::Element
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Element, )
-};
-
-HANDLER_DEFINE_MEMBERS(TestElementHandler)
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestItem : Dgn::DgnElement::Item
-{
-    DEFINE_T_SUPER(Dgn::DgnElement::Item)
-private:
-    friend struct TestItemHandler;
-
-    Utf8String m_testItemProperty;
-
-    explicit TestItem(Utf8CP prop) : m_testItemProperty(prop) {;}
-
-    Utf8String _GetECSchemaName() const override {return TMTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return TMTEST_TEST_ITEM_CLASS_NAME;}
-    DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
-    DgnDbStatus _LoadProperties(DgnElementCR el) override;
-    DgnDbStatus _UpdateProperties(DgnElementCR el) override;
-
-public:
-    static RefCountedPtr<TestItem> Create(Utf8CP prop) {return new TestItem(prop);}
-
-    Utf8StringCR GetTestItemProperty() const {return m_testItemProperty;}
-    void SetTestItemProperty(Utf8CP s) {m_testItemProperty = s;}
-};
-
-typedef RefCountedPtr<TestItem> TestItemPtr;
-typedef RefCountedCPtr<TestItem> TestItemCPtr;
-typedef TestItem& TestItemR;
-typedef TestItem const& TestItemCR;
-typedef TestItem const* TestItemCP;
-typedef TestItem* TestItemP;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
-    RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
-};
-
-HANDLER_DEFINE_MEMBERS(TestItemHandler)
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestItem2 : Dgn::DgnElement::Item
-{
-    DEFINE_T_SUPER(Dgn::DgnElement::Item)
-private:
-    friend struct TestItem2Handler;
-
-    Utf8String m_testItem2Property;
-
-    explicit TestItem2(Utf8CP prop) : m_testItem2Property(prop) {;}
-
-    Utf8String _GetECSchemaName() const override {return TMTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return TMTEST_TEST_ITEM2_CLASS_NAME;}
-    DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override {return DgnDbStatus::Success;}
-    DgnDbStatus _LoadProperties(DgnElementCR el) override;
-    DgnDbStatus _UpdateProperties(DgnElementCR el) override;
-
-public:
-    static RefCountedPtr<TestItem2> Create(Utf8CP prop) {return new TestItem2(prop);}
-
-    Utf8StringCR GetTestItem2Property() const {return m_testItem2Property;}
-    void SetTestItem2Property(Utf8CP s) {m_testItem2Property = s;}
-};
-
-typedef RefCountedPtr<TestItem2> TestItem2Ptr;
-typedef RefCountedCPtr<TestItem2> TestItem2CPtr;
-typedef TestItem2& TestItem2R;
-typedef TestItem2 const& TestItem2CR;
-typedef TestItem2 const* TestItem2CP;
-typedef TestItem2* TestItem2P;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestItem2Handler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM2_CLASS_NAME, TestItem2Handler, Dgn::dgn_AspectHandler::Aspect, )
-    RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem2("");}
-};
-
-HANDLER_DEFINE_MEMBERS(TestItem2Handler)
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestUniqueAspect : Dgn::DgnElement::UniqueAspect
-{
-    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect)
-private:
-    friend struct TestUniqueAspectHandler;
-
-    Utf8String m_testUniqueAspectProperty;
-
-    explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
-
-    Utf8String _GetECSchemaName() const override {return TMTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME;}
-    DgnDbStatus _LoadProperties(DgnElementCR el) override;
-    DgnDbStatus _UpdateProperties(DgnElementCR el) override;
-
-public:
-    static RefCountedPtr<TestUniqueAspect> Create(Utf8CP prop) {return new TestUniqueAspect(prop);}
-
-    static ECN::ECClassCP GetECClass(DgnDbR db) {return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME);}
-
-    Utf8StringCR GetTestUniqueAspectProperty() const {return m_testUniqueAspectProperty;}
-    void SetTestUniqueAspectProperty(Utf8CP s) {m_testUniqueAspectProperty = s;}
-};
-
-typedef RefCountedPtr<TestUniqueAspect> TestUniqueAspectPtr;
-typedef RefCountedCPtr<TestUniqueAspect> TestUniqueAspectCPtr;
-typedef TestUniqueAspect& TestUniqueAspectR;
-typedef TestUniqueAspect const& TestUniqueAspectCR;
-typedef TestUniqueAspect const* TestUniqueAspectCP;
-typedef TestUniqueAspect* TestUniqueAspectP;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
-    RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestUniqueAspect("");}
-};
-
-HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestMultiAspect : Dgn::DgnElement::MultiAspect
-{
-    DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
-private:
-    friend struct TestMultiAspectHandler;
-
-    Utf8String m_testMultiAspectProperty;
-
-    explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
-
-    Utf8String _GetECSchemaName() const override {return TMTEST_SCHEMA_NAME;}
-    Utf8String _GetECClassName() const override {return TMTEST_TEST_MULTI_ASPECT_CLASS_NAME;}
-    DgnDbStatus _LoadProperties(DgnElementCR el) override;
-    DgnDbStatus _UpdateProperties(DgnElementCR el) override;
-
-public:
-    static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) {return new TestMultiAspect(prop);}
-
-    static ECN::ECClassCP GetECClass(DgnDbR db) {return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_MULTI_ASPECT_CLASS_NAME);}
-
-    Utf8StringCR GetTestMultiAspectProperty() const {return m_testMultiAspectProperty;}
-    void SetTestMultiAspectProperty(Utf8CP s) {m_testMultiAspectProperty = s;}
-};
-
-typedef RefCountedPtr<TestMultiAspect> TestMultiAspectPtr;
-typedef RefCountedCPtr<TestMultiAspect> TestMultiAspectCPtr;
-typedef TestMultiAspect& TestMultiAspectR;
-typedef TestMultiAspect const& TestMultiAspectCR;
-typedef TestMultiAspect const* TestMultiAspectCP;
-typedef TestMultiAspect* TestMultiAspectP;
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
-{
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
-    RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestMultiAspect("");}
-};
-
-HANDLER_DEFINE_MEMBERS(TestMultiAspectHandler)
-
-//=======================================================================================
-// @bsiclass                                                     Sam.Wilson      06/15
-//=======================================================================================
-struct ElementItemTestDomain : DgnDomain
-    {
-    DOMAIN_DECLARE_MEMBERS(ElementItemTestDomain, )
-public:
-    ElementItemTestDomain();
-    };
-
-DOMAIN_DEFINE_MEMBERS(ElementItemTestDomain)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      06/15
@@ -277,22 +40,9 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementItemTestDomain::ElementItemTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
-    {
-    RegisterHandler(TestElementHandler::GetHandler());
-    RegisterHandler(TestItemHandler::GetHandler());
-    RegisterHandler(TestItem2Handler::GetHandler());
-    RegisterHandler(TestUniqueAspectHandler::GetHandler());
-    RegisterHandler(TestMultiAspectHandler::GetHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 ElementItemTests::ElementItemTests()
     {
-    // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(ElementItemTestDomain::GetDomain()); 
+    DgnPlatformTestDomain::Register(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -315,17 +65,7 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     ASSERT_TRUE(m_db.IsValid());
     ASSERT_TRUE( result == BE_SQLITE_OK);
 
-    BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
-
-    auto status = ElementItemTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(DgnDbStatus::Success == status);
-
-    auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
-    ASSERT_NE( nullptr , schema );
-    ASSERT_TRUE( TestElement::QueryClassId(*m_db).IsValid() );
-    ASSERT_NE( nullptr , TestUniqueAspect::GetECClass(*m_db) );
-    ASSERT_NE( nullptr , TestMultiAspect::GetECClass(*m_db) );
+    ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*m_db) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
@@ -335,132 +75,6 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
-    {
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(el);
-    
-    // We make the element geometry depend on the item's property. 
-    //  In a real app, of course, this property would be something realistic, not a string.
-    if (m_testItemProperty.EqualsI("Line"))
-        builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,1,1))));
-    else if (m_testItemProperty.EqualsI("Circle"))
-        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromXYMajorMinor(0,0,0, 10,10, 0,0, Angle::PiOver2())));
-    else
-        return DgnDbStatus::WriteError;
-    
-    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(el))
-        return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
-    {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId));
-    return testElement;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_LoadProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, el.GetElementId());
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ReadError;
-    m_testItemProperty = stmt->GetValueText(0);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, el.GetElementId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem2::_LoadProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_ITEM2_TestItem2Property " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, el.GetElementId());
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ReadError;
-    m_testItem2Property = stmt->GetValueText(0);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestItem2::_UpdateProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_ITEM2_TestItem2Property "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindText(1, m_testItem2Property.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, el.GetElementId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, GetAspectInstanceId(el));
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ReadError;
-    m_testUniqueAspectProperty = stmt->GetValueText(0);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, GetAspectInstanceId(el));
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, GetAspectInstanceId());
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ReadError;
-    m_testMultiAspectProperty = stmt->GetValueText(0);
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, GetAspectInstanceId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -578,34 +192,16 @@ TEST_F(ElementItemTests, ItemCRUD)
 
     if (true)
         {
-        //  Replace the item with an item of a different ECClass
-        TestElementPtr tempEl = el->MakeCopy<TestElement>();
-        RefCountedPtr<TestItem2> newItem2 = TestItem2::Create("TestItem2");
-        newItem2->SetTestItem2Property("TestItem2");
-        DgnElement::Item::SetItem(*tempEl, *newItem2);  // Initial geometry should be a line
-        ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
-        }
-    if (true)
-        {
-        //  Verify that persistent item was changed to the new class 
-        ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*el) );
-        ASSERT_NE( nullptr , DgnElement::Item::Get<TestItem2>(*el) );
-        }
-
-    ASSERT_TRUE( el.IsValid() );
-
-    if (true)
-        {
         //  Delete the item
         TestElementPtr tempEl = el->MakeCopy<TestElement>();
-        TestItem2P item2 = DgnElement::Item::GetP<TestItem2>(*tempEl);
-        item2->Delete();
-        ASSERT_EQ( nullptr , DgnElement::Item::GetItem(*tempEl) ) << "Item should not be returned when scheduled for drop";
+        TestItemP item = DgnElement::Item::GetP<TestItem>(*tempEl);
+        item->Delete();
+        ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*tempEl) ) << "Item should not be returned when scheduled for drop";
         ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
         }
 
     ASSERT_TRUE( el.IsValid() );
-    ASSERT_EQ( nullptr , DgnElement::Item::GetItem(*el) ) << "Item should now be gone";
+    ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*el) ) << "Item should now be gone";
     }
 
 /*---------------------------------------------------------------------------------**//**
