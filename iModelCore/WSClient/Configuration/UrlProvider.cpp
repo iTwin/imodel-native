@@ -31,7 +31,7 @@ const Utf8CP UrlProvider::s_urlNames[6] = {
     URLNAME_PunchListWsg,
     URLNAME_ConnectWsg,
     URLNAME_ConnectEula,
-    URLNAME_ImsStsAuth,       //ConnectLearnStsAuth
+    URLNAME_ImsStsAuth,
     URLNAME_UsageTracking,
     URLNAME_Passport
     };
@@ -51,7 +51,6 @@ const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
     "https://connect-wsg20.bentley.com"
     };
 
-
 const Utf8String UrlProvider::s_connectWsgUrl[3] = {
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
@@ -64,7 +63,7 @@ const Utf8String UrlProvider::s_connectEulaUrl[3] = {
     "https://connect-agreement.bentley.com/rest"
     };
 
-const Utf8String UrlProvider::s_connectLearnStsAuthUri[3] = {
+const Utf8String UrlProvider::s_imsStsAuthUrl[3] = {
     "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
@@ -130,9 +129,9 @@ Utf8String UrlProvider::GetConnectEulaUrl()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetConnectLearnStsAuthUri()
+Utf8String UrlProvider::GetImsStsAuthUrl()
     {
-    return GetUrl(URLNAME_ImsStsAuth, s_connectLearnStsAuthUri);
+    return GetUrl(URLNAME_ImsStsAuth, s_imsStsAuthUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
