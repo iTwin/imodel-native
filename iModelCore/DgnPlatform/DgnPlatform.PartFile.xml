@@ -56,7 +56,7 @@
             <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
-            <Files Required="false" ProductDirectoryName="DgnObjectModelTs" SubPartDirectory="DgnObjectModelTs">Delivery/DgnObjectModel.d.ts</Files>
+            <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
         </Bindings>
     </Part>

@@ -1622,7 +1622,7 @@ public:
 //! @see ComponentModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct DgnComponentSolutions : DgnDbTable
+struct ComponentModelSolution : DgnDbTable
 {
     DEFINE_T_SUPER(DgnDbTable)
 
@@ -1636,7 +1636,7 @@ public:
         DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
         };
 
-    DgnComponentSolutions(DgnDbR db) : T_Super(db) {;}
+    ComponentModelSolution(DgnDbR db) : T_Super(db) {;}
 
     //! @name Capturing Solutions
     //@{

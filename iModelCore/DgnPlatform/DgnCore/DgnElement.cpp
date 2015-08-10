@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 
 DgnElement::Item::Key   DgnElement::Item::s_key;
 
@@ -1862,9 +1862,8 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
         return DgnDbStatus::BadArg;
 
-    DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
     int retval;
-    DgnDbStatus xstatus = som.ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
+    DgnDbStatus xstatus = DgnScript::ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
     if (xstatus != DgnDbStatus::Success)
         return xstatus;
 

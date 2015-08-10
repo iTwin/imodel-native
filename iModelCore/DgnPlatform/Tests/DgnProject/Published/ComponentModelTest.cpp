@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/DgnComponentModel_Test.cpp $
+|  $Source: Tests/DgnProject/Published/ComponentModelTest.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,14 +8,14 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define TEST_JS_NAMESPACE    "DgnComponentModelTest"
-#define TEST_JS_NAMESPACE_W L"DgnComponentModelTest"
+#define TEST_JS_NAMESPACE    "ComponentModelTest"
+#define TEST_JS_NAMESPACE_W L"ComponentModelTest"
 #define TEST_WIDGET_COMPONENT_NAME "Widget"
 #define TEST_GADGET_COMPONENT_NAME "Gadget"
 
@@ -449,8 +449,8 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
-    DgnComponentSolutions solutions(*m_clientDb);
-    EC::ECInstanceId existingSid = solutions.QuerySolutionId(ccId, DgnComponentSolutions::ComputeSolutionName(parms));
+    ComponentModelSolution solutions(*m_clientDb);
+    EC::ECInstanceId existingSid = solutions.QuerySolutionId(ccId, ComponentModelSolution::ComputeSolutionName(parms));
     
     solutionId = solutions.CaptureSolution(*componentModel);
     ASSERT_TRUE( solutionId.IsValid() );
@@ -471,7 +471,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
     
-    DgnComponentSolutions solutions(*m_clientDb);
+    ComponentModelSolution solutions(*m_clientDb);
     PhysicalElementPtr instance = solutions.CreateSolutionInstance(*targetModel, TEST_JS_NAMESPACE, solutionId, DPoint3d::FromZero(), YawPitchRollAngles());
     ASSERT_TRUE( instance.IsValid() );
     ASSERT_TRUE( instance->Insert().IsValid() );
@@ -629,8 +629,8 @@ void ComponentModelTest::SimulateClient()
 TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     {
     // For the purposes of this test, we'll put the Component and Client models in different DgnDbs
-    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"DgnComponentModelTest_Component.idgndb");
-    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"DgnComponentModelTest_Client.idgndb");
+    m_componentDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Component.idgndb");
+    m_clientDbName = copyDb(L"DgnDb/3dMetricGeneral.idgndb", L"ComponentModelTest_Client.idgndb");
     BeTest::GetHost().GetOutputRoot(m_componentSchemaFileName);
     m_componentSchemaFileName.AppendToPath(TEST_JS_NAMESPACE_W L"0.0.ECSchema.xml");
 

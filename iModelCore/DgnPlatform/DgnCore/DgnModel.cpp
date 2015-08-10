@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 #include <DgnPlatform/DgnCore/DgnDbTables.h>
 
 /*---------------------------------------------------------------------------------**//**
@@ -259,9 +259,8 @@ void DgnModel::Solver::Solve(DgnModelR model)
     {
     if (Type::Script == m_type)
         {
-        DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
         int retval;
-        DgnDbStatus xstatus = som.ExecuteModelSolver(retval, model, m_name.c_str(), m_parameters);
+        DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), m_parameters);
         if (xstatus != DgnDbStatus::Success || 0 != retval)
             {
             TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Model solver failed");   // *** NEEDS WORK: Get failure description from ModelSolver
@@ -1066,7 +1065,7 @@ void DgnModel::Solver::FromJson(Utf8CP str)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceId DgnComponentSolutions::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
+EC::ECInstanceId ComponentModelSolution::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
     {
     CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(ComponentModelId=? AND Parameters=?)");
     stmt->BindId(1, cmid);
@@ -1079,7 +1078,7 @@ EC::ECInstanceId DgnComponentSolutions::QuerySolutionId(DgnModelId cmid, Utf8Str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnComponentSolutions::Query(Solution& sln, EC::ECInstanceId sid)
+DgnDbStatus ComponentModelSolution::Query(Solution& sln, EC::ECInstanceId sid)
     {
     CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(Id=?)");
     stmt->BindId(1, sid);
@@ -1095,7 +1094,7 @@ DgnDbStatus DgnComponentSolutions::Query(Solution& sln, EC::ECInstanceId sid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnComponentSolutions::Solution::QueryGeomStream(GeomStreamR geom, DgnDbR db) const
+DgnDbStatus ComponentModelSolution::Solution::QueryGeomStream(GeomStreamR geom, DgnDbR db) const
     {
     return geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution), "Geom", m_id.GetValue());
     }
@@ -1103,7 +1102,7 @@ DgnDbStatus DgnComponentSolutions::Solution::QueryGeomStream(GeomStreamR geom, D
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnComponentSolutions::ComputeSolutionName(Json::Value const& parms)
+Utf8String ComponentModelSolution::ComputeSolutionName(Json::Value const& parms)
     {
     return Json::FastWriter::ToString(parms).c_str();
     }
@@ -1111,7 +1110,7 @@ Utf8String DgnComponentSolutions::ComputeSolutionName(Json::Value const& parms)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componentModel)
+EC::ECInstanceId ComponentModelSolution::CaptureSolution(ComponentModelR componentModel)
     {
     if (&componentModel.GetDgnDb() != &GetDgnDb())
         {
@@ -1232,7 +1231,7 @@ EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr DgnComponentSolutions::CreateSolutionInstance(DgnModelR destinationModel, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+PhysicalElementPtr ComponentModelSolution::CreateSolutionInstance(DgnModelR destinationModel, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
     Solution sln;
     if (DgnDbStatus::Success != Query(sln, solutionId))
