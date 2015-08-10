@@ -83,6 +83,7 @@
     <ClInclude Include="NonPublished\PublicApi\NonPublished\ECDb\ECDbTestProject.h" />
     <ClInclude Include="Performance\DbLogHelper.h" />
     <ClInclude Include="Performance\PerformanceBisDesignTestFixture.h" />
+    <ClInclude Include="Performance\PerformanceECDbMapCATests.h" />
     <ClInclude Include="Performance\PerformanceECSqlStatementTestFixture.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
