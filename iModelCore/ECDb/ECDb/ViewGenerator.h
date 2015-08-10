@@ -326,7 +326,7 @@ struct SqlGenerator
          BentleyStatus BuildHoldingConstraint (NativeSqlBuilder& stmt, RelationshipClassMapCR classMap);
          BentleyStatus BuildEmbeddingConstraint (NativeSqlBuilder& stmt, RelationshipClassMapCR classMap);
 
-         SqlClassPersistenceMethod* SqlGenerator::GetClassPersistenceMethod (ClassMapCR classMap);
+         SqlClassPersistenceMethod* GetClassPersistenceMethod (ClassMapCR classMap);
          BentleyStatus BuildHoldingView (NativeSqlBuilder& sql);
 
          BentleyStatus FindRelationshipReferences (bmap<RelationshipClassMapCP, ECDbMap::LightWeightMapCache::RelationshipEnd>& relationships, ClassMapCR classMap);

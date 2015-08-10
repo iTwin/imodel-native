@@ -3414,8 +3414,8 @@ ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId root
 BentleyStatus ECDbMapStorage::UpdateDMLPolicy (ECDbClassMapId classMapId, uint16_t dmlPolicy)
     {
     CachedStatementPtr stmt = m_manager.GetECDb ().GetCachedStatement ("UPDATE ec_ClassMap SET DMLPolicy = ? WHERE Id = ?");
-    stmt->BindInt64 (1, classMapId);
-    stmt->BindInt (2, static_cast<int>(dmlPolicy));
+    stmt->BindInt (1, static_cast<int>(dmlPolicy));
+    stmt->BindInt64 (2, classMapId);
     auto r = stmt->Step ();
     BeAssert (r == BE_SQLITE_DONE);
     return r == BE_SQLITE_DONE ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;

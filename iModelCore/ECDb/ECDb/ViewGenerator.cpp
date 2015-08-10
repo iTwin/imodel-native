@@ -659,6 +659,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             }
 
         //Create null view
+       // printf ("NULL VIEW for %s\n", Utf8String (classMap.GetClass ().GetName ().c_str ()).c_str ());
         NativeSqlBuilder nullView;
         nullView.Append ("SELECT ");
         if (BuildSelectionClause (nullView, classMap, classMap, nullptr, true, true) != BentleyStatus::SUCCESS)
@@ -704,7 +705,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         for (auto classMap : classMaps)
             {
             auto scpm = GetClassPersistenceMethod (*classMap);
-            printf ("%s\n", Utf8String (scpm->GetClassMap ().GetClass ().GetFullName ()).c_str ());
+            //printf ("%s\n", Utf8String (scpm->GetClassMap ().GetClass ().GetFullName ()).c_str ());
             BeAssert (scpm != nullptr);
             if (BuildDeleteTriggers (*scpm) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
@@ -728,12 +729,17 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 {
                 }
 
-            Utf8String createSql = scpm.second->ToString (SqlOption::Create);
+            Utf8String createSql;
+            createSql.append ("--> ").append (Utf8String (scpm.second->GetClassMap ().GetClass().GetFullName()).c_str()).append("\n");
+            createSql.append ("--> ").append (scpm.second->GetClassMap ().GetDMLPolicy ().ToString ()).append ("\n");;
+            createSql.append(scpm.second->ToString (SqlOption::Create));
+
             fwrite (createSql.c_str(), createSql.size (),1, file);
             fflush (file);
 
             if (m_map.GetECDbR ().ExecuteSql (createSql.c_str ()) != BE_SQLITE_OK)
-                {
+                { 
+                printf ("%s\n", m_map.GetECDbR ().GetLastError ());
                 }
             }
         fclose (file);
@@ -745,7 +751,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //----------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::BuildDeleteTriggerForStructArrays (SqlClassPersistenceMethod& scpm)
         {
-        printf ("BuildDeleteTriggerForStructArrays\n");
+        //printf ("BuildDeleteTriggerForStructArrays\n");
         auto primaryTarget = scpm.GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
         if (primaryTarget == DMLPolicy::Target::None)
             return BentleyStatus::SUCCESS;
@@ -776,7 +782,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             auto ecinstanceIdMap = primaryClassMap.GetECInstanceIdPropertyMap ();
             BeAssert (ecinstanceIdMap != nullptr);
             BeAssert (ecinstanceIdMap->GetFirstColumn () != nullptr);
-            deleteTrigger.GetNameBuilder ().Append (primaryTargetId).Append ("_Delete_StructArrays");
+            deleteTrigger.GetNameBuilder ().Append (BuildSchemaQualifiedClassName(primaryClassMap.GetClass()).c_str()).Append ("_Delete_StructArrays");
             deleteTrigger.GetOnBuilder ().Append (primaryTargetId);
             auto& deleteTriggerBody = deleteTrigger.GetBodyBuilder ();
             auto primaryECInstanceId = primaryTarget == DMLPolicy::Target::Table ? ecinstanceIdMap->GetFirstColumn ()->GetName ().c_str () : "ECInstanceId";
@@ -887,7 +893,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggersForDerivedClasses (SqlClassPersistenceMethod& scpm)
         {
-        printf ("BuildDeleteTriggersForDerivedClasses\n");
+       // printf ("BuildDeleteTriggersForDerivedClasses\n");
 
         auto& primaryClassMap = scpm.GetClassMap ();
         auto primaryTarget = primaryClassMap.GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
@@ -909,7 +915,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             auto& deleteTrigger = scpm.AddTrigger (SqlTriggerBuilder::Type::Delete, primaryTriggerCondition, false);
             auto refECInstanceId = refTarget == DMLPolicy::Target::Table ? refClassMap.GetECInstanceIdPropertyMap ()->GetFirstColumn ()->GetName ().c_str () : "ECInstanceId";
 
-            deleteTrigger.GetNameBuilder ().Append (primaryTargetId).Append ("_Delete_").Append (BuildSchemaQualifiedClassName (refClassMap.GetClass ()).c_str());
+            deleteTrigger.GetNameBuilder ().Append (BuildSchemaQualifiedClassName (primaryClassMap.GetClass ()).c_str ()).Append ("_Delete_").Append (BuildSchemaQualifiedClassName (refClassMap.GetClass ()).c_str ());
             deleteTrigger.GetOnBuilder ().Append (primaryTargetId);
 
             Utf8String filterClause;
@@ -1005,20 +1011,28 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         {
         auto strengthType = classMap.GetRelationshipClass ().GetStrength ();
         auto strengthDirection = classMap.GetRelationshipClass ().GetStrengthDirection ();
+        auto primarySCPM = GetClassPersistenceMethod (classMap);
+        BeAssert (primarySCPM != nullptr);
+        auto primaryTarget = primarySCPM->GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
 
         if (StrengthType::STRENGTHTYPE_Embedding == strengthType)
             {
             trigger.Append (" -- StrengthType == Embedding  ").AppendEOL ();
             ECRelationshipEnd endToDelete =
                 strengthDirection == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+            
+            auto primaryKey = ECRelationshipEnd::ECRelationshipEnd_Source == endToDelete ? classMap.GetSourceECInstanceIdPropMap () : classMap.GetTargetECInstanceIdPropMap ();
+            auto primaryKeyPath = ECRelationshipEnd::ECRelationshipEnd_Source == endToDelete ? "SourceECInstanceId" : "TargetECInstanceId";
+            auto primaryKeyId = primaryTarget == DMLPolicy::Target::Table ? primaryKey->GetFirstColumn ()->GetName ().c_str () : primaryKeyPath;
             for (auto endToBeDeleted : GetEndClassMaps (classMap.GetRelationshipClass (), endToDelete))
                 {
+                auto refSCPM = GetClassPersistenceMethod (*endToBeDeleted);
+                auto refTarget = refSCPM->GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
+                auto refTargetId = refSCPM->GetAffectedTargetId (DMLPolicy::Operation::Delete);
+                auto refECInstanceIdKey = refTarget == DMLPolicy::Target::Table ? refSCPM->GetClassMap ().GetECInstanceIdPropertyMap ()->GetFirstColumn ()->GetName ().c_str () : "ECInstanceId";
                 trigger.Append ("\tDELETE FROM ");
-                trigger.AppendEscaped (BuildViewClassName (endToBeDeleted->GetClass ()).c_str ());
-                if (endToDelete == ECRelationshipEnd_Target)
-                    trigger.Append (" WHERE  ECInstanceId = OLD.TargetECInstanceId;");
-                else
-                    trigger.Append (" WHERE  ECInstanceId = OLD.SourceECInstanceId;");
+                trigger.AppendEscaped (refTargetId);
+                trigger.AppendFormatted (" WHERE  %s = OLD.%s;", refECInstanceIdKey, primaryKeyId);
                 trigger.AppendEOL ();
                 }
             }
@@ -1032,19 +1046,28 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         {
         auto strengthType = classMap.GetRelationshipClass ().GetStrength ();
         auto strengthDirection = classMap.GetRelationshipClass ().GetStrengthDirection ();
+        auto primarySCPM = GetClassPersistenceMethod (classMap);
+        BeAssert (primarySCPM != nullptr);
+        auto primaryTarget = primarySCPM->GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
+
         if (StrengthType::STRENGTHTYPE_Holding == strengthType)
             {
             trigger.Append (" -- StrengthType == Holding  ").AppendEOL ();
             ECRelationshipEnd endToDelete =
                 strengthDirection == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+
+            auto primaryKey = ECRelationshipEnd::ECRelationshipEnd_Source == endToDelete ? classMap.GetSourceECInstanceIdPropMap () : classMap.GetTargetECInstanceIdPropMap ();
+            auto primaryKeyPath = ECRelationshipEnd::ECRelationshipEnd_Source == endToDelete ? "SourceECInstanceId" : "TargetECInstanceId";
+            auto primaryKeyId = primaryTarget == DMLPolicy::Target::Table ? primaryKey->GetFirstColumn ()->GetName ().c_str () : primaryKeyPath;
             for (auto endToBeDeleted : GetEndClassMaps (classMap.GetRelationshipClass (), endToDelete))
                 {
+                auto refSCPM = GetClassPersistenceMethod (*endToBeDeleted);
+                auto refTarget = refSCPM->GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
+                auto refTargetId = refSCPM->GetAffectedTargetId (DMLPolicy::Operation::Delete);
+                auto refECInstanceIdKey = refTarget == DMLPolicy::Target::Table ? refSCPM->GetClassMap ().GetECInstanceIdPropertyMap ()->GetFirstColumn ()->GetName ().c_str () : "ECInstanceId";
                 trigger.Append ("\tDELETE FROM ");
-                trigger.AppendEscaped (BuildViewClassName (endToBeDeleted->GetClass ()).c_str ());
-                if (endToDelete == ECRelationshipEnd_Target)
-                    trigger.Append (" WHERE  ECInstanceId = OLD.TargetECInstanceId AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.TargetECInstanceId) = 0;");
-                else
-                    trigger.Append (" WHERE  ECInstanceId = OLD.SourceECInstanceId AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW " WHERE ECInstanceId = OLD.TargetECInstanceId) = 0;");
+                trigger.AppendEscaped (refTargetId);
+                trigger.AppendFormatted (" WHERE  %s = OLD.%s AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.%s) = 0;", refECInstanceIdKey, primaryKeyId, primaryKeyId);
                 trigger.AppendEOL ();
                 }
             }
@@ -1227,7 +1250,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggerForMe (SqlClassPersistenceMethod& scpm)
         {
-        printf ("BuildDeleteTriggerForMe\n");
+        //printf ("BuildDeleteTriggerForMe\n");
         //We will not create delete me trigger for a table;
         if (scpm.GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete) != DMLPolicy::Target::View)
             return BentleyStatus::SUCCESS;
@@ -1297,7 +1320,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggersForRelationships (SqlClassPersistenceMethod& scpm)
         {
-        printf ("BuildDeleteTriggersForRelationships\n");
+        //printf ("BuildDeleteTriggersForRelationships\n");
         auto& primaryClassMap = scpm.GetClassMap ();
         if (primaryClassMap.GetClass ().GetRelationshipClassCP () != nullptr)
             return BentleyStatus::SUCCESS;
@@ -1317,7 +1340,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
    
         Utf8CP primaryECInstanceIdKey = primaryTarget == DMLPolicy::Target::Table ? primaryClassMap.GetECInstanceIdPropertyMap ()->GetFirstColumn ()->GetName ().c_str () : "ECInstanceId";
         SqlTriggerBuilder& deleteTrigger = scpm.AddTrigger (SqlTriggerBuilder::Type::Delete, primaryTriggerCondition, /*Temprary = */false);
-        deleteTrigger.GetNameBuilder ().Append (primaryTargetId).Append ("_Delete_Relationships");
+        deleteTrigger.GetNameBuilder ().Append (BuildSchemaQualifiedClassName (primaryClassMap.GetClass()).c_str()).Append ("_Delete_Relationships");
         if (primaryTarget == DMLPolicy::Target::Table)
             {
             auto classIdColumn = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId);
@@ -1351,13 +1374,16 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         deleteTriggerBody.AppendFormatted ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.%s, %s, 'BEGIN'); ", deleteTrigger.GetName (), primaryECInstanceIdKey, primaryECClassId.c_str ()).AppendEOL ();
         deleteTriggerBody.Append ("--#endif").AppendEOL ();
 #endif
-
+        
         for (auto& ref : relationshipRefs)
             {           
             auto refSPM = GetClassPersistenceMethod (*(ref.first));
             auto refTarget = refSPM->GetClassMap ().GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
+            if (refTarget == DMLPolicy::Target::None)
+                continue;
+
             auto refTargetId = refSPM->GetAffectedTargetId (DMLPolicy::Operation::Delete);
-          
+            deleteTriggerBody.AppendFormatted ("-- %s", Utf8String(refSPM->GetClassMap ().GetClass().GetName().c_str()).c_str()).AppendEOL();
             deleteTriggerBody.Append ("\tDELETE FROM ");
             deleteTriggerBody.AppendEscaped (refTargetId);
             Utf8CP refSourceKey = refSourceKey = refTarget == DMLPolicy::Target::Table ? ref.first->GetSourceECClassIdPropMap ()->GetFirstColumn ()->GetName ().c_str() : "SourceECInstanceId";

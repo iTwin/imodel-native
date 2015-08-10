@@ -58,6 +58,30 @@ struct DMLPolicy
         };
     private:
         std::map<Operation, Target> m_ops;
+        Utf8CP ToString (Operation op) const
+            {
+            switch (op) 
+                { 
+                case Operation::Select: return "SELECT";
+                case Operation::Insert: return "INSERT";
+                case Operation::Update: return "UPDATE";
+                case Operation::Delete: return "DELETE";
+                }
+
+            return nullptr;
+            }
+        Utf8CP ToString (Target op) const
+            {
+            switch (op)
+                {
+                case Target::Table: return "TABLE";
+                case Target::View: return "VIEW";
+                case Target::None: return "NONE";
+                }
+
+            return nullptr;
+            }
+
     public:
         DMLPolicy ()
             {
@@ -133,6 +157,21 @@ struct DMLPolicy
             out.Set (Operation::Delete, (Target)((raw & mask << 6) >> 6));
             return out;
             }
+
+        const Utf8String ToString () const
+            {
+            Utf8String outString;
+            int idx = 0;
+            for (auto const& pair : m_ops)
+                {
+                idx = idx + 1;
+                outString.append (Utf8PrintfString ("%s -> %s", ToString (pair.first), ToString (pair.second)).c_str ());
+                if (idx != m_ops.size ())
+                    outString.append (", ");
+                }
+
+            return outString;
+            }
     };
 //=======================================================================================
 //! Maps an ECClass to a DbTable
@@ -177,7 +216,8 @@ private:
     virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
     virtual ClassDbView const& _GetDbView () const = 0;
-
+    virtual DMLPolicy const& _GetDMLPolicy () const = 0;
+    virtual DMLPolicy&  _GetDMLPolicyR () = 0;
 public:
     virtual ~IClassMap () {}
 
@@ -233,7 +273,8 @@ public:
 
         return secondaryTables;
         }
-
+    DMLPolicy const& GetDMLPolicy () const { return _GetDMLPolicy (); }
+    DMLPolicy&  GetDMLPolicyR () {return _GetDMLPolicyR ();}
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
@@ -388,6 +429,8 @@ struct ClassMap : public IClassMap, RefCountedBase
         virtual ECN::ECClassId _GetParentMapClassId () const override { return m_parentMapClassId; }
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual ClassDbView const& _GetDbView () const override { return *m_dbView; }
+        virtual DMLPolicy const& _GetDMLPolicy ()  const override { return m_crudPolicy; }
+        virtual DMLPolicy&  _GetDMLPolicyR () override{ return m_crudPolicy; }
         PropertyMapCollection& GetPropertyMapsR ();
 
         ECDbSchemaManagerCR Schemas () const;
@@ -421,8 +464,7 @@ struct ClassMap : public IClassMap, RefCountedBase
     void SetId (ECDbClassMapId id) { m_id = id; }
     BentleyStatus Save (std::set<ClassMap const*>& savedGraph) { return _Save (savedGraph); }
     BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
-    DMLPolicy const& GetDMLPolicy () const { return m_crudPolicy; }
-    DMLPolicy&  GetDMLPolicyR () { return m_crudPolicy; }
+
 
     void CreateIndices ();
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }

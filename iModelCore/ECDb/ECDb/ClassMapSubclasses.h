@@ -27,7 +27,7 @@ private:
     private:
         ClassMapCR m_secondaryTableClassMap;
         PropertyMapCollection m_embeddedClassViewPropMaps;
-
+        DMLPolicy m_policy;
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual PropertyMapCollection const& _GetPropertyMaps () const override { return m_embeddedClassViewPropMaps; }
         virtual ECDbSqlTable& _GetTable () const override { return m_secondaryTableClassMap.GetTable (); }
@@ -37,11 +37,17 @@ private:
         virtual Type _GetClassMapType () const override { return Type::EmbeddedType; };
         virtual ECN::ECClassId _GetParentMapClassId () const override { return m_secondaryTableClassMap.GetParentMapClassId (); }
         virtual ClassDbView const& _GetDbView () const override { return m_secondaryTableClassMap.GetDbView (); }
-
+        virtual DMLPolicy const& _GetDMLPolicy () const { return m_policy; }
+        virtual DMLPolicy&  _GetDMLPolicyR () { return m_policy; }
     public:
         explicit EmbeddedTypeClassMap (ClassMapCR secondaryTableClassMap)
             : m_secondaryTableClassMap (secondaryTableClassMap)
-            {}
+            {
+            m_policy.Set (DMLPolicy::Operation::Select, DMLPolicy::Target::Table);
+            m_policy.Set (DMLPolicy::Operation::Insert, DMLPolicy::Target::Table);
+            m_policy.Set (DMLPolicy::Operation::Update, DMLPolicy::Target::Table);
+            m_policy.Set (DMLPolicy::Operation::Delete, DMLPolicy::Target::Table);
+            }
 
         ~EmbeddedTypeClassMap () {}
 
