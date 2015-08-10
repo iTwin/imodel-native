@@ -1125,7 +1125,7 @@ EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componen
         }
 
     //  Accumulate geometry by SubCategory
-    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** TBD: add another dimension: break out builders by same ElemDisplayParams
+    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** WIP_IMPORT: add another dimension: break out builders by same ElemDisplayParams
     componentModel.FillModel();
     for (auto const& mapEntry : componentModel)
         {
