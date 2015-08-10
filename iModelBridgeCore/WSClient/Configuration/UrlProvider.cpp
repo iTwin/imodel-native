@@ -13,55 +13,73 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+bool UrlProvider::s_isInitialized = false;
 static UrlProvider::Environment s_env;
 IBuddiClientPtr UrlProvider::s_buddi;
 ILocalState* UrlProvider::s_localState = nullptr;
 
-bool UrlProvider::s_isInitialized = false;
+// URL configuration
+
+#define URLNAME_PunchListWsg    "Mobile.PunchListWsg"
+#define URLNAME_ConnectWsg      "Mobile.ConnectWsg"
+#define URLNAME_ConnectEula     "Mobile.ConnectEula"
+#define URLNAME_ImsStsAuth      "Mobile.ImsStsAuth"
+#define URLNAME_UsageTracking   "Mobile.UsageTracking"
+#define URLNAME_Passport        "Mobile.Passport"
 
 const Utf8CP UrlProvider::s_urlNames[6] = {
-    "Mobile.PunchListWsg",
-    "Mobile.ConnectWsg",
-    "Mobile.ConnectEula",
-    "Mobile.ImsStsAuth",       //ConnectLearnStsAuth
-    "Mobile.UsageTracking",
-    "Mobile.Passport"
+    URLNAME_PunchListWsg,
+    URLNAME_ConnectWsg,
+    URLNAME_ConnectEula,
+    URLNAME_ImsStsAuth,       //ConnectLearnStsAuth
+    URLNAME_UsageTracking,
+    URLNAME_Passport
     };
 
-const UrlData UrlProvider::s_punchListWsgUrl[3] = {
-    {"https://dev-wsg20-eus.cloudapp.net", 103},
-    {"https://qa-wsg20-eus.cloudapp.net", 102},
-    {"https://connect-wsg20.bentley.com", 1230}
+// Region IDs from the buddi.bentley.com
+uint32_t UrlProvider::s_regionsId[3] = {
+    103,    // "Bentley Corporate Network - DEV"
+    102,    // "Bentley Corporate Network - QA"
+    0       // No region - use BUDDI non-regional URLs
     };
 
-const UrlData UrlProvider::s_connectWsgUrl[3] = {
-    {"https://dev-wsg20-eus.cloudapp.net", 103},
-    {"https://qa-wsg20-eus.cloudapp.net", 102},
-    {"https://connect-wsg20.bentley.com", 1231}
+// Default URLs
+
+const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
     };
 
-const UrlData UrlProvider::s_connectEulaUrl[3] = {
-    {"https://dev-agreement-eus.cloudapp.net/rest", 103},
-    {"https://dev-agreement-eus.cloudapp.net/rest", 102},
-    {"https://connect-agreement.bentley.com/rest", 1232}
+
+const Utf8String UrlProvider::s_connectWsgUrl[3] = {
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
     };
 
-const UrlData UrlProvider::s_connectLearnStsAuthUri[3] = {
-    {"https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx", 103},
-    {"https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx", 102},
-    {"https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx", 1233}
+const Utf8String UrlProvider::s_connectEulaUrl[3] = {
+    "https://dev-agreement-eus.cloudapp.net/rest",
+    "https://dev-agreement-eus.cloudapp.net/rest",
+    "https://connect-agreement.bentley.com/rest"
     };
 
-const UrlData UrlProvider::s_usageTrackingUrl[3] = {
-    {"https://licenseXM.bentley.com/bss/ws/mobile", 103},
-    {"https://licenseXM.bentley.com/bss/ws/mobile", 102},
-    {"https://SELECTserver.bentley.com/bss/ws/mobile", 1234}
+const Utf8String UrlProvider::s_connectLearnStsAuthUri[3] = {
+    "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
     };
 
-const UrlData UrlProvider::s_passportUrl[3] = {
-    {"https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 103},
-    {"https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 102},
-    {"https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport", 1235}
+const Utf8String UrlProvider::s_usageTrackingUrl[3] = {
+    "https://licenseXM.bentley.com/bss/ws/mobile",
+    "https://licenseXM.bentley.com/bss/ws/mobile",
+    "https://SELECTserver.bentley.com/bss/ws/mobile"
+    };
+
+const Utf8String UrlProvider::s_passportUrl[3] = {
+    "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport"
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -90,7 +108,7 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetPunchlistWsgUrl()
     {
-    return GetUrl("Mobile.PunchListWsg", s_punchListWsgUrl);
+    return GetUrl(URLNAME_PunchListWsg, s_punchListWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -98,7 +116,7 @@ Utf8String UrlProvider::GetPunchlistWsgUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectWsgUrl()
     {
-    return GetUrl("Mobile.ConnectWsg", s_connectWsgUrl);
+    return GetUrl(URLNAME_ConnectWsg, s_connectWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -106,7 +124,7 @@ Utf8String UrlProvider::GetConnectWsgUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectEulaUrl()
     {
-    return GetUrl("Mobile.ConnectEula", s_connectEulaUrl);
+    return GetUrl(URLNAME_ConnectEula, s_connectEulaUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -114,7 +132,7 @@ Utf8String UrlProvider::GetConnectEulaUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectLearnStsAuthUri()
     {
-    return GetUrl("Mobile.ImsStsAuth", s_connectLearnStsAuthUri);
+    return GetUrl(URLNAME_ImsStsAuth, s_connectLearnStsAuthUri);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -122,7 +140,7 @@ Utf8String UrlProvider::GetConnectLearnStsAuthUri()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetUsageTrackingUrl()
     {
-    return GetUrl("Mobile.UsageTracking", s_usageTrackingUrl);
+    return GetUrl(URLNAME_UsageTracking, s_usageTrackingUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -130,13 +148,13 @@ Utf8String UrlProvider::GetUsageTrackingUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetPassportUrl()
     {
-    return GetUrl("Mobile.Passport", s_passportUrl);
+    return GetUrl(URLNAME_Passport, s_passportUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Julija.Semenenko   06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetUrl(Utf8CP urlName, const UrlData* defaultUrls)
+Utf8String UrlProvider::GetUrl(Utf8CP urlName, const Utf8String* defaultUrls)
     {
     if (!s_isInitialized)
         {
@@ -152,22 +170,22 @@ Utf8String UrlProvider::GetUrl(Utf8CP urlName, const UrlData* defaultUrls)
         return url;
         }
 
-    url = GetBuddiUrl(urlName, defaultUrls[s_env].GetId());
+    url = GetBuddiUrl(urlName);
     if (!url.empty())
         {
         s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName, url);
         return url;
         }
 
-    return defaultUrls[s_env].GetDefaultUrl();
+    return defaultUrls[s_env];
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Julija.Semenenko   06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetBuddiUrl(Utf8StringCR urlName, uint32_t regionId)
+Utf8String UrlProvider::GetBuddiUrl(Utf8StringCR urlName)
     {
-    auto result = s_buddi->GetUrl(urlName, regionId)->GetResult();
+    auto result = s_buddi->GetUrl(urlName, s_regionsId[s_env])->GetResult();
     if (result.IsSuccess())
         {
         return result.GetValue();
