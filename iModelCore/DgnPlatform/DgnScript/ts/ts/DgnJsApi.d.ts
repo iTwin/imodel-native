@@ -1,7 +1,7 @@
 declare module BentleyApi.Dgn {
 
     //! Utilities
-    class JsUtils implements BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
+    class JsUtils implements BeJsProjection_SuppressConstructor {
         //! Make sure that a script library is loaded
         static ImportLibrary(libName: Bentley_Utf8String): void;
 
@@ -35,7 +35,7 @@ declare module BentleyApi.Dgn {
 
     type JsYawPitchRollAnglesP = cxx_pointer<JsYawPitchRollAngles>;
 
-    //! A wrapper for BentleyApi::Dgn::DgnElement. There is no constructor. The user must call DgnModel::Create to create a new one.
+    //! A wrapper for BentleyApi::Dgn::DgnElement.
     class JsDgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         GetElementId(): Bentley_Utf8String;
         Insert(): cxx_int32_t;
@@ -48,7 +48,7 @@ declare module BentleyApi.Dgn {
 
     type JsDgnElementP = cxx_pointer<JsDgnElement>;
 
-    //! A wrapper for BentleyApi::Dgn::DgnElement. There is no constructor. The user must call ?? to create a new one.
+    //! A wrapper for BentleyApi::Dgn::DgnModel. There is no constructor. The native caller must supply one.
     class JsDgnModel implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
         GetModelId(): Bentley_Utf8String;
         CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): JsDgnElementP;

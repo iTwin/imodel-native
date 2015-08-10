@@ -21,9 +21,25 @@ extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
+// Needed by generated callbacks to construct instances of wrapper classes.
+// @bsiclass                                                    Sam/Steve.Wilson    7/15
+//=======================================================================================
+struct RefCountedBaseWithCreate : public RefCounted <IRefCounted>
+{
+    template <typename T, typename... Arguments>
+    static RefCountedPtr<T> Create (Arguments&&... arguments)
+        {
+        return new T (std::forward<Arguments> (arguments)...);
+        };
+
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+};
+
+//=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsUtils : RefCountedBaseWithCreate
+struct JsUtils : RefCountedBaseWithCreate // ***  NEEDS WORK: It should not be necessary to derived from RefCountedBase, since I suppress my constructor. This is a bug in BeJavaScript that should be fixed.
 {
     static void ImportLibrary (Utf8StringCR libName);
     static void ReportError(Utf8StringCR description);

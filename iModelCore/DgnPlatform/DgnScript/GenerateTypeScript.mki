@@ -52,7 +52,7 @@ $(dgnScriptGen)DgnJsApiCallbacks.cpp : $(dgnScriptTsDir)DgnJsApi.d.ts $(dgnScrip
         --nativeOutputPath "$(dgnScriptGen)DgnJsApiCallbacks.cpp" \
         --nativeOutputHeaderPath "$(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h" \
         --projectionTypeName "BentleyApi::Dgn::DgnJsApiProjection" \
-        --refCountedBaseType "BentleyApi::RefCountedBaseWithCreate" \
+        --refCountedBaseType "BentleyApi::Dgn::RefCountedBaseWithCreate" \
         --platformTsLibPath "$(BuildContext)SubParts/BeJavaScriptJs/BeJavaScriptTypes.ts" \
         --tscCommand "$(TypeScriptCompile)"
     ~time
