@@ -730,13 +730,13 @@ struct ECInstanceInteropHelper
 struct IECSchemaRemapper
     {
 protected:
-    virtual void                _ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const = 0;
-    virtual void                _ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const = 0;
+    virtual bool                _ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const = 0;
+    virtual bool                _ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const = 0;
 public:
-    //! Given a serialized property name, return the name of the possibly renamed property in the specified ECClass.
-    ECOBJECTS_EXPORT void       ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const;
-    //! Given a serialized class name, return the name of the possibly renamed class in the specified ECSchema
-    ECOBJECTS_EXPORT void       ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const;
+    //! Given a serialized property name, return the name of the possibly renamed property in the specified ECClass. Returns true if a remapping for the specified property name was found.
+    ECOBJECTS_EXPORT bool       ResolvePropertyName (WStringR serializedPropertyName, ECClassCR ecClass) const;
+    //! Given a serialized class name, return the name of the possibly renamed class in the specified ECSchema. Returns true if a remapping for the specified class name was found.
+    ECOBJECTS_EXPORT bool       ResolveClassName (WStringR serializedClassName, ECSchemaCR ecSchema) const;
     };
 
 /*---------------------------------------------------------------------------------**//**

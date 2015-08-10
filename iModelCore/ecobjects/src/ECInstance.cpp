@@ -3680,8 +3680,8 @@ ECSchemaCP ECInstanceReadContext::FindSchemaCP(SchemaKeyCR key, SchemaMatchType 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
-void IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
+bool IECSchemaRemapper::ResolvePropertyName (WStringR name, ECClassCR ecClass) const        { return _ResolvePropertyName (name, ecClass); }
+bool IECSchemaRemapper::ResolveClassName (WStringR name, ECSchemaCR schema) const           { return _ResolveClassName (name, schema); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
