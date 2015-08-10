@@ -292,6 +292,7 @@ ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. S
 BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
 BEREPOSITORYBASED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 
+BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId);
 
 namespace dgn_ElementHandler{struct Element;};
