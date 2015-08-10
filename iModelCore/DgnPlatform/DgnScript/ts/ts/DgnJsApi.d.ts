@@ -1,7 +1,7 @@
 declare module BentleyApi.Dgn {
 
     //! Utilities
-    class JsUtils implements BeJsProjection_SuppressConstructor {
+    class JsUtils implements BeJsProjection_SuppressConstructor, BeJsProjection_RefCounted {
         //! Make sure that a script library is loaded
         static ImportLibrary(libName: Bentley_Utf8String): void;
 
