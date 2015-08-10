@@ -10,10 +10,11 @@
 
 #include <Bentley/Bentley.h>
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/PageParser.h>
-#include <CrawlerLib/Downloader.h>
+#include <CrawlerLib/DownloadJob.h>
+#include <CrawlerLib/Politeness.h>
 
 #include <queue>
+#include <map>
 #include <set>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
@@ -21,11 +22,8 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 class UrlQueue
     {
     public:
-    CRAWLERLIB_EXPORT UrlQueue();
-    CRAWLERLIB_EXPORT UrlQueue(UrlQueue const& other);
+    CRAWLERLIB_EXPORT UrlQueue(IPoliteness* politeness);
     CRAWLERLIB_EXPORT virtual ~UrlQueue();
-
-    UrlQueue& operator=(UrlQueue const& other);
 
     CRAWLERLIB_EXPORT virtual size_t NumberOfUrls() const;
 
@@ -34,9 +32,13 @@ class UrlQueue
     CRAWLERLIB_EXPORT virtual void SetAcceptExternalLinks(bool accept);
     CRAWLERLIB_EXPORT virtual void SetAcceptLinksInExternalLinks(bool accept);
     CRAWLERLIB_EXPORT virtual void SetMaximumCrawlDepth(uint32_t depth);
+    CRAWLERLIB_EXPORT virtual void SetRespectRobotTxt(bool respect);
+    CRAWLERLIB_EXPORT virtual void SetRespectRobotTxtIfDisallowRoot(bool respect);
+    CRAWLERLIB_EXPORT virtual void SetRobotsTxtUserAgent(WString const& userAgent);
+    CRAWLERLIB_EXPORT virtual void SetMaxRobotTxtCrawlDelay(uint32_t delay);
 
     CRAWLERLIB_EXPORT virtual void AddUrl(UrlPtr const& url);
-    CRAWLERLIB_EXPORT virtual UrlPtr NextUrl();
+    CRAWLERLIB_EXPORT virtual DownloadJobPtr NextDownloadJob();
 
     private:
     bool HaveAlreadyVisited(UrlPtr const& url) const;
@@ -48,8 +50,11 @@ class UrlQueue
     bool m_AcceptLinksInExternalLinks;
     uint32_t m_MaximumCrawlDepth;
 
-    std::queue<UrlPtr> m_Urls;
+    std::map<WString, std::queue<UrlPtr>>           m_QueuesPerDomain;
+    std::map<WString, std::queue<UrlPtr>>::iterator m_CurrentDomain;
+
     UrlPtrSet m_VisitedUrls;
+    IPoliteness* m_pPoliteness;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

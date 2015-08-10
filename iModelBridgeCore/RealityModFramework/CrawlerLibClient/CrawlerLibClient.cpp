@@ -19,8 +19,9 @@ class CrawlerLibClient : ICrawlerObserver
     CrawlerLibClient()
         {
         //Use the CrawlerFactory to easily build a crawler. You are responsible of deleting it.
-        crawler = CrawlerFactory::GetSingleThreadedCrawler();
+        crawler = CrawlerFactory::CreateCrawler(/*8 simultaneous downloads maximum by default*/);
         }
+
     virtual ~CrawlerLibClient()
         {
         delete crawler;

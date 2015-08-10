@@ -17,16 +17,10 @@ using ::testing::Pointee;
 using ::testing::_;
 
 
-class RobotsTxtParserMock : public IRobotsTxtParser
+class RobotsTxtDownloaderMock : public IRobotsTxtDownloader
     {
     public:
-    MOCK_CONST_METHOD2(ParseRobotsTxt, RobotsTxtContentPtr(WString const& text, UrlPtr const& baseUrl));
-    };
-
-class SleeperMock : public ISleeper
-    {
-    public:
-    MOCK_CONST_METHOD1(Sleep, void(uint32_t seconds));
+    MOCK_METHOD1(DownloadRobotsTxt, RobotsTxtContentPtr(UrlPtr const& url));
     };
 
 class PolitenessTester : public ::testing::Test
@@ -35,14 +29,11 @@ class PolitenessTester : public ::testing::Test
     PolitenessTester()
         {
         seed = new Seed(L"http://some-domain.com/index.html");
-        downloader = new DownloaderMock;
-        parser = new RobotsTxtParserMock;
-        sleeper = new SleeperMock;
-        politeness = new Politeness(downloader, parser, sleeper);
+        downloader = new RobotsTxtDownloaderMock;
+        politeness = new Politeness(downloader);
         emptyRobotsTxt = new RobotsTxtContent(L"", seed);
 
-        ON_CALL(*downloader, DownloadPage(_, _)).WillByDefault(Return(SUCCESS));
-        ON_CALL(*parser, ParseRobotsTxt(_, _)).WillByDefault(Return(emptyRobotsTxt));
+        ON_CALL(*downloader, DownloadRobotsTxt(_)).WillByDefault(Return(emptyRobotsTxt));
         }
 
     ~PolitenessTester()
@@ -67,9 +58,7 @@ class PolitenessTester : public ::testing::Test
         }
 
     Politeness* politeness;
-    DownloaderMock* downloader;
-    RobotsTxtParserMock* parser;
-    SleeperMock* sleeper;
+    RobotsTxtDownloaderMock* downloader;
 
     RobotsTxtContentPtr emptyRobotsTxt;
     WString robotsTxtFileText;
@@ -84,29 +73,14 @@ TEST_F(PolitenessTester, ByDefaultYouCanDownloadAllPages)
 
 TEST_F(PolitenessTester, ByDefaultRobotsTxtAreIgnoredAndNotDownloaded)
     {
-    EXPECT_CALL(*downloader, DownloadPage(_, _)).Times(0);
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).Times(0);
     politeness->CanDownloadUrl(seed);
     }
 
 TEST_F(PolitenessTester, WhenAnUnknownDomainIsQueriedTheRobotsTxtIsDownloadedTheFirstTimeOnly)
     {
     UrlPtr anotherUrlInSameDomain = new Url(L"http://some-domain.com/other_page.html", seed);
-    UrlPtr expectedRobotsTxtUrl = new Url(L"http://some-domain.com/robots.txt", seed);
-    UrlPtr expectedPageBaseUrl = new Url(L"http://some-domain.com", seed);
-    EXPECT_CALL(*downloader, DownloadPage(_, Pointee(*expectedRobotsTxtUrl))).Times(1);
-    EXPECT_CALL(*parser, ParseRobotsTxt(_, Pointee(*expectedPageBaseUrl))).Times(1);
-
-    politeness->SetRespectRobotTxt(true);
-    politeness->CanDownloadUrl(seed);
-    politeness->CanDownloadUrl(anotherUrlInSameDomain);
-    }
-
-TEST_F(PolitenessTester, WhenDownloadingRobotsTxtFailsDownloadingIsNotRetriedAndEveryPageAndResultIsNotParsed)
-    {
-    UrlPtr anotherUrlInSameDomain = new Url(L"http://some-domain.com/other_page.html", seed);
-    UrlPtr expectedUrl = new Url(L"http://some-domain.com/robots.txt", seed);
-    EXPECT_CALL(*downloader, DownloadPage(_, Pointee(*expectedUrl))).Times(1).WillOnce(Return(ERROR));
-    EXPECT_CALL(*parser, ParseRobotsTxt(_, _)).Times(0);
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(Pointee(*seed))).Times(1);
 
     politeness->SetRespectRobotTxt(true);
     politeness->CanDownloadUrl(seed);
@@ -117,7 +91,7 @@ TEST_F(PolitenessTester, WhenAnUrlIsInTheRobotsTxtDisallowListAllOfItSubUrlAreDi
     {
     UrlPtr disallowedUrl = new Url(L"/foo", seed);
     UrlPtr disallowedSubUrl = new Url(L"/foo/toto.html", seed);
-    EXPECT_CALL(*parser, ParseRobotsTxt(_, _)).WillOnce(Return(GetRobotsTxtContentThatDisallows(disallowedUrl)));
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).WillOnce(Return(GetRobotsTxtContentThatDisallows(disallowedUrl)));
 
     politeness->SetRespectRobotTxt(true);
     EXPECT_FALSE(politeness->CanDownloadUrl(disallowedUrl));
@@ -130,7 +104,7 @@ TEST_F(PolitenessTester, WhenRootIsDisallowedPolitenessCanDownloadFromUrlAnyway)
     UrlPtr root = new Url(L"/", seed);
     UrlPtr ignoredDisallowedUrl1 = new Url(L"/foo", seed);
     UrlPtr ignoredDisallowedUrl2 = new Url(L"/foo/toto.html", seed);
-    EXPECT_CALL(*parser, ParseRobotsTxt(_, _)).WillOnce(Return(GetRobotsTxtContentThatDisallows(root)));
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).WillOnce(Return(GetRobotsTxtContentThatDisallows(root)));
 
     politeness->SetRespectRobotTxt(true);
 
@@ -146,21 +120,19 @@ TEST_F(PolitenessTester, WhenRootIsDisallowedPolitenessCanDownloadFromUrlAnyway)
 TEST_F(PolitenessTester, GivenAnUnknowDomainNameWaitingToRespectCrawlDelayDownloadsTheDomainRobotsTxt)
     {
     UrlPtr unknowDomain = new Url(L"http://unknown-domain.com", seed);
-    UrlPtr expectedRobotsUrl = new Url(L"http://unknown-domain.com/robots.txt", seed);
     politeness->SetRespectRobotTxt(true);
-    EXPECT_CALL(*downloader, DownloadPage(_, Pointee(*expectedRobotsUrl))).Times(1);
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(Pointee(*unknowDomain))).Times(1);
 
-    politeness->WaitToRespectCrawlDelayOf(unknowDomain);
+    politeness->GetCrawlDelay(unknowDomain);
     }
 
-TEST_F(PolitenessTester, WaitingToRespectCrawlDelayCallsTheSleeperWithTheRightTimeToSleep)
+TEST_F(PolitenessTester, PolitenessReturnsTheRightCrawlDelay)
     {
     politeness->SetRespectRobotTxt(true);
-    EXPECT_CALL(*parser, ParseRobotsTxt(_, _)).WillOnce(Return(GetRobotsTxtContentThatHasCrawlDelay(10)));
-    EXPECT_CALL(*sleeper, Sleep(10));
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).WillOnce(Return(GetRobotsTxtContentThatHasCrawlDelay(10)));
 
     UrlPtr toDownload = new Url(L"http://toto.com", seed);
-    politeness->WaitToRespectCrawlDelayOf(toDownload);
+    ASSERT_EQ(10, politeness->GetCrawlDelay(toDownload));
     }
 
 TEST_F(PolitenessTester, WhenTheCrawlDelayIsHigherThanTheMaximumDelayItIsOverridden)
@@ -170,18 +142,16 @@ TEST_F(PolitenessTester, WhenTheCrawlDelayIsHigherThanTheMaximumDelayItIsOverrid
 
     politeness->SetRespectRobotTxt(true);
     politeness->SetMaxCrawlDelay(expectedDelay);
-    EXPECT_CALL(*parser, ParseRobotsTxt(_, _)).WillOnce(Return(GetRobotsTxtContentThatHasCrawlDelay(domainCrawlDelay)));
-    EXPECT_CALL(*sleeper, Sleep(expectedDelay));
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).WillOnce(Return(GetRobotsTxtContentThatHasCrawlDelay(domainCrawlDelay)));
 
     UrlPtr toDownload = new Url(L"http://toto.com", seed);
-    politeness->WaitToRespectCrawlDelayOf(toDownload);
+    ASSERT_EQ(expectedDelay, politeness->GetCrawlDelay(toDownload));
     }
 
-TEST_F(PolitenessTester, WhenTheRobotsTxtIsNotRespectedWaitingForCrawlDelayDoesNothing)
+TEST_F(PolitenessTester, WhenTheRobotsTxtIsNotRespectedTheCrawlDelayIsZeroAndTheRobotsTxtIsNotDowloaded)
     {
     politeness->SetRespectRobotTxt(false);
     UrlPtr unknowDomain = new Url(L"http://unknown-domain.com", seed);
-    EXPECT_CALL(*sleeper, Sleep(_)).Times(0);
-    EXPECT_CALL(*downloader, DownloadPage(_, _)).Times(0);
-    politeness->WaitToRespectCrawlDelayOf(unknowDomain);
+    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).Times(0);
+    ASSERT_EQ(0, politeness->GetCrawlDelay(unknowDomain));
     }

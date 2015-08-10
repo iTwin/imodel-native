@@ -8,15 +8,16 @@
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
-#include <Bentley/Bentley.h>
 
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/PageParser.h>
-#include <CrawlerLib/Downloader.h>
+#include <CrawlerLib/PageDownloader.h>
 #include <CrawlerLib/UrlQueue.h>
 #include <CrawlerLib/PageContent.h>
 #include <CrawlerLib/Politeness.h>
 
+#include <Bentley/Bentley.h>
+
+#include <vector>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
@@ -30,7 +31,7 @@ class ICrawlerObserver
 class Crawler
     {
     public:
-    CRAWLERLIB_EXPORT Crawler(IPageDownloader* downloader, IPoliteness* politeness, UrlQueue* queue, IPageParser* parser);
+    CRAWLERLIB_EXPORT Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders);
     Crawler() = delete;
     CRAWLERLIB_EXPORT virtual ~Crawler();
 
@@ -56,15 +57,14 @@ class Crawler
     CRAWLERLIB_EXPORT void SetCrawlLinksWithHtmlTagRelNoFollow(bool crawlLinks);
     CRAWLERLIB_EXPORT void SetCrawlLinksFromPagesWithNoFollowMetaTag(bool crawlLinks);
 
-    
 
     private:
-    IPageDownloader* m_pDownloader;
-    IPoliteness* m_pPoliteness;
     UrlQueue* m_pQueue;
-    IPageParser* m_pParser;
+    std::vector<IPageDownloader*> m_pDownloaders;
 
     ICrawlerObserver* m_pObserver;
+
+    const size_t m_NumberOfDownloaders;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

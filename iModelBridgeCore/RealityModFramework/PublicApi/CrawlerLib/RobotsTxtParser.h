@@ -36,7 +36,7 @@ struct UserAgent : public RefCountedBase
 struct RobotsTxtContent : public RefCountedBase
     {
     public:
-    CRAWLERLIB_EXPORT RobotsTxtContent(WString const& robotTxtFile, UrlPtr const& baseUrl);
+    CRAWLERLIB_EXPORT RobotsTxtContent(WString const& robotsTxtFile, UrlPtr const& robotsTxtUrl);
     RobotsTxtContent() = delete;
 
     CRAWLERLIB_EXPORT WString const& GetRobotsTxtFile() const;
@@ -62,17 +62,11 @@ struct RobotsTxtContent : public RefCountedBase
     std::map<UserAgent, uint32_t> m_CrawlDelays;
     };
 
-class IRobotsTxtParser
+class RobotsTxtParser 
     {
     public:
-    CRAWLERLIB_EXPORT virtual ~IRobotsTxtParser() {}
-    virtual RobotsTxtContentPtr ParseRobotsTxt(WString const& robotTxtFileContent, UrlPtr const& baseUrl) const = 0;
-    };
-
-class RobotsTxtParser : public IRobotsTxtParser
-    {
-    public:
-    CRAWLERLIB_EXPORT RobotsTxtContentPtr ParseRobotsTxt(WString const& robotTxtFileContent, UrlPtr const& baseUrl) const override;
+    CRAWLERLIB_EXPORT RobotsTxtContentPtr ParseRobotsTxt(WString const& robotTxtFileContent, UrlPtr const& baseUrl) const;
+    CRAWLERLIB_EXPORT RobotsTxtContentPtr GetEmptyRobotTxt(UrlPtr const& baseUrl) const;
     
     private:
     static const std::wregex s_UserAgentRegex; 

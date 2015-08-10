@@ -217,6 +217,14 @@ TEST_F(RobotsTxtParserTester, CanParseCrawlDelay)
     ASSERT_EQ(21, content->GetCrawlDelay(UserAgent(L"coolbot")));
     }
 
+TEST_F(RobotsTxtParserTester, WildcardCrawlDelayAppliesToEveryUserAgent)
+    {
+    WString delayRules = L"User-agent: *\n"
+                         L"Crawl-delay: 10";
+    RobotsTxtContentPtr content = parser.ParseRobotsTxt(delayRules, siteBaseUrl);
+    ASSERT_EQ(10, content->GetCrawlDelay(UserAgent(L"awesomebot")));
+    }
+
 TEST_F(RobotsTxtParserTester, CanTellIfRootIsDisallowed)
     {
     WString rules = L"User-agent: awesomebot\n"

@@ -6,12 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/CrawlerFactory.h>
-#include <CrawlerLib/CrawlerLib.h>
+
 #include <CrawlerLib/Url.h>
-#include <CrawlerLib/Downloader.h>
-#include <CrawlerLib/PageParser.h>
+#include <CrawlerLib/PageDownloader.h>
 #include <CrawlerLib/UrlQueue.h>
 #include <CrawlerLib/RobotsTxtParser.h>
+#include <CrawlerLib/RobotsTxtDownloader.h>
 #include <CrawlerLib/Politeness.h>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
@@ -19,17 +19,20 @@ USING_NAMESPACE_BENTLEY_CRAWLERLIB
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Crawler* CrawlerFactory::GetSingleThreadedCrawler()
+Crawler* CrawlerFactory::CreateCrawler(size_t maxNumberOfSimultaneousDownloads)
     {
-    IPageDownloader* webPageDownloader = new SingleThreadedDownloader;
+    CrawlDelaySleeperPtr sleeper = new CrawlDelaySleeper;
+    std::vector<IPageDownloader*> downloaders;
+    for(size_t i = 0; i < maxNumberOfSimultaneousDownloads; ++i)
+        {
+        IPageDownloader* downloader = new PageDownloader(sleeper);
+        downloaders.push_back(downloader);
+        }
 
-    IPageDownloader* robotsTxtDownloader = new SingleThreadedDownloader;
-    RobotsTxtParser* robotsTxtParser = new RobotsTxtParser;
-    ISleeper* sleeper = new Sleeper;
-    IPoliteness* politeness = new Politeness(robotsTxtDownloader, robotsTxtParser, sleeper);
+    IRobotsTxtDownloader* robotsTxtDownloader = new RobotsTxtDownloader;
 
-    UrlQueue* queue = new UrlQueue;
-    IPageParser* pageParser = new PageParser;
+    IPoliteness* politeness = new Politeness(robotsTxtDownloader);
+    UrlQueue* queue = new UrlQueue(politeness);
 
-    return new Crawler(webPageDownloader, politeness, queue, pageParser);
-    } 
+    return new Crawler(queue, downloaders);
+    }

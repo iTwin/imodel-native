@@ -19,24 +19,15 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
-class IPageParser
-    {
-    public:
-    CRAWLERLIB_EXPORT virtual ~IPageParser() {}
-    virtual PageContentPtr ParsePage(WString const& text, UrlPtr const& url) const = 0;
-    virtual void SetParseLinksRelNoFollow(bool parse) = 0;
-    virtual void SetParsePagesWithNoFollowMetaTag(bool parse) = 0;
-    };
-
-
-class PageParser : public IPageParser
+class PageParser
     {
     public:
     CRAWLERLIB_EXPORT PageParser();
-    CRAWLERLIB_EXPORT virtual ~PageParser() {}
-    CRAWLERLIB_EXPORT PageContentPtr ParsePage(WString const& text, UrlPtr const& url) const override;
-    CRAWLERLIB_EXPORT void SetParseLinksRelNoFollow(bool parse) override {m_ParseLinksRelNoFollow = parse;}
-    CRAWLERLIB_EXPORT void SetParsePagesWithNoFollowMetaTag(bool parse) override {m_ParsePagesWithNoFollowMetaTag = parse;}
+    CRAWLERLIB_EXPORT void SetParseLinksRelNoFollow(bool parse) {m_ParseLinksRelNoFollow = parse;}
+    CRAWLERLIB_EXPORT void SetParsePagesWithNoFollowMetaTag(bool parse) {m_ParsePagesWithNoFollowMetaTag = parse;}
+
+    CRAWLERLIB_EXPORT PageContentPtr ParsePage(WString const& text, UrlPtr const& url) const;
+    CRAWLERLIB_EXPORT PageContentPtr GetEmptyPageContent(UrlPtr const& url) const;
 
     private:
     //Helper functions

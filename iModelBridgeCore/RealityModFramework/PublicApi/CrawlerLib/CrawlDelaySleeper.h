@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/CrawlerFactory.h $
+|     $Source: PublicApi/CrawlerLib/CrawlDelaySleeper.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,14 +9,23 @@
 #pragma once
 
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/Crawler.h>
+
+#include <Bentley/Bentley.h>
+#include <Bentley/BeThread.h>
+
+#include <vector>
+#include <map>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
-class CrawlerFactory
+struct CrawlDelaySleeper : RefCountedBase
     {
     public:
-    CRAWLERLIB_EXPORT static Crawler* CreateCrawler(size_t maxNumberOfSimultaneousDownloads = 8);
+    void Sleep(uint32_t seconds, WString const& domain);
+
+    private:
+    std::map<WString, BentleyApi::BeMutex> m_MutexPerDomain;
+    BeMutex m_AddDomainToMapMutex;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

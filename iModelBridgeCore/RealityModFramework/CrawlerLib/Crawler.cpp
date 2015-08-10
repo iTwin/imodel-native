@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/Crawler.h>
+#include <curl/curl.h>
+#include <future>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
@@ -13,12 +15,12 @@ using namespace std;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Crawler::Crawler(IPageDownloader* downloader, IPoliteness* politeness, UrlQueue* queue, IPageParser* parser)
+Crawler::Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders)
+    : m_NumberOfDownloaders(downloaders.size())
     {
-    m_pDownloader = downloader;
-    m_pPoliteness = politeness;
+    curl_global_init(CURL_GLOBAL_ALL);
+    m_pDownloaders = downloaders;
     m_pQueue = queue;
-    m_pParser = parser;
     m_pObserver = NULL;
     }
 
@@ -27,10 +29,9 @@ Crawler::Crawler(IPageDownloader* downloader, IPoliteness* politeness, UrlQueue*
 //+---------------+---------------+---------------+---------------+---------------+------
 Crawler::~Crawler()
     {
-    delete m_pDownloader;
-    delete m_pPoliteness;
+    for (auto downloader : m_pDownloaders)
+        delete downloader;
     delete m_pQueue;
-    delete m_pParser;
     }
 
 //---------------------------------------------------------------------------------------
@@ -44,23 +45,26 @@ StatusInt Crawler::Crawl(UrlPtr const& seed)
     while(m_pQueue->NumberOfUrls() > 0)
         {
         buffer = L"";
-        UrlPtr currentUrl = m_pQueue->NextUrl();
 
-        if(m_pPoliteness->CanDownloadUrl(currentUrl))
+        size_t numberOfJobs = min(m_pQueue->NumberOfUrls(), m_NumberOfDownloaders);
+        vector<future<PageContentPtr>> asyncResults(numberOfJobs);
+        for(size_t i = 0; i < numberOfJobs; ++i)
             {
-            m_pPoliteness->WaitToRespectCrawlDelayOf(currentUrl);
-            if(m_pDownloader->DownloadPage(buffer, currentUrl) == SUCCESS)
+            IPageDownloader* downloader = m_pDownloaders[i];
+            DownloadJobPtr job = m_pQueue->NextDownloadJob();
+            asyncResults[i] = async(launch::async, &IPageDownloader::DownloadPage, downloader, job);
+            }
+        for(auto resultIterator = asyncResults.begin(); resultIterator != asyncResults.end(); ++resultIterator)
+            {
+            PageContentPtr content = resultIterator->get();
+            if(m_pObserver != NULL)
                 {
-                PageContentPtr content = m_pParser->ParsePage(buffer, currentUrl);
-                if(m_pObserver != NULL)
-                    {
-                    m_pObserver->OnPageCrawled(content);
-                    }
+                m_pObserver->OnPageCrawled(content);
+                }
 
-                for (auto link : content->GetLinks())
-                    {
-                    m_pQueue->AddUrl(link);
-                    }
+            for (auto link : content->GetLinks())
+                {
+                m_pQueue->AddUrl(link);
                 }
             }
         }
@@ -89,7 +93,8 @@ void Crawler::SetMaxNumberOfLinkToCrawl(size_t n)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetUserAgent(WString const& agent)
     {
-    m_pDownloader->SetUserAgent(agent);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetUserAgent(agent);
     }
 
 //---------------------------------------------------------------------------------------
@@ -97,7 +102,8 @@ void Crawler::SetUserAgent(WString const& agent)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetRequestTimeoutInSeconds(long timeout)
     {
-    m_pDownloader->SetRequestTimeoutInSeconds(timeout);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetRequestTimeoutInSeconds(timeout);
     }
 
 //---------------------------------------------------------------------------------------
@@ -105,7 +111,8 @@ void Crawler::SetRequestTimeoutInSeconds(long timeout)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetFollowAutoRedirects(bool follow)
     {
-    m_pDownloader->SetFollowAutoRedirects(follow);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetFollowAutoRedirects(follow);
     }
 
 //---------------------------------------------------------------------------------------
@@ -113,7 +120,8 @@ void Crawler::SetFollowAutoRedirects(bool follow)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetMaxAutoRedirectCount(long count)
     {
-    m_pDownloader->SetMaxAutoRedirectCount(count);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetMaxAutoRedirectCount(count);
     }
 
 //---------------------------------------------------------------------------------------
@@ -121,7 +129,8 @@ void Crawler::SetMaxAutoRedirectCount(long count)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetMaxHttpConnectionCount(long count)
     {
-    m_pDownloader->SetMaxHttpConnectionCount(count);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetMaxHttpConnectionCount(count);
     }
 
 //---------------------------------------------------------------------------------------
@@ -129,7 +138,8 @@ void Crawler::SetMaxHttpConnectionCount(long count)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::ValidateSslCertificates(bool validate)
     {
-    m_pDownloader->ValidateSslCertificates(validate);
+    for(auto downloader : m_pDownloaders)
+        downloader->ValidateSslCertificates(validate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,7 +147,8 @@ void Crawler::ValidateSslCertificates(bool validate)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::ValidateContentType(bool validate)
     {
-    m_pDownloader->ValidateContentType(validate);
+    for(auto downloader : m_pDownloaders)
+        downloader->ValidateContentType(validate);
     }
 
 //---------------------------------------------------------------------------------------
@@ -145,7 +156,8 @@ void Crawler::ValidateContentType(bool validate)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetListOfValidContentType(bvector<WString> const& contentTypes)
     {
-    m_pDownloader->SetListOfValidContentType(contentTypes);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetListOfValidContentType(contentTypes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -177,7 +189,7 @@ void Crawler::SetAcceptLinksInExternalLinks(bool accept)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetRespectRobotTxt(bool respect)
     {
-    m_pPoliteness->SetRespectRobotTxt(respect);
+    m_pQueue->SetRespectRobotTxt(respect);
     }
 
 //---------------------------------------------------------------------------------------
@@ -185,7 +197,7 @@ void Crawler::SetRespectRobotTxt(bool respect)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetRespectRobotTxtIfDisallowRoot(bool respect)
     {
-    m_pPoliteness->SetRespectRobotTxtIfDisallowRoot(respect);
+    m_pQueue->SetRespectRobotTxtIfDisallowRoot(respect);
     }
 
 //---------------------------------------------------------------------------------------
@@ -193,7 +205,7 @@ void Crawler::SetRespectRobotTxtIfDisallowRoot(bool respect)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetRobotsTxtUserAgent(WString const& userAgent)
     {
-    m_pPoliteness->SetUserAgent(UserAgent(userAgent));
+    m_pQueue->SetRobotsTxtUserAgent(userAgent);
     }
 
 //---------------------------------------------------------------------------------------
@@ -201,7 +213,7 @@ void Crawler::SetRobotsTxtUserAgent(WString const& userAgent)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetMaxRobotTxtCrawlDelay(uint32_t delay)
     {
-    m_pPoliteness->SetMaxCrawlDelay(delay);
+    m_pQueue->SetMaxRobotTxtCrawlDelay(delay);
     }
 
 //---------------------------------------------------------------------------------------
@@ -209,7 +221,8 @@ void Crawler::SetMaxRobotTxtCrawlDelay(uint32_t delay)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetCrawlLinksWithHtmlTagRelNoFollow(bool crawlLinks)
     {
-    m_pParser->SetParseLinksRelNoFollow(crawlLinks);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetParseLinksRelNoFollow(crawlLinks);
     }
 
 //---------------------------------------------------------------------------------------
@@ -217,5 +230,6 @@ void Crawler::SetCrawlLinksWithHtmlTagRelNoFollow(bool crawlLinks)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetCrawlLinksFromPagesWithNoFollowMetaTag(bool crawlLinks)
     {
-    m_pParser->SetParsePagesWithNoFollowMetaTag(crawlLinks);
+    for(auto downloader : m_pDownloaders)
+        downloader->SetParsePagesWithNoFollowMetaTag(crawlLinks);
     }

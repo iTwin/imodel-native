@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/Politeness.h>
 #include <limits>
-#include <chrono>
-#include <thread>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
@@ -17,12 +15,10 @@ using namespace std;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-Politeness::Politeness(IPageDownloader* downloader, IRobotsTxtParser* parser, ISleeper* sleeper)
+Politeness::Politeness(IRobotsTxtDownloader* downloader)
     : m_UserAgent(L"*")
     {
     m_pDownloader = downloader;
-    m_pParser = parser;
-    m_pSleeper = sleeper;
     m_RespectRobotsTxt = false;
     m_RespectRobotsTxtIfDisallowRoot = true;
     m_MaxCrawlDelay = (numeric_limits<uint32_t>::max)();
@@ -34,8 +30,6 @@ Politeness::Politeness(IPageDownloader* downloader, IRobotsTxtParser* parser, IS
 Politeness::~Politeness()
     {
     delete m_pDownloader;
-    delete m_pParser;
-    delete m_pSleeper;
     }
 
 bool Politeness::CanDownloadUrl(UrlPtr const& url)
@@ -77,26 +71,14 @@ bool Politeness::IsContentDisallowUrl(RobotsTxtContentPtr const& content, UrlPtr
 //+---------------+---------------+---------------+---------------+---------------+------
 void Politeness::DownloadRobotsTxt(UrlPtr const& url)
     {
-    WString buffer;
-    UrlPtr robotsTxtUrl = new Url(L"/robots.txt", url);
-    UrlPtr baseUrl = new Url(L"/", url);
-    StatusInt downloadStatus = m_pDownloader->DownloadPage(buffer, robotsTxtUrl);
-    if(downloadStatus == SUCCESS)
-        {
-        RobotsTxtContentPtr content = m_pParser->ParseRobotsTxt(buffer, baseUrl);
-        m_RobotsTxtFilesPerDomain.emplace(robotsTxtUrl->GetDomainName(), content);
-        }
-    else
-        {
-        RobotsTxtContentPtr content = new RobotsTxtContent(L"", baseUrl);
-        m_RobotsTxtFilesPerDomain.emplace(robotsTxtUrl->GetDomainName(), content);
-        }
+    RobotsTxtContentPtr content = m_pDownloader->DownloadRobotsTxt(url);
+    m_RobotsTxtFilesPerDomain.emplace(url->GetDomainName(), content);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void Politeness::WaitToRespectCrawlDelayOf(UrlPtr const& url)
+uint32_t Politeness::GetCrawlDelay(UrlPtr const& url)
     {
     if(m_RespectRobotsTxt)
         {
@@ -107,15 +89,7 @@ void Politeness::WaitToRespectCrawlDelayOf(UrlPtr const& url)
             iterator = m_RobotsTxtFilesPerDomain.find(url->GetDomainName());
             }
         RobotsTxtContentPtr content = iterator->second;
-        uint32_t delay = (std::min)(m_MaxCrawlDelay, content->GetCrawlDelay(m_UserAgent));
-        m_pSleeper->Sleep(delay);
+        return (std::min)(m_MaxCrawlDelay, content->GetCrawlDelay(m_UserAgent));
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Alexandre.Gariepy   08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void Sleeper::Sleep(uint32_t seconds) const
-    {
-    std::this_thread::sleep_for(std::chrono::seconds(seconds));
+    return 0;
     }

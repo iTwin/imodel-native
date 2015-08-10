@@ -36,9 +36,10 @@ bool UserAgent::operator<(UserAgent const& other) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-RobotsTxtContent::RobotsTxtContent(WString const& robotTxtFile, UrlPtr const& baseUrl)
-    : RefCountedBase(), m_RobotTxtFile(robotTxtFile), m_BaseUrl(baseUrl)
+RobotsTxtContent::RobotsTxtContent(WString const& robotsTxtFile, UrlPtr const& robotsTxtUrl)
+    : RefCountedBase(), m_RobotTxtFile(robotsTxtFile)
     {
+    m_BaseUrl = new Url(L"/", robotsTxtUrl);
     }
 
 //---------------------------------------------------------------------------------------
@@ -112,11 +113,15 @@ void RobotsTxtContent::AddDisallowedUrl(UserAgent const& agent, UrlPtr const& ur
 //+---------------+---------------+---------------+---------------+---------------+------
 uint32_t RobotsTxtContent::GetCrawlDelay(UserAgent const& agent) const
     {
-    auto iterator = m_CrawlDelays.find(agent);
-    if(iterator == m_CrawlDelays.end())
-        return 0;
+    auto iteratorWildcard = m_CrawlDelays.find(UserAgent(L"*"));
+    auto iteratorAgent = m_CrawlDelays.find(agent);
+
+    if(iteratorAgent != m_CrawlDelays.end())
+        return iteratorAgent->second;
+    else if(iteratorWildcard != m_CrawlDelays.end())
+        return iteratorWildcard->second;
     else
-        return iterator->second;
+        return 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -198,4 +203,13 @@ RobotsTxtContentPtr RobotsTxtParser::ParseRobotsTxt(WString const& robotTxtFileC
         }
 
     return content;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+RobotsTxtContentPtr RobotsTxtParser::GetEmptyRobotTxt(UrlPtr const& baseUrl) const
+    {
+    RobotsTxtContentPtr emptyContent = new RobotsTxtContent(L"", baseUrl);
+    return emptyContent;
     }

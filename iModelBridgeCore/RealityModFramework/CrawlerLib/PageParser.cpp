@@ -75,3 +75,10 @@ void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageCo
             }
         }
     }
+
+PageContentPtr PageParser::GetEmptyPageContent(UrlPtr const& url) const
+    {
+    PageContentPtr content = new PageContent(*url, L"");
+
+    return content;
+    }

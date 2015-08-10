@@ -10,7 +10,7 @@
 #include <Bentley/BeTest.h>
 #include <CrawlerLib/Url.h>
 #include <CrawlerLib/PageParser.h>
-#include <CrawlerLib/Downloader.h>
+#include <CrawlerLib/PageDownloader.h>
 #include <CrawlerLib/UrlQueue.h>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
@@ -40,18 +40,15 @@ struct UrlMock : public Url //Skips the url validation
     inline void SetIsExternalPage(bool isExternal) {m_IsExternalPage = isExternal;}
     };
 
-class DownloaderMock : public IPageDownloader
+class PolitenessMock : public IPoliteness
     {
     public:
-    MOCK_METHOD2(DownloadPage, StatusInt(WString& buffer, UrlPtr const& p_Url));
-    MOCK_METHOD1(SetUserAgent, void(WString const& agent));
-    MOCK_METHOD1(SetRequestTimeoutInSeconds, void(long timeout));
-    MOCK_METHOD1(SetFollowAutoRedirects, void(bool follow));
-    MOCK_METHOD1(SetMaxAutoRedirectCount, void(long count));
-    MOCK_METHOD1(SetMaxHttpConnectionCount, void(long count));
-    MOCK_METHOD1(ValidateSslCertificates, void(bool validate));
-    MOCK_METHOD1(ValidateContentType, void(bool validate));
-    MOCK_METHOD1(SetListOfValidContentType, void(bvector<WString> const& types));
+    MOCK_METHOD1(SetMaxCrawlDelay, void(uint32_t delay));
+    MOCK_METHOD1(SetUserAgent, void(UserAgent const& agent));
+    MOCK_METHOD1(SetRespectRobotTxt, void(bool respect));
+    MOCK_METHOD1(SetRespectRobotTxtIfDisallowRoot, void(bool respect));
+    MOCK_METHOD1(CanDownloadUrl, bool(UrlPtr const& url));
+    MOCK_METHOD1(GetCrawlDelay, uint32_t(UrlPtr const& url));
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE
