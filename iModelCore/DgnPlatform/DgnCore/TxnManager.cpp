@@ -550,8 +550,6 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
     {
     BeAssert(!HasChanges());
 
-    ILLEGAL_TXN_MARK(m_dgndb);
-
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
     BeAssert(rc == BE_SQLITE_OK);
