@@ -490,7 +490,6 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     timer.Stop ();
     m_SelectTime = timer.GetElapsedSeconds ();
     stmt.Finalize ();
-    m_UpdateTime = timer.GetElapsedSeconds ();
     LOG.infov ("Scenario - Read - 1 class [%d properties each] , %d Instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, timer.GetElapsedSeconds ());
 
     //Delete Instance using Sql Query.
