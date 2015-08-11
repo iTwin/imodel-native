@@ -2874,7 +2874,7 @@ void DTM::ConvertUnits (double xyFactor,double zFactor)
 void DTM::AddPoint (BGEO::DPoint3d rPoint)
     {
     DPoint3d  point;
-    DTMHelpers::Copy (rPoint,point);
+    DTMHelpers::Copy (point,rPoint);
     DTMException::CheckForErrorStatus (Handle->AddPoint (point));
     CheckMemoryPressure();
     }
@@ -3733,8 +3733,8 @@ bool DTM::IntersetVector ([System::Runtime::InteropServices::Out]BGEO::DPoint3d%
     ::DPoint3d uStartPoint;
     ::DPoint3d uEndPoint;
     ::DPoint3d uIntersectionPoint;
-    DTMHelpers::Copy (startPoint, uStartPoint);
-    DTMHelpers::Copy (endPoint, uEndPoint);
+    DTMHelpers::Copy (uStartPoint, startPoint);
+    DTMHelpers::Copy (uEndPoint, endPoint);
 
     bool ret = Handle->IntersectVector (uIntersectionPoint, uStartPoint, uEndPoint);
 
