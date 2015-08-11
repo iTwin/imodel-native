@@ -20,6 +20,7 @@ UnitsTest.Conversions   # Takes WAY too long to run every time
 
 SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
 
+CGBinarySerializationTests.WriterTest # notified Earlin and Carole
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------

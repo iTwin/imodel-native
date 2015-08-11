@@ -1705,7 +1705,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Long:
         {
         int64_t i;
-        if (1 != BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lld", &i))
+        if (1 != BE_STRING_UTILITIES_UTF8_SSCANF (str, "%" PRId64, &i))
             return false;
         else if (PRIMITIVETYPE_Long == primitiveType)
             SetLong (i);
@@ -1725,7 +1725,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Integer:
         {
         int64_t i;
-        if (1 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lld", &i))
+        if (1 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%" PRId64, &i))
             {
             if (INT_MAX >= i && INT_MIN <= i)
                 SetInteger ((int32_t)i);

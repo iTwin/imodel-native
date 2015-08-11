@@ -105,7 +105,7 @@ ECSchemaReadContextPtr   schemaContext
     results[readingString] = readingTimer.GetElapsedSeconds();
 
     Utf8String writingString;
-    writingString.Sprintf("Writing instance from class: %ls:%ls (%d bytes)", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength);
+    writingString.Sprintf("Writing instance from class: %s:%s (%d bytes)", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength);
     results[writingString] = writingTimer.GetElapsedSeconds();
 
     LogResultsToFile(results);
