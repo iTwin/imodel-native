@@ -14,65 +14,52 @@ struct DgnElementTests : public DgnDbTestFixture
     {
     };
 
-/*=================================================================================**//**
-* @bsiclass                                                     Maha Nasir      08/15
-+===============+===============+===============+===============+===============+======*/
-struct TestListener :DgnElements::Listener
-    {
-    static bool check;
-    virtual void _OnElementLoaded (DgnElementR elementR) override
-        {
-        printf ("_OnElementLoaded() Fired \n");
-        check = true;
-        }
-    };
-bool TestListener::check = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnElementTests, ResetStatistics)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    m_defaultModelId = m_db->Models ().QueryFirstModelId ();
-    DgnModelPtr seedModel = m_db->Models ().GetModel (m_defaultModelId);
-    seedModel->FillModel ();
+    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    DgnModelPtr seedModel = m_db->Models().GetModel(m_defaultModelId);
+    seedModel->FillModel();
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone ("Model1");
-    M1->Insert ("Test Model 1");
+    DgnModelPtr M1 = seedModel->Clone("Model1");
+    M1->Insert("Test Model 1");
     EXPECT_TRUE (M1 != nullptr);
-    m_db->SaveChanges ("changeSet1");
+    m_db->SaveChanges("changeSet1");
 
-    DgnModelId M1id = m_db->Models ().QueryModelId ("model1");
-    EXPECT_TRUE (M1id.IsValid ());
+    DgnModelId M1id = m_db->Models().QueryModelId("model1");
+    EXPECT_TRUE (M1id.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement ("E1", M1id);
-    DgnElementId E1id = keyE1->GetElementId ();
-    DgnElementCPtr E1 = m_db->Elements ().GetElement (E1id);
+    auto keyE1 = InsertElement("E1", M1id);
+    DgnElementId E1id = keyE1->GetElementId();
+    DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    auto keyE2 = InsertElement ("E2", M1id);
-    DgnElementId E2id = keyE2->GetElementId ();
-    DgnElementCPtr E2 = m_db->Elements ().GetElement (E2id);
+    auto keyE2 = InsertElement("E2", M1id);
+    DgnElementId E2id = keyE2->GetElementId();
+    DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
     EXPECT_TRUE (E2 != nullptr);
 
-    DgnModelId model_id = m_db->Elements ().QueryModelId (E1id);
+    DgnModelId model_id = m_db->Elements().QueryModelId(E1id);
     EXPECT_EQ (M1id, model_id);
 
     //Deletes the first element.
-    DgnDbStatus status=E2->Delete ();
+    DgnDbStatus status=E2->Delete();
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
-    m_db->SaveChanges ();
+    m_db->SaveChanges();
 
     int64_t memTarget = 0;
-    m_db->Elements ().Purge (memTarget);
+    m_db->Elements().Purge(memTarget);
 
     //Get stats of the element pool.
-    DgnElements::Statistics stats = m_db->Elements ().GetStatistics ();
+    DgnElements::Statistics stats = m_db->Elements().GetStatistics();
 
     uint32_t NewElements = stats.m_newElements;
     EXPECT_EQ (2, NewElements);
@@ -86,9 +73,9 @@ TEST_F (DgnElementTests, ResetStatistics)
     uint32_t PurgedElements = stats.m_purged;
     EXPECT_EQ (1, PurgedElements);
 
-    m_db->Elements ().ResetStatistics ();
+    m_db->Elements().ResetStatistics();
 
-    stats = m_db->Elements ().GetStatistics ();
+    stats = m_db->Elements().GetStatistics();
 
     //Statistics after reset.
     NewElements = stats.m_newElements;
@@ -103,83 +90,43 @@ TEST_F (DgnElementTests, ResetStatistics)
     UnrefElements = stats.m_unReferenced;
     EXPECT_EQ (0, UnrefElements);
     }
-/*---------------------------------------------------------------------------------**//**
-//! Test for adding and dropping Listener from an elemnt.
-* @bsimethod                                    Maha Nasir                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnElementTests, AddAndDropListener)
-    {
-    SetupProject (L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-
-    TestListener *m_Listener = new TestListener ();
-    m_db->Elements ().AddListener (m_Listener);
-
-    m_defaultModelId = m_db->Models ().QueryFirstModelId ();
-    DgnModelPtr seedModel = m_db->Models ().GetModel (m_defaultModelId);
-    seedModel->FillModel ();
-    EXPECT_TRUE (seedModel != nullptr);
-
-    //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone ("Model1");
-    M1->Insert ("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
-    m_db->SaveChanges ("changeSet1");
-
-    DgnModelId M1id = m_db->Models ().QueryModelId ("model1");
-    EXPECT_TRUE (M1id.IsValid ());
-
-    //Inserts an element.
-    auto keyE1 = InsertElement ("E1", M1id);
-
-    m_db->Elements ().Purge (0);
-
-    DgnElementId E1id = keyE1->GetElementId ();
-    DgnElementCPtr E1 = m_db->Elements ().GetElement (E1id);
-    EXPECT_TRUE (E1 != nullptr);
-
-    EXPECT_TRUE(m_db->Elements ().FindElement (E1id)!=nullptr);
-
-    EXPECT_TRUE (TestListener::check);
-
-    m_db->Elements ().DropListener (m_Listener);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnElementTests, UpdateElement)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"Element_Test.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    m_defaultModelId = m_db->Models ().QueryFirstModelId ();
-    DgnModelPtr seedModel = m_db->Models ().GetModel (m_defaultModelId);
-    seedModel->FillModel ();
+    m_defaultModelId = m_db->Models().QueryFirstModelId();
+    DgnModelPtr seedModel = m_db->Models().GetModel(m_defaultModelId);
+    seedModel->FillModel();
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone ("Model1");
-    M1->Insert ("Test Model 1");
+    DgnModelPtr M1 = seedModel->Clone("Model1");
+    M1->Insert("Test Model 1");
     EXPECT_TRUE (M1 != nullptr);
-    m_db->SaveChanges ("changeSet1");
+    m_db->SaveChanges("changeSet1");
 
-    DgnModelId M1id = m_db->Models ().QueryModelId ("model1");
-    EXPECT_TRUE (M1id.IsValid ());
+    DgnModelId M1id = m_db->Models().QueryModelId("model1");
+    EXPECT_TRUE (M1id.IsValid());
 
-    auto keyE1 = InsertElement ("E1", M1id);
-    DgnElementId E1id = keyE1->GetElementId ();
-    DgnElementCPtr E1 = m_db->Elements ().GetElement (E1id);
+    auto keyE1 = InsertElement("E1", M1id);
+    DgnElementId E1id = keyE1->GetElementId();
+    DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    DgnClassId classId = E1->QueryClassId (*m_db);
-    EXPECT_TRUE (classId.IsValid ());
+    DgnClassId classId = E1->QueryClassId(*m_db);
+    EXPECT_TRUE (classId.IsValid());
 
     //Creating a copy of element to edit.
-    DgnElementPtr E1Copy = E1->CopyForEdit ();
-    E1Copy->SetLabel ("Updated Test Element");
-    E1Copy->SetCode ("This is the updated Element.");
+    DgnElementPtr E1Copy = E1->CopyForEdit();
+    E1Copy->SetLabel("Updated Test Element");
+    E1Copy->SetCode("This is the updated Element.");
 
-    DgnElementCPtr Update_Element = E1Copy->Update ();
+    DgnElementCPtr Update_Element = E1Copy->Update();
 
-    EXPECT_STREQ ("Updated Test Element", Update_Element->GetLabel ());
-    EXPECT_STREQ ("This is the updated Element.", Update_Element->GetCode ());
+    EXPECT_STREQ ("Updated Test Element", Update_Element->GetLabel());
+    EXPECT_STREQ ("This is the updated Element.", Update_Element->GetCode());
     }

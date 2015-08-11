@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define DGN_CLASSNAME_Authority             "Authority"
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
@@ -1621,7 +1622,7 @@ public:
 //! @see ComponentModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct DgnComponentSolutions : DgnDbTable
+struct ComponentModelSolution : DgnDbTable
 {
     DEFINE_T_SUPER(DgnDbTable)
 
@@ -1635,7 +1636,7 @@ public:
         DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
         };
 
-    DgnComponentSolutions(DgnDbR db) : T_Super(db) {;}
+    ComponentModelSolution(DgnDbR db) : T_Super(db) {;}
 
     //! @name Capturing Solutions
     //@{

@@ -14,6 +14,7 @@
 # Additional assets needed by DgnProject unit tests
 BEGTEST_ASSETS + $(BuildContext)SubParts/ECSchemas/
 BEGTEST_ASSETS + $(BuildContext)SubParts/UnitTests/assets/DgnProject/ECSchemas;ECSchemas
+BEGTEST_ASSETS + $(BuildContext)SubParts/UnitTests/assets/DgnProject/Script;Script
 BEGTEST_ASSETS + $(BuildContext)SubParts/DgnPlatformLastResortFonts/lastresortfonts
 BEGTEST_ASSETS + $(BuildContext)SubParts/GeoCoordData;DgnGeoCoord
 BEGTEST_ASSETS + $(BuildContext)SubParts/BeIcu4cData/icudt55l.dat

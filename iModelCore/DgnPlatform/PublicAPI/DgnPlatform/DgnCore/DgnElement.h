@@ -162,6 +162,7 @@ public:
     friend struct ElemIdTree;
     friend struct dgn_ElementHandler::Element;
     friend struct dgn_TxnTable::Element;
+    friend struct MultiAspect;
 
     //! Parameters for creating new DgnElements
     struct CreateParams
@@ -219,13 +220,20 @@ public:
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {return DropMe::No;}
 
+        //! Called after an update to the element was reversed by undo.
+        //! @param[in] original the original DgnElement (after undo)
+        //! @param[in] modified the modified DgnElement (before undo)
+        //! @return true to drop this appData, false to leave it attached to the DgnElement.
+        //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
+        virtual DropMe _OnReversedUpdate(DgnElementCR original, DgnElementCR modified) {return DropMe::No;}
+
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
-    //! Buffers changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
+    //! Holds changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
     //! All aspects are actually subclasses of either dgn.ElementUniqueAspect or dgn.ElementMultiAspect. dgn.ElementItem is a special case of dgn.ElementUniqueAspect.
     //! A domain that defines a subclass of one of these ECClasses in the schema should normally also define a subclass of one of the 
     //! subclasses of DgnElement::Aspect in order to manage transactions.
@@ -389,7 +397,7 @@ public:
         DGNPLATFORM_EXPORT static UniqueAspect const* GetAspect(DgnElementCR el, ECN::ECClassCR ecclass);
 
         template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
-        };
+    };
 
     //! Represents a dgn.ElementItem.
     //! dgn.ElementItem is-a dgn.ElementUniqueAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
@@ -495,9 +503,8 @@ public:
         //! @param egaInstance The ECInstance that specifies the EGA and supplies any addition input parameters required by the implementation.
         //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
         //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
-        //! @see BentleyApi::Dgn::DgnScriptContext for an explanation of script-based EGAs.
+        //! @see BentleyApi::Dgn::DgnScript for an explanation of script-based EGAs.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
-    
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -508,7 +515,7 @@ private:
 
 protected:
     struct Flags
-        {
+    {
         uint32_t m_persistent:1;
         uint32_t m_editable:1;
         uint32_t m_lockHeld:1;
@@ -516,7 +523,7 @@ protected:
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
         Flags() {memset(this, 0, sizeof(*this));}
-        };
+    };
 
     mutable BeAtomic<uint32_t> m_refCount;
     DgnDbR          m_dgndb;
@@ -531,7 +538,6 @@ protected:
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-    friend struct MultiAspect;
     virtual Utf8CP _GetECClassName() const {return MyECClassName();}
     virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
@@ -577,6 +583,10 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnUpdated.
     DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
 
+    //! Called after an update to this DgnElement was reversed by undo. The element will be in its original (pre-change, post-undo) state.
+    //! @note If you override this method, you @em must call T_Super::_OnReversedUpdate.
+    DGNPLATFORM_EXPORT virtual void _OnReversedUpdate(DgnElementCR changed) const;
+
     //! Called when an element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to control when/if their instances are deleted.
     //! @return DgnDbStatus::Success to allow the delete, otherwise the delete will fail with the returned status.
@@ -591,7 +601,7 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
-    //! Called after a DgnElement that was previously added has been removed by an undo.
+    //! Called after a DgnElement that was previously added has been removed by undo.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
     DGNPLATFORM_EXPORT virtual void _OnReversedAdd() const;
 

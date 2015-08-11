@@ -56,7 +56,8 @@
             <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
-            <Files Required="false" ProductDirectoryName="DgnObjectModelTs" SubPartDirectory="DgnObjectModelTs">Delivery/DgnObjectModel.d.ts</Files>
+            <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
+            <Files Required="false" ProductDirectoryName="GeomJsApiTs" SubPartDirectory="Script/GeomJsApiTs">Delivery/GeomJsApi.d.ts</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
         </Bindings>
     </Part>
@@ -89,6 +90,7 @@
         <SubPart PartName="PublicAPI"/>
         <Bindings>
             <Directory SourceName="Delivery/UnitTests/assets/DgnProject/ECSchemas" SubPartDirectory="UnitTests/assets/DgnProject/ECSchemas" />
+            <Directory SourceName="Delivery/UnitTests/assets/DgnProject/Script" SubPartDirectory="UnitTests/assets/DgnProject/Script" />
             <!-- CompileUnitTests.mke will put -I$(BuildContext)SubParts/UnitTests/PublicAPI on the include path, so that unit test source can #include <DgnPlatform/DgnProject/DgnHandlers/ScopedDgnHost.h> -->
             <Directory SourceName="PublicAPI/DgnPlatform/DgnHandlers/UnitTests" SubPartDirectory="UnitTests/PublicAPI/DgnPlatform/DgnHandlers"/>
             <Directory SourceName="PrivateAPI"                                  SubPartDirectory="UnitTests/PrivateAPI"/>

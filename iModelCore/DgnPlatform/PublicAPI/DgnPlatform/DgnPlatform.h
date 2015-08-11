@@ -133,7 +133,7 @@ DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS (DgnHost)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
-DGNPLATFORM_TYPEDEFS (DgnScriptContext)
+DGNPLATFORM_TYPEDEFS (DgnScript)
 DGNPLATFORM_TYPEDEFS (DrawContext)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
 DGNPLATFORM_TYPEDEFS (DropGeometry)
@@ -292,6 +292,7 @@ ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. S
 BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
 BEREPOSITORYBASED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 
+BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId);
 
 namespace dgn_ElementHandler{struct Element;};

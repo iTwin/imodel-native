@@ -18,10 +18,10 @@ static DgnVersion getCurrentSchemaVerion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void importDgnSchema(DgnDbR project, bool updateExisting)
+static void importDgnSchema(DgnDbR db, bool updateExisting)
     {
     ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
-    ecSchemaContext->AddSchemaLocater(project.GetSchemaLocater());
+    ecSchemaContext->AddSchemaLocater(db.GetSchemaLocater());
 
     BeFileName ecSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     ecSchemaPath.AppendToPath(L"ECSchemas");
@@ -38,7 +38,7 @@ static void importDgnSchema(DgnDbR project, bool updateExisting)
     ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
     BeAssert(dgnschema != NULL);
 
-    BentleyStatus status = project.Schemas().ImportECSchemas(ecSchemaContext->GetCache(), ECDbSchemaManager::ImportOptions(false, updateExisting));
+    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache(), ECDbSchemaManager::ImportOptions(false, updateExisting));
     BeAssert(status == SUCCESS);
     }
 
@@ -69,6 +69,14 @@ DbResult DgnDb::CreateDgnDbTables()
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
     importDgnSchema(*this, false);
+
+    // Every DgnDb has a "local" authority for element codes
+        {
+        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name) VALUES (1,'DgnDb')"); // WIP: use Authority API when it exists
+        DbResult result = statement.Step();
+        BeAssert(BE_SQLITE_DONE == result);
+        UNUSED_VARIABLE(result);
+        }
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId;END");

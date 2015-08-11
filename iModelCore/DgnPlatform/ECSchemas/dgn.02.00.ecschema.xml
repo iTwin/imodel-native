@@ -391,12 +391,13 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <IsPolymorphic>True</IsPolymorphic>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-                <!-- WIP: Why does this add "WHERE ECClassId = xxx"?
+                <!-- WIP: Uncomment when CodeAuthority support has been added
                 <Indexes>
                     <DbIndex>
                         <Name>idx_dgn_Element_Code</Name>
-                        <IsUnique>False</IsUnique>
+                        <IsUnique>True</IsUnique>
                         <Properties>
+                            <string>CodeAuthorityId</string>
                             <string>Code</string>
                         </Properties>
                     </DbIndex>
@@ -432,12 +433,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
+        <ECProperty propertyName="CodeAuthorityId" typeName="long">
+             <!-- Foreign key relationship to dgn:Authority class --> 
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <!-- WIP: Uncomment when CodeAuthority support has been added
+                    <IsNullable>False</IsNullable>
+                    -->
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
         <ECProperty propertyName="Code" typeName="string">
-            <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system. -->
+            <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system (identified by CodeAuthorityId). -->
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                    <!-- Code is usually, but not necessarily, unique -->
+                    <!-- Code by itself is not necessarily unique, but CodeAuthorityId + Code is unique.  -->
                     <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -477,6 +488,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="DrawingElement" isDomainClass="True">
         <BaseClass>Element2d</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
+        <ECProperty propertyName="TextAnnotationBlob" typeName="binary"/>
     </ECClass>
 
     <!-- Abstract -->
@@ -790,9 +806,31 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
-    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
-        <BaseClass>PhysicalElement</BaseClass>
-        <ECProperty propertyName="TextAnnotationBlob" typeName="binary"/>
+    <ECClass typeName="Authority" isDomainClass="True" >
+        <!-- Authority for element codes and classifications -->
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" description="Name of authority" >
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                    <IsUnique>True</IsUnique>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Uri" typeName="string" description="URI for authority" >
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <!-- Optional for an authority to have a URI -->
+                    <IsNullable>True</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECClass>
 
 </ECSchema>
