@@ -701,16 +701,12 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildViewInfrastructure (std::set<ClassMap const*>& classMaps)
         {
-
         for (auto classMap : classMaps)
             {
-            auto scpm = GetClassPersistenceMethod (*classMap);
-            //printf ("%s\n", Utf8String (scpm->GetClassMap ().GetClass ().GetFullName ()).c_str ());
-            BeAssert (scpm != nullptr);
-            if (BuildDeleteTriggers (*scpm) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
+            GetClassPersistenceMethod (*classMap);
             }
-
+        
+        
         NativeSqlBuilder holdingView;
         DropViewIfExists (m_map.GetECDbR (), ECDB_HOLDING_VIEW);
         if (BuildHoldingView (holdingView) != BentleyStatus::SUCCESS)
@@ -719,14 +715,34 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         if (m_map.GetECDbR ().ExecuteSql (holdingView.ToString ()) != BE_SQLITE_OK)
             return BentleyStatus::ERROR;
 
-        auto file = fopen ("d:\\Temp\\Out.sql", "w+");
+       auto curSize = m_scpms.size ();
+       do
+            {
+            curSize = m_scpms.size ();
+            for (auto& kp : m_scpms)
+                {
+                if (!kp.second->IsFinished ())
+                    {
+                    kp.second->ResetTriggers ();
+                    if (BuildDeleteTriggers (*kp.second) != BentleyStatus::SUCCESS)
+                        return BentleyStatus::ERROR;
+
+                    kp.second->MarkAsFinish ();
+                    }
+                }
+           } while (curSize != m_scpms.size ());
+
+
+
+//        auto file = fopen ("d:\\Temp\\Out.sql", "w+");
         for (auto& scpm : m_scpms)
             {
             Utf8String dropSql = scpm.second->ToString( SqlOption::DropIfExists);
-            fwrite (dropSql.c_str(), dropSql.size (),1, file);
-            fflush (file);
+            //fwrite (dropSql.c_str(), dropSql.size (),1, file);
+            //fflush (file);
             if (m_map.GetECDbR ().ExecuteSql (dropSql.c_str ()) != BE_SQLITE_OK)
                 {
+                return BentleyStatus::ERROR;
                 }
 
             Utf8String createSql;
@@ -734,15 +750,16 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             createSql.append ("--> ").append (scpm.second->GetClassMap ().GetDMLPolicy ().ToString ()).append ("\n");;
             createSql.append(scpm.second->ToString (SqlOption::Create));
 
-            fwrite (createSql.c_str(), createSql.size (),1, file);
-            fflush (file);
+            //fwrite (createSql.c_str(), createSql.size (),1, file);
+            //            fflush (file);
 
             if (m_map.GetECDbR ().ExecuteSql (createSql.c_str ()) != BE_SQLITE_OK)
                 { 
-                printf ("%s\n", m_map.GetECDbR ().GetLastError ());
+                return BentleyStatus::ERROR;
+                //printf ("%s\n", m_map.GetECDbR ().GetLastError ());
                 }
             }
-        fclose (file);
+        //        fclose (file);
 
         return BentleyStatus::SUCCESS;
         }
@@ -1386,8 +1403,8 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             deleteTriggerBody.AppendFormatted ("-- %s", Utf8String(refSPM->GetClassMap ().GetClass().GetName().c_str()).c_str()).AppendEOL();
             deleteTriggerBody.Append ("\tDELETE FROM ");
             deleteTriggerBody.AppendEscaped (refTargetId);
-            Utf8CP refSourceKey = refSourceKey = refTarget == DMLPolicy::Target::Table ? ref.first->GetSourceECClassIdPropMap ()->GetFirstColumn ()->GetName ().c_str() : "SourceECInstanceId";
-            Utf8CP refTargetKey = refSourceKey = refTarget == DMLPolicy::Target::Table ? ref.first->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str () : "TargetECInstanceId";
+            Utf8CP refSourceKey = refTarget == DMLPolicy::Target::Table ? ref.first->GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str() : "SourceECInstanceId";
+            Utf8CP refTargetKey =  refTarget == DMLPolicy::Target::Table ? ref.first->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str () : "TargetECInstanceId";
             if (ref.second == ECDbMap::LightWeightMapCache::RelationshipEnd::Source)
                 {               
                 deleteTriggerBody.AppendFormatted (" WHERE (%s = OLD.%s);", refSourceKey, primaryECInstanceIdKey).AppendEOL ();

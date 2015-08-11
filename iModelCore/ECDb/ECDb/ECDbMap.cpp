@@ -147,7 +147,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             classMaps.insert (key.second.get ());
         }
-
+    
     SqlGenerator viewGen (*this);
     if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {

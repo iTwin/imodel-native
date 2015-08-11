@@ -258,9 +258,10 @@ struct SqlTriggerBuilder
         NativeSqlBuilder m_rowFilter;
         std::vector<SqlTriggerBuilder> m_triggerBuilderList;
         ClassMapCR m_classMap;
+        bool m_finish;
     public:
         SqlClassPersistenceMethod (ClassMapCR classMap)
-            :m_classMap (classMap)
+            :m_classMap (classMap), m_finish (false)
             {}
 
         ~SqlClassPersistenceMethod ()
@@ -269,7 +270,8 @@ struct SqlTriggerBuilder
         NativeSqlBuilder& GetTableNameBuilder () { return m_tableName; }
         NativeSqlBuilder& GetRowFilterBuilder () { return m_rowFilter; }
         SqlViewBuilder& GetViewBuilder () { return m_viewBuilder; }
-       
+        bool IsFinished () const { return m_finish; }
+        void MarkAsFinish () { m_finish = true; }
         SqlTriggerBuilder& AddTrigger (SqlTriggerBuilder::Type type, SqlTriggerBuilder::Condition condition, bool temprary)
             {
             m_triggerBuilderList.push_back (SqlTriggerBuilder (type, condition, temprary));
@@ -288,7 +290,10 @@ struct SqlTriggerBuilder
             }
 
         std::vector<SqlTriggerBuilder> const& GetTriggerBuilderList () { return m_triggerBuilderList; }
-
+        void ResetTriggers ()
+            {
+            m_triggerBuilderList.clear ();
+            }
         Utf8String ToString (SqlOption option, bool escape = false)
             {
             NativeSqlBuilder sql;
