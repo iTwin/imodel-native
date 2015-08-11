@@ -45,8 +45,6 @@ private:
 protected:
     ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlStatusContext& statusContext);
 
-    void OnBeforeStep();
-
     ECSqlStepStatus DoStep ();
     ECSqlStatus DoReset ();
 
@@ -74,7 +72,7 @@ public:
     ECSqlStatus ClearBindings ();
     ECSqlStatus Reset ();
 
-    Utf8CP GetECSql () const;
+    Utf8CP GetECSql() const { return m_ecsql.c_str(); }
     Utf8CP GetNativeSql () const;
 
     ECDbCR GetECDb () const { return *m_ecdb; }

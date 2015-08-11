@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatusContext.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -92,8 +92,8 @@ ECSqlStatus ECSqlStatusContext::Reset ()
         m_status = ECSqlStatus::Success;
         m_statusMessage.clear ();
         }
-    
-    return m_status;
+
+    return ECSqlStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
