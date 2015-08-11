@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
+#include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
@@ -201,4 +202,19 @@ void UrlProvider::CleanUpUrlCache()
         {
         s_localState->SaveValue(LOCAL_STATE_NAMESPACE, s_urlNames[i], Json::Value::null);
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+IHttpHandlerPtr UrlProvider::GetSecurityConfigurator(IHttpHandlerPtr customHandler)
+    {
+    // TODO: maybe this could be tied to GetUrl calls - instead return HttpClient that would generate correctly configured requests
+    return std::make_shared<HttpConfigurationHandler>([=] (HttpRequest& request)
+        {
+        if (Environment::Release == s_env)
+            {
+            request.SetValidateCertificate(true);
+            }
+        }, customHandler);
     }

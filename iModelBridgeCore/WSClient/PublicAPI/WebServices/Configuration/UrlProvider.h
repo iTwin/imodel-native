@@ -55,6 +55,11 @@ struct UrlProvider
                                                ILocalState* customlocalState = nullptr,
                                                IBuddiClientPtr customBuddi = nullptr);
 
+        //! Should be used with all requests to provided URLs!
+        //! Returns handler that will configure requests depending on environment.
+        //! Will setup certificate validation appropriately.
+        WSCLIENT_EXPORT static IHttpHandlerPtr GetSecurityConfigurator(IHttpHandlerPtr customHandler = nullptr);
+
         WSCLIENT_EXPORT static Utf8String GetPunchlistWsgUrl();
         WSCLIENT_EXPORT static Utf8String GetConnectWsgUrl();
         WSCLIENT_EXPORT static Utf8String GetConnectEulaUrl();

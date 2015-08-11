@@ -50,12 +50,12 @@ struct EXPORT_VTABLE_ATTRIBUTE BuddiClient : public IBuddiClient
         static bool IsSupported(BeXmlDomPtr dom);
 
     public:
-        WSCLIENT_EXPORT BuddiClient(IHttpHandlerPtr customHandler = nullptr, Utf8String url = "http://buddi.bentley.com/discovery.asmx");
+        WSCLIENT_EXPORT BuddiClient(IHttpHandlerPtr customHandler = nullptr, Utf8String url = "https://buddi.bentley.com/discovery.asmx");
 
         //! Sends http request and returns regions
         WSCLIENT_EXPORT AsyncTaskPtr<BuddiRegionsResult> GetRegions() override;
 
-        //! Sends http request and gets URL registered in BUDDI (http://buddi.bentley.com)
+        //! Sends http request and gets URL registered in BUDDI (https://buddi.bentley.com)
         //@param[in] urlName    URL name, registered in the BUDDI
         //@param[in] regionId   BUDDI region ID. 0 to use default URLs
         WSCLIENT_EXPORT AsyncTaskPtr<BuddiUrlResult> GetUrl(Utf8StringCR urlName, uint32_t regionId = 0) override;
