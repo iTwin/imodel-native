@@ -20,7 +20,11 @@ struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
         size_t m_classNamePostFix = 1;
         size_t m_instancesPerClass = 0;
         size_t m_propertiesPerClass = 0;
-        double m_InsertTime, m_UpdateTime, m_SelectTime, m_DeleteTime;
+        double m_insertTime = 0.0;
+        double m_updateTime = 0.0;
+        double m_selectTime = 0.0;
+        double m_deleteTime = 0.0;
+
         struct ECSqlTestItem
             {
             Utf8String m_insertECSql;

@@ -124,7 +124,9 @@
     <ClCompile Include="ViewGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\PublicAPI\ECDb\ChangeSummary.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
