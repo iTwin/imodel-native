@@ -1067,3 +1067,45 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeCompanyKey.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
     ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(employeeHardwareKey2.GetECInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
+    {
+    CreateProject();
+    m_testDb->Txns().EnableTracking(true);
+
+    InsertModel();
+    InsertCategory();
+    InsertElement();
+    DgnElementId parentElementId = m_testElementId;
+    InsertElement();
+    DgnElementId childElementId = m_testElementId;
+
+    m_testDb->SaveChanges();
+
+    RefCountedPtr<DgnElement> childElementPtr = m_testDb->Elements().GetForEdit<DgnElement>(childElementId);
+    
+    DgnDbStatus dbStatus = childElementPtr->SetParentId(parentElementId);
+    ASSERT_TRUE(DgnDbStatus::Success == dbStatus);
+    
+    childElementPtr->Update(&dbStatus);
+    ASSERT_TRUE(DgnDbStatus::Success == dbStatus);
+
+    ChangeSummary changeSummary(*m_testDb);
+    GetChangeSummaryFromCurrentTransaction(changeSummary);
+
+    /*
+    DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
+
+    ChangeSummary after setting ParentId:
+    InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
+    2;161;dgn:ElementOwnsChildElements;Insert;No
+    2;171;dgn:PhysicalElement;Update;No
+    */
+    ASSERT_EQ(2, changeSummary.MakeIterator().QueryCount());
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "ElementOwnsChildElements", DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
+    ASSERT_TRUE(ChangeSummaryHasChange(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Update)); // Captured due to change of ParentId property
+    }
