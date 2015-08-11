@@ -34,7 +34,7 @@ tsSourceFiles = $[@wildcard $(baseDir)*.ts] $[@wildcard $(BuildContext)SubParts/
 
 $(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
     $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(ScriptOutDir)DgnPlatformTest.js
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(ScriptOutDir)DgnScriptTest.js
     ~time
 
 %endif
