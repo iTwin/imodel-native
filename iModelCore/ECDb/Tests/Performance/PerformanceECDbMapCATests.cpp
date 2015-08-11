@@ -42,6 +42,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
     {
+    //printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
@@ -59,7 +60,8 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
             }
         }
     timer.Stop ();
-    m_deleteTime = timer.GetElapsedSeconds ();
+    //printf("Stop profiling and press key to continue..."); getchar();
+    m_deleteTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL DELETE %d instances each from %d classes took %.4f s.", m_instancesPerClass, m_sqlTestItems.size(), m_deleteTime);
     }
 
@@ -344,7 +346,8 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
     selectSql = Utf8String ("SELECT * FROM ts_");
     selectSql.append (className).append (" WHERE ECInstanceId = ? ");
 
-    deleteSql = Utf8String ("DELETE FROM ts_");
+    //use view here to make sure referential integrity is ensured. Otherwise it is not comparable to ECSQL.
+    deleteSql = Utf8String ("DELETE FROM VC_ts_");
     deleteSql.append (className).append (" WHERE ECInstanceId = ? ");
 
     bool isFirstItem = true;
@@ -488,7 +491,6 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt (1, instanceCount));
         instanceCount++;
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "step failed for " << deleteSql.c_str ();
-        ASSERT_EQ(1, ecdb.GetModifiedRowCount());
         stmt.Reset ();
         stmt.ClearBindings ();
         }
