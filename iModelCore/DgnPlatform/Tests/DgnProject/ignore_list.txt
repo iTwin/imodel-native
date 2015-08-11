@@ -16,6 +16,7 @@ TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this
 
 XGraphicsTests.SplitLargeMeshes                         # TFS 19411
 DgnElementTests.AddAndDropListener                      # notified Keith
+TransactionManagerTests.MultiTxnOperation
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
