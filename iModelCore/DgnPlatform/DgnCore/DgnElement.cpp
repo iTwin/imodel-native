@@ -1002,44 +1002,6 @@ void GeomStream::SaveData(uint8_t const* data, uint32_t size)
         memcpy(m_data, data, size);
     }
 
-//=======================================================================================
-// @bsiclass                                                    Brien.Bastings  07/2014
-//=======================================================================================
-struct ElementLoadedEventCaller
-{
-    DgnElementR m_elRef;
-    ElementLoadedEventCaller(DgnElementR elRef) : m_elRef(elRef) {}
-    void CallHandler(DgnElements::Listener& handler) const {handler._OnElementLoaded(m_elRef);}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SendOnLoadedEvent(DgnElementR elRef) const
-    {
-    if (nullptr != m_listeners)
-        m_listeners->CallAllHandlers(ElementLoadedEventCaller(elRef));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Brien.Bastings   07/2014
-//---------------------------------------------------------------------------------------
-void DgnElements::AddListener(Listener* listener)
-    {
-    if (nullptr == m_listeners)
-        m_listeners = new EventHandlerList<Listener>;
-
-    m_listeners->AddHandler(listener);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Brien.Bastings   07/2014
-//---------------------------------------------------------------------------------------
-void DgnElements::DropListener(Listener* listener)
-    {
-    if (nullptr != m_listeners)
-        m_listeners->DropHandler(listener);
-    }
 
 static const double s_smallVal = .0005;
 inline static void fixRange(double& low, double& high) {if (low==high) {low-=s_smallVal; high+=s_smallVal;}}

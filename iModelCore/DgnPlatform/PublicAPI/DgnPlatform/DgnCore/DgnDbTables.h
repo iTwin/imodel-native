@@ -872,21 +872,14 @@ struct DgnElements : DgnDbTable
         uint32_t m_purged;         //! number of garbage elements that were purged
     };
 
-    //! Interface to track element loading.
-    struct Listener
-    {
-        virtual ~Listener() {}
-        virtual void _OnElementLoaded(DgnElementR) = 0;
-    };
-
 private:
     DgnElementId                m_highestElementId;
-    EventHandlerList<Listener>* m_listeners;
     struct ElemIdTree*          m_tree;
     HeapZone                    m_heapZone;
     BeSQLite::StatementCache    m_stmts;
     BeSQLite::SnappyFromBlob    m_snappyFrom;
     BeSQLite::SnappyToBlob      m_snappyTo;
+    DgnElementIdSet             m_selectedElements;
     mutable BeSQLite::BeDbMutex m_mutex;
 
     void OnReclaimed(DgnElementCR);
@@ -992,11 +985,8 @@ public:
     //! If you have a DgnElement, call GetElementKey on it rather than using this method.
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
 
-    //! Add element-loaded-from-db event listener.
-    DGNPLATFORM_EXPORT void AddListener(Listener* listener);
-
-    //! Drop element-loaded-from-db event listener.
-    DGNPLATFORM_EXPORT void DropListener(Listener* listener);
+    DgnElementIdSet const& GetSelectedElements() const {return m_selectedElements;}
+    DgnElementIdSet& GetSelectedElementsR() {return m_selectedElements;}
 };
 
 //=======================================================================================

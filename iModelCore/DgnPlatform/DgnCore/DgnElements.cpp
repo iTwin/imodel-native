@@ -1007,7 +1007,6 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20)
     {
-    m_listeners = nullptr;
     m_tree = new ElemIdTree(dgndb);
     }
 
@@ -1079,6 +1078,9 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 
     if (makePersistent)
         {
+        if (m_selectedElements.Contains(el->GetElementId()))
+            el->SetInSelectionSet(true);
+
         el->GetModel()->_OnLoadedElement(*el);
         AddToPool(*el);
         }

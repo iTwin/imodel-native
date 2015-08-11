@@ -337,7 +337,7 @@ public:
     bool empty() const {return m_set.empty();}
     void clear() {m_set.clear();}
     size_t size() const {return m_set.size();}
-    bpair<iterator,bool> insert (IdType const& val) {return ((T_SetType&)m_set).insert(val);}
+    bpair<iterator,bool> insert (IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
     void insert (const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
     size_t erase (IdType const& val) {return ((T_SetType&)m_set).erase(val);}
     iterator erase (iterator it) {return ((T_SetType&)m_set).erase(it);}
