@@ -2142,25 +2142,25 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ReverseToPos)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-    auto& txns = m_db->Txns ();
-    txns.EnableTracking (true);
-    auto txn_id = txns.GetCurrentTxnId ();
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
+    auto txn_id = txns.GetCurrentTxnId();
 
     //creates model
     DgnModelId seedModelId = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models ().GetModel (seedModelId);
-    DgnModelPtr model1 = seedModel->Clone ("model1");
-    model1->Insert ();
-    m_db->SaveChanges ("changeSet1");
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("model1");
+    model1->Insert();
+    m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE (model1 != nullptr);
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
 
     //Reverse insertion.Model 1 should'nt be in the Db now.
-    DgnDbStatus stat = txns.ReverseTo (txn_id);
+    DgnDbStatus stat = txns.ReverseTo(txn_id);
     EXPECT_EQ ((DgnDbStatus)SUCCESS, stat);
-    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    EXPECT_FALSE (m_db->Models().QueryModelId("model1").IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2168,31 +2168,31 @@ TEST_F (TransactionManagerTests, ReverseToPos)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, CancelToPos)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-    auto& txns = m_db->Txns ();
-    txns.EnableTracking (true);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
 
     //creates model
     DgnModelId seedModelId = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models ().GetModel (seedModelId);
-    DgnModelPtr model1 = seedModel->Clone ("model1");
-    model1->Insert ();
-    m_db->SaveChanges ("changeSet1");
-    auto t1 = txns.GetCurrentTxnId ();
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("model1");
+    model1->Insert();
+    m_db->SaveChanges("changeSet1");
+    auto t1 = txns.GetCurrentTxnId();
 
     ASSERT_TRUE (model1 != nullptr);
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
 
     //Deletes the model.
-    DgnDbStatus ModelStatus = model1->Delete ();
-    EXPECT_EQ (DgnDbStatus::Success, ModelStatus);
-    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
-    m_db->SaveChanges ("changeSet2");
+    DgnDbStatus modelStatus = model1->Delete ();
+    EXPECT_EQ (DgnDbStatus::Success, modelStatus);
+    EXPECT_FALSE (m_db->Models().QueryModelId("model1").IsValid());
+    m_db->SaveChanges("changeSet2");
 
     //Model should be back in the db.
-    DgnDbStatus status = txns.CancelTo (t1);
+    DgnDbStatus status = txns.CancelTo(t1);
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2200,52 +2200,52 @@ TEST_F (TransactionManagerTests, CancelToPos)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, MultiTxnOperation)
     {
-    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
-    auto& txns = m_db->Txns ();
-    txns.EnableTracking (true);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
 
     //Inserts a  model
     DgnModelId seedModelId = m_defaultModelId;
-    DgnModelPtr seedModel = m_db->Models ().GetModel (seedModelId);
-    DgnModelPtr model1 = seedModel->Clone ("Model1");
-    model1->Insert ("Test Model 1");
-    m_db->SaveChanges ("changeSet1");
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("Model1");
+    model1->Insert("Test Model 1");
+    m_db->SaveChanges("changeSet1");
 
     ASSERT_TRUE (model1 != nullptr);
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("Model1").IsValid ());
+    EXPECT_TRUE (m_db->Models().QueryModelId("Model1").IsValid());
 
-    txns.BeginMultiTxnOperation ();
+    txns.BeginMultiTxnOperation();
 
     //Inserts 2 models..
-    DgnModelPtr model2 = seedModel->Clone ("Model2");
-    model2->Insert ("Test Model 2");
-    m_db->SaveChanges ("changeSet2");
+    DgnModelPtr model2 = seedModel->Clone("Model2");
+    model2->Insert("Test Model 2");
+    m_db->SaveChanges("changeSet2");
 
     ASSERT_TRUE (model2 != nullptr);
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("Model2").IsValid ());
+    EXPECT_TRUE (m_db->Models().QueryModelId("Model2").IsValid());
 
-    model2->FillModel ();
-    EXPECT_TRUE (model2->IsFilled ());
-    m_db->SaveChanges ("changeSet3");
+    model2->FillModel();
+    EXPECT_TRUE (model2->IsFilled());
+    m_db->SaveChanges("changeSet3");
 
-    DgnModelPtr model3 = seedModel->Clone ("Model3");
-    model3->Insert ("Test Model 3");
-    auto t3 = txns.GetCurrentTxnId ();
-    m_db->SaveChanges ("changeSet4");
+    DgnModelPtr model3 = seedModel->Clone("Model3");
+    model3->Insert("Test Model 3");
+    auto t3 = txns.GetCurrentTxnId();
+    m_db->SaveChanges("changeSet4");
 
-    txns.EndMultiTxnOperation ();
+    txns.EndMultiTxnOperation();
 
-    DgnDbStatus status = txns.ReverseTxns (1);
+    DgnDbStatus status = txns.ReverseTxns(1);
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
     //Model2 and Model3 shouldn't be in the db.
-    EXPECT_FALSE (m_db->Models ().QueryModelId ("Model2").IsValid ());
-    EXPECT_FALSE (m_db->Models ().QueryModelId ("Model3").IsValid ());
+    EXPECT_FALSE (m_db->Models().QueryModelId("Model2").IsValid());
+    EXPECT_FALSE (m_db->Models().QueryModelId("Model3").IsValid());
 
-    status = txns.ReinstateTxn ();
+    status = txns.ReinstateTxn();
     EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
 
     //Model2 and Model3 shoud be back in the db.
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("Model2").IsValid ());
-    EXPECT_TRUE (m_db->Models ().QueryModelId ("Model3").IsValid ());
+    EXPECT_TRUE (m_db->Models().QueryModelId("Model2").IsValid());
+    EXPECT_TRUE (m_db->Models().QueryModelId("Model3").IsValid());
     }
