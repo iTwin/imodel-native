@@ -324,15 +324,15 @@ public:
     //!     Integer:  2, 
     //!     Double: 3.5
     //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-    //!     Point3d: {“x” : 1.1, “y” : 2.2, “z” : 3.3} (JSON object value)
-    //!     String: “Test”
+    //!     Point3d: {"x" : 1.1, "y" : 2.2, "z" : 3.3} (JSON object value)
+    //!     String: "Test"
     //!     
     //!  FormattedValue: e.g., 
-    //!     Integer: “2”
-    //!     Double: “3 feet 6 inches”
+    //!     Integer: "2"
+    //!     Double: "3 feet 6 inches"
     //!     DateTime: "2013-01-08T08:12:04.523" (ISO string)
-    //!     Point3D: “1.1, 2.2, 3.3”
-    //!     String: “Test”
+    //!     Point3D: "1.1, 2.2, 3.3"
+    //!     String: "Test"
     //! @endcode
     ECDB_EXPORT bool GetRow (JsonValueR currentRow) const;
 

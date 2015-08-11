@@ -136,13 +136,18 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
     
+    m_lightWeightMapCache.Reset ();
+    //This has to evaluated after map is saved
+    if (EvaluateDMLPolicyForEachClass () != BentleyStatus::SUCCESS)
+        return MapStatus::Error;
+
     std::set<ClassMap const*> classMaps;
     for (auto& key : m_classMapDictionary)
         {
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             classMaps.insert (key.second.get ());
         }
-
+    
     SqlGenerator viewGen (*this);
     if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {
@@ -198,9 +203,9 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
     if (AssertIfIsNotImportingSchema ())
         return MapStatus::Error;
 
-    StopWatch timer(true);
+    StopWatch timer (true);
 
-    m_lightWeightMapCache.Reset ();
+
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
     bvector<ECRelationshipClassCP> rootRelationships;
@@ -241,7 +246,7 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         if (status == MapStatus::Error)
             return status;
         }
-    
+
     if (!FinishTableDefinition ())
         return MapStatus::Error;
 
@@ -252,25 +257,39 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         if (status == MapStatus::Error)
             return status;
         }
-    
+
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (auto& key : m_classMapDictionary)
+    for (std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
         {
-        key.second->CreateIndices ();
+        if (SUCCESS != kvpair.first->CreateUserProvidedIndices(*kvpair.second))
+            return MapStatus::Error;
         }
 
     if (!FinishTableDefinition ())
         return MapStatus::Error;
-
+     
     timer.Stop ();
     if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
+
         LOG.debugv ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
-            mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
+        mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
 
     return MapStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Affan.Khan         7/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMap::EvaluateDMLPolicyForEachClass ()
+    {
+    for (auto key : m_classMapDictionary)
+        {
+        key.second->EvaluateDMLPolicy ();
+        GetSQLManagerR ().GetMapStorageR ().UpdateDMLPolicy (key.second->GetId (), key.second->GetDMLPolicy ().ToInt());
+        }
 
+    return BentleyStatus::SUCCESS;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Casey.Mullen        11/2011
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -697,6 +716,7 @@ bool ECDbMap::FinishTableDefinition () const
         MappedTablePtr const& mappedTable = it->second;
         if (!mappedTable->IsFinished() && mappedTable->FinishTableDefinition() != SUCCESS)
             return false;
+
         }
     return true;
     }
@@ -811,7 +831,7 @@ BentleyStatus ECDbMap::Save()
             i++;
             if (SUCCESS != classMap->Save (doneList))
                 {
-                LOG.errorv ("Failed to save ECDbMap for ECClass %s. db error: %s", Utf8String (ecClass.GetFullName ()).c_str (), GetECDbR ().GetLastError ());
+                LOG.errorv ("Failed to save ECDbMap for ECClass %s. db error: %s", ecClass.GetFullName (), GetECDbR ().GetLastError ());
                 return ERROR;
                 }
             }

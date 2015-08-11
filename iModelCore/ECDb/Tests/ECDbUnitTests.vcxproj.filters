@@ -276,6 +276,9 @@
     <ClInclude Include="Published\SchemaImportTestFixture.h">
       <Filter>Published</Filter>
     </ClInclude>
+    <ClInclude Include="Performance\PerformanceECDbMapCATests.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="NonPublished">

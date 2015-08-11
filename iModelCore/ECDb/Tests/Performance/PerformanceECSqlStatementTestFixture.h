@@ -9,7 +9,6 @@
 
 #include <ECDb/ECDbApi.h>
 #include <Bentley/NonCopyableClass.h>
-
 #include "PerformanceTestFixture.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE

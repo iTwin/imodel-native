@@ -120,7 +120,14 @@ private:
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
-
+    virtual BentleyStatus _EvaluateDMLPolicy () override
+        {
+        GetDMLPolicyR ().Set (DMLPolicy::Operation::Insert, DMLPolicy::Target::View);
+        GetDMLPolicyR ().Set (DMLPolicy::Operation::Update, DMLPolicy::Target::View);
+        GetDMLPolicyR ().Set (DMLPolicy::Operation::Delete, DMLPolicy::Target::View);
+        GetDMLPolicyR ().Set (DMLPolicy::Operation::Select, DMLPolicy::Target::View);
+        return BentleyStatus::SUCCESS;
+        }
 
 public:
     ~RelationshipClassEndTableMap () {}

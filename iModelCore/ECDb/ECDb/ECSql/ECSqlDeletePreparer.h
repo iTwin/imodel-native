@@ -56,11 +56,16 @@ struct ECSqlDeletePreparer2
 
     public:
         static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp)
-            {
-            ctx.SetSqlRenderStrategy (ECSqlPrepareContext::SqlRenderStrategy::V1);
-            ctx.PushScope (exp);
+            {           
+
             auto classExp = exp.GetClassNameExp ();
-            auto& map = classExp->GetInfo ().GetMap ();
+            auto& map = static_cast<ClassMapCR>(classExp->GetInfo ().GetMap ());
+            if (map.GetDMLPolicy ().Get (DMLPolicy::Operation::Delete) == DMLPolicy::Target::Table)
+                {
+                return ECSqlDeletePreparer::Prepare (ctx, exp);
+                }
+            ctx.PushScope (exp);
+            ctx.SetSqlRenderStrategy (ECSqlPrepareContext::SqlRenderStrategy::V1);
             auto viewName = SqlGenerator::BuildViewClassName (map.GetClass ());
             auto const& classMap = classExp->GetInfo ().GetMap ();
             if (ctx.IsPrimaryStatement ())

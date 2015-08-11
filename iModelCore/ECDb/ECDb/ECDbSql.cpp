@@ -2991,7 +2991,7 @@ ECDbPropertyPath* ECDbMapStorage::CreatePropertyPath (ECN::ECPropertyId rootProp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbClassMapInfo* ECDbMapStorage::CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, ECDbClassMapId baseClassMapId)
+ECDbClassMapInfo* ECDbMapStorage::CreateClassMap (ECN::ECClassId classId, ECDbMapStrategy const& mapStrategy, uint16_t dmlPolicy, ECDbClassMapId baseClassMapId)
     {
     if (baseClassMapId != 0LL)
         {
@@ -3002,7 +3002,7 @@ ECDbClassMapInfo* ECDbMapStorage::CreateClassMap (ECN::ECClassId classId, ECDbMa
             }
         }
    
-    return Set (std::unique_ptr<ECDbClassMapInfo> (new ECDbClassMapInfo (*this, m_manager.GetIdGenerator ().NextClassMapId (), classId, mapStrategy, baseClassMapId)));
+    return Set (std::unique_ptr<ECDbClassMapInfo> (new ECDbClassMapInfo (*this, m_manager.GetIdGenerator ().NextClassMapId (), classId, mapStrategy, dmlPolicy, baseClassMapId)));
     }
 
 //---------------------------------------------------------------------------------------
@@ -3126,6 +3126,8 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
     stmt->BindInt(4, (int) o.GetMapStrategy ().GetStrategy ());
     stmt->BindInt(5, (int) o.GetMapStrategy().GetOption());
     stmt->BindInt(6, o.GetMapStrategy().IsPolymorphic() ? 1 : 0);
+    stmt->BindInt(7, o.GetDMLPolicy());
+
 
     return stmt->Step ();
     }
@@ -3237,7 +3239,8 @@ DbResult ECDbMapStorage::ReadClassMaps ()
             return BE_SQLITE_ERROR;
             }
 
-        auto classMap = Set (std::unique_ptr<ECDbClassMapInfo> (new ECDbClassMapInfo (*this, id, classId, mapStrategy, parentId)));
+        uint16_t dmlPolicy = static_cast<uint16_t>(stmt->GetValueInt (6));
+        auto classMap = Set (std::unique_ptr<ECDbClassMapInfo> (new ECDbClassMapInfo (*this, id, classId, mapStrategy, dmlPolicy, parentId)));
         if (classMap == nullptr)
             {
             BeAssert (false && "Failed to create classMap");
@@ -3398,15 +3401,25 @@ ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECN::ECPropertyId root
 
     return CreatePropertyMap (*propertyPath, column);
     }
+
+BentleyStatus ECDbMapStorage::UpdateDMLPolicy (ECDbClassMapId classMapId, uint16_t dmlPolicy)
+    {
+    CachedStatementPtr stmt = m_manager.GetECDb ().GetCachedStatement ("UPDATE ec_ClassMap SET DMLPolicy = ? WHERE Id = ?");
+    stmt->BindInt (1, static_cast<int>(dmlPolicy));
+    stmt->BindInt64 (2, classMapId);
+    auto r = stmt->Step ();
+    BeAssert (r == BE_SQLITE_DONE);
+    return r == BE_SQLITE_DONE ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-ECDbClassMapInfo* ECDbClassMapInfo::CreateDerivedClassMap (ECClassId classId, ECDbMapStrategy mapStrategy)
-    {    
-    auto subMap = m_map.CreateClassMap (classId, mapStrategy, GetId ());
-    if (subMap)
-        m_childClassMaps.push_back (subMap);
-
-    return subMap;
-    }
+//ECDbClassMapInfo* ECDbClassMapInfo::CreateDerivedClassMap (ECClassId classId, ECDbMapStrategy mapStrategy)
+//    {    
+//    auto subMap = m_map.CreateClassMap (classId, mapStrategy, GetId ());
+//    if (subMap)
+//        m_childClassMaps.push_back (subMap);
+//
+//    return subMap;
+//    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

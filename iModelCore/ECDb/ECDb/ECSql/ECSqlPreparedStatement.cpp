@@ -86,7 +86,7 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder (int parameterIndex)
 //---------------------------------------------------------------------------------------
 int ECSqlPreparedStatement::GetParameterIndex (Utf8CP parameterName) const
     {
-    auto index = GetParameterMap ().GetIndexForName (parameterName);
+    int index = GetParameterMap ().GetIndexForName (parameterName);
     if (index <= 0)
         GetStatusContextR ().SetError (ECSqlStatus::IndexOutOfBounds, "No parameter index found for parameter name :%s.", parameterName);
 
@@ -111,14 +111,6 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings ()
         return GetStatusContextR ().SetError (&GetECDb (), nativeSqlStat);
     else
         return ResetStatus ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        04/15
-//---------------------------------------------------------------------------------------
-void ECSqlPreparedStatement::OnBeforeStep()
-    {
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -168,14 +160,6 @@ ECSqlStatus ECSqlPreparedStatement::DoReset ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-Utf8CP ECSqlPreparedStatement::GetECSql () const
-    {
-    return m_ecsql.c_str ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        12/13
-//---------------------------------------------------------------------------------------
 Utf8CP ECSqlPreparedStatement::GetNativeSql () const
     {
     if (m_isNoopInSqlite)
@@ -216,8 +200,6 @@ ECSqlStatus ECSqlPreparedStatement::ResetStatus () const
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlSelectPreparedStatement::Step ()
     {
-    OnBeforeStep();
-
     const auto stat = DoStep ();
     if (stat == ECSqlStepStatus::HasRow)
         {
@@ -340,14 +322,8 @@ ECSqlInsertPreparedStatement::ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlSt
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
     {
-    OnBeforeStep();
-
-
     if (IsNoopInSqlite ())
-        {
-
         return ECSqlStepStatus::Done;
-        }         
 
     ECInstanceId ecinstanceidOfInsert;
     //GetModifiedRowCount can be costly, so we want to avoid calling it when not needed.
@@ -447,8 +423,6 @@ ECSqlUpdatePreparedStatement::ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlSt
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlUpdatePreparedStatement::Step ()
     {
-    OnBeforeStep();
-
     ECSqlStepStatus status = ECSqlStepStatus::Done;
     if (!IsNoopInSqlite ())
         {
@@ -490,8 +464,6 @@ ECSqlDeletePreparedStatement::ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlSt
 //---------------------------------------------------------------------------------------
 ECSqlStepStatus ECSqlDeletePreparedStatement::Step ()
     {
-    OnBeforeStep();
-
     ECSqlStepStatus status = ECSqlStepStatus::Done;
     if (!IsNoopInSqlite ())
         {
@@ -500,7 +472,6 @@ ECSqlStepStatus ECSqlDeletePreparedStatement::Step ()
 
         status = DoStep ();
         }
-
 
     return status;
     }

@@ -49,9 +49,7 @@ $(docsBuildDir)macros.txt : $(_MakeFileSpec)
 
 # Inserts extracted code samples into the doc files
 always:
-    !~@${preprocessedSourceDir}
     PublishAPI.py $(PUBLISH_VERBOSE) -o${preprocessedSourceDir} -d$(baseDir)source $(cleanopt) -x$(TARGET_PLATFORM) --insertFileDir=${extractedSampleCodeDir} --insertFileMacros=@$(docsBuildDir)macros.txt
-
 
 #for the name of the latest version of the BSCA schema
 %include $(OutBuildContexts)ECStandards/StandardSchemas.delivery.mki

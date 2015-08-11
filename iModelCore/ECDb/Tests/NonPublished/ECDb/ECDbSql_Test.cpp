@@ -209,7 +209,7 @@ TEST(ECDbSql, IndexErrors)
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
         "</ECClass>"
         "</ECSchema>",
-        SUCCESS));
+        ERROR));
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
