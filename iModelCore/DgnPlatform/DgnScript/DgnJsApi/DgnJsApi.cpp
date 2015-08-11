@@ -77,17 +77,17 @@ void JsElementGeometryBuilder::AppendBox(double x, double y, double z)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsElementGeometryBuilder* JsElementGeometryBuilder::Create(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
+JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
     DgnElement3dP e3d = dynamic_cast<DgnElement3dP>(e->m_el.get());
     if (nullptr != e3d)
-        return new JsElementGeometryBuilder(*e3d, o->m_pt, a->m_angles);
-
-    DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
-    if (nullptr != e2d)
-        return new JsElementGeometryBuilder(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYaw()));
-
-    return nullptr;
+        m_builder = ElementGeometryBuilder::Create(*e3d, o->m_pt, a->m_angles);
+    else
+        {
+        DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
+        if (nullptr != e2d)
+            m_builder = ElementGeometryBuilder::Create(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYaw()));
+        }
     }
 
 //---------------------------------------------------------------------------------------

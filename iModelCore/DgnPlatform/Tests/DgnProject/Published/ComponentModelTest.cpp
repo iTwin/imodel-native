@@ -240,14 +240,14 @@ void ComponentModelTest::Developer_CreateCMs()
         var element = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin = new BentleyApi.Dgn.JsDPoint3d(1,2,3);\
         var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
-        var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
+        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \
         var element2 = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin2 = new BentleyApi.Dgn.JsDPoint3d(10,12,13);\
         var angles2 = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
-        var builder2 = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element2, origin2, angles2); \
+        var builder2 = new BentleyApi.Dgn.JsElementGeometryBuilder(element2, origin2, angles2); \
         builder2.AppendBox(params['X'], params['Y'], params['Z']); \
         builder2.SetGeomStreamAndPlacement(element2); \
         element2.Insert(); \
@@ -262,7 +262,7 @@ void ComponentModelTest::Developer_CreateCMs()
         var element = model.CreateElement('dgn.PhysicalElement', 'Gadget');\
         var origin = new BentleyApi.Dgn.JsDPoint3d(0,0,0);\
         var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,45);\
-        var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
+        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \

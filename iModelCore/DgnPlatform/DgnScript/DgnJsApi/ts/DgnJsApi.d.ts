@@ -42,7 +42,7 @@ declare module BentleyApi.Dgn {
 
     //! A wrapper for BentleyApi::Dgn::DgnElement. There is no constructor. The user must call the Create method to create a new one.
     class JsElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        static Create(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP): cxx_pointer<JsElementGeometryBuilder>;
+        constructor(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         SetGeomStreamAndPlacement(element: JsDgnElementP): cxx_double;
         _OnDispose(): void;
