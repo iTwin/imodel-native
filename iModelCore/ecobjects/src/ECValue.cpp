@@ -2231,8 +2231,33 @@ WCharCP                                 ECValueAccessor::GetAccessString (uint32
     ECEnablerCR enabler       = * m_locationVector[depth].GetEnabler();
     WCharCP accessString;
     if (ECOBJECTS_STATUS_Success == enabler.GetAccessString (accessString, propertyIndex))
+        {
+        // Embedded structs are weird...e.g., for "OuterStruct.InnerStruct.Property":
+        //  - ECValuesCollection::Create() will create separate Location for each portion of the access string ("OuterStruct", "InnerStruct", "Property")
+        //  - ECValueAccessor::PopulateValueAccessor() will create one Location for the entire access string
+        // In the former case, need to strip off the struct prefix(es)
+        Location const* prev = depth > 0 ? &m_locationVector[depth-1] : nullptr;
+        if (nullptr != prev && prev->GetEnabler() == &enabler && prev->GetPropertyIndex() == enabler.GetParentPropertyIndex (propertyIndex))
+            {
+            WCharCP lastDot = wcsrchr (accessString, L'.');
+            BeAssert (nullptr != lastDot);
+            if (nullptr != lastDot)
+                accessString = lastDot + 1;
+            }
+
         return accessString;
+        }
+
     return NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP ECValueAccessor::Location::GetAccessString() const
+    {
+    WCharCP accessString = nullptr;
+    return nullptr != GetEnabler() && ECOBJECTS_STATUS_Success == GetEnabler()->GetAccessString (accessString, GetPropertyIndex()) ? accessString : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2308,12 +2333,8 @@ WString                                        ECValueAccessor::GetManagedAccess
             temp.append (L".");
 
         WCharCP str = GetAccessString (depth);
-        WCharCP lastDot = wcsrchr (str, L'.');
-
-        if (NULL != lastDot)
-            str = lastDot+1;
-
         temp.append (str);
+
         //If the current index is an array element,
         if(m_locationVector[depth].GetArrayIndex() > -1)
             {
@@ -2530,6 +2551,66 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IEC
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool remapAccessString (WStringR newAccessString, ECClassCR newClass, WCharCP oldAccessString, IECSchemaRemapperCR remapper)
+    {
+    bvector<WString> propNames;
+    BeStringUtilities::Split (oldAccessString, L".", propNames);
+    ECClassCP curClass = &newClass;
+    for (auto& propName : propNames)
+        {
+        if (nullptr == curClass)
+            return false;
+
+        remapper.ResolvePropertyName (propName, *curClass);
+        ECPropertyCP prop = curClass->GetPropertyP (propName.c_str());
+        if (nullptr == prop)
+            return false;
+
+        auto structProp = prop->GetAsStructProperty();
+        curClass = nullptr != structProp ? &structProp->GetType() : nullptr;
+        }
+
+    newAccessString = BeStringUtilities::Join (propNames, L".");
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::RemapValueAccessor (ECValueAccessor& newVa, ECEnablerCR newEnabler, ECValueAccessorCR oldVa,  IECSchemaRemapperCR remapper)
+    {
+    newVa.Clear();
+    ECEnablerCP curNewEnabler = &newEnabler;
+    bool prevWasArray = false;
+    for (Location const& oldLoc : oldVa.GetLocationVector())
+        {
+        if (prevWasArray)
+            {
+            // next is a struct array member - need an enabler for the struct.
+            ECPropertyCP prop = newVa.DeepestLocation().GetECProperty();
+            auto arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+            ECClassCP structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
+            curNewEnabler = nullptr != structClass ? structClass->GetDefaultStandaloneEnabler() : nullptr;
+
+            if (nullptr == curNewEnabler)
+                return ECOBJECTS_STATUS_ClassNotFound;
+            }
+
+        WString newAccessString;
+        if (!remapAccessString (newAccessString, curNewEnabler->GetClass(), oldLoc.GetAccessString(), remapper))
+            return ECOBJECTS_STATUS_PropertyNotFound;
+
+        newVa.PushLocation (*curNewEnabler, newAccessString.c_str(), oldLoc.GetArrayIndex());
+
+        prevWasArray = oldLoc.GetArrayIndex() != INDEX_ROOT;
+        }
+
+    return ECOBJECTS_STATUS_Success;
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////

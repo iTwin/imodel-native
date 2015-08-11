@@ -814,6 +814,7 @@ public:
         void            SetPropertyIndex (int index)                { m_cachedProperty = NULL; m_propertyIndex = index; }
         void            SetArrayIndex (int index)                   { m_arrayIndex = index; }
         void            IncrementArrayIndex()                       { m_arrayIndex++; }
+        WCharCP         GetAccessString() const;
 /*__PUBLISH_SECTION_START__*/
     public:
         //! Get the enabler associated with this Location
@@ -984,6 +985,7 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP managedPropertyAccessor);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor, bool includeAdhocs);
+    ECOBJECTS_EXPORT static ECObjectsStatus RemapValueAccessor (ECValueAccessor& newVa, ECEnablerCR newEnabler, ECValueAccessorCR oldVa, IECSchemaRemapperCR remapper);
 //__PUBLISH_SECTION_START__
     };
 
