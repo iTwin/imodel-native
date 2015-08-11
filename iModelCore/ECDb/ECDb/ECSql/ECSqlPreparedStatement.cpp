@@ -86,7 +86,7 @@ IECSqlBinder& ECSqlPreparedStatement::GetBinder (int parameterIndex)
 //---------------------------------------------------------------------------------------
 int ECSqlPreparedStatement::GetParameterIndex (Utf8CP parameterName) const
     {
-    auto index = GetParameterMap ().GetIndexForName (parameterName);
+    int index = GetParameterMap ().GetIndexForName (parameterName);
     if (index <= 0)
         GetStatusContextR ().SetError (ECSqlStatus::IndexOutOfBounds, "No parameter index found for parameter name :%s.", parameterName);
 
