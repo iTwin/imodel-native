@@ -2184,7 +2184,8 @@ TEST_F (TransactionManagerTests, CancelToPos)
     EXPECT_TRUE (m_db->Models().QueryModelId("model1").IsValid());
 
     //Deletes the model.
-    model1->Delete();
+    DgnDbStatus modelStatus = model1->Delete ();
+    EXPECT_EQ (DgnDbStatus::Success, modelStatus);
     EXPECT_FALSE (m_db->Models().QueryModelId("model1").IsValid());
     m_db->SaveChanges("changeSet2");
 
