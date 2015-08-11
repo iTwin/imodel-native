@@ -180,4 +180,55 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
     EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
     }
+
+TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate)
+    {
+    StubLocalState localState;
+
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState);
+    auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_FALSE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    HttpRequest request("foo");
+    configurator->PerformRequest(request)->Wait();
+    }
+
+TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate)
+    {
+    StubLocalState localState;
+
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, &localState);
+    auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_FALSE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    HttpRequest request("foo");
+    configurator->PerformRequest(request)->Wait();
+    }
+
+TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsValidateCertificate)
+    {
+    StubLocalState localState;
+
+    UrlProvider::Initialize(UrlProvider::Environment::Release, &localState);
+    auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
+
+    GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
+        {
+        EXPECT_TRUE(request.GetValidateCertificate());
+        return StubHttpResponse();
+        });
+
+    HttpRequest request("foo");
+    configurator->PerformRequest(request)->Wait();
+    }
 #endif

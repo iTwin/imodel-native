@@ -10,5 +10,5 @@
 
 #include "../WebServicesTestsHelper.h"
 
-class UrlProviderTests : public ::testing::Test
+class UrlProviderTests : public BaseMockHttpHandlerTest
     {};

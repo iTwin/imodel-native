@@ -134,7 +134,7 @@ StatusInt Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExPa
     issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId();
     issueExParamsValue["AppId"] = s_clientInfo->GetProductToken();
 
-    HttpClient client(s_clientInfo, s_customHttpHandler);
+    HttpClient client(s_clientInfo, UrlProvider::GetSecurityConfigurator(s_customHttpHandler));
     HttpRequest request = client.CreatePostRequest(stsUrl);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetAuthorization(authorization);
@@ -189,7 +189,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        stsUrlString = UrlProvider::GetImsStsAuthUrl().c_str();
+        stsUrlString = UrlProvider::GetImsStsAuthUrl();
         }
 
     return GetStsToken(creds, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());

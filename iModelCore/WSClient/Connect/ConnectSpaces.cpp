@@ -15,6 +15,7 @@
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <MobileDgn/Utils/Threading/WorkerThreadPool.h>
 #include <WebServices/Connect/Connect.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 #ifdef DEBUG
 #include <Bentley/BeDirectoryIterator.h>
@@ -137,7 +138,7 @@ void ConnectSpaces::Uninitialize()
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSpaces::ConnectSpaces() :
-m_client(s_clientInfo),
+m_client(s_clientInfo, UrlProvider::GetSecurityConfigurator()),
 m_cancelToken(SimpleCancellationToken::Create())
     {}
 

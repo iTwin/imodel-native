@@ -17,7 +17,7 @@
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-static IHttpHandlerPtr s_customHttpHandler;
+static IHttpHandlerPtr s_httpHandler;
 static bool s_usageTrackingInitialized = false;
 
 /*--------------------------------------------------------------------------------------+
@@ -27,7 +27,7 @@ void UsageTracking::Initialize(IHttpHandlerPtr customHttpHandler)
     {
     if (!s_usageTrackingInitialized)
         {
-        s_customHttpHandler = customHttpHandler;
+        s_httpHandler = UrlProvider::GetSecurityConfigurator(customHttpHandler);
         s_usageTrackingInitialized = true;
         }
     }
@@ -37,8 +37,16 @@ void UsageTracking::Initialize(IHttpHandlerPtr customHttpHandler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UsageTracking::Uninintialize()
     {
-    s_customHttpHandler = nullptr;
+    s_httpHandler = nullptr;
     s_usageTrackingInitialized = false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier   02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UsageTracking::GetServiceUrl()
+    {
+    return UrlProvider::GetUsageTrackingUrl();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -69,8 +77,8 @@ StatusInt UsageTracking::RegisterUserUsages(bvector<MobileTracking> usages)
         return USAGE_NO_USAGES;
         }
 
-    HttpClient client(nullptr, s_customHttpHandler);
-    HttpRequest request = client.CreatePostRequest(GetUsageTrackingUrl());
+    HttpClient client(nullptr, s_httpHandler);
+    HttpRequest request = client.CreatePostRequest(GetServiceUrl());
     request.GetHeaders().SetContentType("application/json");
 
     Utf8String body = Json::FastWriter().write(usageList);
@@ -104,10 +112,10 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     {
     Utf8PrintfString user(userGuid.c_str());
     user.ToLower();
-    Utf8PrintfString getURL("%s/%s/%s", GetUsageTrackingUrl().c_str(), user.c_str(), deviceId.c_str());
+    Utf8PrintfString getURL("%s/%s/%s", GetServiceUrl().c_str(), user.c_str(), deviceId.c_str());
     Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
 
-    HttpClient client(nullptr, s_customHttpHandler);
+    HttpClient client(nullptr, s_httpHandler);
     HttpRequest request = client.CreateGetRequest(getURL);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
@@ -125,11 +133,11 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     {
     Utf8PrintfString user(userGuid.c_str());
     user.ToLower();
-    Utf8PrintfString getURL("%s/%s/%s/%s", GetUsageTrackingUrl().c_str(), user.c_str(), deviceId.c_str(), date.c_str());
+    Utf8PrintfString url("%s/%s/%s/%s", GetServiceUrl().c_str(), user.c_str(), deviceId.c_str(), date.c_str());
     Utf8StringCR ver = VerifyClientMobile(userGuid, deviceId);
 
-    HttpClient client(nullptr, s_customHttpHandler);
-    HttpRequest request = client.CreateGetRequest(getURL);
+    HttpClient client(nullptr, s_httpHandler);
+    HttpRequest request = client.CreateGetRequest(url);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
@@ -212,12 +220,4 @@ Utf8String UsageTracking::VerifyClientMobile(Utf8StringCR userGuid, Utf8StringCR
         }
 
     return hash;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UsageTracking::GetUsageTrackingUrl()
-    {
-    return UrlProvider::GetUsageTrackingUrl();
     }

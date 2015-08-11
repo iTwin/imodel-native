@@ -14,7 +14,7 @@
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-static IHttpHandlerPtr s_customHttpHandler;
+static IHttpHandlerPtr s_httpHandler;
 static bool s_passportInitialized = false;
 
 #define HEADER_USERNAME "BentleyConnectAppServiceUser@bentley.com"
@@ -27,7 +27,7 @@ void Passport::Initialize(IHttpHandlerPtr customHttpHandler)
     {
     if (!s_passportInitialized)
         {
-        s_customHttpHandler = customHttpHandler;
+        s_httpHandler = UrlProvider::GetSecurityConfigurator(customHttpHandler);
         s_passportInitialized = true;
         }
     }
@@ -37,8 +37,16 @@ void Passport::Initialize(IHttpHandlerPtr customHttpHandler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Passport::Uninintialize()
     {
-    s_customHttpHandler = nullptr;
+    s_httpHandler = nullptr;
     s_passportInitialized = false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    George.Rodier   02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Passport::GetServiceUrl()
+    {
+    return UrlProvider::GetPassportUrl();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -46,12 +54,12 @@ void Passport::Uninintialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
     {
-    Utf8PrintfString getURL("%s/%s", GetPassportUrl().c_str(), userGuid.c_str());
+    Utf8PrintfString url("%s/%s", GetServiceUrl().c_str(), userGuid.c_str());
     Utf8PrintfString credsPair("%s:%s", HEADER_USERNAME, HEADER_API_KEY);
     Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
 
-    HttpClient client(nullptr, s_customHttpHandler);
-    HttpRequest request = client.CreateGetRequest(getURL);
+    HttpClient client(nullptr, s_httpHandler);
+    HttpRequest request = client.CreateGetRequest(url);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetAuthorization(authorization);
 
@@ -69,12 +77,4 @@ StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
         }
 
     return HAS_PASSPORT;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Passport::GetPassportUrl()
-    {
-    return UrlProvider::GetPassportUrl();
     }

@@ -33,6 +33,7 @@ AsyncTaskPtr<BuddiRegionsResult> BuddiClient::GetRegions()
     </soap:Body>
 </soap:Envelope>)xml";
 
+    request.SetValidateCertificate(true);
     request.SetRequestBody(HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
 
@@ -104,6 +105,7 @@ AsyncTaskPtr<BuddiUrlResult> BuddiClient::GetUrl(Utf8StringCR url, uint32_t id)
     </soap:Body>
 </soap:Envelope>)xml", url.c_str(), id);
 
+    request.SetValidateCertificate(true);
     request.SetRequestBody(HttpStringBody::Create(body));
     request.GetHeaders().SetContentType("text/xml; charset=utf-8");
 

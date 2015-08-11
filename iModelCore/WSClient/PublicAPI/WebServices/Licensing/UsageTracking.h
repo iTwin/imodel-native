@@ -31,6 +31,7 @@ struct UsageTracking
     private:
         UsageTracking() {}
         static Utf8String VerifyClientMobile(Utf8StringCR ims, Utf8StringCR dev);
+        static Utf8String GetServiceUrl();
 
         //__PUBLISH_SECTION_END__
     public:
@@ -44,7 +45,6 @@ struct UsageTracking
         WSCLIENT_EXPORT static StatusInt RegisterUserUsages(bvector<MobileTracking> usages);
         WSCLIENT_EXPORT static StatusInt RegisterUserUsages(MobileTracking usage);
 
-        WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl();
         WSCLIENT_EXPORT static void Initialize(std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
         WSCLIENT_EXPORT static void Uninintialize();
     };
