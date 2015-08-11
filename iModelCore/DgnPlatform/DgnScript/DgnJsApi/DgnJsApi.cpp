@@ -134,5 +134,8 @@ DgnJsApi::~DgnJsApi()
 //---------------------------------------------------------------------------------------
 void DgnJsApi::_ImportScriptLibrary(BeJsContextR jsContext, Utf8CP)
     {
+    // TRICKY Unlike most JSApis, DgnJsApi does not have its own bootstrapping source. That is because it is combined with DgnScriptContext's boostrapping 
+    // source, and so it must be evaluated later. See DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext. 
+    // *** NEEDS WORK: See if we can untangle this by building DgnScriptContext and DgnJsApi in different makefiles and thereby generating two different bootstrapping .cpp files.
     jsContext.RegisterProjection<DgnJsApiProjection>();
     }

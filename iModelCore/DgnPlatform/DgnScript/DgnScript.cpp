@@ -244,27 +244,26 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     //  Bootstrap the BentleyApi.Dgn "namespace"
     //  *************************************************************
     //  Initialize the DgnScriptContext
-    auto dgnScripContext = new DgnScriptContext(GetBeJsEnvironment());
-    m_jsContext = dgnScripContext;
+    auto dgnScriptContext = new DgnScriptContext(GetBeJsEnvironment());
+    m_jsContext = dgnScriptContext;
 
     // First, register DgnJsApi's projections
-    RegisterScriptLibraryImporter("BentleyApi.Dgn", *new DgnJsApi(*m_jsContext));
-    ImportScriptLibrary("BentleyApi.Dgn");
+    RegisterScriptLibraryImporter("BentleyApi.Dgn-Core", *new DgnJsApi(*m_jsContext));
+    ImportScriptLibrary("BentleyApi.Dgn-Core");
 
-    // This is a little tricky. We must wait until we have registered the first projection that defines BentleyApi.Dgn, 
+    // Next, allow DgnScriptContext to do some one-time setup work. This will involve evaluating some JS expressions.
+    // This is a little tricky. We must wait until we have registered the first projection that defines BentleyApi.Dgn 
     // before we attempt to add more properties to the BentleyApi.Dgn global object. This tricky sequencing is only needed 
     // here, where we are actually defining BentleyApi.Dgn. Other projections can add to BentleyApi.Dgn and can contain a
-    // combination of native code projections and pure TS/JS code without needing any special sequencing (although there are
-    // special rules for how true "hybrid" TS/native classes must be defined).
-    dgnScripContext->Initialize();
+    // combination of native code projections and pure TS/JS code without needing any special sequencing.
+    dgnScriptContext->Initialize();
 
 
     //  *************************************************************
     //  Register other core projections here
     //  vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    //RegisterScriptLibraryImporter("BentleyApi.Geom", *new DgnJsApi(*m_jsContext));
-    //ImportScriptLibrary("BentleyApi.Geom");
-
+    RegisterScriptLibraryImporter("BentleyApi.Dgn-Geom", *new GeomJsApi(*m_jsContext));
+    ImportScriptLibrary("BentleyApi.Dgn-Geom");     // we also auto-load the geom types, as they are used everywhere
 
 
     //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
