@@ -27,6 +27,7 @@ class IPageDownloader
     public:
     CRAWLERLIB_EXPORT virtual ~IPageDownloader() { }
     virtual PageContentPtr DownloadPage(DownloadJobPtr const& p_DownloadJob) = 0;
+
     virtual void SetUserAgent(WString const& agent) = 0;
     virtual void SetRequestTimeoutInSeconds(long timeout) = 0;
     virtual void SetFollowAutoRedirects(bool follow) = 0;

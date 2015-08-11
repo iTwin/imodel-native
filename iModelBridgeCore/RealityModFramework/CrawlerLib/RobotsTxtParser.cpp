@@ -186,8 +186,12 @@ RobotsTxtContentPtr RobotsTxtParser::ParseRobotsTxt(WString const& robotTxtFileC
             {
             for(auto agent : agentsConcernedByCurrentRule)
                 {
-                UrlPtr disallowedUrl = new Url(match[1].str().c_str(), baseUrl);
-                content->AddDisallowedUrl(agent, disallowedUrl);
+                try
+                    {
+                    UrlPtr disallowedUrl = new Url(match[1].str().c_str(), baseUrl);
+                    content->AddDisallowedUrl(agent, disallowedUrl);
+                    }
+                catch(InvalidUrlException&) {}
                 }
             lastLineWasUserAgent = false;
             }

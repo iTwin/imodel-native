@@ -7,10 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/Crawler.h>
 #include <curl/curl.h>
-#include <future>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
+
+const chrono::milliseconds Crawler::s_AsyncWaitTime = chrono::milliseconds(75);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -32,6 +33,7 @@ Crawler::~Crawler()
     for (auto downloader : m_pDownloaders)
         delete downloader;
     delete m_pQueue;
+    curl_global_cleanup();
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,37 +41,49 @@ Crawler::~Crawler()
 //+---------------+---------------+---------------+---------------+---------------+------
 StatusInt Crawler::Crawl(UrlPtr const& seed)
     {
-    WString buffer;
     m_pQueue->AddUrl(seed);
 
-    while(m_pQueue->NumberOfUrls() > 0)
+    vector<future<PageContentPtr>> asyncResults(m_NumberOfDownloaders);
+    size_t i = 0;
+    while(m_pQueue->NumberOfUrls() > 0 || !AllDownloadsFinished(asyncResults))
         {
-        buffer = L"";
-
-        size_t numberOfJobs = min(m_pQueue->NumberOfUrls(), m_NumberOfDownloaders);
-        vector<future<PageContentPtr>> asyncResults(numberOfJobs);
-        for(size_t i = 0; i < numberOfJobs; ++i)
+        if(!asyncResults[i].valid() && m_pQueue->NumberOfUrls() > 0) //After default construction, std::future is not valid
             {
-            IPageDownloader* downloader = m_pDownloaders[i];
             DownloadJobPtr job = m_pQueue->NextDownloadJob();
-            asyncResults[i] = async(launch::async, &IPageDownloader::DownloadPage, downloader, job);
+            asyncResults[i] = async(launch::async, &IPageDownloader::DownloadPage, m_pDownloaders[i], job);
             }
-        for(auto resultIterator = asyncResults.begin(); resultIterator != asyncResults.end(); ++resultIterator)
+        if(asyncResults[i].valid() && asyncResults[i].wait_for(s_AsyncWaitTime) == future_status::ready)
             {
-            PageContentPtr content = resultIterator->get();
-            if(m_pObserver != NULL)
-                {
-                m_pObserver->OnPageCrawled(content);
-                }
-
+            PageContentPtr content = asyncResults[i].get();
             for (auto link : content->GetLinks())
                 {
                 m_pQueue->AddUrl(link);
                 }
+            if(m_pQueue->NumberOfUrls() > 0)
+                {
+                DownloadJobPtr job = m_pQueue->NextDownloadJob();
+                asyncResults[i] = async(launch::async, &IPageDownloader::DownloadPage, m_pDownloaders[i], job);
+                }
+            if(m_pObserver != NULL)
+                m_pObserver->OnPageCrawled(content);
             }
+        i = (i + 1) % m_NumberOfDownloaders;
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Crawler::AllDownloadsFinished(vector<future<PageContentPtr>> const& downloads) const
+    {
+    for(auto download = downloads.begin(); download != downloads.end(); ++download)
+        {
+        if(download->valid()) //Meaning that it is downloading or holding an unread result
+            return false;
+        }
+    return true;
     }
 
 //---------------------------------------------------------------------------------------

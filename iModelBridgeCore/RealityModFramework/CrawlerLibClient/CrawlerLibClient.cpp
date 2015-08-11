@@ -19,7 +19,7 @@ class CrawlerLibClient : ICrawlerObserver
     CrawlerLibClient()
         {
         //Use the CrawlerFactory to easily build a crawler. You are responsible of deleting it.
-        crawler = CrawlerFactory::CreateCrawler(/*8 simultaneous downloads maximum by default*/);
+        crawler = CrawlerFactory::CreateCrawler(20/*8 simultaneous downloads maximum by default*/);
         }
 
     virtual ~CrawlerLibClient()
@@ -35,10 +35,10 @@ class CrawlerLibClient : ICrawlerObserver
 
     void Run()
         {
-        UrlPtr seed = new Seed(L"http://mrdata.usgs.gov/wms.html");
+        UrlPtr seed = new Seed(L"http://store.steampowered.com/");
 
         //Set the crawler options
-        crawler->SetMaxNumberOfLinkToCrawl(50);
+        crawler->SetMaxNumberOfLinkToCrawl(2000);
         crawler->SetAcceptExternalLinks(true);
         crawler->SetAcceptLinksInExternalLinks(false);
         crawler->SetMaximumCrawlDepth(1000);
@@ -48,7 +48,7 @@ class CrawlerLibClient : ICrawlerObserver
 
         crawler->SetFollowAutoRedirects(true);
         crawler->SetMaxAutoRedirectCount(10);
-        crawler->SetMaxHttpConnectionCount(5);
+        //crawler->SetMaxHttpConnectionCount(5);
         crawler->ValidateSslCertificates(false);
 
         crawler->ValidateContentType(true);

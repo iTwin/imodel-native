@@ -18,6 +18,8 @@
 #include <Bentley/Bentley.h>
 
 #include <vector>
+#include <chrono>
+#include <future>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
@@ -59,12 +61,15 @@ class Crawler
 
 
     private:
+    bool AllDownloadsFinished(std::vector<std::future<PageContentPtr>> const& downloads) const;
+
     UrlQueue* m_pQueue;
     std::vector<IPageDownloader*> m_pDownloaders;
 
     ICrawlerObserver* m_pObserver;
 
     const size_t m_NumberOfDownloaders;
+    static const std::chrono::milliseconds s_AsyncWaitTime;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

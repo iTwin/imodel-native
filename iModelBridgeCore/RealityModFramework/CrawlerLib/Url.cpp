@@ -90,8 +90,7 @@ void Url::RemoveTrailingSlash(WString& urlString) const
 //+---------------+---------------+---------------+---------------+---------------+------
 bool Url::IsSubUrlOf(Url const& other)
     {
-    wregex otherUrlRegex(WPrintfString(L"^%ls\\S*$", other.m_Url.c_str()).c_str());
-    if(regex_match(m_Url.c_str(), otherUrlRegex))
+    if(m_Url.find(other.m_Url) == 0)
         return true;
     else
         return false;

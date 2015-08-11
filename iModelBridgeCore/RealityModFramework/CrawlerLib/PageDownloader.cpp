@@ -36,6 +36,7 @@ PageContentPtr PageDownloader::DownloadPage(DownloadJobPtr const& p_DownloadJob)
     {
     WaitToRespectCrawlDelay(p_DownloadJob);
 
+    PageContentPtr content;
     SetResourceUrl(p_DownloadJob->GetUrlToDownload()->GetUrlWString());
     if(IsValidContentType())
         {
@@ -44,12 +45,14 @@ PageContentPtr PageDownloader::DownloadPage(DownloadJobPtr const& p_DownloadJob)
         SetDataWritingSettings(&buffer, CurlWriteCallback);
         response = curl_easy_perform(m_CurlHandle);
         if(response == CURLE_OK)
-            return m_Parser.ParsePage(buffer, p_DownloadJob->GetUrlToDownload());
+            content = m_Parser.ParsePage(buffer, p_DownloadJob->GetUrlToDownload());
         else
-            return m_Parser.GetEmptyPageContent(p_DownloadJob->GetUrlToDownload());
+            content = m_Parser.GetEmptyPageContent(p_DownloadJob->GetUrlToDownload());
         }
     else
-        return m_Parser.GetEmptyPageContent(p_DownloadJob->GetUrlToDownload());
+        content = m_Parser.GetEmptyPageContent(p_DownloadJob->GetUrlToDownload());
+
+    return content;
     }
 
 //---------------------------------------------------------------------------------------
