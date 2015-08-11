@@ -80,11 +80,15 @@ class DTMElementHandlerManager
     static IMultiResolutionGridManagerCreatorPtr s_multiResolutionGridManagerCreator;
     static IRasterTextureSourceManager*          s_rasterTextureSourceManagerP;
     static bool                                  s_isDrawForAnimation;
+    static bool                                  s_isInitializedDgnPlatform;
+    static bool                                  s_isInitializedDgnDisplay;
     
     DTMElementHandlerManager() {}
 
 public:
-    DTMELEMENT_EXPORT static void Initialize (IDTMElementPowerPlatformExtension* value);
+    DTMELEMENT_EXPORT static void InitializeDgnPlatform ();
+    DTMELEMENT_EXPORT static void InitializeDgnDisplay ();
+    DTMELEMENT_EXPORT static void SetPowerPlatformExtension (DTMElementHandlerManager::IDTMElementPowerPlatformExtension* value);
 
     DTMELEMENT_EXPORT static IDTMElementPowerPlatformExtension* GetDTMElementPowerPlatformExtension ()
         {
@@ -131,7 +135,6 @@ public:
     public: DTMELEMENT_EXPORT static void ActivateMrDTM();
     public: DTMELEMENT_EXPORT static void DeactivateMrDTM();    
     public: DTMELEMENT_EXPORT static StatusInt ConvertMrDTMtoSingleResDTM(EditElementHandleR outputEh, EditElementHandleCR inputEh, long maxNbPointsInDTM, DgnModelRefP modelRef);    
-
 
     public: DTMELEMENT_EXPORT static void SetMultiResolutionGridManagerCreator(IMultiResolutionGridManagerCreatorPtr multiResolutionGridManagerCreator);   
 

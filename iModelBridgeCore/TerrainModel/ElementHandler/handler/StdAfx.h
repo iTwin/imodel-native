@@ -15,6 +15,8 @@
 #include <DgnView\IViewManager.h>
 #include <DgnView\IRedraw.h>
 #include <DgnView\AccuSnap.h>
+#include <DgnView\DgnViewLib.h>
+
 #include <DgnPlatform\DgnECProviderBase.h>
 #include <DgnPlatform\ElementProperties.h>
 

@@ -32,7 +32,9 @@ DTMElementHandlerManager::IDTMIsFriendModelExtension* DTMElementHandlerManager::
 
 IMultiResolutionGridManagerCreatorPtr DTMElementHandlerManager::s_multiResolutionGridManagerCreator = 0;
 IRasterTextureSourceManager*          DTMElementHandlerManager::s_rasterTextureSourceManagerP = 0;
-bool                                  DTMElementHandlerManager::s_isDrawForAnimation = false; 
+bool                                  DTMElementHandlerManager::s_isDrawForAnimation = false;
+bool                                  DTMElementHandlerManager::s_isInitializedDgnPlatform = false;
+bool                                  DTMElementHandlerManager::s_isInitializedDgnDisplay = false;
 
 
 
@@ -142,30 +144,50 @@ void DTMElementHandlerManager::SetIsFriendModelExtension (DTMElementHandlerManag
     }
 
 //=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 08/15
+//=======================================================================================
+void DTMElementHandlerManager::SetPowerPlatformExtension (DTMElementHandlerManager::IDTMElementPowerPlatformExtension* DTMElementPowerPlatformExtension)
+    {
+    s_DTMElementPowerPlatformExtension = DTMElementPowerPlatformExtension;
+    }
+
+//=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 08/15
+//=======================================================================================
+void DTMElementHandlerManager::InitializeDgnPlatform ()
+    {
+    if (!s_isInitializedDgnPlatform)
+        {
+        s_isInitializedDgnPlatform = true;
+        DTMRegisterDisplayHandlers ();
+        Initializations ();
+        registerElementHandlers ();
+
+        // Initialize the XAttributes handler
+        DTMBinaryData::Initialize ();
+        MrDTMXAttributeHandler::GetInstance ()->RegisterHandlers ();
+        }
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Daryl.Holmwood 04/10
 //=======================================================================================
-void DTMElementHandlerManager::Initialize (DTMElementHandlerManager::IDTMElementPowerPlatformExtension* DTMElementPowerPlatformExtension)
+void DTMElementHandlerManager::InitializeDgnDisplay ()
     {
-    // Register the handlers
-    DTMRegisterDisplayHandlers();
-    Initializations ();
-    s_DTMElementPowerPlatformExtension = DTMElementPowerPlatformExtension;
-    registerElementHandlers ();
+    if (!s_isInitializedDgnDisplay)
+        {
+        s_isInitializedDgnDisplay = true;
+        // Register the handlers
 
-    // Initialize the XAttributes handler
-    DTMBinaryData::Initialize();
+        InitializeDgnPlatform ();
+        DTMDisplayCacheManager::Initialize ();
 
-    DTMDisplayCacheManager::Initialize();
-    
-
-    MrDTMXAttributeHandler::GetInstance()->RegisterHandlers();  
-        
 #ifdef ToDoDoWeNeed
-    SystemCallback::SetFileSaveAsFunction (onSystemFunc_FileSave);
-    SystemCallback::SetFileSaveFunction (onSystemFunc_FileSave);
-    SystemCallback::SetCompressDgnFileFunction (onCompressFile);
+        SystemCallback::SetFileSaveAsFunction (onSystemFunc_FileSave);
+        SystemCallback::SetFileSaveFunction (onSystemFunc_FileSave);
+        SystemCallback::SetCompressDgnFileFunction (onCompressFile);
 #endif
-
+        }
     }
 
 //=======================================================================================

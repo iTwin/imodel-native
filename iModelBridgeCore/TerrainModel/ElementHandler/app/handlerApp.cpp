@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/app/handlerApp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Mstn\MdlApi\mdl.h>
@@ -97,7 +97,8 @@ extern "C" __declspec(dllexport) void MdlMain (int , WCharCP  argv[])
 
     mdlSystem_setMdlAppClass (NULL, MdlApplicationClass::MSRequired); // Don't allow handler app to unload!
 
-    Bentley::TerrainModel::Element::DTMElementHandlerManager::Initialize (&s_DTMElementPowerPlatformExtension);
-    registerManagedElementHandler();
+    Bentley::TerrainModel::Element::DTMElementHandlerManager::SetPowerPlatformExtension (&s_DTMElementPowerPlatformExtension);
+    Bentley::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnDisplay ();
+    registerManagedElementHandler ();
     registerSelectionListener ();
     }

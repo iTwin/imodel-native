@@ -729,7 +729,7 @@ DgnModelRefP GetActivatedModel (ElementHandleCR element, ViewContextCP context)
     if (context && context->GetViewport())
         return context->GetViewport()->GetRootModel();
 
-    if (IViewManager::GetActiveViewSet().GetSelectedViewport())
+    if (nullptr != &DgnViewLib::GetHost () && IViewManager::GetActiveViewSet ().GetSelectedViewport ())
         return IViewManager::GetActiveViewSet ().GetSelectedViewport ()->GetRootModel ();
     return element.GetModelRef()->GetRoot();
 //ToDo    return DTMSessionMonitor::GetInstance().GetActive ();
