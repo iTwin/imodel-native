@@ -29,7 +29,6 @@ struct JsDPoint3d : RefCountedBase
     JsDPoint3d() {m_pt.Init(0,0,0);}
     JsDPoint3d(DPoint3dCR pt) : m_pt(pt) {;}
     JsDPoint3d(double x, double y, double z) {m_pt.x=x; m_pt.y=y; m_pt.z=z;}
-    static JsDPoint3d* Create(double x, double y, double z) {return new JsDPoint3d(x,y,z);}
 
     double GetX() {return m_pt.x;}
     double GetY() {return m_pt.y;}
@@ -50,7 +49,7 @@ struct JsYawPitchRollAngles : RefCountedBase
 
     JsYawPitchRollAngles() {m_angles.FromDegrees(0,0,0);}
     JsYawPitchRollAngles(YawPitchRollAnglesCR angles) : m_angles(angles) {;}
-    static JsYawPitchRollAngles* Create(double yaw, double pitch, double roll) {return new JsYawPitchRollAngles(YawPitchRollAngles::FromDegrees(yaw,pitch,roll));}
+    JsYawPitchRollAngles(double yaw, double pitch, double roll) : m_angles(YawPitchRollAngles::FromDegrees(yaw,pitch,roll)) {;}
 
     double GetYaw  () {return m_angles.GetYaw().Degrees();}
     double GetPitch() {return m_angles.GetPitch().Degrees();}

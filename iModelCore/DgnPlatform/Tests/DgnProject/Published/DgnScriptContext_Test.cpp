@@ -189,15 +189,15 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnScriptTest, Test2)
+TEST(DgnScriptTest, RunScripts)
     {
     ScopedDgnHost  autoDgnHost;
 
     T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
-    BeTest::GetHost().GetDocumentsRoot (jsFileName);
-    jsFileName.AppendToPath(L"DgnDb/DgnScriptTest.js");
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
+    jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
 
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);

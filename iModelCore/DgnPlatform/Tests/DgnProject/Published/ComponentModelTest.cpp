@@ -238,15 +238,15 @@ void ComponentModelTest::Developer_CreateCMs()
     function widgetSolver(model, params) { \
         model.DeleteAllElements();\
         var element = model.CreateElement('dgn.PhysicalElement', 'Widget');\
-        var origin = BentleyApi.Dgn.JsDPoint3d.Create(1,2,3);\
-        var angles = BentleyApi.Dgn.JsYawPitchRollAngles.Create(0,0,0);\
+        var origin = new BentleyApi.Dgn.JsDPoint3d(1,2,3);\
+        var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
         var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \
         var element2 = model.CreateElement('dgn.PhysicalElement', 'Widget');\
-        var origin2 = BentleyApi.Dgn.JsDPoint3d.Create(10,12,13);\
-        var angles2 = BentleyApi.Dgn.JsYawPitchRollAngles.Create(0,0,0);\
+        var origin2 = new BentleyApi.Dgn.JsDPoint3d(10,12,13);\
+        var angles2 = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,0);\
         var builder2 = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element2, origin2, angles2); \
         builder2.AppendBox(params['X'], params['Y'], params['Z']); \
         builder2.SetGeomStreamAndPlacement(element2); \
@@ -260,8 +260,8 @@ void ComponentModelTest::Developer_CreateCMs()
     function gadgetSolver(model, params) { \
         model.DeleteAllElements();\
         var element = model.CreateElement('dgn.PhysicalElement', 'Gadget');\
-        var origin = BentleyApi.Dgn.JsDPoint3d.Create(0,0,0);\
-        var angles = BentleyApi.Dgn.JsYawPitchRollAngles.Create(0,0,45);\
+        var origin = new BentleyApi.Dgn.JsDPoint3d(0,0,0);\
+        var angles = new BentleyApi.Dgn.JsYawPitchRollAngles(0,0,45);\
         var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \

@@ -39,6 +39,3 @@ DgnTextStylesTest.*                                     # WIP DgnTextStyles
 DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
-
-
-DgnScriptTest.Test2 # WIP Sam
