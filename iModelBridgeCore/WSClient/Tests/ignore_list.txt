@@ -9,6 +9,8 @@
 BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # Hangs regularly on firebug; have notified Vincas.
 ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
 CachingDataSourceTests.* # notified Vincas
+ChangeManagerTests.* # notified Vincas
+DataSourceCacheTests.* # notified Vincas
 
 # Fails on Android. Notified Vincas
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
