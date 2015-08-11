@@ -251,7 +251,7 @@ protected:
 
     //! Returns true if callers are permitted to modify values of this IECInstance in memory. This may differ from the return value of _IsReadOnly(), which
     //! returns true if the IECInstance is permitted to be modified persistently.
-    virtual bool    _ChangeValuesAllowed() const { return ! IsReadOnly(); }
+    virtual bool            _ChangeValuesAllowed() const { return ! IsReadOnly(); }
 public:
     //! Returns true if callers are permitted to modify values of this IECInstance in memory. This may differ from the return value of IsReadOnly(), which
     //! returns true if the IECInstance is permitted to be modified persistently.

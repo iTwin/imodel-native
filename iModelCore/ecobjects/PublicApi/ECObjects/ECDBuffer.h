@@ -669,6 +669,8 @@ protected:
 
     virtual bool                _IsPersistentlyReadOnly() const { return false; }
     virtual ECObjectsStatus     _SetIsPersistentlyReadOnly (bool readOnly) { return ECOBJECTS_STATUS_OperationNotSupported; }
+    virtual bool                _IsHidden() const { return false; }
+    virtual ECObjectsStatus     _SetIsHidden (bool hidden) { return ECOBJECTS_STATUS_OperationNotSupported; }
 
     // Helper for implementations of calculated property methods above
     ECOBJECTS_EXPORT CalculatedPropertySpecificationCP LookupCalculatedPropertySpecification (IECInstanceCR thisAsIECInstance, PropertyLayoutCR propLayout) const;
@@ -743,6 +745,8 @@ public:
 
     ECOBJECTS_EXPORT bool                   IsPersistentlyReadOnly() const;
     ECOBJECTS_EXPORT ECObjectsStatus        SetIsPersistentlyReadOnly (bool readOnly);
+    ECOBJECTS_EXPORT bool                   IsHidden() const;
+    ECOBJECTS_EXPORT ECObjectsStatus        SetIsHidden (bool hidden);
 /*__PUBLISH_SECTION_START__*/  
 public:
     //! Returns true if the buffer is empty (all values are null and all arrays are empty)

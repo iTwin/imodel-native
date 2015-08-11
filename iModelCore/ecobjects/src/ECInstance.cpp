@@ -891,9 +891,9 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 
             //Get the array value to check its size. Expand array if necessary.
             if (compatible)
-                currentInstance->GetValue(arrayInfoPlaceholder, (uint32_t)propertyIndex);
+                status = currentInstance->GetValue(arrayInfoPlaceholder, (uint32_t)propertyIndex);
             else
-                currentInstance->GetValue(arrayInfoPlaceholder, accessor.GetAccessString (depth));
+                status = currentInstance->GetValue(arrayInfoPlaceholder, accessor.GetAccessString (depth));
 
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
@@ -2188,10 +2188,23 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (Utf8String& displ
         ECN::ECValue ecValue;
         if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
             {
-            if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !Utf8String::IsNullOrEmpty (ecValue.GetUtf8CP()))
+            auto prop = GetClass().GetPropertyP (propertyName.c_str());
+            auto adapter = nullptr != prop ? prop->GetTypeAdapter() : nullptr;
+            if (nullptr == adapter)
                 {
+                // Preserve old behavior of converting directly to string, because ECObjects.dll doesn't know how to use type adapters...
+            if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !Utf8String::IsNullOrEmpty (ecValue.GetUtf8CP()))
+                    {
                 displayLabel = ecValue.GetUtf8CP();
-                return ECOBJECTS_STATUS_Success;
+                    return ECOBJECTS_STATUS_Success;
+                    }
+                }
+            else
+                {
+                // TFS#244646: Use type adapters to do conversion
+                auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this) : nullptr;
+                if (context.IsValid() && adapter->ConvertToString (displayLabel, ecValue, *context))
+                    return ECOBJECTS_STATUS_Success;
                 }
             }
         }
@@ -2219,12 +2232,22 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (Utf8CP displayLab
         return ECOBJECTS_STATUS_Error;
 
     ECN::ECValue ecValue;
-    ecValue.SetUtf8CP (displayLabel, false);
+    auto prop = GetClass().GetPropertyP (propertyName.c_str());
+    auto adapter = nullptr != prop ? prop->GetTypeAdapter() : nullptr;
+    if (nullptr == adapter)
+        {
+        // Preserve old behavior of converting directly to string, because ECObjects.dll doesn't know how to use type adapters...
+        ecValue.SetUtf8CP (displayLabel, false);
+        }
+    else
+        {
+        // TFS#244646: Use type adapters to do conversion
+        auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this) : nullptr;
+        if (context.IsNull() || !adapter->ConvertFromString (ecValue, displayLabel, *context))
+            return ECOBJECTS_STATUS_Error;
+        }
 
-    if (ECOBJECTS_STATUS_Success == SetValue (propertyName.c_str(), ecValue))
-        return ECOBJECTS_STATUS_Success;
-
-    return  ECOBJECTS_STATUS_Error;
+    return SetValue (propertyName.c_str(), ecValue);
     }
 
 /*---------------------------------------------------------------------------------**//**

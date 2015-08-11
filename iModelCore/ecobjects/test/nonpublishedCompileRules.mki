@@ -29,3 +29,5 @@ $(o)UnitsTestBase$(oext)               : $(baseDir)NonPublished/UnitsTestBase.cp
 $(o)ECSchemaUnitsManagerTests$(oext)               : $(baseDir)NonPublished/ECSchemaUnitsManagerTests.cpp                $(PCHHeaderDependency) ${MultiCompileDepends}
 $(o)SchemaLocalizationTests$(oext)   : $(baseDir)NonPublished/SchemaLocalizationTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
+$(o)PropertyOverrideTests$(oext)   : $(baseDir)NonPublished/PropertyOverrideTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+

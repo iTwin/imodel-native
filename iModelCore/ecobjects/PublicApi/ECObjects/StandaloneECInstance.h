@@ -97,6 +97,8 @@ protected:
 
     ECOBJECTS_EXPORT virtual ~MemoryECInstanceBase ();
 
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _SetIsHidden (bool set) override;
+    ECOBJECTS_EXPORT virtual bool               _IsHidden () const override;
     ECOBJECTS_EXPORT virtual bool               _IsMemoryInitialized () const;
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _ModifyData (uint32_t offset, void const * newData, uint32_t dataLength);
     ECOBJECTS_EXPORT virtual ECObjectsStatus    _MoveData (uint32_t toOffset, uint32_t fromOffset, uint32_t dataLength);
@@ -186,8 +188,6 @@ public:
     ECOBJECTS_EXPORT void                     SetUsageBitmask (uint16_t mask);
     ECOBJECTS_EXPORT void                     SetPartiallyLoaded (bool set);
     ECOBJECTS_EXPORT bool                     IsPartiallyLoaded () const;
-    ECOBJECTS_EXPORT bool                     SetHiddenInstance (bool set);
-    ECOBJECTS_EXPORT bool                     IsHiddenInstance () const;
 //__PUBLISH_SECTION_START__
 };
 

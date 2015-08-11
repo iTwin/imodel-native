@@ -439,8 +439,13 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty)
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     if (nullptr != derivedProperty)
         {
-        if (ECOBJECTS_STATUS_Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
-            derivedProperty->SetBaseProperty (&baseProperty);
+        // TFS#246533: Silly multiple inheritance scenarios...does derived property already have a different base property? Does the new property
+        // have priority over that one based on the order of base class declarations?
+        if (nullptr == derivedProperty->GetBaseProperty() || GetBaseClassPropertyP (baseProperty.GetName().c_str()) == &baseProperty)
+            {
+            if (ECOBJECTS_STATUS_Success == (status = CanPropertyBeOverridden (baseProperty, *derivedProperty)))
+                derivedProperty->SetBaseProperty (&baseProperty);
+            }
         }
     else
         {
@@ -576,17 +581,22 @@ bool includeBaseClasses
     
     if ( propertyIterator != m_propertyMap.end() )
         return propertyIterator->second;
+    else
+        return includeBaseClasses ? GetBaseClassPropertyP (propName.c_str()) : NULL;
+    }
 
-    if (!includeBaseClasses)
-        return NULL;
-
-    // not found yet, search the inheritence hierarchy
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP ECClass::GetBaseClassPropertyP (Utf8CP propertyName) const
+    {
     for (const ECClassP& baseClass: m_baseClasses)
         {
-        ECPropertyP baseProperty = baseClass->GetPropertyP (propName);
+        ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
         if (NULL != baseProperty)
             return baseProperty;
         }
+
     return NULL;
     }
 
