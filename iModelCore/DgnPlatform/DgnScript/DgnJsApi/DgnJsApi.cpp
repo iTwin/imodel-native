@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScript/DgnJsApi.cpp $
+|     $Source: DgnScript/DgnJsApi/DgnJsApi.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,7 +12,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include "DgnJsApi.h"
+#include <DgnPlatform/DgnJsApi.h>
 #include <DgnPlatform/DgnJsApiProjection.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -134,5 +134,8 @@ DgnJsApi::~DgnJsApi()
 //---------------------------------------------------------------------------------------
 void DgnJsApi::_ImportScriptLibrary(BeJsContextR jsContext, Utf8CP)
     {
+    // TRICKY Unlike most JSApis, DgnJsApi does not have its own bootstrapping source. That is because it is combined with DgnScriptContext's boostrapping 
+    // source, and so it must be evaluated later. See DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext. 
+    // *** NEEDS WORK: See if we can untangle this by building DgnScriptContext and DgnJsApi in different makefiles and thereby generating two different bootstrapping .cpp files.
     jsContext.RegisterProjection<DgnJsApiProjection>();
     }
