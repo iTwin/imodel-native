@@ -151,7 +151,6 @@ public:
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR) const;
     size_t                      GetTableCountOnRelationshipEnd (ECN::ECRelationshipConstraintCR) const;
     void                        ClearCache();
-    ClassMapCP GetClassMap (ECN::ECClassId ecClassId);
     RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId);
     };
 

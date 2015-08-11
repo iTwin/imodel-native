@@ -1303,6 +1303,11 @@ void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb) const
         if (!whereExp.empty())
             whereExp.append(" AND ");
 
+        ECClassCP ecclass = ecdb.Schemas().GetECClass(classId);
+        BeAssert(ecclass != nullptr);
+
+        //StorageDescription const& storageDescription = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*ecclass)->GetStorageDescription();
+        //storageDescription.
         whereExp.append(classIdCol->GetName()).append(" = ");
         Utf8String classIdStr;
         classIdStr.Sprintf("%lld", classId);

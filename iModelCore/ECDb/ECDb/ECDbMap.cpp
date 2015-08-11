@@ -163,21 +163,6 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         06/2015
 //---------------------------------------------------------------------------------------
-ClassMapCP ECDbMap::GetClassMap (ECN::ECClassId ecClassId)
-    {
-    auto ecClass = GetECDbR ().Schemas ().GetECClass (ecClassId);
-    if (ecClass == nullptr)
-        {
-        BeDataAssert (false && "Failed to find classmap with given ecclassid");
-        return nullptr;
-        }
-
-    return static_cast<ClassMapCP>(GetClassMap (*ecClass));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         06/2015
-//---------------------------------------------------------------------------------------
 RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId)
     {
     auto ecClass = GetECDbR ().Schemas ().GetECClass (ecRelationshipClassId);
@@ -1212,6 +1197,326 @@ StorageDescription const& ECDbMap::LightWeightMapCache::GetStorageDescription (E
         }
 
     return *(itor->second.get ());
+    }
+
+//****************************************************************************************
+// StorageDescription
+//****************************************************************************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+StorageDescription::StorageDescription(StorageDescription&& rhs)
+    : m_classId(std::move(rhs.m_classId)), m_horizontalPartitions(std::move(rhs.m_horizontalPartitions)),
+    m_nonVirtualHorizontalPartitionIndices(std::move(rhs.m_nonVirtualHorizontalPartitionIndices)),
+    m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex))
+    {}
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_classId = std::move(rhs.m_classId);
+        m_horizontalPartitions = std::move(rhs.m_horizontalPartitions);
+        m_nonVirtualHorizontalPartitionIndices = std::move(rhs.m_nonVirtualHorizontalPartitionIndices);
+        m_rootHorizontalPartitionIndex = std::move(rhs.m_rootHorizontalPartitionIndex);
+        }
+
+    return *this;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static
+//std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
+//    {
+//    Utf8CP const findClassesMappedToPartitionSql =
+//        "WITH RECURSIVE "
+//        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
+//        "   AS ("
+//        "       VALUES (?1, ?1, ?1) "
+//        "   UNION "
+//        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
+//        "           FROM DerivedClassList DCL "
+//        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
+//        "   ),"
+//        "   TableMapInfo "
+//        "   AS ("
+//        "   SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
+//        "   FROM ec_PropertyMap "
+//        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+//        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+//        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+//        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+//        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+//        "   WHERE ec_ClassMap.MapStrategy NOT IN( 0x2000, 0x4000)"
+//        "   ) "
+//        "SELECT DCL.DerivedClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
+//        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId "
+//        "   WHERE DCL.CurrentClassId IS NOT NULL AND DCL.RootClassId = ?1";
+//
+//    Utf8CP const findAllClassesMappedToTableSql =
+//        "SELECT DISTINCT ec_Class.Id "
+//        "FROM ec_PropertyMap "
+//        "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+//        "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+//        "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+//        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+//        "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+//        "WHERE ec_ClassMap.MapStrategy NOT IN(0x2000, 0x4000) AND ec_Table.Name = ? ORDER BY ec_Class.Id";
+//
+//    auto& ecdb = classMap.GetECDbMap().GetECDbR();
+//    ECClassId classId = classMap.GetClass().GetId();
+//    auto const& dbSchema = classMap.GetECDbMap ().GetSQLManager ().GetDbSchema ();
+//
+//    CachedStatementPtr classesMappedToPartitionStmt = nullptr;
+//    ecdb.GetCachedStatement(classesMappedToPartitionStmt, findClassesMappedToPartitionSql);
+//    classesMappedToPartitionStmt->BindInt64(1, classId);
+//
+//    CachedStatementPtr allClassesMappedToTableStmt = nullptr;
+//    ecdb.GetCachedStatement(allClassesMappedToTableStmt, findAllClassesMappedToTableSql);
+//
+//    if (classesMappedToPartitionStmt == nullptr || allClassesMappedToTableStmt == nullptr)
+//        {
+//        BeAssert(false && "Preparation of the StorageDescription SQL failed.");
+//        return nullptr;
+//        }
+//
+//    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
+//
+//    bmap<ECDbTableId, bpair<size_t, std::vector<ECClassId>>> cache;
+//    while (classesMappedToPartitionStmt->Step() == BE_SQLITE_ROW)
+//        {
+//        ECClassId derivedECClassId = classesMappedToPartitionStmt->GetValueInt64(0);
+//        ECDbTableId tableId = classesMappedToPartitionStmt->GetValueInt64(1);
+//
+//        size_t horizPartitionIndex = 0;
+//        auto it = cache.find(tableId);
+//        if (it != cache.end())
+//            horizPartitionIndex = it->second.first;
+//        else
+//            {
+//            Utf8CP tableName = classesMappedToPartitionStmt->GetValueText(2);
+//            ECDbSqlTable const* table = dbSchema.FindTable(tableName);
+//            BeAssert(table != nullptr);
+//
+//            const bool isRootPartition = derivedECClassId == classId;
+//            horizPartitionIndex = storageDescription->AddHorizontalPartition(*table, isRootPartition);
+//
+//
+//            bpair<size_t, std::vector<ECClassId>>& cacheElement = cache[table->GetId()];
+//            cacheElement.first = horizPartitionIndex;
+//            allClassesMappedToTableStmt->BindText(1, table->GetName(), Statement::MakeCopy::No);
+//
+//            while (allClassesMappedToTableStmt->Step() == BE_SQLITE_ROW)
+//                {
+//                cacheElement.second.push_back(allClassesMappedToTableStmt->GetValueInt64(0));
+//                }
+//
+//            allClassesMappedToTableStmt->Reset();
+//            allClassesMappedToTableStmt->ClearBindings();
+//            }
+//
+//        HorizontalPartition* horizPartition = storageDescription->GetHorizontalPartitionP(horizPartitionIndex);
+//        BeAssert(horizPartition != nullptr);
+//        horizPartition->AddClassId(derivedECClassId);
+//        }
+//    
+//    for (auto const& kvPair : cache)
+//        {
+//        size_t partitionIx = kvPair.second.first;
+//        std::vector<ECClassId> const& allClassesMappedToTable = kvPair.second.second;
+//        HorizontalPartition* horizPartition = storageDescription->GetHorizontalPartitionP(partitionIx);
+//        BeAssert(horizPartition != nullptr);
+//        horizPartition->GenerateClassIdFilter(allClassesMappedToTable);
+//        }
+//
+//    return std::move(storageDescription);
+//    }
+
+std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc)
+    {
+    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
+    for (auto& kp : lwmc.GetTablesMapToClass(classId))
+        {
+        auto table = kp.first;
+
+        auto& deriveClassList = kp.second;
+        if (deriveClassList.empty())
+            continue;
+
+        auto id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
+        auto hp = storageDescription->GetHorizontalPartitionP(id);
+        for (auto ecClassId : deriveClassList)
+            {
+            hp->AddClassId(ecClassId);
+            }
+
+        hp->GenerateClassIdFilter(lwmc.GetClassesMapToTable(*table));
+        }
+
+    return std::move(storageDescription);
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition const* StorageDescription::GetHorizontalPartition(size_t index) const
+    {
+    if (index >= m_horizontalPartitions.size())
+        {
+        BeAssert(false && "Index out of range");
+        return nullptr;
+        }
+
+    return &m_horizontalPartitions[index];
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition* StorageDescription::GetHorizontalPartitionP(size_t index)
+    {
+    if (index >= m_horizontalPartitions.size())
+        {
+        BeAssert(false && "Index out of range");
+        return nullptr;
+        }
+
+    return &m_horizontalPartitions[index];
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+size_t StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition)
+    {
+    const bool isVirtual = table.GetPersistenceType() == PersistenceType::Virtual;
+    m_horizontalPartitions.push_back(HorizontalPartition(table));
+
+    const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
+    if (!isVirtual)
+        m_nonVirtualHorizontalPartitionIndices.push_back(indexOfAddedPartition);
+
+    if (isRootPartition)
+        m_rootHorizontalPartitionIndex = indexOfAddedPartition;
+
+    return indexOfAddedPartition;
+    }
+
+
+//****************************************************************************************
+// HorizontalPartition
+//****************************************************************************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition::HorizontalPartition(HorizontalPartition&& rhs)
+    : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)),
+    m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds))
+    {
+    //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
+    //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+    //this method is safe.
+    rhs.m_table = nullptr;
+    }
+
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_table = std::move(rhs.m_table);
+        m_partitionClassIds = std::move(rhs.m_partitionClassIds);
+        m_inversedPartitionClassIds = std::move(rhs.m_inversedPartitionClassIds);
+        m_hasInversedPartitionClassIds = std::move(rhs.m_hasInversedPartitionClassIds);
+
+        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
+        //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
+        //this method is safe.
+        rhs.m_table = nullptr;
+        }
+
+    return *this;
+    }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds)
+    {
+    BeAssert(!m_partitionClassIds.empty());
+    m_hasInversedPartitionClassIds = m_partitionClassIds.size() > tableClassIds.size() / 2;
+    if (m_partitionClassIds.size() == tableClassIds.size())
+        return;
+
+    //tableClassIds list is already sorted
+    std::sort(m_partitionClassIds.begin(), m_partitionClassIds.end());
+
+    auto partitionClassIdsIt = m_partitionClassIds.begin();
+    for (ECClassId candidateClassId : tableClassIds)
+        {
+        if (partitionClassIdsIt == m_partitionClassIds.end() || candidateClassId < *partitionClassIdsIt)
+            m_inversedPartitionClassIds.push_back(candidateClassId);
+        else
+            ++partitionClassIdsIt;
+        }
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    05 / 2015
+//------------------------------------------------------------------------------------------
+bool HorizontalPartition::NeedsClassIdFilter() const
+    {
+    BeAssert(!m_partitionClassIds.empty());
+    //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.
+    //if class ids are inversed, filtering is needed if the inversed list is not empty. If it is empty, it means
+    //don't filter at all -> consider all class ids
+    return !m_inversedPartitionClassIds.empty();
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2015
+//------------------------------------------------------------------------------------------
+void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder) const
+    {
+    BeAssert(!m_partitionClassIds.empty());
+
+    std::vector<ECClassId> const* classIds = nullptr;
+    BooleanSqlOperator inOperator;
+    if (m_hasInversedPartitionClassIds)
+        {
+        classIds = &m_inversedPartitionClassIds;
+        if (classIds->empty())
+            return; //no filter needed, as all class ids should be considered
+
+        inOperator = BooleanSqlOperator::NotIn;
+        }
+    else
+        {
+        classIds = &m_partitionClassIds;
+        inOperator = BooleanSqlOperator::In;
+        }
+
+    sqlBuilder.Append(inOperator);
+    sqlBuilder.AppendParenLeft();
+    bool isFirstItem = true;
+    for (ECClassId const& classId : *classIds)
+        {
+        if (!isFirstItem)
+            sqlBuilder.AppendComma();
+
+        sqlBuilder.Append(classId);
+
+        isFirstItem = false;
+        }
+
+    sqlBuilder.AppendParenRight();
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

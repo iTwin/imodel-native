@@ -998,23 +998,32 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         std::vector<ClassMapCP> classes;
         auto& constraints = end == ECRelationshipEnd::ECRelationshipEnd_Source ? relationship.GetSource () : relationship.GetTarget ();
         auto anyClassId = m_map.GetLightWeightMapCache ().GetAnyClassId ();
-        ClassMapCP classMap;
+        ClassMapCP classMap = nullptr;
+        ECDbSchemaManagerCR schemaManager = m_map.GetECDbR().Schemas();
         for (auto constraint : constraints.GetConstraintClasses ())
             {
-            if (constraint->GetClass ().GetId () == anyClassId)
+            if (constraint->GetClass().GetId() == anyClassId)
                 {
-                classes.clear ();
-                for (auto classId : m_map.GetLightWeightMapCache ().GetAnyClassReplacements ())
+                classes.clear();
+                for (auto classId : m_map.GetLightWeightMapCache().GetAnyClassReplacements())
                     {
-                     classMap = m_map.GetClassMap (classId);
+                    ECClassCP ecclass = schemaManager.GetECClass(classId);
+                    if (ecclass == nullptr)
+                        {
+                        BeAssert(ecclass != nullptr);
+                        classes.clear();
+                        return classes;
+                        }
+
+                    classMap = m_map.GetClassMapCP(*ecclass);
                     if (classMap != nullptr)
-                        classes.push_back (classMap);
+                        classes.push_back(classMap);
                     }
 
                 return classes;
                 }
 
-             classMap = m_map.GetClassMap (constraint->GetClass().GetId());
+            classMap = m_map.GetClassMapCP (constraint->GetClass());
             if (classMap != nullptr)
                 classes.push_back (classMap);
             }
