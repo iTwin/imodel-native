@@ -26,15 +26,7 @@ ECSqlStatus ClassNameExp::_CreatePropertyNameExpList (ECSqlParseContext& ctx, st
 
     for(auto propertyMap : classMap.GetPropertyMaps ())
         {
-        auto propName = Utf8String (propertyMap->GetPropertyAccessString ());
-        auto policy = ECDbPolicyManager::GetPropertyPolicy (*propertyMap, IsValidInECSqlPolicyAssertion::Get ());
-        if (!policy.IsSupported ())
-            {
-            LOG.warningv ("Ignored ECProperty '%s' when resolving * expression against ECClass '%s'. %s", propName.c_str (), ToECSql ().c_str (), policy.GetNotSupportedMessage ());
-            continue;
-            }
-
-        auto newExp = unique_ptr<PropertyNameExp> (new PropertyNameExp (propName.c_str (), *this, classMap));
+        auto newExp = unique_ptr<PropertyNameExp>(new PropertyNameExp(propertyMap->GetPropertyAccessString(), *this, classMap));
         addDelegate (newExp);
         }
 

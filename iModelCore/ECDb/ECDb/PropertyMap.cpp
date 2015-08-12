@@ -69,14 +69,6 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
     if (!columnInfo.IsValid())
         return nullptr;
 
-    auto policy = ECDbPolicyManager::GetPropertyPolicy (ecProperty, IsValidInECSqlPolicyAssertion::Get ());
-    if (!policy.IsSupported ())
-        {
-        LOG.warningv ("Did not map ECProperty '%s.%s'. %s", rootClass.GetFullName (), propertyAccessString,
-            policy.GetNotSupportedMessage ());
-        return UnmappedPropertyMap::Create (ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
-        }
-
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
     if (primitiveProperty != nullptr)
         {
@@ -528,35 +520,6 @@ PropertyMapCollection::const_iterator PropertyMapCollection::end () const
     {
     return m_orderedCollection.end ();
     }
-
-
-//**************************************************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    03/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-UnmappedPropertyMap::UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
-    : PropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap)
-    {
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    03/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-PropertyMapPtr UnmappedPropertyMap::Create (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap)
-    {
-    return new UnmappedPropertyMap (ecProperty, propertyAccessString, primaryTable, parentPropertyMap);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    03/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String UnmappedPropertyMap::_ToString () const
-    {
-    Utf8String str;
-    str.Sprintf ("UnmappedPropertyMap: ecProperty=%s.%s", GetProperty ().GetClass ().GetFullName (), GetProperty ().GetName ().c_str ());
-    return str;
-    }
-
 
 
 //**************************************************************************

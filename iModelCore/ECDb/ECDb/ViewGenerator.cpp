@@ -32,10 +32,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
             {
             return BentleyStatus::SUCCESS;
             }
-        else if (/*auto o = */dynamic_cast<UnmappedPropertyMap const*>(&propertyMap))
-            {
-            return BentleyStatus::SUCCESS;
-            }
         else if (/*auto o = */dynamic_cast<PropertyMapSystem const*>(&propertyMap))
             {
             return BentleyStatus::SUCCESS;

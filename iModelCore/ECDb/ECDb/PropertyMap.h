@@ -210,29 +210,6 @@ public:
     static PropertyMapPtr CreateAndEvaluateMapping (ECN::ECPropertyCR ecProperty, ECDbMapCR ecDbMap, ECN::ECClassCR rootClass, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
     };
 
-
-//=======================================================================================
-//! Represents an "is not mapped" mapping for an ECProperty.
-//! Some ECProperties cannot be mapped to a column in the database because they are not supported
-//! in ECDb.
-// @bsiclass                                                   Krischan.Eberle    03/2014
-//=======================================================================================
-struct UnmappedPropertyMap : PropertyMap
-    {
-private:
-    UnmappedPropertyMap (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-
-    virtual bool _IsUnmapped () const override { return true; }
-    virtual Utf8String _ToString () const override;
-    virtual BentleyStatus _Save(ECDbClassMapInfo & classMapInfo) const override { return SUCCESS; }
-    virtual BentleyStatus _Load(ECDbClassMapInfo const& classMapInfo) override { return SUCCESS; }
-public:
-    static PropertyMapPtr Create (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-
-    ~UnmappedPropertyMap () {}
-    };
-
-
 //=======================================================================================
 //! Simple primitives map to a *single* column
 // @bsiclass                                                     Casey.Mullen      11/2012
