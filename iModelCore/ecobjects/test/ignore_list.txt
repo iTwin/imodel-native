@@ -22,7 +22,6 @@ SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file
 
 CGBinarySerializationTests.WriterTest # notified Earlin and Carole
 
-SchemaDeserializationTest.ExpectSuccessWhenRoundtripUsingString # notified Muhammad.Zaighum
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
