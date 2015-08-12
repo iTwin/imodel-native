@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
+
 /*
     How to use the PerformanceTestFixture?
 
@@ -13,13 +15,9 @@
     This is what you need to do to use it:
     1. In your file, include header file like this:
         #include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
-    2. Then inherit your fixture from PerformanceTestFixture e.g.:
-        struct PerformanceBeSQLiteDbTests : public PerformanceTestFixture
-    3. You get a StopWatch member m_stopwatch and you can use it's Start(), Stop(), GetElapsedSeconds() methods.
-    4. Also include following line in your test to make use of GTest's test info:
-        m_test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-    5. Now when you want to write a Time to the db, add following line:
-        m_prr.writeTodb(m_stopwatch, m_test_info->test_case_name(), m_test_info->name());
+    2. Now when you want to write a Time to the db, add following line:
+        LOGTODB(TEST_DETAILS, m_InsertTime, "Sql Insert time", 1000);
+       It automatically adds Test case name and Test name. You will need to provide time in seconds and then some additional details and number of operations. Last two arguments are optional.
     6. All entries go into PerformanceResult.Db which is located in your out's build\BeGTest\run\Output\. Look in the PerformanceTestRun table.
 
 Notes:
