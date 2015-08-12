@@ -137,8 +137,7 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (GetValueAs
                TESTCLASS_INSTANCE_COUNT,
                TestSchemaHelper::TESTCLASS_NAME,
                asserter.GetPropertyName ());
-    PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb (totalStopWatch, testDetails, "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    LOGTODB(TEST_DETAILS, totalStopWatch.GetElapsedSeconds(), "RunGetValueWithIsNullTest for the ECSQLStatement Performance", TESTCLASS_INSTANCE_COUNT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,13 +170,12 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (GetValu
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov ("Total Time: %.4lf ms for %d instances. Test Property: %s::%s.",
+    PERFORMANCELOG.infov ("Total Time: %.4lf ms for %d instances. Test Property: %s::%s.",
                totalStopWatch.GetElapsedSeconds () * 1000,
                TESTCLASS_INSTANCE_COUNT,
                TestSchemaHelper::TESTCLASS_NAME,
                asserter.GetPropertyName ());
-    PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb (totalStopWatch, testDetails, "RunGetValueWithoutIsNullTest for the ECSQLStatement Preformance  TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    LOGTODB(TEST_DETAILS, totalStopWatch.GetElapsedSeconds(), "RunGetValueWithIsNullTest for the ECSQLStatement Performance", TESTCLASS_INSTANCE_COUNT);
     }
 
 /*---------------------------------------------------------------------------------**//**
