@@ -24,7 +24,7 @@
                 <Directory Id="TARGETDIR" Name="SourceDir">
                         <Directory Id="INSTALLDIR" Name=".">
                                 <Component Id="NativeLogging" Guid="$(var.ComponentGuid)" Win64="$(var.COMPONENT_WIN64)">
-                                        <File Id="Log4Cxx" Name="bentleylog4cxx-2.0.dll" Source="$(var.INSTALLER_FILE_BASE)bentleylog4cxx-2.0.dll"/>
+                                        <File Id="Log4Cxx" Name="bentleylog4cxx3.dll" Source="$(var.INSTALLER_FILE_BASE)bentleylog4cxx3.dll"/>
                                         <File Id="confgigDTD" Name="log4j.dtd" Source="$(var.INSTALLER_FILE_BASE)log4j.dtd"/>
                                 </Component>
                         </Directory>
