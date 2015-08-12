@@ -27,9 +27,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IQueryProvider
         struct Query;
 
     public:
-        virtual ~IQueryProvider ()
-            {
-            };
+        virtual ~IQueryProvider()
+            {};
 
         //! Get queries for specific instance. By default returns none.
         WSCACHE_EXPORT virtual bvector<Query> GetQueries
@@ -59,9 +58,9 @@ struct IQueryProvider::Query
         bool syncRecursively;
 
     public:
-        WSCACHE_EXPORT Query ();
-        WSCACHE_EXPORT Query (CachedResponseKey key, WSQueryPtr query, bool syncRecursively = true);
-        WSCACHE_EXPORT bool IsValid () const;
+        WSCACHE_EXPORT Query();
+        WSCACHE_EXPORT Query(CachedResponseKey key, WSQueryPtr query, bool syncRecursively = true);
+        WSCACHE_EXPORT bool IsValid() const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

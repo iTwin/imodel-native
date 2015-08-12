@@ -19,12 +19,11 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ICacheTransactionManager
     {
     public:
-        virtual ~ICacheTransactionManager ()
-            {
-            };
+        virtual ~ICacheTransactionManager()
+            {};
 
         //! Start active transaction
-        virtual CacheTransaction StartCacheTransaction () = 0;
+        virtual CacheTransaction StartCacheTransaction() = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

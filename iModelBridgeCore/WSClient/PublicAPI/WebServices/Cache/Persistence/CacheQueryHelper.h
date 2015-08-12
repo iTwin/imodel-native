@@ -26,7 +26,7 @@ struct CacheQueryHelper
     {
     public:
         struct ClassReadInfo;
-        typedef std::function<BentleyStatus (const CacheQueryHelper::ClassReadInfo& info, ECSqlStatement& statement)> ReadCallback;
+        typedef std::function<BentleyStatus(const CacheQueryHelper::ClassReadInfo& info, ECSqlStatement& statement)> ReadCallback;
 
     private:
         const ISelectProvider& m_selectProvider;
@@ -47,18 +47,18 @@ struct CacheQueryHelper
             Utf8CP classAlias
             );
 
-        static bool IsTypeString (ECPropertyCR property);
-        static int GetRemoteIdColumnIndex (const ClassReadInfo& info, bool& columnNeedsVerification);
+        static bool IsTypeString(ECPropertyCR property);
+        static int GetRemoteIdColumnIndex(const ClassReadInfo& info, bool& columnNeedsVerification);
 
     public:
-        WSCACHE_EXPORT CacheQueryHelper (const ISelectProvider& selectProvider);
+        WSCACHE_EXPORT CacheQueryHelper(const ISelectProvider& selectProvider);
 
         //! Create ordered list of class read information. Each one includes ordered list of selected and order by properties.
-        //! specify classLocater if you want to get read infos for classes polymorphicly. 
+        //! specify classLocater if you want to get read infos for classes polymorphicly.
         //! TODO: revise design how to deal with polymorphic reads
-        WSCACHE_EXPORT bvector<ClassReadInfo> CreateReadInfos (ECClassCP ecClass) const;
-        WSCACHE_EXPORT bvector<ClassReadInfo> CreateReadInfos (bvector<ECClassCP> ecClasses) const;
-        WSCACHE_EXPORT bvector<ClassReadInfo> CreateReadInfos (const bvector<ECClassP>& ecClasses) const;
+        WSCACHE_EXPORT bvector<ClassReadInfo> CreateReadInfos(ECClassCP ecClass) const;
+        WSCACHE_EXPORT bvector<ClassReadInfo> CreateReadInfos(bvector<ECClassCP> ecClasses) const;
+        WSCACHE_EXPORT bvector<ClassReadInfo> CreateReadInfos(const bvector<ECClassP>& ecClasses) const;
 
         //! Read all instances from map, extract EC data from statement using custom callback or use reader function from below
         WSCACHE_EXPORT BentleyStatus ReadInstances
@@ -94,7 +94,7 @@ struct CacheQueryHelper
             //! ECSql columns:    {From ClassReadInfo}
             //! ECSql parameters: SourceClassInstance.ECInstanceId
             WSCACHE_EXPORT static Utf8String SelectPropertiesByRelatedSourceECInstanceId
-            (
+                (
                 const ClassReadInfo& info,
                 ECClassCR sourceClass,
                 ECRelationshipClassCR relationshipClass
@@ -147,19 +147,19 @@ struct CacheQueryHelper
             //! Create ECSql to select all properties and remote id based on instance ECInstanceId
             //! ECSql columns:    CachedInstance.$RemoteId, CachedInstance.*
             //! ECSql parameters: CachedInstance.ECInstanceId
-            WSCACHE_EXPORT static Utf8String SelectAllPropertiesAndRemoteIdByECInstanceId (ECClassCR cachedInstanceClass);
+            WSCACHE_EXPORT static Utf8String SelectAllPropertiesAndRemoteIdByECInstanceId(ECClassCR cachedInstanceClass);
 
             //! Create ECSql to select properties from instance by its remote id. Will not select remote id.
             //! ECSql columns:    CachedInstance.*
             //! ECSql parameters: CachedInstance.$RemoteId
             //! Limit: 1
-            WSCACHE_EXPORT static Utf8String SelectAllPropertiesByRemoteId (ECClassCR cachedInstanceClass);
+            WSCACHE_EXPORT static Utf8String SelectAllPropertiesByRemoteId(ECClassCR cachedInstanceClass);
 
             //! Create ECSql to select cached instance local ECInstanceId by its remote id
             //! ECSql columns:    CachedInstance.ECInstanceId
             //! ECSql parameters: CachedInstance.$RemoteId
             //! Limit: 1
-            WSCACHE_EXPORT static Utf8String SelectECInstanceIdByRemoteId (ECClassCR cachedInstanceClass);
+            WSCACHE_EXPORT static Utf8String SelectECInstanceIdByRemoteId(ECClassCR cachedInstanceClass);
             };
     };
 
@@ -181,9 +181,9 @@ struct CacheQueryHelper::ClassReadInfo
             std::shared_ptr<ISelectProvider::SortProperties> sortProperties
             );
 
-        WSCACHE_EXPORT ECClassCR GetECClass () const;
-        WSCACHE_EXPORT const ISelectProvider::SelectProperties& GetSelectProperties () const;
-        WSCACHE_EXPORT const ISelectProvider::SortProperties& GetSortProperties () const;
+        WSCACHE_EXPORT ECClassCR GetECClass() const;
+        WSCACHE_EXPORT const ISelectProvider::SelectProperties& GetSelectProperties() const;
+        WSCACHE_EXPORT const ISelectProvider::SortProperties& GetSortProperties() const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -20,13 +20,13 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 struct WebApiV1BentleyConect : public WebApiV1
     {
     protected:
-        virtual Utf8String GetSchemaUrl () const override;
+        virtual Utf8String GetSchemaUrl() const override;
 
     public:
-        WebApiV1BentleyConect (std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);
-        virtual ~WebApiV1BentleyConect ();
+        WebApiV1BentleyConect(std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);
+        virtual ~WebApiV1BentleyConect();
 
-        static bool IsSupported (WSInfoCR info);
+        static bool IsSupported(WSInfoCR info);
 
         virtual AsyncTaskPtr<WSFileResult> SendGetFileRequest
             (

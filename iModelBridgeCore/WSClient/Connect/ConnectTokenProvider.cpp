@@ -17,32 +17,31 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectTokenProvider::ConnectTokenProvider (std::shared_ptr<IConnectAuthenticationPersistence> customPersistence) :
-m_persistence (customPersistence ? customPersistence : ConnectAuthenticationPersistence::GetShared ())
-    {
-    }
+ConnectTokenProvider::ConnectTokenProvider(std::shared_ptr<IConnectAuthenticationPersistence> customPersistence) :
+m_persistence(customPersistence ? customPersistence : ConnectAuthenticationPersistence::GetShared())
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr ConnectTokenProvider::UpdateToken ()
+SamlTokenPtr ConnectTokenProvider::UpdateToken()
     {
-    Credentials creds = m_persistence->GetCredentials ();
+    Credentials creds = m_persistence->GetCredentials();
 
-    auto token = std::make_shared<SamlToken> ();
-    if (!creds.IsValid () || 0 != Connect::Login (creds, *token))
+    auto token = std::make_shared<SamlToken>();
+    if (!creds.IsValid() || 0 != Connect::Login(creds, *token))
         {
         return nullptr;
         }
 
-    m_persistence->SetToken (token);
+    m_persistence->SetToken(token);
     return token;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr ConnectTokenProvider::GetToken ()
+SamlTokenPtr ConnectTokenProvider::GetToken()
     {
-    return m_persistence->GetToken ();
+    return m_persistence->GetToken();
     }

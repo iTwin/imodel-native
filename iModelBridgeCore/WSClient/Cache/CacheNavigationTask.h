@@ -39,11 +39,11 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
         std::shared_ptr<ECSqlStatementCache> m_statementCache;
 
     protected:
-        virtual void _OnExecute ();
+        virtual void _OnExecute();
 
-        void ContinueCachingChildrenRecursively (bool forceFullRecursiveCaching);
-        void CacheNavigationTrees (const bvector<ObjectId>& navigationTrees, bool forceFullRecursiveCaching);
-        AsyncTaskPtr<void> CacheChildrenRecursively (ObjectIdCR objectid, bool forceFullRecursiveCaching);
+        void ContinueCachingChildrenRecursively(bool forceFullRecursiveCaching);
+        void CacheNavigationTrees(const bvector<ObjectId>& navigationTrees, bool forceFullRecursiveCaching);
+        AsyncTaskPtr<void> CacheChildrenRecursively(ObjectIdCR objectid, bool forceFullRecursiveCaching);
         void ResolveGetChildrenResponse
             (
             WSObjectsResult& result,
@@ -53,12 +53,12 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
             bool forceUpdateChildren,
             bool retrievingFullData
             );
-        void CacheRejectedObjects ();
-        void MarkNotModifiedChildrenAsPartial ();
-        void CacheFiles ();
-        void ReportProgress (ObjectIdCR objectId);
-        void ReportProgress (double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel);
-        bool IsObjectFileBacked (CacheTransactionCR txn, ECInstanceKeyCR instance);
+        void CacheRejectedObjects();
+        void MarkNotModifiedChildrenAsPartial();
+        void CacheFiles();
+        void ReportProgress(ObjectIdCR objectId);
+        void ReportProgress(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel);
+        bool IsObjectFileBacked(CacheTransactionCR txn, ECInstanceKeyCR instance);
 
     public:
         CacheNavigationTask
@@ -71,7 +71,7 @@ struct CacheNavigationTask : public CachingTaskBase, public IECDbSchemaChangeLis
             ICancellationTokenPtr cancellationToken
             );
 
-        virtual void OnSchemaChanged () override;
+        virtual void OnSchemaChanged() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

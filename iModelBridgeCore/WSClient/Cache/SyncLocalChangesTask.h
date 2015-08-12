@@ -18,7 +18,6 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
-
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                              Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -37,47 +36,47 @@ struct SyncLocalChangesTask : public CachingTaskBase
         bvector<ObjectId> m_objectsToRefreshAfterSync;
 
     private:
-        virtual void _OnExecute ();
-        virtual void _OnError (CachingDataSource::ErrorCR error);
-        void OnSyncDone ();
+        virtual void _OnExecute();
+        virtual void _OnError(CachingDataSource::ErrorCR error);
+        void OnSyncDone();
 
-        void SyncNextChangeGroup ();
+        void SyncNextChangeGroup();
 
-        AsyncTaskPtr<void> SyncChangeGroup (ChangeGroupPtr changeGroup);
-        AsyncTaskPtr<void> SyncCreation (ChangeGroupPtr changeGroup);
-        AsyncTaskPtr<void> SyncObjectModification (ChangeGroupPtr changeGroup);
-        AsyncTaskPtr<void> SyncFileModification (ChangeGroupPtr changeGroup);
-        AsyncTaskPtr<void> SyncObjectDeletion (ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncChangeGroup(ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncCreation(ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncObjectModification(ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncFileModification(ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncObjectDeletion(ChangeGroupPtr changeGroup);
 
-        void HandleCreationError (WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
+        void HandleCreationError(WSErrorCR error, ChangeGroupPtr changeGroup, Utf8StringCR objectLabel);
 
-        void ReportProgress (double currentFileBytesUploaded, Utf8StringCR label) const;
-        ResponseGuardPtr CreateResponseGuard (Utf8StringCR objectLabel, bool reportProgress) const;
+        void ReportProgress(double currentFileBytesUploaded, Utf8StringCR label) const;
+        ResponseGuardPtr CreateResponseGuard(Utf8StringCR objectLabel, bool reportProgress) const;
 
-        BentleyStatus BuildSyncJson (IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
-        BentleyStatus BuildSyncJsonForObjectCreation (IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
-        BentleyStatus BuildSyncJsonForRelationshipCreation (IDataSourceCache& cache, ChangeManager::RelationshipChangeCR relationshipChange, JsonValueR syncJsonOut) const;
+        BentleyStatus BuildSyncJson(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
+        BentleyStatus BuildSyncJsonForObjectCreation(IDataSourceCache& cache, ChangeGroupCR changeGroup, JsonValueR syncJsonOut) const;
+        BentleyStatus BuildSyncJsonForRelationshipCreation(IDataSourceCache& cache, ChangeManager::RelationshipChangeCR relationshipChange, JsonValueR syncJsonOut) const;
 
-        std::map<ECInstanceKey, Utf8String> ReadChangedRemoteIds (ChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const;
+        std::map<ECInstanceKey, Utf8String> ReadChangedRemoteIds(ChangeGroupCR changeGroup, WSCreateObjectResponseCR response) const;
 
-        BentleyStatus ReadObjectProperties (IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
-        BentleyStatus ReadObjectPropertiesForUpdate (IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
-        BentleyStatus ReadObjectPropertiesForCreation (IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
+        BentleyStatus ReadObjectProperties(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
+        BentleyStatus ReadObjectPropertiesForUpdate(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
+        BentleyStatus ReadObjectPropertiesForCreation(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR propertiesJsonOut) const;
 
-        void RemoveCacheSpecificProperties (JsonValueR propertiesJson) const;
-        void RemoveReadOnlyProperties (JsonValueR propertiesJson, ECClassCR ecClass) const;
-        void RemoveCalculatedProperties (JsonValueR propertiesJson, ECClassCR ecClass) const;
+        void RemoveCacheSpecificProperties(JsonValueR propertiesJson) const;
+        void RemoveReadOnlyProperties(JsonValueR propertiesJson, ECClassCR ecClass) const;
+        void RemoveCalculatedProperties(JsonValueR propertiesJson, ECClassCR ecClass) const;
 
-        void SetExistingInstanceInfoToJson (IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR json) const;
-        void SetChangedInstanceClassInfoToJson (IDataSourceCache& cache, IChangeManager::ObjectChangeCR change, JsonValueR json) const;
-        Utf8String GetChangeStateStr (IChangeManager::ChangeStatus changeStatus) const;
+        void SetExistingInstanceInfoToJson(IDataSourceCache& cache, ECInstanceKeyCR instanceKey, JsonValueR json) const;
+        void SetChangedInstanceClassInfoToJson(IDataSourceCache& cache, IChangeManager::ObjectChangeCR change, JsonValueR json) const;
+        Utf8String GetChangeStateStr(IChangeManager::ChangeStatus changeStatus) const;
 
-        void RegisterFailedSync (IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
-        void SetUpdatedInstanceKeyInChangeGroups (ECInstanceKey oldKey, ECInstanceKey newKey);
+        void RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
+        void SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
 
         static void RemoveEmptyMembersRecursively(JsonValueR jsonObject);
         static void RemoveEmptyMembersRecursively(JsonValueR childJson, Utf8StringCR childMemberNameInParent, JsonValueR parentJson);
-        
+
     public:
         SyncLocalChangesTask
             (
