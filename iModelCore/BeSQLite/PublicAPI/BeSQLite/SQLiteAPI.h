@@ -137,7 +137,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-07-14 15:39:22 db4cbefb8674c6cfff27c1e918741de1885c845c"
+#define SQLITE_SOURCE_ID      "2015-07-24 22:21:01 0298a9a780695b666e7c683700d9f2f889d6f826"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1021,7 +1021,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_WIN32_SET_HANDLE       23
 #define SQLITE_FCNTL_WAL_BLOCK              24
 #define SQLITE_FCNTL_ZIPVFS                 25
-#define SQLITE_FCNTL_OTA                    26
+#define SQLITE_FCNTL_RBU                    26
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -3586,6 +3586,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_bind_text64(sqlite3_stmt*, int, const char
                          void(*)(void*), unsigned char encoding);
 SQLITE_API int SQLITE_STDCALL sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 SQLITE_API int SQLITE_STDCALL sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
+SQLITE_API int SQLITE_STDCALL sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64);
 
 /*
 ** CAPI3REF: Number Of SQL Parameters
@@ -4675,6 +4676,7 @@ SQLITE_API void SQLITE_STDCALL sqlite3_result_text16le(sqlite3_context*, const v
 SQLITE_API void SQLITE_STDCALL sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
 SQLITE_API void SQLITE_STDCALL sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 SQLITE_API void SQLITE_STDCALL sqlite3_result_zeroblob(sqlite3_context*, int n);
+SQLITE_API int SQLITE_STDCALL sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 
 /*
 ** CAPI3REF: Define New Collating Sequences

@@ -303,7 +303,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-07-14 15:39:22 db4cbefb8674c6cfff27c1e918741de1885c845c"
+#define SQLITE_SOURCE_ID      "2015-07-24 22:21:01 0298a9a780695b666e7c683700d9f2f889d6f826"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1157,9 +1157,9 @@ struct sqlite3_io_methods {
 ** The [SQLITE_FCNTL_ZIPVFS] opcode is implemented by zipvfs only. All other
 ** VFS should return SQLITE_NOTFOUND for this opcode.
 **
-** <li>[[SQLITE_FCNTL_OTA]]
-** The [SQLITE_FCNTL_OTA] opcode is implemented by the special VFS used by
-** the OTA extension only.  All other VFS should return SQLITE_NOTFOUND for
+** <li>[[SQLITE_FCNTL_RBU]]
+** The [SQLITE_FCNTL_RBU] opcode is implemented by the special VFS used by
+** the RBU extension only.  All other VFS should return SQLITE_NOTFOUND for
 ** this opcode.  
 ** </ul>
 */
@@ -1187,7 +1187,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_WIN32_SET_HANDLE       23
 #define SQLITE_FCNTL_WAL_BLOCK              24
 #define SQLITE_FCNTL_ZIPVFS                 25
-#define SQLITE_FCNTL_OTA                    26
+#define SQLITE_FCNTL_RBU                    26
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -3752,6 +3752,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_bind_text64(sqlite3_stmt*, int, const char
                          void(*)(void*), unsigned char encoding);
 SQLITE_API int SQLITE_STDCALL sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 SQLITE_API int SQLITE_STDCALL sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
+SQLITE_API int SQLITE_STDCALL sqlite3_bind_zeroblob64(sqlite3_stmt*, int, sqlite3_uint64);
 
 /*
 ** CAPI3REF: Number Of SQL Parameters
@@ -4724,8 +4725,8 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** to by the second parameter and which is N bytes long where N is the
 ** third parameter.
 **
-** ^The sqlite3_result_zeroblob() interfaces set the result of
-** the application-defined function to be a BLOB containing all zero
+** ^The sqlite3_result_zeroblob() and zeroblob64() interfaces set the result 
+** of the application-defined function to be a BLOB containing all zero
 ** bytes and N bytes in size, where N is the value of the 2nd parameter.
 **
 ** ^The sqlite3_result_double() interface sets the result from
@@ -4841,6 +4842,7 @@ SQLITE_API void SQLITE_STDCALL sqlite3_result_text16le(sqlite3_context*, const v
 SQLITE_API void SQLITE_STDCALL sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
 SQLITE_API void SQLITE_STDCALL sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 SQLITE_API void SQLITE_STDCALL sqlite3_result_zeroblob(sqlite3_context*, int n);
+SQLITE_API int SQLITE_STDCALL sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
 
 /*
 ** CAPI3REF: Define New Collating Sequences
@@ -8155,6 +8157,7 @@ struct sqlite3_rtree_query_info {
 extern "C" {
 #endif
 
+/* #include "sqlite3.h" */
 
 /*
 ** CAPI3REF: Session Object Handle
@@ -9691,9 +9694,13 @@ int sqlite3changegroup_output_strm(sqlite3_changegroup*,
 ** compiling with an appropriate version of MSVC.
 */
 #if defined(_MSC_VER) && _MSC_VER>=1300
-#  include <intrin.h>
-#  pragma intrinsic(_byteswap_ushort)
-#  pragma intrinsic(_byteswap_ulong)
+#  if !defined(_WIN32_WCE)
+#    include <intrin.h>
+#    pragma intrinsic(_byteswap_ushort)
+#    pragma intrinsic(_byteswap_ulong)
+#  else
+#    include <cmnintrin.h>
+#  endif
 #endif
 
 /*
@@ -10518,7 +10525,9 @@ SQLITE_PRIVATE const int sqlite3one;
 # if defined(__linux__) \
   || defined(_WIN32) \
   || (defined(__APPLE__) && defined(__MACH__)) \
-  || defined(__sun)
+  || defined(__sun) \
+  || defined(__FreeBSD__) \
+  || defined(__DragonFly__)
 #   define SQLITE_MAX_MMAP_SIZE 0x7fff0000  /* 2147418112 */
 # else
 #   define SQLITE_MAX_MMAP_SIZE 0
@@ -15226,6 +15235,7 @@ SQLITE_PRIVATE int sqlite3DbstatRegister(sqlite3*);
 **
 ** This file contains definitions of global variables and constants.
 */
+/* #include "sqliteInt.h" */
 
 /* An array to map all upper-case characters into their corresponding
 ** lower-case character. 
@@ -15465,6 +15475,7 @@ SQLITE_PRIVATE const Token sqlite3IntTokens[] = {
 SQLITE_PRIVATE int sqlite3PendingByte = 0x40000000;
 #endif
 
+/* #include "opcodes.h" */
 /*
 ** Properties of opcodes.  The OPFLG_INITIALIZER macro is
 ** created by mkopcodeh.awk during compilation.  Data is obtained
@@ -15493,6 +15504,7 @@ SQLITE_PRIVATE const unsigned char sqlite3OpcodeProperty[] = OPFLG_INITIALIZER;
 
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
 
+/* #include "sqliteInt.h" */
 
 /*
 ** An array of names of all compile-time options.  This array should 
@@ -15922,6 +15934,7 @@ SQLITE_API const char *SQLITE_STDCALL sqlite3_compileoption_get(int N){
 ** This module implements the sqlite3_status() interface and related
 ** functionality.
 */
+/* #include "sqliteInt.h" */
 /************** Include vdbeInt.h in the middle of status.c ******************/
 /************** Begin file vdbeInt.h *****************************************/
 /*
@@ -16826,6 +16839,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_status(
 **      Willmann-Bell, Inc
 **      Richmond, Virginia (USA)
 */
+/* #include "sqliteInt.h" */
 /* #include <stdlib.h> */
 /* #include <assert.h> */
 #include <time.h>
@@ -17137,7 +17151,7 @@ static void computeYMD(DateTime *p){
     A = Z + 1 + A - (A/4);
     B = A + 1524;
     C = (int)((B - 122.1)/365.25);
-    D = (36525*C)/100;
+    D = (36525*(C&32767))/100;
     E = (int)((B-D)/30.6001);
     X1 = (int)(30.6001*E);
     p->D = B - D - X1;
@@ -17938,6 +17952,7 @@ SQLITE_PRIVATE void sqlite3RegisterDateTimeFunctions(void){
 ** architectures.
 */
 #define _SQLITE_OS_C_ 1
+/* #include "sqliteInt.h" */
 #undef _SQLITE_OS_C_
 
 /*
@@ -18344,6 +18359,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
 ** during a hash table resize is a benign fault.
 */
 
+/* #include "sqliteInt.h" */
 
 #ifndef SQLITE_OMIT_BUILTIN_TEST
 
@@ -18425,6 +18441,7 @@ SQLITE_PRIVATE void sqlite3EndBenignMalloc(void){
 ** are merely placeholders.  Real drivers must be substituted using
 ** sqlite3_config() before SQLite will operate.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** This version of the memory allocator is the default.  It is
@@ -18511,6 +18528,7 @@ SQLITE_PRIVATE void sqlite3MemSetDefault(void){
 **                                be necessary when compiling for Delphi,
 **                                for example.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** This version of the memory allocator is the default.  It is
@@ -18786,6 +18804,7 @@ SQLITE_PRIVATE void sqlite3MemSetDefault(void){
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** This version of the memory allocator is used only if the
@@ -19320,6 +19339,7 @@ SQLITE_PRIVATE int sqlite3MemdebugMallocCount(){
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** This version of the memory allocator is only built into the library
@@ -20034,6 +20054,7 @@ SQLITE_PRIVATE const sqlite3_mem_methods *sqlite3MemGetMemsys3(void){
 ** The sqlite3_status() logic tracks the maximum values of n and M so
 ** that an application can, at any time, verify this constraint.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** This version of the memory allocator is used only when 
@@ -20577,6 +20598,7 @@ SQLITE_PRIVATE const sqlite3_mem_methods *sqlite3MemGetMemsys5(void){
 **
 ** This file contains code that is common across all mutex implementations.
 */
+/* #include "sqliteInt.h" */
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_MUTEX_OMIT)
 /*
@@ -20750,6 +20772,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_mutex_notheld(sqlite3_mutex *p){
 ** that does error checking on mutexes to make sure they are being
 ** called correctly.
 */
+/* #include "sqliteInt.h" */
 
 #ifndef SQLITE_MUTEX_OMIT
 
@@ -20953,6 +20976,7 @@ SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** The code in this file is only used if we are compiling threadsafe
@@ -21327,6 +21351,7 @@ SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
 *************************************************************************
 ** This file contains the C functions that implement mutexes for Win32.
 */
+/* #include "sqliteInt.h" */
 
 #if SQLITE_OS_WIN
 /*
@@ -22002,6 +22027,7 @@ SQLITE_PRIVATE sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
 **
 ** Memory allocation functions used throughout sqlite.
 */
+/* #include "sqliteInt.h" */
 /* #include <stdarg.h> */
 
 /*
@@ -22813,6 +22839,7 @@ SQLITE_PRIVATE int sqlite3ApiExit(sqlite3* db, int rc){
 ** library, though the implementation here has enhancements to support
 ** SQLite.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** Conversion types fall into various categories as defined by the
@@ -23815,6 +23842,11 @@ SQLITE_API char *SQLITE_CDECL sqlite3_snprintf(int n, char *zBuf, const char *zF
 ** sqlite3_log() must render into a static buffer.  It cannot dynamically
 ** allocate memory because it might be called while the memory allocator
 ** mutex is held.
+**
+** sqlite3VXPrintf() might ask for *temporary* memory allocations for
+** certain format characters (%q) or for very large precisions or widths.
+** Care must be taken that any sqlite3_log() calls that occur while the
+** memory mutex is held do not use these mechanisms.
 */
 static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
   StrAccum acc;                          /* String accumulator */
@@ -23890,6 +23922,7 @@ SQLITE_PRIVATE void sqlite3XPrintf(StrAccum *p, u32 bFlags, const char *zFormat,
 ** The interfaces in this file is only available when compiling
 ** with SQLITE_DEBUG.
 */
+/* #include "sqliteInt.h" */
 #ifdef SQLITE_DEBUG
 
 /*
@@ -24321,6 +24354,7 @@ SQLITE_PRIVATE void sqlite3TreeViewExprList(
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 */
+/* #include "sqliteInt.h" */
 
 
 /* All threads share a single random number generator.
@@ -24467,7 +24501,9 @@ SQLITE_PRIVATE void sqlite3PrngRestoreState(void){
 ** of multiple cores can do so, while also allowing applications to stay
 ** single-threaded if desired.
 */
+/* #include "sqliteInt.h" */
 #if SQLITE_OS_WIN
+/* #  include "os_win.h" */
 #endif
 
 #if SQLITE_MAX_WORKER_THREADS>0
@@ -24741,7 +24777,9 @@ SQLITE_PRIVATE int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 **     0xfe 0xff   big-endian utf-16 follows
 **
 */
+/* #include "sqliteInt.h" */
 /* #include <assert.h> */
+/* #include "vdbeInt.h" */
 
 #ifndef SQLITE_AMALGAMATION
 /*
@@ -25254,6 +25292,7 @@ SQLITE_PRIVATE void sqlite3UtfSelfTest(void){
 ** strings, and stuff like that.
 **
 */
+/* #include "sqliteInt.h" */
 /* #include <stdarg.h> */
 #if HAVE_ISNAN || SQLITE_HAVE_ISNAN
 # include <math.h>
@@ -26650,6 +26689,7 @@ SQLITE_PRIVATE u64 sqlite3LogEstToInt(LogEst x){
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 */
+/* #include "sqliteInt.h" */
 /* #include <assert.h> */
 
 /* Turn bulk memory into a hash table object by initializing the

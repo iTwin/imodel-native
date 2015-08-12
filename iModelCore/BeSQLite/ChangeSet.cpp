@@ -657,6 +657,7 @@ void Changes::Change::OnPropertyUpdateReversed(Db& db) const
         stmt->BindText(8, strVal, Statement::MakeCopy::No);
 
     rc = stmt->Step(); // do the insert/replace
+    BeAssert(rc==BE_SQLITE_DONE);
 
     db.GetDbFile()->OnSettingsDirtied();    // save the fact that we have data in the temporary settings table
     }

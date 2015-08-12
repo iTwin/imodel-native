@@ -14,6 +14,7 @@
 ** See the header comment on "btreeInt.h" for additional information.
 ** Including a description of file format and an overview of operation.
 */
+/* #include "btreeInt.h" */
 
 /*
 ** The header string that appears at the beginning of every
@@ -8959,7 +8960,7 @@ static int checkTreePage(
   const char *saved_zPfx = pCheck->zPfx;
   int saved_v1 = pCheck->v1;
   int saved_v2 = pCheck->v2;
-  u8 savedIsInit;
+  u8 savedIsInit = 0;
 
   /* Check that the page exists
   */
@@ -9595,6 +9596,8 @@ SQLITE_PRIVATE int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage));
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 */
+/* #include "sqliteInt.h" */
+/* #include "btreeInt.h" */
 
 /*
 ** Structure allocated for each backup operation.
@@ -10393,6 +10396,8 @@ copy_finished:
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 #ifdef SQLITE_DEBUG
 /*
@@ -12106,6 +12111,8 @@ SQLITE_PRIVATE int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
 ** This file contains code used for creating, destroying, and populating
 ** a VDBE (or an "sqlite3_stmt" as it is known to the outside world.) 
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 /*
 ** Create a new virtual database engine.
@@ -16438,6 +16445,8 @@ SQLITE_PRIVATE void sqlite3VdbePreUpdateHook(
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
@@ -16585,7 +16594,10 @@ SQLITE_API int SQLITE_STDCALL sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 SQLITE_API const void *SQLITE_STDCALL sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    sqlite3VdbeMemExpandBlob(p);
+    if( sqlite3VdbeMemExpandBlob(p)!=SQLITE_OK ){
+      assert( p->flags==MEM_Null && p->z==0 );
+      return 0;
+    }
     p->flags |= MEM_Blob;
     return p->n ? p->z : 0;
   }else{
@@ -16846,6 +16858,15 @@ SQLITE_API void SQLITE_STDCALL sqlite3_result_value(sqlite3_context *pCtx, sqlit
 SQLITE_API void SQLITE_STDCALL sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetZeroBlob(pCtx->pOut, n);
+}
+SQLITE_API int SQLITE_STDCALL sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
+  Mem *pOut = pCtx->pOut;
+  assert( sqlite3_mutex_held(pOut->db->mutex) );
+  if( n>(u64)pOut->db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    return SQLITE_TOOBIG;
+  }
+  sqlite3VdbeMemSetZeroBlob(pCtx->pOut, (int)n);
+  return SQLITE_OK;
 }
 SQLITE_API void SQLITE_STDCALL sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
@@ -17826,6 +17847,20 @@ SQLITE_API int SQLITE_STDCALL sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, 
   }
   return rc;
 }
+SQLITE_API int SQLITE_STDCALL sqlite3_bind_zeroblob64(sqlite3_stmt *pStmt, int i, sqlite3_uint64 n){
+  int rc;
+  Vdbe *p = (Vdbe *)pStmt;
+  sqlite3_mutex_enter(p->db->mutex);
+  if( n>(u64)p->db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    rc = SQLITE_TOOBIG;
+  }else{
+    assert( (n & 0x7FFFFFFF)==n );
+    rc = sqlite3_bind_zeroblob(pStmt, i, n);
+  }
+  rc = sqlite3ApiExit(p->db, rc);
+  sqlite3_mutex_leave(p->db->mutex);
+  return rc;
+}
 
 /*
 ** Return the number of wildcards that can be potentially bound to.
@@ -18256,6 +18291,8 @@ SQLITE_API void SQLITE_STDCALL sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt
 **
 ** The Vdbe parse-tree explainer is also found here.
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 #ifndef SQLITE_OMIT_TRACE
 
@@ -18448,6 +18485,8 @@ SQLITE_PRIVATE char *sqlite3VdbeExpandSql(
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 /*
 ** Invoke this macro on memory cells just prior to changing the
@@ -21229,7 +21268,7 @@ case OP_MakeRecord: {
     len = sqlite3VdbeSerialTypeLen(serial_type);
     if( pRec->flags & MEM_Zero ){
       if( nData ){
-        sqlite3VdbeMemExpandBlob(pRec);
+        if( sqlite3VdbeMemExpandBlob(pRec) ) goto no_mem;
       }else{
         nZero += pRec->u.nZero;
         len -= pRec->u.nZero;
@@ -25266,6 +25305,8 @@ abort_due_to_interrupt:
 ** This file contains code used to implement incremental BLOB I/O.
 */
 
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 #ifndef SQLITE_OMIT_INCRBLOB
 
@@ -25892,6 +25933,8 @@ SQLITE_API int SQLITE_STDCALL sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_i
 ** thread to merge the output of each of the others to a single PMA for
 ** the main thread to read from.
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 /* 
 ** If SQLITE_DEBUG_SORTER_THREADS is defined, this module outputs various
@@ -28508,6 +28551,7 @@ SQLITE_PRIVATE int sqlite3VdbeSorterCompare(
 **   2) The sqlite3JournalCreate() function is called.
 */
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
+/* #include "sqliteInt.h" */
 
 
 /*
@@ -28755,6 +28799,7 @@ SQLITE_PRIVATE int sqlite3JournalSize(sqlite3_vfs *pVfs){
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 */
+/* #include "sqliteInt.h" */
 
 /* Forward references to internal structures */
 typedef struct MemJournal MemJournal;
@@ -29010,6 +29055,7 @@ SQLITE_PRIVATE int sqlite3MemJournalSize(void){
 ** This file contains routines used for walking the parser tree for
 ** an SQL statement.
 */
+/* #include "sqliteInt.h" */
 /* #include <stdlib.h> */
 /* #include <string.h> */
 
@@ -29168,6 +29214,7 @@ SQLITE_PRIVATE int sqlite3WalkSelect(Walker *pWalker, Select *p){
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 */
+/* #include "sqliteInt.h" */
 /* #include <stdlib.h> */
 /* #include <string.h> */
 

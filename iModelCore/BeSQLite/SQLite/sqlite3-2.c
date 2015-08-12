@@ -44,6 +44,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 */
+/* #include "sqliteInt.h" */
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
 /*
@@ -7778,6 +7779,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){
 **
 ** This file contains code that is specific to Windows.
 */
+/* #include "sqliteInt.h" */
 #if SQLITE_OS_WIN               /* This file is used for Windows only */
 
 /*
@@ -7986,6 +7988,7 @@ SQLITE_API int sqlite3_open_file_count = 0;
 /*
 ** Include the header file for the Windows VFS.
 */
+/* #include "os_win.h" */
 
 /*
 ** Compiling and using WAL mode requires several APIs that are only
@@ -13639,6 +13642,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_os_end(void){
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 */
+/* #include "sqliteInt.h" */
 
 /* Size of the Bitvec structure in bytes. */
 #define BITVEC_SZ        512
@@ -14028,6 +14032,7 @@ bitvec_end:
 *************************************************************************
 ** This file implements that page cache.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** A complete page cache is an instance of this structure.
@@ -14769,6 +14774,7 @@ SQLITE_PRIVATE void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHd
 ** show that method (3) with N==100 provides about a 5% performance boost for
 ** common workloads.
 */
+/* #include "sqliteInt.h" */
 
 typedef struct PCache1 PCache1;
 typedef struct PgHdr1 PgHdr1;
@@ -14879,6 +14885,7 @@ static SQLITE_WSD struct PCacheGlobal {
   */
   int isInit;                    /* True if initialized */
   int separateCache;             /* Use a new PGroup for each PCache */
+  int nInitPage;                 /* Initial bulk allocation size */   
   int szSlot;                    /* Size of each free slot */
   int nSlot;                     /* The number of pcache slots */
   int nReserve;                  /* Try to keep nFreeSlot above this */
@@ -14945,6 +14952,43 @@ SQLITE_PRIVATE void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
     }
     pcache1.pEnd = pBuf;
   }
+}
+
+/*
+** Try to initialize the pCache->pFree and pCache->pBulk fields.  Return
+** true if pCache->pFree ends up containing one or more free pages.
+*/
+static int pcache1InitBulk(PCache1 *pCache){
+  i64 szBulk;
+  char *zBulk;
+  if( pcache1.nInitPage==0 ) return 0;
+  /* Do not bother with a bulk allocation if the cache size very small */
+  if( pCache->nMax<3 ) return 0;
+  sqlite3BeginBenignMalloc();
+  if( pcache1.nInitPage>0 ){
+    szBulk = pCache->szAlloc * (i64)pcache1.nInitPage;
+  }else{
+    szBulk = -1024 * (i64)pcache1.nInitPage;
+  }
+  if( szBulk > pCache->szAlloc*(i64)pCache->nMax ){
+    szBulk = pCache->szAlloc*pCache->nMax;
+  }
+  zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
+  sqlite3EndBenignMalloc();
+  if( zBulk ){
+    int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
+    int i;
+    for(i=0; i<nBulk; i++){
+      PgHdr1 *pX = (PgHdr1*)&zBulk[pCache->szPage];
+      pX->page.pBuf = zBulk;
+      pX->page.pExtra = &pX[1];
+      pX->isBulkLocal = 1;
+      pX->pNext = pCache->pFree;
+      pCache->pFree = pX;
+      zBulk += pCache->szAlloc;
+    }
+  }
+  return pCache->pFree!=0;
 }
 
 /*
@@ -15047,7 +15091,7 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
   void *pPg;
 
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  if( pCache->pFree ){
+  if( pCache->pFree || (pCache->nPage==0 && pcache1InitBulk(pCache)) ){
     p = pCache->pFree;
     pCache->pFree = p->pNext;
     p->pNext = 0;
@@ -15251,7 +15295,8 @@ static void pcache1RemoveFromHash(PgHdr1 *pPage, int freeFlag){
 ** If there are currently more than nMaxPage pages allocated, try
 ** to recycle pages to reduce the number allocated to nMaxPage.
 */
-static void pcache1EnforceMaxPage(PGroup *pGroup){
+static void pcache1EnforceMaxPage(PCache1 *pCache){
+  PGroup *pGroup = pCache->pGroup;
   assert( sqlite3_mutex_held(pGroup->mutex) );
   while( pGroup->nCurrentPage>pGroup->nMaxPage && pGroup->pLruTail ){
     PgHdr1 *p = pGroup->pLruTail;
@@ -15259,6 +15304,10 @@ static void pcache1EnforceMaxPage(PGroup *pGroup){
     assert( p->isPinned==0 );
     pcache1PinPage(p);
     pcache1RemoveFromHash(p, 1);
+  }
+  if( pCache->nPage==0 && pCache->pBulk ){
+    sqlite3_free(pCache->pBulk);
+    pCache->pBulk = pCache->pFree = 0;
   }
 }
 
@@ -15335,6 +15384,14 @@ static int pcache1Init(void *NotUsed){
     pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PMEM);
   }
 #endif
+  if( pcache1.separateCache
+   && sqlite3GlobalConfig.nPage!=0
+   && sqlite3GlobalConfig.pPage==0
+  ){
+    pcache1.nInitPage = sqlite3GlobalConfig.nPage;
+  }else{
+    pcache1.nInitPage = 0;
+  }
   pcache1.grp.mxPinned = 10;
   pcache1.isInit = 1;
   return SQLITE_OK;
@@ -15389,36 +15446,6 @@ static sqlite3_pcache *pcache1Create(int szPage, int szExtra, int bPurgeable){
       pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     }
     pcache1LeaveMutex(pGroup);
-    /* Try to initialize the local bulk pagecache line allocation if using
-    ** separate caches and if nPage!=0 */
-    if( pcache1.separateCache
-     && sqlite3GlobalConfig.nPage!=0
-     && sqlite3GlobalConfig.pPage==0
-    ){
-      int szBulk;
-      char *zBulk;
-      sqlite3BeginBenignMalloc();
-      if( sqlite3GlobalConfig.nPage>0 ){
-        szBulk = pCache->szAlloc * sqlite3GlobalConfig.nPage;
-      }else{
-        szBulk = -1024*sqlite3GlobalConfig.nPage;
-      }
-      zBulk = pCache->pBulk = sqlite3Malloc( szBulk );
-      sqlite3EndBenignMalloc();
-      if( zBulk ){
-        int nBulk = sqlite3MallocSize(zBulk)/pCache->szAlloc;
-        int i;
-        for(i=0; i<nBulk; i++){
-          PgHdr1 *pX = (PgHdr1*)&zBulk[szPage];
-          pX->page.pBuf = zBulk;
-          pX->page.pExtra = &pX[1];
-          pX->isBulkLocal = 1;
-          pX->pNext = pCache->pFree;
-          pCache->pFree = pX;
-          zBulk += pCache->szAlloc;
-        }
-      }
-    }
     if( pCache->nHash==0 ){
       pcache1Destroy((sqlite3_pcache*)pCache);
       pCache = 0;
@@ -15441,7 +15468,7 @@ static void pcache1Cachesize(sqlite3_pcache *p, int nMax){
     pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
     pCache->nMax = nMax;
     pCache->n90pct = pCache->nMax*9/10;
-    pcache1EnforceMaxPage(pGroup);
+    pcache1EnforceMaxPage(pCache);
     pcache1LeaveMutex(pGroup);
   }
 }
@@ -15459,7 +15486,7 @@ static void pcache1Shrink(sqlite3_pcache *p){
     pcache1EnterMutex(pGroup);
     savedMaxPage = pGroup->nMaxPage;
     pGroup->nMaxPage = 0;
-    pcache1EnforceMaxPage(pGroup);
+    pcache1EnforceMaxPage(pCache);
     pGroup->nMaxPage = savedMaxPage;
     pcache1LeaveMutex(pGroup);
   }
@@ -15796,7 +15823,7 @@ static void pcache1Destroy(sqlite3_pcache *p){
   assert( pGroup->nMinPage >= pCache->nMin );
   pGroup->nMinPage -= pCache->nMin;
   pGroup->mxPinned = pGroup->nMaxPage + 10 - pGroup->nMinPage;
-  pcache1EnforceMaxPage(pGroup);
+  pcache1EnforceMaxPage(pCache);
   pcache1LeaveMutex(pGroup);
   sqlite3_free(pCache->pBulk);
   sqlite3_free(pCache->apHash);
@@ -15960,6 +15987,7 @@ SQLITE_PRIVATE void sqlite3PcacheStats(
 ** There is an added cost of O(N) when switching between TEST and
 ** SMALLEST primitives.
 */
+/* #include "sqliteInt.h" */
 
 
 /*
@@ -16429,6 +16457,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 ** another is writing.
 */
 #ifndef SQLITE_OMIT_DISKIO
+/* #include "sqliteInt.h" */
 /************** Include wal.h in the middle of pager.c ***********************/
 /************** Begin file wal.h *********************************************/
 /*
@@ -16450,6 +16479,7 @@ SQLITE_PRIVATE int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 
 #ifndef _WAL_H_
 #define _WAL_H_
 
+/* #include "sqliteInt.h" */
 
 /* Additional values that can be added to the sync_flags argument of
 ** sqlite3WalFrames():
@@ -24064,6 +24094,7 @@ SQLITE_PRIVATE int sqlite3PagerWalFramesize(Pager *pPager){
 */
 #ifndef SQLITE_OMIT_WAL
 
+/* #include "wal.h" */
 
 /*
 ** Trace output macros
@@ -24469,9 +24500,9 @@ static void walIndexWriteHdr(Wal *pWal){
   pWal->hdr.isInit = 1;
   pWal->hdr.iVersion = WALINDEX_MAX_VERSION;
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
-  memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[1], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
   walShmBarrier(pWal);
-  memcpy((void *)&aHdr[0], (void *)&pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void*)&aHdr[0], (const void*)&pWal->hdr, sizeof(WalIndexHdr));
 }
 
 /*
@@ -24773,13 +24804,13 @@ static void walCleanupHash(Wal *pWal){
   ** via the hash table even after the cleanup.
   */
   if( iLimit ){
-    int i;           /* Loop counter */
+    int j;           /* Loop counter */
     int iKey;        /* Hash key */
-    for(i=1; i<=iLimit; i++){
-      for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
-        if( aHash[iKey]==i ) break;
+    for(j=1; j<=iLimit; j++){
+      for(iKey=walHash(aPgno[j]); aHash[iKey]; iKey=walNextHash(iKey)){
+        if( aHash[iKey]==j ) break;
       }
-      assert( aHash[iKey]==i );
+      assert( aHash[iKey]==j );
     }
   }
 #endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
@@ -25281,7 +25312,7 @@ static void walMergesort(
   int nMerge = 0;                 /* Number of elements in list aMerge */
   ht_slot *aMerge = 0;            /* List to be merged */
   int iList;                      /* Index into input list */
-  int iSub = 0;                   /* Index into aSub array */
+  u32 iSub = 0;                   /* Index into aSub array */
   struct Sublist aSub[13];        /* Array of sub-lists */
 
   memset(aSub, 0, sizeof(aSub));
@@ -25292,7 +25323,9 @@ static void walMergesort(
     nMerge = 1;
     aMerge = &aList[iList];
     for(iSub=0; iList & (1<<iSub); iSub++){
-      struct Sublist *p = &aSub[iSub];
+      struct Sublist *p;
+      assert( iSub<ArraySize(aSub) );
+      p = &aSub[iSub];
       assert( p->aList && p->nList<=(1<<iSub) );
       assert( p->aList==&aList[iList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
@@ -25303,7 +25336,9 @@ static void walMergesort(
 
   for(iSub++; iSub<ArraySize(aSub); iSub++){
     if( nList & (1<<iSub) ){
-      struct Sublist *p = &aSub[iSub];
+      struct Sublist *p;
+      assert( iSub<ArraySize(aSub) );
+      p = &aSub[iSub];
       assert( p->nList<=(1<<iSub) );
       assert( p->aList==&aList[nList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
@@ -27214,6 +27249,7 @@ SQLITE_PRIVATE int sqlite3WalFramesize(Wal *pWal){
 **      4     Number of leaf pointers on this page
 **      *     zero or more pages numbers of leaves
 */
+/* #include "sqliteInt.h" */
 
 
 /* The following value is the maximum cell size assuming a maximum page
