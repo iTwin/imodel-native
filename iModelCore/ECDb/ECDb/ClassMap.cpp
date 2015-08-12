@@ -1456,7 +1456,4 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 ECDbSqlTable& ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
 
 
-
-
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

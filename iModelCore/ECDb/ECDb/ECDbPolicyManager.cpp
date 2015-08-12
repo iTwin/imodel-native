@@ -220,7 +220,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPropertyPolicy (PropertyMapCP propMap, ECProp
         if (propMap->IsUnmapped ())
             {
             Utf8String errorMessage;
-            errorMessage.Sprintf ("ECProperty '%s' is not mapped to a column in the database and can therefore not be used in ECSQL.", Utf8String (ecProperty.GetName ()).c_str ());
+            errorMessage.Sprintf ("ECProperty '%s' is not mapped to a column in the database and therefore cannot be used in ECSQL.", Utf8String (ecProperty.GetName ()).c_str ());
             return ECDbPolicy::CreateNotSupported (errorMessage.c_str ());
             }
         }

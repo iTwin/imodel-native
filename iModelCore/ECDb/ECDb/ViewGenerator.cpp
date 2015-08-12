@@ -1437,9 +1437,6 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggers (SqlClassPersistenceMethod& scpm)
         {
-        //if (scpm.GetClassMap ().GetClass ().GetName ().EndsWithI ("InstanceHasFileInfo"))
-            //printf (""); -- invalid on gcc/LinuxX64... plus... what did this all accomplish?
-        
         if (BuildDeleteTriggersForRelationships (scpm) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
 

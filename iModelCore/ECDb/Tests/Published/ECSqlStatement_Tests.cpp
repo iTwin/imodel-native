@@ -2071,6 +2071,53 @@ void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Ut
     EXPECT_STREQ (expectedPropPathStr, actualPropPathStr.c_str ());
     LOG.tracev ("Property path: %s", actualPropPathStr.c_str ());
 
+    struct PropertyPathEntry
+        {
+        Utf8String m_entry;
+        bool m_isArrayIndex;
+
+        PropertyPathEntry(Utf8CP entry, bool isArrayIndex) :m_entry(entry), m_isArrayIndex(isArrayIndex) {}
+        };
+
+    bvector<PropertyPathEntry> expectedPropPathEntries;
+    bvector<Utf8String> expectedPropPathTokens;
+    BeStringUtilities::Split(expectedPropPathStr, ".", expectedPropPathTokens);
+    for (Utf8StringCR token : expectedPropPathTokens)
+        {
+        bvector<Utf8String> arrayTokens;
+        BeStringUtilities::Split(token.c_str(), "[]", arrayTokens);
+
+        if (arrayTokens.empty())
+            {
+            expectedPropPathEntries.push_back(PropertyPathEntry(token.c_str(), false));
+            continue;
+            }
+
+        ASSERT_EQ(2, arrayTokens.size());
+        expectedPropPathEntries.push_back(PropertyPathEntry(arrayTokens[0].c_str(), false));
+        expectedPropPathEntries.push_back(PropertyPathEntry(arrayTokens[1].c_str(), true));
+        }
+
+    ASSERT_EQ(expectedPropPathEntries.size(), actualPropPath.Size());
+
+    size_t expectedPropPathEntryIx = 0;
+    for (ECSqlPropertyPath::EntryCP propPathEntry : actualPropPath)
+        {
+        PropertyPathEntry const& expectedEntry = expectedPropPathEntries[expectedPropPathEntryIx];
+        if (expectedEntry.m_isArrayIndex)
+            {
+            ASSERT_EQ(ECSqlPropertyPath::Entry::Kind::ArrayIndex, propPathEntry->GetKind());
+            ASSERT_EQ(atoi(expectedEntry.m_entry.c_str()), propPathEntry->GetArrayIndex());
+            }
+        else
+            {
+            ASSERT_EQ(ECSqlPropertyPath::Entry::Kind::Property, propPathEntry->GetKind());
+            ASSERT_STREQ(expectedEntry.m_entry.c_str(), propPathEntry->GetProperty()->GetName().c_str());
+            }
+
+        expectedPropPathEntryIx++;
+        }
+
     EXPECT_STREQ (expectedRootClassName, actualColumnInfo.GetRootClass ().GetName ().c_str ());
     if (expectedRootClassAlias == nullptr)
         EXPECT_TRUE (Utf8String::IsNullOrEmpty (actualColumnInfo.GetRootClassAlias ()));
