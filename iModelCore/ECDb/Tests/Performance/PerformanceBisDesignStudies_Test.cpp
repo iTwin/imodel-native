@@ -120,7 +120,7 @@ TEST (Performance_BisDesign, InsertPerformanceAndNumberOfIndicesTest)
     Db db;
     ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (Db::OpenMode::ReadWrite)));
 
-    LOG.infov ("INSERT performance as function of index count per table - %d tables, %d columns, %d rows",
+    PERFORMANCELOG.infov ("INSERT performance as function of index count per table - %d tables, %d columns, %d rows",
         tableCount, columnCount, rowCount);
     StopWatch logTimer(true);
     for (int i = 0; i < tableCount; i++)
@@ -163,11 +163,10 @@ TEST (Performance_BisDesign, InsertPerformanceAndNumberOfIndicesTest)
             }
         timer.Stop ();
 
-        LOG.infov ("%d indices: %.4f s", i, timer.GetElapsedSeconds ());
+        PERFORMANCELOG.infov ("%d indices: %.4f s", i, timer.GetElapsedSeconds ());
         }
     logTimer.Stop();
-    PerformanceTestingFrameWork performanceObj;
-    EXPECT_TRUE(performanceObj.writeTodb(logTimer, "Performance_BisDesign,InsertPerformanceAndNumberOfIndicesTest ", " PerformanceBsiDesignStudies Test run using  performance_bisdesign_insertperformance_and_indexcount.db"));
+    LOGTODB(TEST_DETAILS, logTimer.GetElapsedSeconds(), "PerformanceBsiDesignStudies Test run using  performance_bisdesign_insertperformance_and_indexcount.db");
     }
 
 END_ECDBUNITTESTS_NAMESPACE
