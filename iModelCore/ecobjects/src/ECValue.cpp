@@ -2582,6 +2582,27 @@ static bool remapAccessString (WStringR newAccessString, ECClassCR newClass, WCh
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+static ECEnablerCP getStructArrayEnablerForDeepestLocation (ECValueAccessorCR va)
+    {
+    if (0 == va.GetDepth())
+        return nullptr;
+
+    auto prop = va.DeepestLocationCR().GetECProperty();
+    auto arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
+    auto structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
+    if (nullptr != structClass)
+        {
+        // NEEDSWORK: Why is GetEnablerForStructArrayMember() const, and why does it return a ref-counted ptr? (We obviously need somebody else to keep it alive for us, which they do...)
+        auto parentEnabler = const_cast<ECEnablerP> (va.DeepestLocationCR().GetEnabler());
+        return nullptr != parentEnabler ? parentEnabler->GetEnablerForStructArrayMember (structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str()).get() : nullptr;
+        }
+    else
+        return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECValueAccessor::RemapValueAccessor (ECValueAccessor& newVa, ECEnablerCR newEnabler, ECValueAccessorCR oldVa,  IECSchemaRemapperCR remapper)
     {
     newVa.Clear();
@@ -2589,17 +2610,8 @@ ECObjectsStatus ECValueAccessor::RemapValueAccessor (ECValueAccessor& newVa, ECE
     bool prevWasArray = false;
     for (Location const& oldLoc : oldVa.GetLocationVector())
         {
-        if (prevWasArray)
-            {
-            // next is a struct array member - need an enabler for the struct.
-            ECPropertyCP prop = newVa.DeepestLocation().GetECProperty();
-            auto arrayProp = nullptr != prop ? prop->GetAsArrayProperty() : nullptr;
-            ECClassCP structClass = nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
-            curNewEnabler = nullptr != structClass ? structClass->GetDefaultStandaloneEnabler() : nullptr;
-
-            if (nullptr == curNewEnabler)
-                return ECOBJECTS_STATUS_ClassNotFound;
-            }
+        if (prevWasArray && nullptr == (curNewEnabler = getStructArrayEnablerForDeepestLocation (newVa)))
+            return ECOBJECTS_STATUS_ClassNotFound;
 
         WString newAccessString;
         if (!remapAccessString (newAccessString, curNewEnabler->GetClass(), oldLoc.GetAccessString(), remapper))
@@ -2608,6 +2620,66 @@ ECObjectsStatus ECValueAccessor::RemapValueAccessor (ECValueAccessor& newVa, ECE
         newVa.PushLocation (*curNewEnabler, newAccessString.c_str(), oldLoc.GetArrayIndex());
 
         prevWasArray = oldLoc.GetArrayIndex() != INDEX_ROOT;
+        }
+
+    return ECOBJECTS_STATUS_Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECValueAccessor::PopulateAndRemapValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP accessString, IECSchemaRemapperCR remapper)
+    {
+    // Yeah, we're kinda re-implementing Bill's getECValueAccessorUsingManagedAccessString() here...easier than generalizing his function to handle the remapping.
+    va.Clear();
+
+    // "A.B.C[0].D[1].E" => "A.B.C", "0].D", "1].E"
+    bvector<WString> chunks;
+    BeStringUtilities::Split (accessString, L"[", chunks);
+    if (chunks.empty())
+        return ECOBJECTS_STATUS_Error;
+
+    ECEnablerCP curEnabler = &enabler;
+    for (WString& chunk : chunks)
+        {
+        WCharCP thisAccessString = chunk.c_str();
+        auto bracPos = chunk.find ('[');
+        if (WString::npos != bracPos)
+            {
+            // previous was an array
+            if (va.GetDepth() == 0)
+                return ECOBJECTS_STATUS_Error;
+
+            // Identify any struct subsequent array member accessor
+            if (bracPos < chunk.length()-1)
+                {
+                if (chunk[bracPos + 1] == '.' && chunk[bracPos + 2] != 0)
+                    thisAccessString += bracPos + 2;
+                else
+                    return ECOBJECTS_STATUS_Error;
+                }
+
+            // extract array index
+            chunk[bracPos] = 0;
+            uint32_t arrayIndex;
+            if (1 != swscanf (chunk.c_str(), L"%ud", &arrayIndex))
+                return ECOBJECTS_STATUS_Error;
+
+            va.DeepestLocation().SetArrayIndex (arrayIndex);
+
+            // If this is a struct array member, obtain an enabler for it.
+            if (!WString::IsNullOrEmpty (thisAccessString) && nullptr == (curEnabler = getStructArrayEnablerForDeepestLocation (va)))
+                return ECOBJECTS_STATUS_Error;
+            }
+
+        if (!WString::IsNullOrEmpty (thisAccessString))
+            {
+            WString newAccessString;
+            if (remapAccessString (newAccessString, curEnabler->GetClass(), thisAccessString, remapper))
+                va.PushLocation (*curEnabler, newAccessString.c_str());
+            else
+                return ECOBJECTS_STATUS_PropertyNotFound;
+            }
         }
 
     return ECOBJECTS_STATUS_Success;

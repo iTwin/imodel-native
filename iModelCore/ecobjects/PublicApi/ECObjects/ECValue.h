@@ -985,7 +985,10 @@ public:
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP managedPropertyAccessor);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor, bool includeAdhocs);
+    // We have modified an ECClass and have an ECValueAccessor defined in terms of the old ECClass. Remap it to refer to the new ECClass.
     ECOBJECTS_EXPORT static ECObjectsStatus RemapValueAccessor (ECValueAccessor& newVa, ECEnablerCR newEnabler, ECValueAccessorCR oldVa, IECSchemaRemapperCR remapper);
+    // We have modified an ECClass and have an access string defined in terms of the old ECClass. Populate it according to the new ECClass, remapping property names as appropriate.
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateAndRemapValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP accessString, IECSchemaRemapperCR remapper);
 //__PUBLISH_SECTION_START__
     };
 
