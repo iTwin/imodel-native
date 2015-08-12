@@ -46,10 +46,6 @@ struct Connect
         // Checks if given response is IMS Login redirect that should be treated as invalid credentials.
         // This is workaround because IMS does not give any other indication.
         WSCLIENT_EXPORT static bool IsImsLoginRedirect(HttpResponseCR response);
-
-        WSCLIENT_EXPORT static Utf8String GetWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetEulaUrl();
-        WSCLIENT_EXPORT static Utf8String GetStsUrl();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
