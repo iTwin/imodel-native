@@ -871,17 +871,6 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMAXUI8     UINT64_MAX
 
 //=======================================================================================
-//! @ingroup DgnColorGroup
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct HsvColorDef
-{
-    int32_t  hue;           /* red=0, yellow, green, cyan, blue, magenta */
-    int32_t  saturation;    /* 0=white, 100=no white, tints */
-    int32_t  value;         /* 0=black, 100=no black, shades */
-};
-
-//=======================================================================================
 //! RGBA values for a color
 //! @ingroup DgnColorGroup
 //=======================================================================================

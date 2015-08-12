@@ -125,12 +125,12 @@ enum class DrawExpense
 };
 
 
-enum class FillDisplay //!< Whether an element should be drawn with its internal area filled or not
+enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
 {
     Never    = 0, //!< don't fill, even if fill attribute is on for the viewport
-    ByView   = 1, //!< fill the element iff the fill attribute is on for the viewport
-    Always   = 2, //!< always fill the element, even if the fill attribute is off for the viewport
-    Blanking = 3, //!< always fill/always behind geometry that follows
+    ByView   = 1, //!< fill if the fill attribute is on for the viewport
+    Always   = 2, //!< always fill, even if the fill attribute is off for the viewport
+    Blanking = 3, //!< always fill, fill will always be behind subsequent geometry
 };
 
 enum class DgnGeometryClass
