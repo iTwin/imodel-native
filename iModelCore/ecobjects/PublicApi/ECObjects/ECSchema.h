@@ -1652,6 +1652,10 @@ public:
         str.Sprintf (L"%ls:%ls", m_schemaName.c_str(), m_className.c_str());
         return str;
         }
+
+//__PUBLISH_SECTION_END__
+    ECOBJECTS_EXPORT bool   Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+//__PUBLISH_SECTION_START__
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1699,6 +1703,9 @@ public:
     //! @param[in]      accessString The access string identifying the ECProperty within the ECEnabler
     //! @return true if the access string identifies a valid ECProperty within the ECEnabler
     ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, WCharCP accessString);
+//__PUBLISH_SECTION_END__
+    ECOBJECTS_EXPORT bool       Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+//__PUBLISH_SECTION_START__
     };
 
 typedef bvector<QualifiedECAccessor> QualifiedECAccessorList;

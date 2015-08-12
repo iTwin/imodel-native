@@ -2891,6 +2891,59 @@ bool QualifiedECAccessor::FromAccessString (ECEnablerCR enabler, WCharCP accessS
         return false;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool QualifiedECAccessor::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper)
+    {
+    SchemaNameClassNamePair schemaClass (m_schemaName, m_className);
+    bool remapped = schemaClass.Remap (pre, post, remapper);
+    if (remapped)
+        {
+        m_schemaName = schemaClass.m_schemaName;
+        m_className = schemaClass.m_className;
+        }
+
+    ECClassCP newClass = post.GetClassCP (schemaClass.m_className.c_str());
+    ECValueAccessor va;
+    if (nullptr != newClass && ECOBJECTS_STATUS_Success == ECValueAccessor::PopulateAndRemapValueAccessor (va, *newClass->GetDefaultStandaloneEnabler(), m_accessString.c_str(), remapper))
+        {
+        WString newAccessString = va.GetManagedAccessString();
+        if (!newAccessString.Equals (m_accessString))
+            {
+            m_accessString = newAccessString;
+            remapped = true;
+            }
+        }
+
+    return remapped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool SchemaNameClassNamePair::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper)
+    {
+    bool remapped = false;
+    if (pre.GetName().Equals (m_schemaName))
+        {
+        if (!pre.GetName().Equals (post.GetName()))
+            {
+            m_schemaName = post.GetName();
+            remapped = true;
+            }
+
+        WString newClassName = m_className;
+        if (remapper.ResolveClassName (newClassName, post))
+            {
+            m_className = newClassName;
+            remapped = true;
+            }
+        }
+
+    return remapped;
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 
