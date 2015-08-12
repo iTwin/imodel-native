@@ -290,7 +290,6 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
     timer.Stop ();
     PERFORMANCELOG.infov ("Schema Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
-    PerformanceTestingFrameWork performanceObjSchemaImport;
 
     ecdb.SaveChanges ();
 

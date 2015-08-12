@@ -475,14 +475,13 @@ void RunPerformanceComparisonTest(Utf8CP testClassName, int numberOfInstancesPer
     { 
         PERFORMANCELOG.infov("ECInstanceInserter Performance: Insertion: %.1f",
             eciiInsertTiming);
-        EXPECT_TRUE(performancePercentageEcii.writeTodb(eciiInsertTiming, TestDetails+"ForECInstanceInserter",
-            " ECInstanceInserter Performance: Insertion: for " + eciiTestInserterDetails + " Number of instances Per Class : " + eciiInsertNumberOfClasses));
+        LOGTODB(TEST_DETAILS, eciiInsertTiming, "ECInstanceInserter Performance: Insertion: for", numberOfInstancesPerClass);
     }
     if (ecsqlHasRun)
     {
         PERFORMANCELOG.infov("ECSQL INSERT Performance: Insertion: %.1f",
             ecsqlinsertInsertTiming);
-        EXPECT_TRUE(performancePercentageEcSql.writeTodb(ecsqlinsertInsertTiming, TestDetails+"ForECSQLInsert",
+        LOGTODB(TEST_DETAILS, ecsqlinsertInsertTiming, "ForECSQLInsert Performance: Insertion: for", numberOfInstancesPerClass);
     }
 }
 
