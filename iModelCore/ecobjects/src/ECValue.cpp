@@ -2227,6 +2227,14 @@ WCharCP                                 ECValueAccessor::GetAccessString () cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 WCharCP                                 ECValueAccessor::GetAccessString (uint32_t depth) const
     {
+    return GetAccessString (depth, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WCharCP                                 ECValueAccessor::GetAccessString (uint32_t depth, bool alwaysIncludeParentStructAccessStrings) const
+    {
     int propertyIndex         = m_locationVector[depth].GetPropertyIndex();
     ECEnablerCR enabler       = * m_locationVector[depth].GetEnabler();
     WCharCP accessString;
@@ -2236,13 +2244,16 @@ WCharCP                                 ECValueAccessor::GetAccessString (uint32
         //  - ECValuesCollection::Create() will create separate Location for each portion of the access string ("OuterStruct", "InnerStruct", "Property")
         //  - ECValueAccessor::PopulateValueAccessor() will create one Location for the entire access string
         // In the former case, need to strip off the struct prefix(es)
-        Location const* prev = depth > 0 ? &m_locationVector[depth-1] : nullptr;
-        if (nullptr != prev && prev->GetEnabler() == &enabler && prev->GetPropertyIndex() == enabler.GetParentPropertyIndex (propertyIndex))
+        if (!alwaysIncludeParentStructAccessStrings)
             {
-            WCharCP lastDot = wcsrchr (accessString, L'.');
-            BeAssert (nullptr != lastDot);
-            if (nullptr != lastDot)
-                accessString = lastDot + 1;
+            Location const* prev = depth > 0 ? &m_locationVector[depth-1] : nullptr;
+            if (nullptr != prev && prev->GetEnabler() == &enabler && prev->GetPropertyIndex() == enabler.GetParentPropertyIndex (propertyIndex))
+                {
+                WCharCP lastDot = wcsrchr (accessString, L'.');
+                BeAssert (nullptr != lastDot);
+                if (nullptr != lastDot)
+                    accessString = lastDot + 1;
+                }
             }
 
         return accessString;
@@ -2332,7 +2343,7 @@ WString                                        ECValueAccessor::GetManagedAccess
         if(depth > 0)
             temp.append (L".");
 
-        WCharCP str = GetAccessString (depth);
+        WCharCP str = GetAccessString (depth, false);
         temp.append (str);
 
         //If the current index is an array element,

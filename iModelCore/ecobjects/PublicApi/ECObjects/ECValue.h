@@ -847,6 +847,7 @@ private:
 /*__PUBLISH_SECTION_END__*/
     const LocationVector&   GetLocationVector() const;
 
+    WCharCP                 GetAccessString (uint32_t depth, bool alwaysIncludeParentStructAccessStrings) const;
 public:
     bool                                IsAdhocProperty() const { return m_isAdhoc; }
 
