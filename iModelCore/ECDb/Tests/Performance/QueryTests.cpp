@@ -57,8 +57,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             timerName.Sprintf("Query One Instance By Id Of Class '%s'", className.c_str());
             double ellapsedSecond;
             ExecuteSql(ecSql, timerName, results, expectedNumberOfResults, ellapsedSecond);
-            PerformanceTestingFrameWork obj;
-            EXPECT_TRUE(obj.writeTodb(ellapsedSecond * 1000.0, "LoadByInstanceId:  " + instanceId + className, " QueryAllInstancesByClass "));
+            LOGTODB(TEST_DETAILS, ellapsedSecond * 1000.0, "LoadByInstanceId");
             }
 
         void QueryAllInstancesByClass(Utf8String className, bmap<Utf8String, double>& results, int expectedNumberOfResults)
@@ -69,8 +68,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             timerName.Sprintf("Query All Instances Of Class '%s'", className.c_str());
             double ellapsedSecond;
             ExecuteSql(ecSql, timerName, results, expectedNumberOfResults, ellapsedSecond);
-            PerformanceTestingFrameWork obj;
-            EXPECT_TRUE(obj.writeTodb(ellapsedSecond * 1000.0, "QueryAllInstances " + className, " QueryAllInstancesByClass "));
+            LOGTODB(TEST_DETAILS, ellapsedSecond * 1000.0, "QueryAllInstances");
             }
 
         void QueryAllInstancesByClassWithOrderBy(Utf8String className, Utf8String propertyName, bmap<Utf8String, double>& results, int expectedNumberOfResults)
@@ -81,8 +79,7 @@ struct PerformanceQueryTests : PerformanceTestFixture
             timerName.Sprintf("Query All Instances Of Class '%s' With OrderBy", className.c_str());
             double ellapsedSecond;
             ExecuteSql(ecSql, timerName, results, expectedNumberOfResults, ellapsedSecond);
-            PerformanceTestingFrameWork obj;
-            EXPECT_TRUE(obj.writeTodb(ellapsedSecond * 1000.0, "QueryAllInstances " + className, propertyName + " QueryAllInstancesByClassWithOrderBy "));
+            LOGTODB(TEST_DETAILS, ellapsedSecond * 1000.0, "QueryAllInstancesByClassWithOrderBy");
             }
 
     public:

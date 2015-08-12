@@ -10,6 +10,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
 #include <BeSQLite/BeSQLite.h>
+#include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
 
 #include "PerformanceTests.h"
 
@@ -47,24 +48,6 @@ public:
     virtual void SetUp () override;
     virtual void TearDown () override;
     };
-//=======================================================================================    
-//! @bsiclass                                                Adeel.Shoukat    07/2014
-//=======================================================================================
-struct PerformanceTestingFrameWork
-{
-private:
-    Db m_Db;
-    ECSqlStatement stmt;
-    DbResult dbOpenStat;
-    BeFileName dir;
 
-public:
-    PerformanceTestingFrameWork()
-    {
-    }
-    void openDb();
-    bool writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription);
-    bool writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription);
-};
 
 END_ECDBUNITTESTS_NAMESPACE

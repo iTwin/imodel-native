@@ -50,20 +50,17 @@ void PerformanceBisDesignTestFixture::RunTest (Utf8CP dbFileName, Context& conte
         StopWatch logInsertTime(true);
         _RunInsertTest (db, context);
         logInsertTime.Stop();
-        PerformanceTestingFrameWork performanceObjInsert;
-        EXPECT_TRUE(performanceObjInsert.writeTodb(logInsertTime, "Performance BIS Design Studies test, RunInsert For : " + bisonTestDetails , " Db is used to cover the scenario mention in Db Name "));
+        LOGTODB(TEST_DETAILS, logInsertTime.GetElapsedSeconds(), "RunInsert For : scenario mention in Db Name.");
         }
 
     //select test
         {
         Db db;
         OpenTestDb (db, dbFileName, true);
-        StopWatch logSelecttTime(true);
+        StopWatch logSelectTime(true);
         _RunSelectTest(db, context);
-        PerformanceTestingFrameWork performanceObjSelect;
-        logSelecttTime.Stop();
-        EXPECT_TRUE(performanceObjSelect.writeTodb(logSelecttTime, "Performance BIS Design Studies test, RunSelect For : " + bisonTestDetails , " Db is used to cover the scenario mention in Db Name "));
-      
+        logSelectTime.Stop();
+        LOGTODB(TEST_DETAILS, logSelectTime.GetElapsedSeconds(), "RunSelect For : scenario mention in Db Name.");
         }
     }
 

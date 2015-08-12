@@ -290,8 +290,7 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions ()));
     timer.Stop ();
     LOG.infov ("Schema Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_Import", "Import EC Schema with 10,000 Custom Attributes"));
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Import EC Schema with 10,000 Custom Attributes", 10000);
 
     ecdb.SaveChanges ();
 
@@ -306,7 +305,8 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ASSERT_TRUE (ecschema != nullptr);
 
     LOG.infov ("Schema Export took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_GetSchema", "Gets the schema that has 10,000 Custom Attributes"));
+    //EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_GetSchema", "Gets the schema that has 10,000 Custom Attributes"));
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Gets EC Schema with 10,000 Custom Attributes", 10000);
     ecdb.CloseDb ();
     }
 

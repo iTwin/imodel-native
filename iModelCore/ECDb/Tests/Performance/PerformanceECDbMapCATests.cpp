@@ -150,7 +150,7 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql.c_str ();
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            int parameterIndex = 1;
+            //int parameterIndex = 1;
             for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
                 EXPECT_EQ (ECSqlStatus::Success, stmt.BindText (parameterIndex++, ("Init Value"), IECSqlBinder::MakeCopy::No));
@@ -316,11 +316,10 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     UpdateInstances (ecdb);
     DeleteInstances (ecdb);
 
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_InsertTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Insert time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_SelectTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "SELECT time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_UpdateTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Update time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_DeleteTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Delete time"));
+    LOGTODB(TEST_DETAILS, m_InsertTime, "Insert time");
+    LOGTODB(TEST_DETAILS, m_SelectTime, "Select time");
+    LOGTODB(TEST_DETAILS, m_UpdateTime, "Update time");
+    LOGTODB(TEST_DETAILS, m_DeleteTime, "Delete time");
     }
 
 //---------------------------------------------------------------------------------------
@@ -369,11 +368,10 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     UpdateInstances (ecdb);
     DeleteInstances (ecdb);
 
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_InsertTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Insert time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_SelectTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "SELECT time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_UpdateTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Update time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_DeleteTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Delete time"));
+    LOGTODB(TEST_DETAILS, m_InsertTime, "Insert time");
+    LOGTODB(TEST_DETAILS, m_SelectTime, "Select time");
+    LOGTODB(TEST_DETAILS, m_UpdateTime, "Update time");
+    LOGTODB(TEST_DETAILS, m_DeleteTime, "Delete time");
     }
 
 

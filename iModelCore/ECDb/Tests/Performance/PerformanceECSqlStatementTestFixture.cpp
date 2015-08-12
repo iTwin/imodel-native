@@ -155,13 +155,12 @@ GetValueAsserter const& asserter
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
+    PERFORMANCELOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
             totalStopWatch.GetElapsedSeconds () * 1000, 
             TESTCLASS_INSTANCE_COUNT,
             TestSchemaHelper::TESTCLASS_NAME,
             asserter.GetPropertyName ());
-    PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb(totalStopWatch, testDetails, "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    LOGTODB(TEST_DETAILS, totalStopWatch.GetElapsedSeconds(), "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT", TESTCLASS_INSTANCE_COUNT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -197,13 +196,12 @@ GetValueAsserter const& asserter
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
+    PERFORMANCELOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
             totalStopWatch.GetElapsedSeconds () * 1000, 
             TESTCLASS_INSTANCE_COUNT,
             TestSchemaHelper::TESTCLASS_NAME,
             asserter.GetPropertyName ());
-    PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb(totalStopWatch, testDetails, "RunGetValueWithoutIsNullTest for the ECSQLStatement Preformance  TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    LOGTODB(TEST_DETAILS, totalStopWatch.GetElapsedSeconds(), "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT", TESTCLASS_INSTANCE_COUNT);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Krischan.Eberle          09/12

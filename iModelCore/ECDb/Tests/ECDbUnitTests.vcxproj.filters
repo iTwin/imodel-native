@@ -196,6 +196,9 @@
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
