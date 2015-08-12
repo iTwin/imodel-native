@@ -85,4 +85,17 @@ declare module BentleyApi.Dgn {
 
     type JsDSegment3dP = cxx_pointer<JsDSegment3d>;
 
+
+    //! A wrapper for BentleyApi::DSegment3d
+    class JsCurvePrimitive implements IDisposable {
+        constructor ();
+        static CreateLineSegment (segment : JsDSegment3dP) : JsCurvePrimitiveP;
+        _OnDispose(): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+    type JsCurvePrimitiveP = cxx_pointer<JsCurvePrimitive>;
+
+
 }

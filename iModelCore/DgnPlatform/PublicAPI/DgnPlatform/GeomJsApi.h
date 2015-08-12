@@ -163,7 +163,7 @@ void SetDegrees (double degrees){m_angle = AngleInDegrees::FromDegrees (degrees)
 //=======================================================================================
 struct JsDEllipse3d : RefCountedBase
 {
-    friend struct JSCurvePrimitive;
+    friend struct JsCurvePrimitive;
     DEllipse3d m_ellipse;
 
     JsDEllipse3d() {}
@@ -209,17 +209,17 @@ struct JsDEllipse3d : RefCountedBase
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JSCurvePrimitive: RefCountedBase
+struct JsCurvePrimitive: RefCountedBase
 {
     ICurvePrimitivePtr m_curvePrimitive;
+    JsCurvePrimitive () {}
 
-    JSCurvePrimitive ();
+    JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
 
-    static JSCurvePrimitive *CreateLineSegment (JsDSegment3d*segment)
+    static JsCurvePrimitiveP CreateLineSegment (JsDSegment3dP segment)
         {
-        JSCurvePrimitive *cp = new JSCurvePrimitive ();
-        cp->m_curvePrimitive = ICurvePrimitive::CreateLine (segment->m_segment);
-        return cp;
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (segment->m_segment);
+        return new JsCurvePrimitive (cp);
         }
     
     int GetCurvePrimitiveType (){return m_curvePrimitive->GetCurvePrimitiveType ();}
