@@ -419,6 +419,7 @@ def PrintError (msg):
 DEBUGGER_NONE = 0
 DEBUGGER_VS11 = 1
 DEBUGGER_VS12 = 2
+DEBUGGER_VS14 = 3
 
 TEST_None = 0
 TEST_Published = 1
@@ -609,6 +610,10 @@ class DgnPlatformTestRunner:
                 self.m_debugger = DEBUGGER_VS12
                 continue
 
+            if "--VS14" == upper:
+                self.m_debugger = DEBUGGER_VS14
+                continue
+
             if "--COVER" == upper:
                 self.m_isRunningCoverage = True
                 self.m_isMakingCoverageReport = True
@@ -783,6 +788,8 @@ class DgnPlatformTestRunner:
                 regVersionString = "11.0"
             elif self.m_debugger == DEBUGGER_VS12:
                 regVersionString = "12.0"
+            elif self.m_debugger == DEBUGGER_VS14:
+                regVersionString = "14.0"
             else:
                 raise Exception("Unknown/unexpected m_debugger")
 
@@ -828,6 +835,9 @@ class DgnPlatformTestRunner:
         elif self.m_debugger == DEBUGGER_VS12:
             slnFormatVersion = "12.00"
             slnVersionComment = "2013"
+        elif self.m_debugger == DEBUGGER_VS14:
+            slnFormatVersion = "14.00"
+            slnVersionComment = "2015"
         else:
             raise Exception("Unknown/unexpected m_debugger")
 
@@ -869,6 +879,8 @@ class DgnPlatformTestRunner:
             seedFileName = "SeedSlnPrefs.2012"
         elif self.m_debugger == DEBUGGER_VS12:
             seedFileName = "SeedSlnPrefs.2012"
+        elif self.m_debugger == DEBUGGER_VS14:
+            seedFileName = "SeedSlnPrefs.2012"
         else:
             raise Exception("Unknown/unexpected m_debugger")
 
@@ -894,6 +906,8 @@ class DgnPlatformTestRunner:
         if self.m_debugger == DEBUGGER_VS11:
             suoExtensions = "v11.suo"
         elif self.m_debugger == DEBUGGER_VS12:
+            suoExtensions = "v11.suo"
+        elif self.m_debugger == DEBUGGER_VS14:
             suoExtensions = "v11.suo"
         else:
             raise Exception("Unknown/unexpected m_debugger")
