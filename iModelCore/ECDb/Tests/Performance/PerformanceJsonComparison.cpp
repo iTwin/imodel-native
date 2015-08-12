@@ -61,7 +61,7 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     timer.Stop();
     printf ("Parsing large JSON object (%d rows) with JsonCpp took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
     Utf8String testDetailsParseCpp = "PerformanceJsonComparison,ParseJsonCppUsingStartupCompany";
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Parsing large JSON object  having 1000 rows with JsonCpp  using StartupCompany.json");
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(timer, testDetailsParseCpp + " :Using JsonCpp", "Parsing large JSON object  having 1000 rows with JsonCpp  using StartupCompany.json"));
     //-----------------------------------------------------------------------------------
     //  Parse using RapidJson
     //-----------------------------------------------------------------------------------
@@ -80,7 +80,8 @@ TEST(PerformanceJsonComparison, ParseJsonUsingStartupCompany)
     rapidJasonTimer.Stop();
     printf ("Parsing large JSON object (%d rows) with RapidJson took %.4f seconds\n", numRows, timer.GetElapsedSeconds());
     Utf8String testDetailsParseRapidJason = "PerformanceJsonComparison,ParseJasonCppUsingStartupCompany";
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Parsing large JSON object  having 1000 rows with RapidJson  using StartupCompany.json");
+
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(rapidJasonTimer, testDetailsParseRapidJason + " :Using RapidJson", "Parsing large JSON object  having 1000 rows with RapidJson  using StartupCompany.json"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -134,7 +135,7 @@ TEST(PerformanceJsonComparison, AddJson)
 
     timer.Stop();
     printf ("Adding and verifying %d entries with JsonCpp took %.4f seconds\n", numEntries, timer.GetElapsedSeconds());
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Adding and Verifying 1000 enteries with JsonCpp");
+    EXPECT_TRUE(performanceObjdJason.writeTodb(timer, testDetailsAddJasonCpp, "Adding and Verifying 1000 enteries with JsonCpp"));
     //-----------------------------------------------------------------------------------
     //  Add using RapidJson
     //-----------------------------------------------------------------------------------
@@ -202,7 +203,7 @@ TEST(PerformanceJsonComparison, AddJson)
     addRapidJasontimer.Stop();
     printf ("Adding and verifying %d entries with RapidJson took %.4f seconds\n", numEntries, timer.GetElapsedSeconds());
     Utf8String testDetailsAddRapidJason = "PerformanceJsonComparison,AddAndVerifyRapidJson";
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Adding and Verifying 1000 enteries with RapidJson");
+    EXPECT_TRUE(performanceObjdJason.writeTodb(addRapidJasontimer, testDetailsAddRapidJason, "Adding and Verifying 1000 enteries with RapidJson"));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

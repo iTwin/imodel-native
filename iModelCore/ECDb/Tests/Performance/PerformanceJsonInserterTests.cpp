@@ -85,7 +85,7 @@ TEST(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     timer.Stop();
     ecdb.SaveChanges();
     LOG.infov("Inserting JsonCpp JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), "Inserting JsonCpp JSON objects into ECDb For repetitionCount", 1000);
+    EXPECT_TRUE(performanceObj.writeTodb(timer, "PerformanceJsonInserter,InsertJsonCppUsingPresistanceAPI", "Inserting JsonCpp JSON objects into ECDb For repetitionCount: 1000"));
 }
 
 
@@ -132,7 +132,7 @@ TEST(PerformanceJsonInserter, InsertRapidJsonInsertJasonCppUsingPresistanceAPI)
     ecdb.SaveChanges();
     LOG.infov("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, rapidJasintimer.GetElapsedSeconds() * 1000.0);
 
-    LOGTODB(TEST_DETAILS, rapidJasintimer.GetElapsedSeconds(), "Inserting RapidJson JSON objects into ECDb For repetitionCount", 1000);
+    EXPECT_TRUE(performanceObjRapidJason.writeTodb(rapidJasintimer, "PerformanceJsonInserter,InsertRapidJsonInsertJasonCppUsingPresistanceAPI", "Inserting RapidJson JSON objects into ECDb For repetitionCount:  1000"));
 }
 
 END_ECDBUNITTESTS_NAMESPACE
