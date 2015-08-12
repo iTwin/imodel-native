@@ -23,8 +23,8 @@ struct WebApiV1 : public WebApi
     protected:
         struct SchemaInfo
             {
-            Utf8String CreateDummyRemoteId () const;
-            static bool IsDummySchemaId (ObjectIdCR objectId);
+            Utf8String CreateDummyRemoteId() const;
+            static bool IsDummySchemaId(ObjectIdCR objectId);
 
             Utf8String name;
             BeVersion version;
@@ -51,26 +51,26 @@ struct WebApiV1 : public WebApi
         mutable SchemaInfo m_schemaInfo;
 
     protected:
-        Utf8String GetUrl (Utf8StringCR service, Utf8StringCR params, Utf8StringCR queryString = nullptr, Utf8StringCR webApiVersion = "v1.1") const;
-        Utf8String CreateObjectIdParam (ObjectIdCR objectId) const;
-        Utf8String CreatePropertiesQuery (const bset<Utf8String>& properties) const;
-        Utf8String CreatePropertiesQuery (Utf8StringCR propertiesList) const;
-        Utf8String CreateParentQuery (ObjectIdCR objectId) const;
-        Utf8String CreateWebApiVersionPart (Utf8StringCR webApiVersion) const;
+        Utf8String GetUrl(Utf8StringCR service, Utf8StringCR params, Utf8StringCR queryString = nullptr, Utf8StringCR webApiVersion = "v1.1") const;
+        Utf8String CreateObjectIdParam(ObjectIdCR objectId) const;
+        Utf8String CreatePropertiesQuery(const bset<Utf8String>& properties) const;
+        Utf8String CreatePropertiesQuery(Utf8StringCR propertiesList) const;
+        Utf8String CreateParentQuery(ObjectIdCR objectId) const;
+        Utf8String CreateWebApiVersionPart(Utf8StringCR webApiVersion) const;
 
-        HttpRequest CreateGetRepositoriesRequest (const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
+        HttpRequest CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
 
-        static BentleyStatus ParseRepository (JsonValueCR dataSourceJson, WSRepository& repositoryOut);
-        static WSRepositoriesResult ResolveGetRepositoriesResponse (HttpResponse& response);
-        static WSCreateObjectResult ResolveCreateObjectResponse (HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className);
-        static WSUpdateObjectResult ResolveUpdateObjectResponse (HttpResponse& response);
-        static WSObjectsResult ResolveObjectsResponse (HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
-        static WSFileResult ResolveFileResponse (HttpResponse& response, BeFileName filePath);
+        static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut);
+        static WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response);
+        static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR className);
+        static WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response);
+        static WSObjectsResult ResolveObjectsResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
+        static WSFileResult ResolveFileResponse(HttpResponse& response, BeFileName filePath);
 
-        static bool IsValidObjectsResponse (HttpResponseCR response);
-        static bool IsJsonResponse (HttpResponseCR response);
+        static bool IsValidObjectsResponse(HttpResponseCR response);
+        static bool IsJsonResponse(HttpResponseCR response);
 
-        static bool IsObjectCreationJsonSupported (JsonValueCR objectCreationJson);
+        static bool IsObjectCreationJsonSupported(JsonValueCR objectCreationJson);
         static void GetParametersFromObjectCreationJson
             (
             JsonValueCR objectCreationJson,
@@ -80,22 +80,22 @@ struct WebApiV1 : public WebApi
             ObjectIdR parentObjectIdOut
             );
 
-        AsyncTaskPtr<SchemaInfoResult> GetSchemaInfo (ICancellationTokenPtr cancellationToken) const;
+        AsyncTaskPtr<SchemaInfoResult> GetSchemaInfo(ICancellationTokenPtr cancellationToken) const;
 
-        SchemaInfo GetCachedSchemaInfo () const;
-        void SetCachedSchemaInfo (SchemaInfo schemaInfo) const;
+        SchemaInfo GetCachedSchemaInfo() const;
+        void SetCachedSchemaInfo(SchemaInfo schemaInfo) const;
 
-        static BentleyStatus ReadSchemaInfoFromFile (BeFileNameCR filePath, SchemaInfo& schemaInfoOut);
-        static BentleyStatus ReadSchemaInfoFromXmlString (Utf8StringCR xmlString, SchemaInfo& schemaInfoOut);
-        static BentleyStatus ReadSchemaInfoFromXmlDom (BeXmlStatus xmlDomReadStatus, BeXmlDomPtr schemaXmlDom, SchemaInfo& schemaInfoOut);
-        static BentleyStatus WriteFileToHttpBody (BeFileNameCR filePath, HttpBodyPtr body);
+        static BentleyStatus ReadSchemaInfoFromFile(BeFileNameCR filePath, SchemaInfo& schemaInfoOut);
+        static BentleyStatus ReadSchemaInfoFromXmlString(Utf8StringCR xmlString, SchemaInfo& schemaInfoOut);
+        static BentleyStatus ReadSchemaInfoFromXmlDom(BeXmlStatus xmlDomReadStatus, BeXmlDomPtr schemaXmlDom, SchemaInfo& schemaInfoOut);
+        static BentleyStatus WriteFileToHttpBody(BeFileNameCR filePath, HttpBodyPtr body);
 
         AsyncTaskPtr<SchemaResult> GetSchema
             (
             HttpBodyPtr body,
             Utf8StringCR eTag,
             HttpRequest::ProgressCallbackCR downloadProgressCallback,
-            ICancellationTokenPtr cancellationToken 
+            ICancellationTokenPtr cancellationToken
             ) const;
 
         AsyncTaskPtr<WSFileResult> GetSchema
@@ -106,7 +106,7 @@ struct WebApiV1 : public WebApi
             ICancellationTokenPtr cancellationToken
             ) const;
 
-        virtual Utf8String GetSchemaUrl () const;
+        virtual Utf8String GetSchemaUrl() const;
 
         AsyncTaskPtr<WSObjectsResult> SendGetChildrenRequest
             (
@@ -117,10 +117,10 @@ struct WebApiV1 : public WebApi
             ) const;
 
     public:
-        WebApiV1 (std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);
-        virtual ~WebApiV1 ();
+        WebApiV1(std::shared_ptr<const ClientConfiguration> configuration, WSInfoCR info);
+        virtual ~WebApiV1();
 
-        static bool IsSupported (WSInfoCR info);
+        static bool IsSupported(WSInfoCR info);
 
         virtual AsyncTaskPtr<WSRepositoriesResult> SendGetRepositoriesRequest
             (
@@ -169,7 +169,7 @@ struct WebApiV1 : public WebApi
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
             JsonValueCR objectCreationJson,
-            BeFileNameCR filePath = BeFileName (),
+            BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
             ICancellationTokenPtr cancellationToken = nullptr
             ) const override;

@@ -139,8 +139,15 @@ m_wsError(error)
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICachingDataSource::Error::Error(AsyncErrorCR error) :
+Error(Status::InternalCacheError, error)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::Error::Error(ICachingDataSource::Status status, AsyncErrorCR error) :
 AsyncError(error),
-m_status(Status::InternalCacheError)
+m_status(status)
     {}
 
 /*--------------------------------------------------------------------------------------+

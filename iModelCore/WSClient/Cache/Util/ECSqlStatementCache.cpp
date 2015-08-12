@@ -79,4 +79,3 @@ void WebServices::ECSqlStatementCache::Clear()
     {
     m_cache.clear();
     }
-

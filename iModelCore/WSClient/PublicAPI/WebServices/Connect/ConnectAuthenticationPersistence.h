@@ -34,7 +34,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
 
         mutable SamlTokenPtr m_token;
 
-        bvector<std::function<void ()>> m_onUserChangedCallbacks;
+        bvector<std::function<void()>> m_onUserChangedCallbacks;
 
     private:
         ConnectAuthenticationPersistence
@@ -43,12 +43,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
             std::shared_ptr<ISecureStore> customSecureStore = nullptr
             );
 
-        void UpgradeIfNeeded () const;
+        void UpgradeIfNeeded() const;
 
     public:
-        virtual ~ConnectAuthenticationPersistence () {}
+        virtual ~ConnectAuthenticationPersistence() {}
 
-        //! Optional singleton instance initialization with custom parameters. This is not thread safe initialization so should be done 
+        //! Optional singleton instance initialization with custom parameters. This is not thread safe initialization so should be done
         //! once in application lifecycle. Default behavior does not require initialization.
         WSCLIENT_EXPORT static void CustomInitialize
             (
@@ -57,19 +57,19 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
             );
 
         //! Get shared thread-safe persistence instance
-        WSCLIENT_EXPORT static ConnectAuthenticationPersistencePtr GetShared ();
+        WSCLIENT_EXPORT static ConnectAuthenticationPersistencePtr GetShared();
 
         //! Connect credentials are shared between apps if SecureStore implementation allows it
-        WSCLIENT_EXPORT void SetCredentials (CredentialsCR credentials) override;
+        WSCLIENT_EXPORT void SetCredentials(CredentialsCR credentials) override;
         //! Connect credentials are shared between apps if SecureStore implementation allows it
-        WSCLIENT_EXPORT Credentials GetCredentials () const override;
+        WSCLIENT_EXPORT Credentials GetCredentials() const override;
 
-        WSCLIENT_EXPORT void SetToken (SamlTokenPtr token) override;
-        WSCLIENT_EXPORT SamlTokenPtr GetToken () const override;
+        WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;
+        WSCLIENT_EXPORT SamlTokenPtr GetToken() const override;
 
         //! Chould only be called when app initializes.
         //! Callback is executed when new user successfully logins thus replacing old user if there was one.
-        WSCLIENT_EXPORT void RegisterUserChangedListener (std::function<void ()> onUserChangedCallback);
+        WSCLIENT_EXPORT void RegisterUserChangedListener(std::function<void()> onUserChangedCallback);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

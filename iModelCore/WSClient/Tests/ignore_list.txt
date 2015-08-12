@@ -7,9 +7,10 @@
 #----------------------------------------------------------------------------------------
 *Create_PassedMandatoryValues_SetsValues* # TODO: enable when Device::GetDeviceId() is implemented for Windows
 BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # Hangs regularly on firebug; have notified Vincas.
-CachingDataSourceTests.SyncCachedData_WSG1AndInitialInstancesReturnsNotFound_RemovesInstancesFromCache # notified Vincas
 ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
-CachingDataSourceTests.GetFile_ClassDoesNotHaveFileDependentPropertiesCA_ProgressIsCalledWithNoNameAndNoSizeAndFileHasDefaultName # notified Vincas
+CachingDataSourceTests.* # notified Vincas
+ChangeManagerTests.* # notified Vincas
+*DataSourceCache*
 
 # Fails on Android. Notified Vincas
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
@@ -20,8 +21,3 @@ FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
 
-# Tests run very long and a lof of them are broken in 06:
-*CachingDataSourceTests*
-*ChangeManagerTests*
-*DataSourceCache*
-*ECDbAdapterTests*

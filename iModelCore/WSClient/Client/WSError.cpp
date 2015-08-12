@@ -27,7 +27,7 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::Id WSError::ErrorIdFromString (Utf8StringCR errorIdString)
+WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
     {
     static std::map<Utf8String, Id> map =
         {
@@ -49,8 +49,8 @@ WSError::Id WSError::ErrorIdFromString (Utf8StringCR errorIdString)
             {"TooManyBadLoginAttempts", Id::TooManyBadLoginAttempts},
         };
 
-    auto it = map.find (errorIdString);
-    if (it != map.end ())
+    auto it = map.find(errorIdString);
+    if (it != map.end())
         {
         return it->second;
         }
@@ -61,25 +61,23 @@ WSError::Id WSError::ErrorIdFromString (Utf8StringCR errorIdString)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::WSError () :
-m_status (Status::None),
-m_id (Id::Unknown)
-    {
-    }
+WSError::WSError() :
+m_status(Status::None),
+m_id(Id::Unknown)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::WSError (Id errorId) :
-m_status (Status::ReceivedError),
-m_id (errorId)
-    {
-    }
+WSError::WSError(Id errorId) :
+m_status(Status::ReceivedError),
+m_id(errorId)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::WSError (HttpResponseCR httpResponse) : WSError ()
+WSError::WSError(HttpResponseCR httpResponse) : WSError()
     {
     if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
         LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
@@ -96,55 +94,55 @@ WSError::WSError (HttpResponseCR httpResponse) : WSError ()
             );
         }
 
-    if (ConnectionStatus::Canceled == httpResponse.GetConnectionStatus ())
+    if (ConnectionStatus::Canceled == httpResponse.GetConnectionStatus())
         {
-        m_message.clear ();
-        m_description.clear ();
+        m_message.clear();
+        m_description.clear();
         m_status = Status::Canceled;
         m_id = WSError::Id::Unknown;
         return;
         }
 
-    if (ConnectionStatus::OK != httpResponse.GetConnectionStatus ())
+    if (ConnectionStatus::OK != httpResponse.GetConnectionStatus())
         {
-        m_message = HttpError (httpResponse).GetDisplayMessage ();
-        m_description.clear ();
+        m_message = HttpError(httpResponse).GetDisplayMessage();
+        m_description.clear();
         m_status = Status::ConnectionError;
         m_id = WSError::Id::Unknown;
         return;
         }
 
-    if (Connect::IsImsLoginRedirect (httpResponse))
+    if (Connect::IsImsLoginRedirect(httpResponse))
         {
         // Bentley CONNECT login redirect
-        m_message = HttpError::GetHttpDisplayMessage (HttpStatus::Unauthorized);
-        m_description.clear ();
+        m_message = HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized);
+        m_description.clear();
         m_status = Status::ReceivedError;
         m_id = Id::LoginFailed;
         return;
         }
 
-    if (SUCCESS != ParseBody (httpResponse))
+    if (SUCCESS != ParseBody(httpResponse))
         {
-        SetStatusServerNotSupported ();
+        SetStatusServerNotSupported();
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseBody (HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseBody(HttpResponseCR httpResponse)
     {
-    Utf8String contentType = httpResponse.GetHeaders ().GetContentType ();
-    if (contentType.find ("application/json") != Utf8String::npos)
+    Utf8String contentType = httpResponse.GetHeaders().GetContentType();
+    if (contentType.find("application/json") != Utf8String::npos)
         {
         // JSON is main error format
-        return ParseJsonError (httpResponse);
+        return ParseJsonError(httpResponse);
         }
-    else if (contentType.find ("application/xml") != Utf8String::npos)
+    else if (contentType.find("application/xml") != Utf8String::npos)
         {
         // XML format can occur when requesting XML ECSchema from v1.x server.
-        return ParseXmlError (httpResponse);
+        return ParseXmlError(httpResponse);
         }
     return ERROR;
     }
@@ -152,53 +150,53 @@ BentleyStatus WSError::ParseBody (HttpResponseCR httpResponse)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseJsonError (HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
     {
-    Json::Value jsonError = httpResponse.GetBody ().AsJson ();
-    if (!IsValidErrorJson (jsonError))
+    Json::Value jsonError = httpResponse.GetBody().AsJson();
+    if (!IsValidErrorJson(jsonError))
         {
         return ERROR;
         }
 
-    WSError::Id errorId = ErrorIdFromString (jsonError[JSON_ErrorId].asString ());
-    Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString ();
-    Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString ();
+    WSError::Id errorId = ErrorIdFromString(jsonError[JSON_ErrorId].asString());
+    Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
+    Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
 
-    SetStatusReceivedError (HttpError (httpResponse), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GetChildNodeContents (BeXmlNodeP node, Utf8CP childNodePath, Utf8StringR contentsOut)
+BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8StringR contentsOut)
     {
-    BeXmlNodeP childNode = node->SelectSingleNode (childNodePath);
+    BeXmlNodeP childNode = node->SelectSingleNode(childNodePath);
     if (nullptr == childNode)
         {
         return ERROR;
         }
-    childNode->GetContent (contentsOut);
+    childNode->GetContent(contentsOut);
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSError::ParseXmlError (HttpResponseCR httpResponse)
+BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
     {
-    Utf8String bodyStr = httpResponse.GetBody ().AsString ();
+    Utf8String bodyStr = httpResponse.GetBody().AsString();
 
     BeXmlStatus xmlStatus;
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromMemory (xmlStatus, bodyStr.c_str (), bodyStr.size ());
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, bodyStr.c_str(), bodyStr.size());
     if (BeXmlStatus::BEXML_Success != xmlStatus)
         {
         return ERROR;
         }
-    xmlDom->RegisterNamespace (XML_NAMESPACE_PREFIX, XML_NAMESPACE);
+    xmlDom->RegisterNamespace(XML_NAMESPACE_PREFIX, XML_NAMESPACE);
 
-    BeXmlNodeP rootNode = xmlDom->GetRootElement ();
-    if (nullptr == rootNode || Utf8String (XML_ROOTNODE_NAME) != rootNode->GetName ())
+    BeXmlNodeP rootNode = xmlDom->GetRootElement();
+    if (nullptr == rootNode || Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
         {
         return ERROR;
         }
@@ -207,26 +205,26 @@ BentleyStatus WSError::ParseXmlError (HttpResponseCR httpResponse)
     Utf8String errorMessage;
     Utf8String errorDescription;
 
-    if (SUCCESS != GetChildNodeContents (rootNode, XML_ErrorId, errorIdStr) ||
-        SUCCESS != GetChildNodeContents (rootNode, XML_ErrorMessage, errorMessage) ||
-        SUCCESS != GetChildNodeContents (rootNode, XML_ErrorDescription, errorDescription))
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_ErrorId, errorIdStr) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorMessage, errorMessage) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorDescription, errorDescription))
         {
         return ERROR;
         }
 
-    WSError::Id errorId = ErrorIdFromString (errorIdStr);
+    WSError::Id errorId = ErrorIdFromString(errorIdStr);
 
-    SetStatusReceivedError (HttpError (httpResponse), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSError::SetStatusServerNotSupported ()
+void WSError::SetStatusServerNotSupported()
     {
-    m_message = WSErrorLocalizedString (MESSAGE_ServerNotSupported);
-    m_description.clear ();
+    m_message = WSErrorLocalizedString(MESSAGE_ServerNotSupported);
+    m_description.clear();
     m_status = Status::ServerNotSupported;
     m_id = WSError::Id::Unknown;
     }
@@ -234,11 +232,11 @@ void WSError::SetStatusServerNotSupported ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WSError::SetStatusReceivedError (HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription)
+void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription)
     {
     m_status = Status::ReceivedError;
 
-    HttpStatusType httpStatusType = HttpStatusHelper::GetType (httpError.GetHttpStatus ());
+    HttpStatusType httpStatusType = HttpStatusHelper::GetType(httpError.GetHttpStatus());
 
     // Set error id
     if (WSError::Id::Unknown != errorId)
@@ -249,11 +247,11 @@ void WSError::SetStatusReceivedError (HttpErrorCR httpError, Id errorId, Utf8Str
         {
         m_id = WSError::Id::ServerError;
         }
-    else if (HttpStatus::BadRequest == httpError.GetHttpStatus ())
+    else if (HttpStatus::BadRequest == httpError.GetHttpStatus())
         {
         m_id = WSError::Id::BadRequest;
         }
-    else if (HttpStatus::Conflict == httpError.GetHttpStatus ())
+    else if (HttpStatus::Conflict == httpError.GetHttpStatus())
         {
         m_id = WSError::Id::Conflict;
         }
@@ -262,17 +260,34 @@ void WSError::SetStatusReceivedError (HttpErrorCR httpError, Id errorId, Utf8Str
         m_id = WSError::Id::Unknown;
         }
 
-    // Set message and details
-    m_message = httpError.GetDisplayMessage ();
-    m_description = FormatDescription (errorMessage.c_str (), errorDescription.c_str ());
+    // Set message 
+    if (WSError::Id::ClassNotFound == m_id)
+        {
+        m_message = WSErrorLocalizedString(MESSAGE_ClassNotFound);
+        }
+    else if (WSError::Id::FileNotFound == m_id)
+        {
+        m_message = WSErrorLocalizedString(MESSAGE_FileNotFound);
+        }
+    else if (WSError::Id::InstanceNotFound == m_id)
+        {
+        m_message = WSErrorLocalizedString(MESSAGE_InstanceNotFound);
+        }
+    else
+        {
+        m_message = httpError.GetDisplayMessage();
+        }
+
+    // Set description
+    m_description = FormatDescription(errorMessage.c_str(), errorDescription.c_str());
 
     // Fallback to default messages if not enough information received
-    if (m_message.empty ())
+    if (m_message.empty())
         {
-        m_message = WSErrorLocalizedString (MESSAGE_UnknownError);
-        if (m_description.empty ())
+        m_message = WSErrorLocalizedString(MESSAGE_UnknownError);
+        if (m_description.empty())
             {
-            m_description = httpError.GetDisplayMessage ();
+            m_description = httpError.GetDisplayMessage();
             }
         }
     }
@@ -280,39 +295,39 @@ void WSError::SetStatusReceivedError (HttpErrorCR httpError, Id errorId, Utf8Str
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsMemberStringOrNull (JsonValueCR json, Utf8CP name)
+bool IsMemberStringOrNull(JsonValueCR json, Utf8CP name)
     {
-    if (!json.isMember (name))
+    if (!json.isMember(name))
         {
         return false;
         }
     JsonValueCR member = json[name];
-    return (member.isString () || member.isNull ());
+    return (member.isString() || member.isNull());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSError::IsValidErrorJson (JsonValueCR jsonError)
+bool WSError::IsValidErrorJson(JsonValueCR jsonError)
     {
     return
-        IsMemberStringOrNull (jsonError, JSON_ErrorId) &&
-        IsMemberStringOrNull (jsonError, JSON_ErrorMessage) &&
-        IsMemberStringOrNull (jsonError, JSON_ErrorDescription);
+        IsMemberStringOrNull(jsonError, JSON_ErrorId) &&
+        IsMemberStringOrNull(jsonError, JSON_ErrorMessage) &&
+        IsMemberStringOrNull(jsonError, JSON_ErrorDescription);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSError::FormatDescription (Utf8StringCR errorMessage, Utf8StringCR errorDescription)
+Utf8String WSError::FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription)
     {
     Utf8String description;
 
-    if (!errorMessage.empty () && !errorDescription.empty ())
+    if (!errorMessage.empty() && !errorDescription.empty())
         {
-        description.Sprintf ("%s\n%s", errorMessage.c_str (), errorDescription.c_str ());
+        description.Sprintf("%s\n%s", errorMessage.c_str(), errorDescription.c_str());
         }
-    else if (!errorMessage.empty ())
+    else if (!errorMessage.empty())
         {
         description = errorMessage;
         }
@@ -327,29 +342,29 @@ Utf8String WSError::FormatDescription (Utf8StringCR errorMessage, Utf8StringCR e
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError WSError::CreateServerNotSupportedError ()
+WSError WSError::CreateServerNotSupportedError()
     {
     WSError error;
-    error.SetStatusServerNotSupported ();
+    error.SetStatusServerNotSupported();
     return error;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSError WSError::CreateFunctionalityNotSupportedError ()
+WSError WSError::CreateFunctionalityNotSupportedError()
     {
     WSError error;
     error.m_status = Status::ReceivedError;
     error.m_id = Id::NotSupported;
-    error.m_message = WSErrorLocalizedString (MESSAGE_FunctionalityNotSupported);
+    error.m_message = WSErrorLocalizedString(MESSAGE_FunctionalityNotSupported);
     return error;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::Status WSError::GetStatus () const
+WSError::Status WSError::GetStatus() const
     {
     return m_status;
     }
@@ -357,7 +372,7 @@ WSError::Status WSError::GetStatus () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSError::Id WSError::GetId () const
+WSError::Id WSError::GetId() const
     {
     return m_id;
     }
@@ -365,7 +380,7 @@ WSError::Id WSError::GetId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSError::GetDisplayMessage () const
+Utf8StringCR WSError::GetDisplayMessage() const
     {
     return m_message;
     }
@@ -373,8 +388,7 @@ Utf8StringCR WSError::GetDisplayMessage () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR WSError::GetDisplayDescription () const
+Utf8StringCR WSError::GetDisplayDescription() const
     {
     return m_description;
     }
-

@@ -37,10 +37,10 @@ struct ClientInfo : public IHttpHeaderProvider
         IHttpHeaderProviderPtr m_primaryHeaderProvider;
 
     private:
-        Utf8String GetUserAgent () const;
+        Utf8String GetUserAgent() const;
 
     public:
-        //! Create client info with mandatory fields and initialize other required fields automatically. 
+        //! Create client info with mandatory fields and initialize other required fields automatically.
         //! There should be one ClientInfo created per application and shared to code that connects to web services.
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
         //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
@@ -71,34 +71,34 @@ struct ClientInfo : public IHttpHeaderProvider
             IHttpHeaderProviderPtr primaryHeaderProvider = nullptr
             );
 
-        WSCLIENT_EXPORT virtual ~ClientInfo ();
+        WSCLIENT_EXPORT virtual ~ClientInfo();
 
         //! Default and fallback language tag used - "en" (English)
         WSCLIENT_EXPORT static Utf8CP DefaultLanguage;
 
         //! Override user language. Values must follow IETF language tag standard (RFC 1766).
         //! Examples - "en", "en-US", "nan-Hant-TW", etc.
-        WSCLIENT_EXPORT void SetLanguage (Utf8StringCR languageTag);
-        WSCLIENT_EXPORT Utf8String GetLanguage () const;
+        WSCLIENT_EXPORT void SetLanguage(Utf8StringCR languageTag);
+        WSCLIENT_EXPORT Utf8String GetLanguage() const;
 
         //! Override default or change fallback language. See SetLanguage() for more info.
-        WSCLIENT_EXPORT void SetFallbackLanguage (Utf8StringCR languageTag);
-        WSCLIENT_EXPORT Utf8String GetFallbackLanguage () const;
+        WSCLIENT_EXPORT void SetFallbackLanguage(Utf8StringCR languageTag);
+        WSCLIENT_EXPORT Utf8String GetFallbackLanguage() const;
 
         //! Get value for accept language header
-        WSCLIENT_EXPORT Utf8String GetAcceptLanguage () const;
+        WSCLIENT_EXPORT Utf8String GetAcceptLanguage() const;
 
-        WSCLIENT_EXPORT Utf8String GetApplicationName () const;
-        WSCLIENT_EXPORT BeVersion GetApplicationVersion () const;
-        WSCLIENT_EXPORT Utf8String GetApplicationGUID () const;
-        WSCLIENT_EXPORT Utf8String GetDeviceId () const;
-        WSCLIENT_EXPORT Utf8String GetSystemDescription () const;
+        WSCLIENT_EXPORT Utf8String GetApplicationName() const;
+        WSCLIENT_EXPORT BeVersion GetApplicationVersion() const;
+        WSCLIENT_EXPORT Utf8String GetApplicationGUID() const;
+        WSCLIENT_EXPORT Utf8String GetDeviceId() const;
+        WSCLIENT_EXPORT Utf8String GetSystemDescription() const;
 
         //! Create product token used in User-Agent header. Example: "TestApplicationName/4.2"
-        WSCLIENT_EXPORT Utf8String GetProductToken () const;
+        WSCLIENT_EXPORT Utf8String GetProductToken() const;
 
         //! Fill required headers using ClientInfo values
-        WSCLIENT_EXPORT virtual void FillHttpRequestHeaders (HttpRequestHeaders& headersOut) const override;
+        WSCLIENT_EXPORT virtual void FillHttpRequestHeaders(HttpRequestHeaders& headersOut) const override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

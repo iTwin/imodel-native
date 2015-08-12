@@ -55,30 +55,6 @@ void Connect::Uninintialize()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Connect::GetWsgUrl()
-    {
-    return UrlProvider::GetConnectWsgUrl();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Connect::GetEulaUrl()
-    {
-    return UrlProvider::GetConnectEulaUrl();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Rolandas.Rimkus    04/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String Connect::GetStsUrl()
-    {
-    return UrlProvider::GetConnectLearnStsAuthUri();
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Connect::GetStsToken(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
@@ -134,7 +110,7 @@ StatusInt Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExPa
     issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId();
     issueExParamsValue["AppId"] = s_clientInfo->GetProductToken();
 
-    HttpClient client(s_clientInfo, s_customHttpHandler);
+    HttpClient client(s_clientInfo, UrlProvider::GetSecurityConfigurator(s_customHttpHandler));
     HttpRequest request = client.CreatePostRequest(stsUrl);
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetAuthorization(authorization);
@@ -170,7 +146,7 @@ StatusInt Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExPa
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Bentley Systems 04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl /*= nullptr*/, Utf8CP stsUrl /*= nullptr*/)
+StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl)
     {
     Utf8String appliesToUrlString;
     if (appliesToUrl != nullptr)
@@ -179,7 +155,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        appliesToUrlString = GetWsgUrl();
+        appliesToUrlString = UrlProvider::GetConnectWsgUrl(); // TODO: applies to URL should be mandatory
         }
 
     Utf8String stsUrlString;
@@ -189,7 +165,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        stsUrlString = UrlProvider::GetConnectLearnStsAuthUri().c_str();
+        stsUrlString = UrlProvider::GetImsStsAuthUrl();
         }
 
     return GetStsToken(creds, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());

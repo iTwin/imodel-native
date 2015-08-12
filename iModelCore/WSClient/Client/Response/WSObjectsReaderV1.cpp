@@ -8,30 +8,29 @@
 #include "ClientInternal.h"
 #include <WebServices/Client/Response/WSObjectsReaderV1.h>
 
-static rapidjson::Value s_nullJsonObject (rapidjson::Type::kNullType);
-static rapidjson::Value s_emptyArrayJsonObject (rapidjson::Type::kArrayType);
+static rapidjson::Value s_nullJsonObject(rapidjson::Type::kNullType);
+static rapidjson::Value s_emptyArrayJsonObject(rapidjson::Type::kArrayType);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReaderV1::WSObjectsReaderV1 (Utf8StringCR schemaName) :
-m_schemaName (schemaName),
-m_className (),
-m_instanceCount (0),
-m_multipleInstancesFormat (true)
-    {
-    }
+WSObjectsReaderV1::WSObjectsReaderV1(Utf8StringCR schemaName) :
+m_schemaName(schemaName),
+m_className(),
+m_instanceCount(0),
+m_multipleInstancesFormat(true)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReaderV1::WSObjectsReaderV1 (Utf8StringCR schemaName, Utf8StringCR className) :
-m_schemaName (schemaName),
-m_className (className),
-m_instanceCount (1),
-m_multipleInstancesFormat (false)
+WSObjectsReaderV1::WSObjectsReaderV1(Utf8StringCR schemaName, Utf8StringCR className) :
+m_schemaName(schemaName),
+m_className(className),
+m_instanceCount(1),
+m_multipleInstancesFormat(false)
     {
-    if (className.empty ())
+    if (className.empty())
         {
         m_instanceCount = 0;
         }
@@ -40,64 +39,63 @@ m_multipleInstancesFormat (false)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReaderV1::~WSObjectsReaderV1 ()
+WSObjectsReaderV1::~WSObjectsReaderV1()
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<WSObjectsReaderV1> WSObjectsReaderV1::Create(Utf8StringCR schemaName)
     {
+    return std::shared_ptr<WSObjectsReaderV1>(new WSObjectsReaderV1(schemaName));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<WSObjectsReaderV1> WSObjectsReaderV1::Create (Utf8StringCR schemaName)
+std::shared_ptr<WSObjectsReaderV1> WSObjectsReaderV1::Create(Utf8StringCR schemaName, Utf8StringCR className)
     {
-    return std::shared_ptr<WSObjectsReaderV1> (new WSObjectsReaderV1 (schemaName));
+    return std::shared_ptr<WSObjectsReaderV1>(new WSObjectsReaderV1(schemaName, className));
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<WSObjectsReaderV1> WSObjectsReaderV1::Create (Utf8StringCR schemaName, Utf8StringCR className)
-    {
-    return std::shared_ptr<WSObjectsReaderV1> (new WSObjectsReaderV1 (schemaName, className));
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::Instances WSObjectsReaderV1::ReadInstances (std::shared_ptr<const rapidjson::Value> data)
+WSObjectsReader::Instances WSObjectsReaderV1::ReadInstances(std::shared_ptr<const rapidjson::Value> data)
     {
     m_data = data;
 
     if (nullptr == m_data ||
-        !m_data->IsObject ())
+        !m_data->IsObject())
         {
-        BeAssert (false && "Bad format");
+        BeAssert(false && "Bad format");
         m_instanceCount = 0;
         m_data = nullptr;
-        return Instances (shared_from_this ());
+        return Instances(shared_from_this());
         }
 
     if (m_multipleInstancesFormat)
         {
-        for (rapidjson::Value::ConstMemberIterator member = m_data->MemberBegin (); member != m_data->MemberEnd (); ++member)
+        for (rapidjson::Value::ConstMemberIterator member = m_data->MemberBegin(); member != m_data->MemberEnd(); ++member)
             {
-            if (!member->value.IsArray () || member->value.IsNull ())
+            if (!member->value.IsArray() || member->value.IsNull())
                 {
-                BeAssert (false && "Bad format");
+                BeAssert(false && "Bad format");
                 m_instanceCount = 0;
                 m_data = nullptr;
-                return Instances (shared_from_this ());
+                return Instances(shared_from_this());
                 }
-            m_instanceCount += member->value.Size ();
+            m_instanceCount += member->value.Size();
             }
         }
 
-    return Instances (shared_from_this ());
+    return Instances(shared_from_this());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReaderV1::HasReadErrors () const
+bool WSObjectsReaderV1::HasReadErrors() const
     {
     return nullptr == m_data;
     }
@@ -105,23 +103,23 @@ bool WSObjectsReaderV1::HasReadErrors () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::Instance WSObjectsReaderV1::ReadInstance (const rapidjson::Value* instanceProperties, Utf8String className) const
+WSObjectsReader::Instance WSObjectsReaderV1::ReadInstance(const rapidjson::Value* instanceProperties, Utf8String className) const
     {
-    BeAssert (!m_schemaName.empty ());
-    BeAssert (!className.empty ());
+    BeAssert(!m_schemaName.empty());
+    BeAssert(!className.empty());
 
-    if (!instanceProperties->IsObject () || !(*instanceProperties)["$id"].IsString ())
+    if (!instanceProperties->IsObject() || !(*instanceProperties)["$id"].IsString())
         {
-        BeAssert (false && "Bad format");
-        return Instance (shared_from_this ());
+        BeAssert(false && "Bad format");
+        return Instance(shared_from_this());
         }
 
-    Utf8String remoteId ((*instanceProperties)["$id"].GetString ());
+    Utf8String remoteId((*instanceProperties)["$id"].GetString());
 
     return Instance
         (
-        shared_from_this (),
-        ObjectId (m_schemaName, className, remoteId),
+        shared_from_this(),
+        ObjectId(m_schemaName, className, remoteId),
         instanceProperties,
         instanceProperties,
         &s_emptyArrayJsonObject
@@ -131,7 +129,7 @@ WSObjectsReader::Instance WSObjectsReaderV1::ReadInstance (const rapidjson::Valu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::SizeType WSObjectsReaderV1::GetInstanceCount () const
+rapidjson::SizeType WSObjectsReaderV1::GetInstanceCount() const
     {
     return m_instanceCount;
     }
@@ -139,60 +137,60 @@ rapidjson::SizeType WSObjectsReaderV1::GetInstanceCount () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::Instance WSObjectsReaderV1::GetInstance (rapidjson::SizeType index) const
+WSObjectsReader::Instance WSObjectsReaderV1::GetInstance(rapidjson::SizeType index) const
     {
     if (index >= m_instanceCount)
         {
-        BeAssert (false && "Index out of range");
-        return Instance (shared_from_this ());
+        BeAssert(false && "Index out of range");
+        return Instance(shared_from_this());
         }
 
     if (m_multipleInstancesFormat)
         {
         Json::ArrayIndex previousTotal = 0;
-        for (rapidjson::Value::ConstMemberIterator member = m_data->MemberBegin (); member != m_data->MemberEnd (); ++member)
+        for (rapidjson::Value::ConstMemberIterator member = m_data->MemberBegin(); member != m_data->MemberEnd(); ++member)
             {
             RapidJsonValueCR classInstances = member->value;
 
-            if (previousTotal + classInstances.Size () > index)
+            if (previousTotal + classInstances.Size() > index)
                 {
                 const rapidjson::Value* instanceProperties = &classInstances[index - previousTotal];
-                return ReadInstance (instanceProperties, member->name.GetString ());
+                return ReadInstance(instanceProperties, member->name.GetString());
                 }
 
-            previousTotal += classInstances.Size ();
+            previousTotal += classInstances.Size();
             }
         }
     else
         {
-        return ReadInstance (m_data.get (), m_className);
+        return ReadInstance(m_data.get(), m_className);
         }
 
-    return Instance (shared_from_this ());
+    return Instance(shared_from_this());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::Instance WSObjectsReaderV1::GetRelatedInstance (const rapidjson::Value* relatedInstance) const
+WSObjectsReader::Instance WSObjectsReaderV1::GetRelatedInstance(const rapidjson::Value* relatedInstance) const
     {
-    BeAssert (false && "Stub");
-    return Instance (shared_from_this ());
+    BeAssert(false && "Stub");
+    return Instance(shared_from_this());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::RelationshipInstance WSObjectsReaderV1::GetRelationshipInstance (const rapidjson::Value* relationshipInstance) const
+WSObjectsReader::RelationshipInstance WSObjectsReaderV1::GetRelationshipInstance(const rapidjson::Value* relationshipInstance) const
     {
-    BeAssert (false && "Stub");
-    return RelationshipInstance (shared_from_this ());
+    BeAssert(false && "Stub");
+    return RelationshipInstance(shared_from_this());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSObjectsReaderV1::GetInstanceETag (const rapidjson::Value* instance) const
+Utf8String WSObjectsReaderV1::GetInstanceETag(const rapidjson::Value* instance) const
     {
     return nullptr;
     }

@@ -22,7 +22,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 //--------------------------------------------------------------------------------------+
-// WebServices Client API for connecting to BWSG server. 
+// WebServices Client API for connecting to BWSG server.
 //--------------------------------------------------------------------------------------+
 
 typedef std::shared_ptr<struct IWSClient>           IWSClientPtr;
@@ -38,22 +38,21 @@ struct IWSClient
     public:
         struct IServerInfoListener
             {
-            virtual ~IServerInfoListener ()
-                {
-                };
-            virtual void OnServerInfoReceived (WSInfoCR info) = 0;
+            virtual ~IServerInfoListener()
+                {};
+            virtual void OnServerInfoReceived(WSInfoCR info) = 0;
             };
 
     public:
-        WSCLIENT_EXPORT virtual ~IWSClient ();
+        WSCLIENT_EXPORT virtual ~IWSClient();
 
-        virtual Utf8String GetServerUrl () const = 0;
+        virtual Utf8String GetServerUrl() const = 0;
 
         //! Register for ServerInfo received events
-        virtual void RegisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) = 0;
+        virtual void RegisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) = 0;
 
         //! Unregister from ServerInfo received events
-        virtual void UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) = 0;
+        virtual void UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) = 0;
 
         //! Returns server information or queries server if needs updating
         virtual AsyncTaskPtr<WSInfoResult> GetServerInfo
@@ -89,10 +88,10 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
         std::shared_ptr<struct ClientConnection> m_connection;
 
     private:
-        WSClient (std::shared_ptr<struct ClientConnection> connection);
+        WSClient(std::shared_ptr<struct ClientConnection> connection);
 
     public:
-        static IWSClientPtr Create (std::shared_ptr<struct ClientConnection> connection);
+        static IWSClientPtr Create(std::shared_ptr<struct ClientConnection> connection);
 
         //! @param[in] serverUrl - address to supported server/site
         //! @param[in] clientInfo - client infomation for licensing and other information
@@ -104,10 +103,10 @@ struct WSClient : public IWSClient, public std::enable_shared_from_this<WSClient
             IHttpHandlerPtr customHandler = nullptr
             );
 
-        WSCLIENT_EXPORT Utf8String GetServerUrl () const override;
+        WSCLIENT_EXPORT Utf8String GetServerUrl() const override;
 
-        WSCLIENT_EXPORT void RegisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) override;
-        WSCLIENT_EXPORT void UnregisterServerInfoListener (std::weak_ptr<IServerInfoListener> listener) override;
+        WSCLIENT_EXPORT void RegisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) override;
+        WSCLIENT_EXPORT void UnregisterServerInfoListener(std::weak_ptr<IServerInfoListener> listener) override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSInfoResult> GetServerInfo
             (

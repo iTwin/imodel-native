@@ -161,8 +161,7 @@ WorkerThreadPtr cacheAccessThread
         auto cacheTransactionManager = std::make_shared<CacheTransactionManager>(std::move(cache), cacheAccessThread);
         auto infoStore = std::make_shared<RepositoryInfoStore>(cacheTransactionManager.get(), client, cacheAccessThread);
 
-        auto ds = std::shared_ptr<CachingDataSource>(new CachingDataSource
-                                                     (
+        auto ds = std::shared_ptr<CachingDataSource>(new CachingDataSource(
                                                      client,
                                                      cacheTransactionManager,
                                                      infoStore,

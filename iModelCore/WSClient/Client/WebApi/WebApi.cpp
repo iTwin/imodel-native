@@ -11,14 +11,12 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebApi::WebApi (std::shared_ptr<const ClientConfiguration> configuration) :
-m_configuration (configuration)
-    {
-    }
+WebApi::WebApi(std::shared_ptr<const ClientConfiguration> configuration) :
+m_configuration(configuration)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WebApi::~WebApi ()
-    {
-    }
+WebApi::~WebApi()
+    {}

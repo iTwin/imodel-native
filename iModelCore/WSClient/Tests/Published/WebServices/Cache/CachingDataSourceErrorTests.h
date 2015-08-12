@@ -10,5 +10,5 @@
 
 #include "../WebServicesTestsHelper.h"
 
-class CachingDataSourceErrorTests : public ::testing::Test
+class CachingDataSourceErrorTests : public WSClientBaseTest
     {};

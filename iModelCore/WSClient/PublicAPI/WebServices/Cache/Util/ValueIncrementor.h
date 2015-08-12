@@ -35,10 +35,10 @@ struct ValueIncrementor
         //! @param db
         //! @param statementCache
         //! @param ecProperty - property of type "long". First found instance of this property class is used to save last increment
-        WSCACHE_EXPORT ValueIncrementor (ECDb& db, ECSqlStatementCache& statementCache, ECPropertyCR ecProperty);
+        WSCACHE_EXPORT ValueIncrementor(ECDb& db, ECSqlStatementCache& statementCache, ECPropertyCR ecProperty);
 
         //! @param[out] valueOut - new numeric value
-        WSCACHE_EXPORT BentleyStatus IncrementWithoutSaving (Utf8StringR valueOut);
+        WSCACHE_EXPORT BentleyStatus IncrementWithoutSaving(Utf8StringR valueOut);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
