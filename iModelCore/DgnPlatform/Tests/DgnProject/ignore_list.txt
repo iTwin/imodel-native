@@ -14,9 +14,6 @@ TextBlockTest.EnforcingAtomicEdfsOnInsert               # Jeff - We'll need this
 TextBlockTest.RoundTripMultiFormat                      # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this for markups in Graphite04
 
-XGraphicsTests.SplitLargeMeshes                         # TFS 19411
-DgnElementTests.AddAndDropListener                      # notified Keith
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -39,4 +36,3 @@ DgnTextStylesTest.*                                     # WIP DgnTextStyles
 DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
-

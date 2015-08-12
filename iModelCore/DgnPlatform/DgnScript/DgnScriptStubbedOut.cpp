@@ -1,18 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScriptContext/DgnScriptContextStubbedOut.cpp $
+|     $Source: DgnScript/DgnScriptStubbedOut.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
+DgnDbStatus DgnScript::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
     {
     return DgnDbStatus::NotEnabled;
     }
@@ -20,7 +20,7 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
+DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
     {
     return DgnDbStatus::NotEnabled;
     }
@@ -28,23 +28,23 @@ DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::ScriptingAdmin::ScriptingAdmin()
+DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
     m_jsenv = nullptr;
-    m_dgnContext = nullptr;
+    m_jsContext = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::ScriptingAdmin::~ScriptingAdmin()
+DgnPlatformLib::Host::ScriptAdmin::~ScriptAdmin()
     {
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-BeJsEnvironmentR DgnPlatformLib::Host::ScriptingAdmin::GetBeJsEnvironment()
+BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeAssert(false);
     return *m_jsenv;
@@ -53,16 +53,24 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptingAdmin::GetBeJsEnvironment()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
+BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     {
     BeAssert(false);
-    return *m_dgnContext;
+    return *m_jsContext;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
+DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     return DgnDbStatus::NotEnabled;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
+    {
+    delete this;
     }

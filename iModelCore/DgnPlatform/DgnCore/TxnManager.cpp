@@ -24,6 +24,24 @@ struct ChangesBlobHeader
 };
 END_UNNAMED_NAMESPACE
 
+
+#if !defined (NDEBUG)
+//=======================================================================================
+//! for debugging, fail if anyone tries to write a transactionable change while this object is on the stack.
+//! @bsiclass                                                     Keith.Bentley   03/07
+//=======================================================================================
+struct  IllegalTxnMark
+{
+    DgnDbR m_db;
+    IllegalTxnMark(DgnDbR db) : m_db(db) {db.ExecuteSql("pragma query_only=TRUE");}
+    ~IllegalTxnMark() {m_db.ExecuteSql("pragma query_only=FALSE");}
+};
+
+#define ILLEGAL_TXN_MARK(db) IllegalTxnMark _v(db)
+#else
+#define ILLEGAL_TXN_MARK(db) 
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -70,7 +88,7 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
         stmt->BindText(Column::Operation, operation, Statement::MakeCopy::No);
 
     // if we're in a multi-txn operation, and if the current TxnId is greater than the first txn, mark it as "grouped"
-    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr < m_multiTxnOp.back()));
+    stmt->BindInt(Column::Grouped, !m_multiTxnOp.empty() && (m_curr > m_multiTxnOp.back()));
 
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
@@ -534,7 +552,7 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
 
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
-    BeAssert (rc == BE_SQLITE_OK);
+    BeAssert(rc == BE_SQLITE_OK);
     EnableTracking(wasTracking);
 
     OnChangesetApplied(changeset, action);

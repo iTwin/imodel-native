@@ -62,7 +62,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
     //========================================================================================
     //! Specifies the solver to invoke when changes to a model or its contents are validated.
-    //! @see DgnScriptContext::ExecuteModelSolver for information on script type model solvers.
+    //! @see DgnScript::ExecuteModelSolver for information on script type model solvers.
     //=======================================================================================
     struct Solver
         {
@@ -73,7 +73,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         enum class Type 
             {
             None=0,     //!< This model has no solver
-            Script,     //!< Execute a named script function. See DgnScriptContext::ExecuteModelSolver
+            Script,     //!< Execute a named script function. See DgnScript::ExecuteModelSolver
             // *** TBD: Add built-in constraint solvers 
             };
 
@@ -360,6 +360,13 @@ protected:
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
+
+    //! Called after an DgnElement that was previously updated has been reversed by undo.
+    //! @param[in] original The element in its original state. This is the state before the original change (the current state)
+    //! @param[in] modified The element in its post-changed (now reversed) state.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnReversedUpdateElement(DgnElementCR original, DgnElementCR modified);
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
@@ -779,7 +786,7 @@ public:
 * This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category before creating the ComponentModel.
 * See #GetElementCategoryName for the name of this category.
 * Elements in the ComponentModel that are not assigned to the Element Category are considered to be construction elements and are not harvested.
-* @see DgnScriptContext, DgnComponentModelSolutions
+* @see DgnScript, ComponentModelSolution
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
@@ -858,7 +865,7 @@ public:
         return BSISUCCESS;
         }
     @endverbatim
-    * @see DgnScriptContext
+    * @see DgnScript
     */
     explicit ComponentModel(CreateParams const& params) : T_Super(params) {m_elementCategoryName = params.GetElementCategoryName();}
 

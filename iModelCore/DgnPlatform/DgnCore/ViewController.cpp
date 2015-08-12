@@ -36,7 +36,6 @@ static Utf8CP VIEWFLAG_fill                      = "fill";
 static Utf8CP VIEWFLAG_grid                      = "grid";
 static Utf8CP VIEWFLAG_acs                       = "acs";
 static Utf8CP VIEWFLAG_useBgImage                = "noBgImage";
-static Utf8CP VIEWFLAG_useBgColor                = "useBgColor";
 
 static Utf8CP VIEWFLAG_noTexture                 = "noTexture";
 static Utf8CP VIEWFLAG_noMaterial                = "noMaterial";
@@ -139,7 +138,6 @@ void ViewFlags::FromBaseJson(JsonValueCR val)
     grid = val[VIEWFLAG_grid].asBool();
     acs = val[VIEWFLAG_acs].asBool();
     bgImage = val[VIEWFLAG_useBgImage].asBool();
-    bgColor = val[VIEWFLAG_useBgColor].asBool();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -176,7 +174,6 @@ void ViewFlags::ToBaseJson(JsonValueR val) const
     if (grid) val[VIEWFLAG_grid] = true;
     if (acs) val[VIEWFLAG_acs] = true;
     if (bgImage) val[VIEWFLAG_useBgImage] = true;
-    if (bgColor) val[VIEWFLAG_useBgColor] = true;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
@@ -284,13 +281,10 @@ void ViewController::_RestoreFromSettings(JsonValueCR settings)
     else
         m_viewFlags.FromBaseJson(settings[VIEW_SETTING_Flags]);
 
-    if (m_viewFlags.bgColor)
-        {
-        if (!settings.isMember(VIEW_SETTING_BackgroundColor))
-            m_viewFlags.bgColor = false;
-        else
-            m_backgroundColor = ColorDef(settings[VIEW_SETTING_BackgroundColor].asUInt());
-        }
+    if (!settings.isMember(VIEW_SETTING_BackgroundColor))
+        m_backgroundColor = ColorDef::Black();
+    else
+        m_backgroundColor = ColorDef(settings[VIEW_SETTING_BackgroundColor].asUInt());
 
     LoadCategories(settings);
     }
@@ -336,8 +330,8 @@ void ViewController::_SaveToSettings(JsonValueR settings) const
     {
     m_viewFlags.ToBaseJson(settings[VIEW_SETTING_Flags]);
 
-    // only save background color if viewflag is on
-    if (m_viewFlags.bgColor)
+    // only save background color if it's not the default (black)...
+    if (ColorDef::Black() != m_backgroundColor)
         settings[VIEW_SETTING_BackgroundColor] = m_backgroundColor.GetValue();
 
     m_viewedCategories.ToJson(settings[VIEW_SETTING_Categories]);

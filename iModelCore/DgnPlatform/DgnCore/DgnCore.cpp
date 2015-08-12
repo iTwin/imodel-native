@@ -422,7 +422,7 @@ DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineSt
 DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return *new TxnAdmin();}
 DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
-DgnPlatformLib::Host::ScriptingAdmin&        DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptingAdmin();}
+DgnPlatformLib::Host::ScriptAdmin&        DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptAdmin();}
 
 
 //---------------------------------------------------------------------------------------

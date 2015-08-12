@@ -395,6 +395,8 @@ StatusInt DgnViewport::_ConnectToOutput()
     if (SUCCESS == status)
         m_qvDCAssigned = true;
 
+    m_backgroundColor = _GetWindowBgColor();
+
     return status;
     }
 
@@ -1451,13 +1453,7 @@ void DgnViewport::PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, Rot
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef ViewController::ResolveBGColor() const
     {
-    ColorDef bgColor = ColorDef::Black();
-
-    // First, see if the view's background color override flag is on. If so, use it.
-    if (GetViewFlags().bgColor)
-        {
-        bgColor = GetBackgroundColor();
-        }
+    ColorDef bgColor = GetBackgroundColor();
 
     // If background color resolved to be black, and user wants inverted, we set background color to white
     if (ColorDef::Black() == bgColor && T_HOST.GetGraphicsAdmin()._WantInvertBlackBackground())

@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnScript.h>
 
-DgnElement::Item::Key   DgnElement::Item::s_key;
+DgnElement::Item::Key  DgnElement::Item::s_key;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
@@ -297,6 +297,25 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     CallAppData(OnUpdatedCaller(*this, original));
 
     GetModel()->_OnUpdatedElement(*this, original);
+    }
+
+struct OnUpdateReversedCaller
+    {
+    DgnElementCR m_updated, m_original;
+    OnUpdateReversedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnReversedUpdate(m_updated, m_original);}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnReversedUpdate(DgnElementCR original) const
+    {
+    // we need to call the events on BOTH sets of appdata
+    original.CallAppData(OnUpdateReversedCaller(*this, original));
+    CallAppData(OnUpdateReversedCaller(*this, original));
+
+    GetModel()->_OnReversedUpdateElement(*this, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -983,44 +1002,6 @@ void GeomStream::SaveData(uint8_t const* data, uint32_t size)
         memcpy(m_data, data, size);
     }
 
-//=======================================================================================
-// @bsiclass                                                    Brien.Bastings  07/2014
-//=======================================================================================
-struct ElementLoadedEventCaller
-{
-    DgnElementR m_elRef;
-    ElementLoadedEventCaller(DgnElementR elRef) : m_elRef(elRef) {}
-    void CallHandler(DgnElements::Listener& handler) const {handler._OnElementLoaded(m_elRef);}
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  07/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::SendOnLoadedEvent(DgnElementR elRef) const
-    {
-    if (nullptr != m_listeners)
-        m_listeners->CallAllHandlers(ElementLoadedEventCaller(elRef));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Brien.Bastings   07/2014
-//---------------------------------------------------------------------------------------
-void DgnElements::AddListener(Listener* listener)
-    {
-    if (nullptr == m_listeners)
-        m_listeners = new EventHandlerList<Listener>;
-
-    m_listeners->AddHandler(listener);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Brien.Bastings   07/2014
-//---------------------------------------------------------------------------------------
-void DgnElements::DropListener(Listener* listener)
-    {
-    if (nullptr != m_listeners)
-        m_listeners->DropHandler(listener);
-    }
 
 static const double s_smallVal = .0005;
 inline static void fixRange(double& low, double& high) {if (low==high) {low-=s_smallVal; high+=s_smallVal;}}
@@ -1843,9 +1824,8 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
         return DgnDbStatus::BadArg;
 
-    DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
     int retval;
-    DgnDbStatus xstatus = som.ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
+    DgnDbStatus xstatus = DgnScript::ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
     if (xstatus != DgnDbStatus::Success)
         return xstatus;
 

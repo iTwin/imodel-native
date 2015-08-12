@@ -12,3 +12,32 @@ baseDir = $(_makeFilePath)
 
 always:
     @CreateSymLinks.py -d"$(BuildContext)Delivery/UnitTests/assets/DgnProject/ECSchemas=$(baseDir)ECSchemas"
+
+
+#   -------------------------------------------------------------------------------------------
+#   Compile .ts files to .js files, ready to be executed by script tests
+#   -------------------------------------------------------------------------------------------
+ScriptOutDir = $(OutputRootDir)build/UnitTests/DgnPlatform/Script/
+
+always:
+    !~@mkdir $(ScriptOutDir)
+
+%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
+
+%if defined(winNT)
+    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
+%else
+    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node $(BuildContext)SubParts/TypeScript/tsc.js
+%endif
+
+tsSourceFiles = $[@wildcard $(baseDir)*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
+
+$(dgnScriptGen)GeomJsApi.js : $(tsSourceFiles)
+    $(msg)
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $(ScriptOutDir)DgnScriptTest.js
+    ~time
+
+%endif
+
+$(BuildContext)Delivery/UnitTests/assets/DgnProject/Script : $(ScriptOutDir)
+    $(LinkFirstDepToFirstTargetAsDirectory)
