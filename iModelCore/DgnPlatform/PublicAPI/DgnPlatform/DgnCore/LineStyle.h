@@ -441,6 +441,7 @@ public:
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
+    virtual bool        _SupportsConvertToRaster() const { return true; }
     virtual double      _CalcRepetitions (LineStyleSymbCP) const;
 
     virtual bool        _IsContinuous           () const override  {return false;}
@@ -757,6 +758,7 @@ public:
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
     virtual bool    _IsBySegment                 () const override;
     virtual bool    _HasLineCodes                () const override;
+    virtual bool    _SupportsConvertToRaster    () const override;
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
@@ -986,6 +988,7 @@ public:
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
+    virtual bool    _SupportsConvertToRaster () const override;
     double          _CalcRepetitions         (LineStyleSymbCP) const;
     LsStrokeP       InsertStroke            (LsStrokeCR stroke);
     void            InsertStroke            (double length, bool isDash);
@@ -1094,6 +1097,7 @@ public:
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
     virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
+    virtual bool                    _SupportsConvertToRaster    () const override;
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
@@ -1213,6 +1217,7 @@ private:
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
+    intptr_t            GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
@@ -1244,7 +1249,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scale) const;
+    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
