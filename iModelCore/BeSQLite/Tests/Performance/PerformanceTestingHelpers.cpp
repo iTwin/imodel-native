@@ -168,8 +168,8 @@ bool PerformanceResultRecorder::writeTodb(double timeInSeconds, Utf8String testc
         lastRunCount = testRunCount;
         testcaseNameInDb = selectStatement.GetValueText(1);
         testNameInDb = selectStatement.GetValueText(2);
-        opCountInDb = selectStatement.GetValueInt(3);
         testDescriptionInDb = selectStatement.GetValueText(4);
+        opCountInDb = selectStatement.GetValueInt(5);
         if (testNameInDb == testName && testcaseNameInDb == testcaseName && testDescriptionInDb == testDescription && opCountInDb == opCount)
         {
             testRunCount = selectStatement.GetValueInt(0);
