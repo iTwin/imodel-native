@@ -1047,7 +1047,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         ASSERT_TRUE (st == BentleyStatus::SUCCESS);
         insertCount++;
         }
-    printf ("InsertCount = %d", insertCount);
 
     ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
     ASSERT_TRUE (classP != nullptr);
@@ -1060,7 +1059,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         ASSERT_TRUE (deleter.Delete (*inst) == BentleyStatus::SUCCESS);
         deleteCount++;
         }
-    printf ("DeleteCount = %d", deleteCount);
 
     //Verify Inserted Instance have been deleted.
     bvector<IECInstancePtr> out;
@@ -2049,6 +2047,17 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct PropertyPathEntry
+    {
+    Utf8String m_entry;
+    bool m_isArrayIndex;
+
+    PropertyPathEntry(Utf8CP entry, bool isArrayIndex) :m_entry(entry), m_isArrayIndex(isArrayIndex) {}
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Utf8CP expectedPropPathStr, Utf8CP expectedRootClassName, Utf8CP expectedRootClassAlias, ECSqlColumnInfoCR actualColumnInfo)
@@ -2071,14 +2080,6 @@ void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Ut
     EXPECT_STREQ (expectedPropPathStr, actualPropPathStr.c_str ());
     LOG.tracev ("Property path: %s", actualPropPathStr.c_str ());
 
-    struct PropertyPathEntry
-        {
-        Utf8String m_entry;
-        bool m_isArrayIndex;
-
-        PropertyPathEntry(Utf8CP entry, bool isArrayIndex) :m_entry(entry), m_isArrayIndex(isArrayIndex) {}
-        };
-
     bvector<PropertyPathEntry> expectedPropPathEntries;
     bvector<Utf8String> expectedPropPathTokens;
     BeStringUtilities::Split(expectedPropPathStr, ".", expectedPropPathTokens);
@@ -2087,7 +2088,7 @@ void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Ut
         bvector<Utf8String> arrayTokens;
         BeStringUtilities::Split(token.c_str(), "[]", arrayTokens);
 
-        if (arrayTokens.empty())
+        if (arrayTokens.size() == 1)
             {
             expectedPropPathEntries.push_back(PropertyPathEntry(token.c_str(), false));
             continue;
@@ -2117,7 +2118,7 @@ void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Ut
 
         expectedPropPathEntryIx++;
         }
-
+        
     EXPECT_STREQ (expectedRootClassName, actualColumnInfo.GetRootClass ().GetName ().c_str ());
     if (expectedRootClassAlias == nullptr)
         EXPECT_TRUE (Utf8String::IsNullOrEmpty (actualColumnInfo.GetRootClassAlias ()));
