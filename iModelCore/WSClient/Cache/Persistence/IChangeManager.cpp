@@ -262,4 +262,3 @@ const bset<IChangeManager::FileChange, IChangeManager::Changes::Compare>& IChang
     {
     return m_fileChanges;
     }
-

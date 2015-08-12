@@ -40,7 +40,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ObservableECDb : public ECDb
         WSCACHE_EXPORT virtual void _OnDbChangedByOtherConnection() override;
 
     public:
-        //! Register for ECSchema change events. 
+        //! Register for ECSchema change events.
         //! Old ECSchema, ECClass, ECSqlStatement and other resource references must be removed when schema changes.
         WSCACHE_EXPORT void RegisterSchemaChangeListener(IECDbSchemaChangeListener* listener);
 

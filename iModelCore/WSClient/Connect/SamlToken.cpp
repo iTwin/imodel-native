@@ -17,55 +17,54 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlToken::SamlToken () :
-m_token (),
-m_dom (nullptr)
-    {
-    }
+SamlToken::SamlToken() :
+m_token(),
+m_dom(nullptr)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlToken::SamlToken (Utf8String token) :
-m_token (std::move (token))
+SamlToken::SamlToken(Utf8String token) :
+m_token(std::move(token))
     {
     WString error;
     BeXmlStatus status;
-    m_dom = BeXmlDom::CreateAndReadFromString (status, m_token.c_str (), m_token.size (), &error);
+    m_dom = BeXmlDom::CreateAndReadFromString(status, m_token.c_str(), m_token.size(), &error);
     if (BeXmlStatus::BEXML_Success != status)
         {
         m_dom = nullptr;
         }
 
-    if (m_dom.IsValid ())
+    if (m_dom.IsValid())
         {
-        m_dom->RegisterNamespace ("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
-        m_dom->RegisterNamespace ("ds", "http://www.w3.org/2000/09/xmldsig#");
+        m_dom->RegisterNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
+        m_dom->RegisterNamespace("ds", "http://www.w3.org/2000/09/xmldsig#");
         }
     }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::IsEmpty () const
+bool SamlToken::IsEmpty() const
     {
-    return m_token.empty ();
+    return m_token.empty();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::IsSupported () const
+bool SamlToken::IsSupported() const
     {
-    if (m_dom.IsNull ())
+    if (m_dom.IsNull())
         {
         return false;
         }
 
-    BeXmlNodeP root = m_dom->GetRootElement ();
+    BeXmlNodeP root = m_dom->GetRootElement();
 
     if (nullptr == root ||
-        0 != strcmp (root->GetNamespace (), "urn:oasis:names:tc:SAML:1.0:assertion") ||
-        0 != strcmp (root->GetName (), "Assertion"))
+        0 != strcmp(root->GetNamespace(), "urn:oasis:names:tc:SAML:1.0:assertion") ||
+        0 != strcmp(root->GetName(), "Assertion"))
         {
         m_dom = nullptr;
         return false;
@@ -73,8 +72,8 @@ bool SamlToken::IsSupported () const
 
     int32_t majorVersion = 0;
     int32_t minorVersion = 0;
-    if (BeXmlStatus::BEXML_Success != root->GetAttributeInt32Value (majorVersion, "MajorVersion") ||
-        BeXmlStatus::BEXML_Success != root->GetAttributeInt32Value (minorVersion, "MinorVersion"))
+    if (BeXmlStatus::BEXML_Success != root->GetAttributeInt32Value(majorVersion, "MajorVersion") ||
+        BeXmlStatus::BEXML_Success != root->GetAttributeInt32Value(minorVersion, "MinorVersion"))
         {
         m_dom = nullptr;
         return false;
@@ -92,26 +91,26 @@ bool SamlToken::IsSupported () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::IsValidAt (DateTimeCR dateTimeUtc) const
+bool SamlToken::IsValidAt(DateTimeCR dateTimeUtc) const
     {
-    if (!IsSupported ())
+    if (!IsSupported())
         {
         return false;
         }
 
-    if (DateTime::Kind::Utc != dateTimeUtc.GetInfo ().GetKind ())
+    if (DateTime::Kind::Utc != dateTimeUtc.GetInfo().GetKind())
         {
-        BeAssert (false);
+        BeAssert(false);
         return false;
         }
 
-    xmlXPathContextPtr context = m_dom->AcquireXPathContext (m_dom->GetRootElement ());
-    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression ("/saml:Assertion/saml:Conditions", context);
+    xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
+    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:Conditions", context);
 
-    bool result = IsValidAt (xpathObject->nodesetval, dateTimeUtc);
+    bool result = IsValidAt(xpathObject->nodesetval, dateTimeUtc);
 
-    m_dom->FreeXPathObject (*xpathObject);
-    m_dom->FreeXPathContext (*context);
+    m_dom->FreeXPathObject(*xpathObject);
+    m_dom->FreeXPathContext(*context);
 
     return result;
     }
@@ -119,50 +118,50 @@ bool SamlToken::IsValidAt (DateTimeCR dateTimeUtc) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::IsValidNow (uint32_t offsetMinutes) const
+bool SamlToken::IsValidNow(uint32_t offsetMinutes) const
     {
     int64_t unixMilliseconds;
-    if (SUCCESS != DateTime::GetCurrentTimeUtc ().ToUnixMilliseconds (unixMilliseconds))
+    if (SUCCESS != DateTime::GetCurrentTimeUtc().ToUnixMilliseconds(unixMilliseconds))
         {
-        BeAssert (false);
+        BeAssert(false);
         return false;
         }
 
     unixMilliseconds += offsetMinutes * 60 * 1000;
 
     DateTime offsetedDateTime;
-    if (SUCCESS != DateTime::FromUnixMilliseconds (offsetedDateTime, unixMilliseconds))
+    if (SUCCESS != DateTime::FromUnixMilliseconds(offsetedDateTime, unixMilliseconds))
         {
-        BeAssert (false);
+        BeAssert(false);
         return false;
         }
 
-    return IsValidAt (offsetedDateTime);
+    return IsValidAt(offsetedDateTime);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::IsValidAt (xmlNodeSetPtr conditionsPtr, DateTimeCR dateTimeUtc)
+bool SamlToken::IsValidAt(xmlNodeSetPtr conditionsPtr, DateTimeCR dateTimeUtc)
     {
     BeXmlDom::IterableNodeSet conditions;
-    conditions.Init (conditionsPtr);
-    if (conditions.size () != 1)
+    conditions.Init(conditionsPtr);
+    if (conditions.size() != 1)
         {
-        BeAssert (false);
+        BeAssert(false);
         return false;
         }
 
     DateTime notBeforeDateUtc;
     DateTime notOnOrAfterDateUtc;
-    if (SUCCESS != GetAttributteDateTimeUtc (conditions.front (), "NotBefore", notBeforeDateUtc) ||
-        SUCCESS != GetAttributteDateTimeUtc (conditions.front (), "NotOnOrAfter", notOnOrAfterDateUtc))
+    if (SUCCESS != GetAttributteDateTimeUtc(conditions.front(), "NotBefore", notBeforeDateUtc) ||
+        SUCCESS != GetAttributteDateTimeUtc(conditions.front(), "NotOnOrAfter", notOnOrAfterDateUtc))
         {
         return false;
         }
 
-    auto resultA = DateTime::Compare (dateTimeUtc, notBeforeDateUtc);
-    auto resultB = DateTime::Compare (dateTimeUtc, notOnOrAfterDateUtc);
+    auto resultA = DateTime::Compare(dateTimeUtc, notBeforeDateUtc);
+    auto resultB = DateTime::Compare(dateTimeUtc, notOnOrAfterDateUtc);
 
     if ((
         resultA == DateTime::CompareResult::LaterThan ||
@@ -179,26 +178,26 @@ bool SamlToken::IsValidAt (xmlNodeSetPtr conditionsPtr, DateTimeCR dateTimeUtc)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SamlToken::GetAttributteDateTimeUtc (BeXmlNodeP node, Utf8CP name, DateTimeR dateTimeOut)
+BentleyStatus SamlToken::GetAttributteDateTimeUtc(BeXmlNodeP node, Utf8CP name, DateTimeR dateTimeOut)
     {
     if (nullptr == node)
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
 
     Utf8String dateStr;
-    node->GetAttributeStringValue (dateStr, name);
+    node->GetAttributeStringValue(dateStr, name);
 
-    if (SUCCESS != DateTime::FromString (dateTimeOut, dateStr.c_str ()))
+    if (SUCCESS != DateTime::FromString(dateTimeOut, dateStr.c_str()))
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
 
-    if (DateTime::Kind::Utc != dateTimeOut.GetInfo ().GetKind ())
+    if (DateTime::Kind::Utc != dateTimeOut.GetInfo().GetKind())
         {
-        BeAssert (false);
+        BeAssert(false);
         return ERROR;
         }
 
@@ -208,35 +207,35 @@ BentleyStatus SamlToken::GetAttributteDateTimeUtc (BeXmlNodeP node, Utf8CP name,
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SamlToken::GetAttributes (bmap<Utf8String, Utf8String>& attributesOut) const
+BentleyStatus SamlToken::GetAttributes(bmap<Utf8String, Utf8String>& attributesOut) const
     {
-    if (!IsSupported ())
+    if (!IsSupported())
         {
         return ERROR;
         }
 
     BentleyStatus status = SUCCESS;
 
-    xmlXPathContextPtr context = m_dom->AcquireXPathContext (m_dom->GetRootElement ());
-    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression ("/saml:Assertion/saml:AttributeStatement/saml:Attribute", context);
+    xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
+    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression("/saml:Assertion/saml:AttributeStatement/saml:Attribute", context);
 
     BeXmlDom::IterableNodeSet attributeNodes;
-    attributeNodes.Init (*m_dom, xpathObject);
+    attributeNodes.Init(*m_dom, xpathObject);
 
     for (BeXmlNodeP attributeNode : attributeNodes)
         {
         Utf8String name;
         Utf8String value;
 
-        if (BEXML_Success != attributeNode->GetAttributeStringValue (name, "AttributeName"))
+        if (BEXML_Success != attributeNode->GetAttributeStringValue(name, "AttributeName"))
             {
             status = ERROR;
             break;
             }
 
-        BeXmlNodeP valueNode = attributeNode->SelectSingleNode ("saml:AttributeValue");
+        BeXmlNodeP valueNode = attributeNode->SelectSingleNode("saml:AttributeValue");
         if (nullptr == valueNode ||
-            BEXML_Success != valueNode->GetContent (value))
+            BEXML_Success != valueNode->GetContent(value))
             {
             status = ERROR;
             break;
@@ -245,8 +244,8 @@ BentleyStatus SamlToken::GetAttributes (bmap<Utf8String, Utf8String>& attributes
         attributesOut[name] = value;
         }
 
-    m_dom->FreeXPathObject (*xpathObject);
-    m_dom->FreeXPathContext (*context);
+    m_dom->FreeXPathObject(*xpathObject);
+    m_dom->FreeXPathContext(*context);
 
     return status;
     }
@@ -254,9 +253,9 @@ BentleyStatus SamlToken::GetAttributes (bmap<Utf8String, Utf8String>& attributes
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Bentley Systems 04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SamlToken::GetX509Certificate (Utf8StringR certOut) const
+BentleyStatus SamlToken::GetX509Certificate(Utf8StringR certOut) const
     {
-    if (!IsSupported ())
+    if (!IsSupported())
         {
         return ERROR;
         }
@@ -264,20 +263,20 @@ BentleyStatus SamlToken::GetX509Certificate (Utf8StringR certOut) const
     BentleyStatus status = ERROR;
 
     auto expression = "/saml:Assertion/ds:Signature/ds:KeyInfo/ds:X509Data/ds:X509Certificate/text()";
-    xmlXPathContextPtr context = m_dom->AcquireXPathContext (m_dom->GetRootElement ());
-    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression (expression, context);
+    xmlXPathContextPtr context = m_dom->AcquireXPathContext(m_dom->GetRootElement());
+    xmlXPathObjectPtr xpathObject = m_dom->EvaluateXPathExpression(expression, context);
 
     BeXmlDom::IterableNodeSet certificates;
-    certificates.Init (*m_dom, xpathObject);
+    certificates.Init(*m_dom, xpathObject);
 
-    if (certificates.size () == 1 &&
-        BeXmlStatus::BEXML_Success == certificates.front ()->GetContent (certOut))
+    if (certificates.size() == 1 &&
+        BeXmlStatus::BEXML_Success == certificates.front()->GetContent(certOut))
         {
         status = SUCCESS;
         }
 
-    m_dom->FreeXPathObject (*xpathObject);
-    m_dom->FreeXPathContext (*context);
+    m_dom->FreeXPathObject(*xpathObject);
+    m_dom->FreeXPathContext(*context);
 
     return status;
     }
@@ -285,15 +284,15 @@ BentleyStatus SamlToken::GetX509Certificate (Utf8StringR certOut) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SamlToken::ToAuthorizationString () const
+Utf8String SamlToken::ToAuthorizationString() const
     {
-    return "token " + Base64Utilities::Encode (m_token);
+    return "token " + Base64Utilities::Encode(m_token);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR SamlToken::AsString () const
+Utf8StringCR SamlToken::AsString() const
     {
     return m_token;
     }

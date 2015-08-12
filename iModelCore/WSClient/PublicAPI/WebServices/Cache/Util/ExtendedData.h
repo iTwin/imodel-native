@@ -31,7 +31,7 @@ struct ExtendedData
         std::shared_ptr<Json::Value> m_extendedData;
 
     public:
-        WSCACHE_EXPORT ExtendedData ();
+        WSCACHE_EXPORT ExtendedData();
         WSCACHE_EXPORT ExtendedData
             (
             ECInstanceKey instanceKey,
@@ -40,19 +40,19 @@ struct ExtendedData
             );
 
         //! Get all extended data for reading
-        WSCACHE_EXPORT JsonValueCR GetData () const;
+        WSCACHE_EXPORT JsonValueCR GetData() const;
 
         //! Check if value with specific key exists
-        WSCACHE_EXPORT bool HasValue (Utf8StringCR key) const;
+        WSCACHE_EXPORT bool HasValue(Utf8StringCR key) const;
 
         //! Get value with specific key
-        WSCACHE_EXPORT JsonValueCR GetValue (Utf8StringCR key) const;
+        WSCACHE_EXPORT JsonValueCR GetValue(Utf8StringCR key) const;
 
         //! Set value with specific key
-        WSCACHE_EXPORT void SetValue (Utf8StringCR key, JsonValueCR value);
+        WSCACHE_EXPORT void SetValue(Utf8StringCR key, JsonValueCR value);
 
         //! Remove value with specific key
-        WSCACHE_EXPORT void RemoveValue (Utf8StringCR key);
+        WSCACHE_EXPORT void RemoveValue(Utf8StringCR key);
     };
 
 typedef const ExtendedData& ExtendedDataCR;

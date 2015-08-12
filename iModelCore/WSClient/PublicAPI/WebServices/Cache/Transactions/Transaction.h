@@ -23,20 +23,20 @@ struct Transaction
 
     public:
         //! Create active transaction.
-        WSCACHE_EXPORT Transaction (ITransactionHandler* handler);
+        WSCACHE_EXPORT Transaction(ITransactionHandler* handler);
         //! Only move constructor is available.
-        WSCACHE_EXPORT Transaction (const Transaction&) = delete;
+        WSCACHE_EXPORT Transaction(const Transaction&) = delete;
         //! Move created transaction without ending it.
-        WSCACHE_EXPORT Transaction (Transaction&&);
+        WSCACHE_EXPORT Transaction(Transaction&&);
         //! If active, rollback transaction without commiting it.
-        WSCACHE_EXPORT virtual ~Transaction ();
+        WSCACHE_EXPORT virtual ~Transaction();
 
         //! Check if transaction is active
-        WSCACHE_EXPORT bool IsActive () const;
+        WSCACHE_EXPORT bool IsActive() const;
         //! Commit whole transaction
-        WSCACHE_EXPORT BentleyStatus Commit ();
+        WSCACHE_EXPORT BentleyStatus Commit();
         //! Rollback whole transaction
-        WSCACHE_EXPORT BentleyStatus Rollback ();
+        WSCACHE_EXPORT BentleyStatus Rollback();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

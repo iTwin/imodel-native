@@ -79,4 +79,3 @@ void ECSqlStatementCache::Clear()
     {
     m_cache.clear();
     }
-

@@ -14,29 +14,28 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::SelectProvider::SelectProvider () :
-m_remoteSelectProvider (std::make_shared<ISelectProvider> ()),
-m_cacheSelectProvider (std::make_shared<ISelectProvider> ())
+ICachingDataSource::SelectProvider::SelectProvider() :
+m_remoteSelectProvider(std::make_shared<ISelectProvider>()),
+m_cacheSelectProvider(std::make_shared<ISelectProvider>())
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::SelectProvider::SelectProvider(ISelectProviderPtr provider)
     {
+    SetForRemote(provider);
+    SetForCache(provider);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::SelectProvider::SelectProvider (ISelectProviderPtr provider)
-    {
-    SetForRemote (provider);
-    SetForCache (provider);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    03/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ICachingDataSource::SelectProvider::SetForRemote (ISelectProviderPtr provider)
+void ICachingDataSource::SelectProvider::SetForRemote(ISelectProviderPtr provider)
     {
     if (nullptr == provider)
         {
-        provider = std::make_shared<ISelectProvider> ();
+        provider = std::make_shared<ISelectProvider>();
         }
     m_remoteSelectProvider = provider;
     }
@@ -44,11 +43,11 @@ void ICachingDataSource::SelectProvider::SetForRemote (ISelectProviderPtr provid
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ICachingDataSource::SelectProvider::SetForCache (ISelectProviderPtr provider)
+void ICachingDataSource::SelectProvider::SetForCache(ISelectProviderPtr provider)
     {
     if (nullptr == provider)
         {
-        provider = std::make_shared<ISelectProvider> ();
+        provider = std::make_shared<ISelectProvider>();
         }
     m_cacheSelectProvider = provider;
     }
@@ -56,7 +55,7 @@ void ICachingDataSource::SelectProvider::SetForCache (ISelectProviderPtr provide
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<const ISelectProvider> ICachingDataSource::SelectProvider::GetForRemote () const
+std::shared_ptr<const ISelectProvider> ICachingDataSource::SelectProvider::GetForRemote() const
     {
     return m_remoteSelectProvider;
     }
@@ -64,7 +63,7 @@ std::shared_ptr<const ISelectProvider> ICachingDataSource::SelectProvider::GetFo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<const ISelectProvider> ICachingDataSource::SelectProvider::GetForCache () const
+std::shared_ptr<const ISelectProvider> ICachingDataSource::SelectProvider::GetForCache() const
     {
     return m_cacheSelectProvider;
     }
@@ -72,7 +71,7 @@ std::shared_ptr<const ISelectProvider> ICachingDataSource::SelectProvider::GetFo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISelectProviderPtr ICachingDataSource::SelectProvider::GetForRemote ()
+ISelectProviderPtr ICachingDataSource::SelectProvider::GetForRemote()
     {
     return m_remoteSelectProvider;
     }
@@ -80,7 +79,7 @@ ISelectProviderPtr ICachingDataSource::SelectProvider::GetForRemote ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ISelectProviderPtr ICachingDataSource::SelectProvider::GetForCache ()
+ISelectProviderPtr ICachingDataSource::SelectProvider::GetForCache()
     {
     return m_cacheSelectProvider;
     }
@@ -88,16 +87,15 @@ ISelectProviderPtr ICachingDataSource::SelectProvider::GetForCache ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error () :
-m_status (Status::Success)
-    {
-    }
+ICachingDataSource::Error::Error() :
+m_status(Status::Success)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Vytenis.Navalinskas    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error (Status status) :
-m_status (status)
+ICachingDataSource::Error::Error(Status status) :
+m_status(status)
     {
     if (status == ICachingDataSource::Status::Canceled)
         {
@@ -105,34 +103,33 @@ m_status (status)
         }
     else if (status == ICachingDataSource::Status::InternalCacheError)
         {
-        m_message = ICachingDataSourceLocalizedString (ERRORMESSAGE_InternalCache);
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_InternalCache);
         }
     else if (status == ICachingDataSource::Status::DataNotCached)
         {
-        m_message = ICachingDataSourceLocalizedString (ERRORMESSAGE_DataNotCached);
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_DataNotCached);
         }
     else if (status == ICachingDataSource::Status::FunctionalityNotSupported)
         {
-        m_message = ICachingDataSourceLocalizedString (ERRORMESSAGE_FunctionalityNotSupported);
+        m_message = ICachingDataSourceLocalizedString(ERRORMESSAGE_FunctionalityNotSupported);
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error (CacheStatus status) : Error (ConvertCacheStatus (status))
-    {
-    }
+ICachingDataSource::Error::Error(CacheStatus status) : Error(ConvertCacheStatus(status))
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error (WSErrorCR error) :
-AsyncError (error.GetMessage (), error.GetDescription ()),
-m_status (Status::NetworkErrorsOccured),
-m_wsError (error)
+ICachingDataSource::Error::Error(WSErrorCR error) :
+AsyncError(error.GetMessage(), error.GetDescription()),
+m_status(Status::NetworkErrorsOccured),
+m_wsError(error)
     {
-    if (WSError::Status::Canceled == m_wsError.GetStatus ())
+    if (WSError::Status::Canceled == m_wsError.GetStatus())
         {
         m_status = Status::Canceled;
         }
@@ -141,31 +138,36 @@ m_wsError (error)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error (AsyncErrorCR error) :
-AsyncError (error),
-m_status (Status::InternalCacheError)
-    {
-    }
+ICachingDataSource::Error::Error(AsyncErrorCR error) :
+Error(Status::InternalCacheError, error)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::Error::Error(ICachingDataSource::Status status, AsyncErrorCR error) :
+AsyncError(error),
+m_status(status)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error (Utf8StringCR message) :
-AsyncError (message),
-m_status (Status::InternalCacheError)
-    {
-    }
+ICachingDataSource::Error::Error(Utf8StringCR message) :
+AsyncError(message),
+m_status(Status::InternalCacheError)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::Error (ICachingDataSource::Status status, ICancellationTokenPtr cancellationToken) :
-Error (status)
+ICachingDataSource::Error::Error(ICachingDataSource::Status status, ICancellationTokenPtr cancellationToken) :
+Error(status)
     {
-    if (cancellationToken && cancellationToken->IsCanceled ())
+    if (cancellationToken && cancellationToken->IsCanceled())
         {
-        m_message.clear ();
-        m_description.clear ();
+        m_message.clear();
+        m_description.clear();
         m_status = Status::Canceled;
         }
     }
@@ -173,14 +175,13 @@ Error (status)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Error::~Error ()
-    {
-    }
+ICachingDataSource::Error::~Error()
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Status ICachingDataSource::Error::ConvertCacheStatus (CacheStatus status)
+ICachingDataSource::Status ICachingDataSource::Error::ConvertCacheStatus(CacheStatus status)
     {
     if (CacheStatus::DataNotCached == status)
         {
@@ -195,14 +196,14 @@ ICachingDataSource::Status ICachingDataSource::Error::ConvertCacheStatus (CacheS
         return ICachingDataSource::Status::Success;
         }
 
-    BeAssert (false);
+    BeAssert(false);
     return ICachingDataSource::Status::InternalCacheError;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSErrorCR ICachingDataSource::Error::GetWSError () const
+WSErrorCR ICachingDataSource::Error::GetWSError() const
     {
     return m_wsError;
     }
@@ -210,7 +211,7 @@ WSErrorCR ICachingDataSource::Error::GetWSError () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::Status ICachingDataSource::Error::GetStatus () const
+ICachingDataSource::Status ICachingDataSource::Error::GetStatus() const
     {
     return m_status;
     }
@@ -218,24 +219,22 @@ ICachingDataSource::Status ICachingDataSource::Error::GetStatus () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::ObjectsData::ObjectsData () :
-ObjectsData (nullptr, DataOrigin::CachedData)
-    {
-    }
+ICachingDataSource::ObjectsData::ObjectsData() :
+ObjectsData(nullptr, DataOrigin::CachedData)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::ObjectsData::ObjectsData (std::shared_ptr<Json::Value> data, DataOrigin origin) :
-m_data (data ? data : std::make_shared<Json::Value> ()),
-m_origin (origin)
-    {
-    }
+ICachingDataSource::ObjectsData::ObjectsData(std::shared_ptr<Json::Value> data, DataOrigin origin) :
+m_data(data ? data : std::make_shared<Json::Value>()),
+m_origin(origin)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueCR ICachingDataSource::ObjectsData::GetJson () const
+JsonValueCR ICachingDataSource::ObjectsData::GetJson() const
     {
     return *m_data;
     }
@@ -243,7 +242,7 @@ JsonValueCR ICachingDataSource::ObjectsData::GetJson () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueR ICachingDataSource::ObjectsData::GetJson ()
+JsonValueR ICachingDataSource::ObjectsData::GetJson()
     {
     return *m_data;
     }
@@ -251,7 +250,7 @@ JsonValueR ICachingDataSource::ObjectsData::GetJson ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::DataOrigin ICachingDataSource::ObjectsData::GetOrigin () const
+ICachingDataSource::DataOrigin ICachingDataSource::ObjectsData::GetOrigin() const
     {
     return m_origin;
     }
@@ -259,24 +258,22 @@ ICachingDataSource::DataOrigin ICachingDataSource::ObjectsData::GetOrigin () con
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::KeysData::KeysData () :
-KeysData (nullptr, DataOrigin::CachedData)
-    {
-    }
+ICachingDataSource::KeysData::KeysData() :
+KeysData(nullptr, DataOrigin::CachedData)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::KeysData::KeysData (std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin) :
-m_data (data ? data : std::make_shared<ECInstanceKeyMultiMap> ()),
-m_origin (origin)
-    {
-    }
+ICachingDataSource::KeysData::KeysData(std::shared_ptr<ECInstanceKeyMultiMap> data, DataOrigin origin) :
+m_data(data ? data : std::make_shared<ECInstanceKeyMultiMap>()),
+m_origin(origin)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-std::shared_ptr<ECInstanceKeyMultiMap> ICachingDataSource::KeysData::GetKeysPtr ()
+std::shared_ptr<ECInstanceKeyMultiMap> ICachingDataSource::KeysData::GetKeysPtr()
     {
     return m_data;
     }
@@ -284,7 +281,7 @@ std::shared_ptr<ECInstanceKeyMultiMap> ICachingDataSource::KeysData::GetKeysPtr 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys () const
+const ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys() const
     {
     return *m_data;
     }
@@ -292,7 +289,7 @@ const ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys ()
+ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys()
     {
     return *m_data;
     }
@@ -300,7 +297,7 @@ ECInstanceKeyMultiMap& ICachingDataSource::KeysData::GetKeys ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::DataOrigin ICachingDataSource::KeysData::GetOrigin () const
+ICachingDataSource::DataOrigin ICachingDataSource::KeysData::GetOrigin() const
     {
     return m_origin;
     }
@@ -308,25 +305,24 @@ ICachingDataSource::DataOrigin ICachingDataSource::KeysData::GetOrigin () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::FileData::FileData () :
-m_origin (DataOrigin::CachedData)
+ICachingDataSource::FileData::FileData() :
+m_origin(DataOrigin::CachedData)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+ICachingDataSource::FileData::FileData(BeFileNameCR filePath, DataOrigin origin) :
+m_filePath(filePath),
+m_origin(origin)
     {
+    BeAssert(origin == DataOrigin::CachedData || origin == DataOrigin::RemoteData);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::FileData::FileData (BeFileNameCR filePath, DataOrigin origin) :
-m_filePath (filePath),
-m_origin (origin)
-    {
-    BeAssert (origin == DataOrigin::CachedData || origin == DataOrigin::RemoteData);
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR ICachingDataSource::FileData::GetFilePath () const
+BeFileNameCR ICachingDataSource::FileData::GetFilePath() const
     {
     return m_filePath;
     }
@@ -334,7 +330,7 @@ BeFileNameCR ICachingDataSource::FileData::GetFilePath () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::DataOrigin ICachingDataSource::FileData::GetOrigin () const
+ICachingDataSource::DataOrigin ICachingDataSource::FileData::GetOrigin() const
     {
     return m_origin;
     }
@@ -342,17 +338,16 @@ ICachingDataSource::DataOrigin ICachingDataSource::FileData::GetOrigin () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::FailedObject::FailedObject (ObjectIdCR objectId, Utf8StringCR objectLabel, ErrorCR error) :
-m_objectId (objectId),
-m_objectLabel (objectLabel),
-m_error (error)
-    {
-    }
+ICachingDataSource::FailedObject::FailedObject(ObjectIdCR objectId, Utf8StringCR objectLabel, ErrorCR error) :
+m_objectId(objectId),
+m_objectLabel(objectLabel),
+m_error(error)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObjectIdCR ICachingDataSource::FailedObject::GetObjectId () const
+ObjectIdCR ICachingDataSource::FailedObject::GetObjectId() const
     {
     return m_objectId;
     }
@@ -360,7 +355,7 @@ ObjectIdCR ICachingDataSource::FailedObject::GetObjectId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ICachingDataSource::FailedObject::GetObjectLabel () const
+Utf8StringCR ICachingDataSource::FailedObject::GetObjectLabel() const
     {
     return m_objectLabel;
     }
@@ -368,7 +363,7 @@ Utf8StringCR ICachingDataSource::FailedObject::GetObjectLabel () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas    09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ICachingDataSource::ErrorCR ICachingDataSource::FailedObject::GetError () const
+ICachingDataSource::ErrorCR ICachingDataSource::FailedObject::GetError() const
     {
     return m_error;
     }

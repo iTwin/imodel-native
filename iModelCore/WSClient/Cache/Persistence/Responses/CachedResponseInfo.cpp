@@ -154,4 +154,3 @@ void CachedResponseInfo::SetCacheTag(Utf8StringCR tag)
     {
     m_infoJson[CLASS_CachedResponseInfo_PROPERTY_CacheTag] = tag;
     }
-

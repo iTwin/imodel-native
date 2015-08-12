@@ -35,10 +35,10 @@ struct ClientConfiguration
             IHttpHandlerPtr customHandler
             );
 
-        Utf8StringCR GetServerUrl () const;
-        Utf8StringCR GetRepositoryId () const;
-        HttpClientR GetHttpClient () const;
-        BeFileName GetDefaultSchemaPath (WSInfoCR info) const;
+        Utf8StringCR GetServerUrl() const;
+        Utf8StringCR GetRepositoryId() const;
+        HttpClientR GetHttpClient() const;
+        BeFileName GetDefaultSchemaPath(WSInfoCR info) const;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

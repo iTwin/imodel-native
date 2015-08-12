@@ -23,10 +23,10 @@ struct WSCreateObjectResponse
         Json::Value m_createdObject;
 
     public:
-        WSCLIENT_EXPORT WSCreateObjectResponse ();
-        WSCLIENT_EXPORT WSCreateObjectResponse (JsonValueCR createdObject);
+        WSCLIENT_EXPORT WSCreateObjectResponse();
+        WSCLIENT_EXPORT WSCreateObjectResponse(JsonValueCR createdObject);
 
-        WSCLIENT_EXPORT JsonValueCR GetObject () const;
+        WSCLIENT_EXPORT JsonValueCR GetObject() const;
     };
 
 typedef WSCreateObjectResponse& WSCreateObjectResponseR;

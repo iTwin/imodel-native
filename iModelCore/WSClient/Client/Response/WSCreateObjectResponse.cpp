@@ -11,23 +11,21 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCreateObjectResponse::WSCreateObjectResponse () :
-m_createdObject ()
-    {
-    }
+WSCreateObjectResponse::WSCreateObjectResponse() :
+m_createdObject()
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jahan.Zeb    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSCreateObjectResponse::WSCreateObjectResponse (JsonValueCR createdObject) :
-m_createdObject (createdObject)
-    {
-    }
+WSCreateObjectResponse::WSCreateObjectResponse(JsonValueCR createdObject) :
+m_createdObject(createdObject)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Jahan.Zeb    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-JsonValueCR WSCreateObjectResponse::GetObject () const
+JsonValueCR WSCreateObjectResponse::GetObject() const
     {
     return m_createdObject;
     }

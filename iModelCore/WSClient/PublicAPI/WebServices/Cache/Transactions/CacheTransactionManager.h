@@ -36,10 +36,10 @@ struct CacheTransactionManager : public ICacheTransactionManager
 
         //! Enable or disable correct thread checking when starting transactions.
         //! Only useful for testing purposes and should never be used in production.
-        WSCACHE_EXPORT static void SetAllowUnsafeAccess (bool allow);
+        WSCACHE_EXPORT static void SetAllowUnsafeAccess(bool allow);
 
-        //! Start active transaction. Can be called only in cache access thread. Will assert and return inactive transaction if an error occurs. 
-        WSCACHE_EXPORT CacheTransaction StartCacheTransaction () override;
+        //! Start active transaction. Can be called only in cache access thread. Will assert and return inactive transaction if an error occurs.
+        WSCACHE_EXPORT CacheTransaction StartCacheTransaction() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
