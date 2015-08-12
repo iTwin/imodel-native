@@ -72,7 +72,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         virtual ECN::ECRelationshipClassCP GetLegacyParentRelationshipClass() = 0;
 
         // Create new object in local cache
-        // object id should be unique (e.g. GUID) to later identify created instance. 
+        // object id should be unique (e.g. GUID) to later identify created instance.
         // TODO: remove the need for filling in remoteId. ECInstanceKey should be enough to find instance in cache. Remote id should be empty
         virtual ECInstanceKey CreateObject(ECClassCR ecClass, JsonValueCR properties, SyncStatus syncStatus = SyncStatus::Ready) = 0;
 
@@ -98,7 +98,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
             SyncStatus syncStatus = SyncStatus::Ready
             ) = 0;
 
-        //! Modify file content for existing object. 
+        //! Modify file content for existing object.
         //! @param[in] instanceKey
         //! @param[in] filePath - path to file that should be cached
         //! @param[in] copyFile - pass false to move file to cache and true to copy and leave original

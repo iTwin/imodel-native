@@ -11,56 +11,53 @@
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::WSObjectsReader () :
-m_data (nullptr)
+WSObjectsReader::WSObjectsReader() :
+m_data(nullptr)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WSObjectsReader::~WSObjectsReader()
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+WSObjectsReader::Instances::Instances(std::shared_ptr<const WSObjectsReader> reader) :
+m_reader(reader)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSObjectsReader::Instances::IsValid() const
     {
+    return !m_reader->HasReadErrors();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::~WSObjectsReader ()
+bool WSObjectsReader::Instances::IsEmpty() const
     {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::Instances::Instances (std::shared_ptr<const WSObjectsReader> reader) :
-m_reader (reader)
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReader::Instances::IsValid () const
-    {
-    return !m_reader->HasReadErrors ();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReader::Instances::IsEmpty () const
-    {
-    return begin () == end ();
+    return begin() == end();
     }
 
 /*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::InstanceIterator WSObjectsReader::Instances::begin () const
+WSObjectsReader::InstanceIterator WSObjectsReader::Instances::begin() const
     {
-    return InstanceIterator (m_reader, 0);
+    return InstanceIterator(m_reader, 0);
     }
 
 /*--------------------------------------------------------------------------------------+
 *  @bsimethod                                                   Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::InstanceIterator WSObjectsReader::Instances::end () const
+WSObjectsReader::InstanceIterator WSObjectsReader::Instances::end() const
     {
-    return InstanceIterator (m_reader, m_reader->GetInstanceCount ());
+    return InstanceIterator(m_reader, m_reader->GetInstanceCount());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -70,13 +67,12 @@ WSObjectsReader::Instance::Instance
 (
 std::shared_ptr<const WSObjectsReader> adapter
 ) :
-m_reader (adapter),
-m_objectId (),
-m_instance (nullptr),
-m_instanceProperties (nullptr),
-m_relationshipInstances (nullptr)
-    {
-    }
+m_reader(adapter),
+m_objectId(),
+m_instance(nullptr),
+m_instanceProperties(nullptr),
+m_relationshipInstances(nullptr)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
@@ -89,18 +85,17 @@ const rapidjson::Value* instance,
 const rapidjson::Value* instanceProperties,
 const rapidjson::Value* relationshipInstances
 ) :
-m_reader (adapter),
-m_objectId (std::move (objectId)),
-m_instance (instance),
-m_instanceProperties (instanceProperties),
-m_relationshipInstances (relationshipInstances)
-    {
-    }
+m_reader(adapter),
+m_objectId(std::move(objectId)),
+m_instance(instance),
+m_instanceProperties(instanceProperties),
+m_relationshipInstances(relationshipInstances)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReader::Instance::IsValid () const
+bool WSObjectsReader::Instance::IsValid() const
     {
     return nullptr != m_instanceProperties;
     }
@@ -108,7 +103,7 @@ bool WSObjectsReader::Instance::IsValid () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObjectIdCR WSObjectsReader::Instance::GetObjectId () const
+ObjectIdCR WSObjectsReader::Instance::GetObjectId() const
     {
     return m_objectId;
     }
@@ -116,15 +111,15 @@ ObjectIdCR WSObjectsReader::Instance::GetObjectId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytenis.Navalinskas    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSObjectsReader::Instance::GetETag () const
+Utf8String WSObjectsReader::Instance::GetETag() const
     {
-    return m_reader->GetInstanceETag (m_instance);
+    return m_reader->GetInstanceETag(m_instance);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-const rapidjson::Value& WSObjectsReader::Instance::GetProperties () const
+const rapidjson::Value& WSObjectsReader::Instance::GetProperties() const
     {
     return *m_instanceProperties;
     }
@@ -132,9 +127,9 @@ const rapidjson::Value& WSObjectsReader::Instance::GetProperties () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::RelationshipInstances WSObjectsReader::Instance::GetRelationshipInstances () const
+WSObjectsReader::RelationshipInstances WSObjectsReader::Instance::GetRelationshipInstances() const
     {
-    return RelationshipInstances (m_reader, m_relationshipInstances);
+    return RelationshipInstances(m_reader, m_relationshipInstances);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -144,14 +139,13 @@ WSObjectsReader::RelationshipInstance::RelationshipInstance
 (
 std::shared_ptr<const WSObjectsReader> adapter
 ) :
-m_reader (adapter),
-m_objectId (),
-m_instance (nullptr),
-m_relationshipInstanceProperties (nullptr),
-m_relatedInstance (nullptr),
-m_direction (BentleyApi::ECN::ECRelatedInstanceDirection::Forward)
-    {
-    }
+m_reader(adapter),
+m_objectId(),
+m_instance(nullptr),
+m_relationshipInstanceProperties(nullptr),
+m_relatedInstance(nullptr),
+m_direction(BentleyApi::ECN::ECRelatedInstanceDirection::Forward)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
@@ -165,19 +159,18 @@ const rapidjson::Value* relationshipInstanceProperties,
 const rapidjson::Value* relatedInstance,
 BentleyApi::ECN::ECRelatedInstanceDirection direction
 ) :
-m_reader (adapter),
-m_objectId (std::move (objectId)),
-m_instance (instance),
-m_relationshipInstanceProperties (relationshipInstanceProperties),
-m_relatedInstance (relatedInstance),
-m_direction (direction)
-    {
-    }
+m_reader(adapter),
+m_objectId(std::move(objectId)),
+m_instance(instance),
+m_relationshipInstanceProperties(relationshipInstanceProperties),
+m_relatedInstance(relatedInstance),
+m_direction(direction)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReader::RelationshipInstance::IsValid () const
+bool WSObjectsReader::RelationshipInstance::IsValid() const
     {
     return nullptr != m_relationshipInstanceProperties;
     }
@@ -185,7 +178,7 @@ bool WSObjectsReader::RelationshipInstance::IsValid () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ObjectIdCR WSObjectsReader::RelationshipInstance::GetObjectId () const
+ObjectIdCR WSObjectsReader::RelationshipInstance::GetObjectId() const
     {
     return m_objectId;
     }
@@ -193,7 +186,7 @@ ObjectIdCR WSObjectsReader::RelationshipInstance::GetObjectId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyApi::ECN::ECRelatedInstanceDirection WSObjectsReader::RelationshipInstance::GetDirection () const
+BentleyApi::ECN::ECRelatedInstanceDirection WSObjectsReader::RelationshipInstance::GetDirection() const
     {
     return m_direction;
     }
@@ -201,15 +194,15 @@ BentleyApi::ECN::ECRelatedInstanceDirection WSObjectsReader::RelationshipInstanc
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Vytenis.Navalinskas    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String WSObjectsReader::RelationshipInstance::GetETag () const
+Utf8String WSObjectsReader::RelationshipInstance::GetETag() const
     {
-    return m_reader->GetInstanceETag (m_instance);
+    return m_reader->GetInstanceETag(m_instance);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-RapidJsonValueCR WSObjectsReader::RelationshipInstance::GetProperties () const
+RapidJsonValueCR WSObjectsReader::RelationshipInstance::GetProperties() const
     {
     return *m_relationshipInstanceProperties;
     }
@@ -217,9 +210,9 @@ RapidJsonValueCR WSObjectsReader::RelationshipInstance::GetProperties () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::Instance WSObjectsReader::RelationshipInstance::GetRelatedInstance () const
+WSObjectsReader::Instance WSObjectsReader::RelationshipInstance::GetRelatedInstance() const
     {
-    return m_reader->GetRelatedInstance (m_relatedInstance);
+    return m_reader->GetRelatedInstance(m_relatedInstance);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -230,15 +223,14 @@ WSObjectsReader::RelationshipInstances::RelationshipInstances
 std::shared_ptr<const WSObjectsReader> adapter,
 const rapidjson::Value* relationshipInstances
 ) :
-m_reader (adapter),
-m_relationshipInstances (relationshipInstances)
-    {
-    }
+m_reader(adapter),
+m_relationshipInstances(relationshipInstances)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReader::RelationshipInstances::IsValid () const
+bool WSObjectsReader::RelationshipInstances::IsValid() const
     {
     return nullptr != m_relationshipInstances;
     }
@@ -246,25 +238,25 @@ bool WSObjectsReader::RelationshipInstances::IsValid () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSObjectsReader::RelationshipInstances::IsEmpty () const
+bool WSObjectsReader::RelationshipInstances::IsEmpty() const
     {
-    return begin () == end ();
+    return begin() == end();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::RelationshipInstanceIterator WSObjectsReader::RelationshipInstances::begin () const
+WSObjectsReader::RelationshipInstanceIterator WSObjectsReader::RelationshipInstances::begin() const
     {
-    return RelationshipInstanceIterator (m_reader, m_relationshipInstances ? m_relationshipInstances->Begin () : 0);
+    return RelationshipInstanceIterator(m_reader, m_relationshipInstances ? m_relationshipInstances->Begin() : 0);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSObjectsReader::RelationshipInstanceIterator WSObjectsReader::RelationshipInstances::end () const
+WSObjectsReader::RelationshipInstanceIterator WSObjectsReader::RelationshipInstances::end() const
     {
-    return RelationshipInstanceIterator (m_reader, m_relationshipInstances ? m_relationshipInstances->End () : 0);
+    return RelationshipInstanceIterator(m_reader, m_relationshipInstances ? m_relationshipInstances->End() : 0);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -275,17 +267,16 @@ WSObjectsReader::RelationshipInstanceIterator::RelationshipInstanceIterator
 std::shared_ptr<const WSObjectsReader> adapter,
 rapidjson::Value::ConstValueIterator it
 ) :
-m_reader (adapter),
-m_it (it)
-    {
-    }
+m_reader(adapter),
+m_it(it)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSObjectsReader::RelationshipInstance WSObjectsReader::RelationshipInstanceIterator::operator*() const
     {
-    return m_reader->GetRelationshipInstance (m_it);
+    return m_reader->GetRelationshipInstance(m_it);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -320,17 +311,16 @@ WSObjectsReader::InstanceIterator::InstanceIterator
 std::shared_ptr<const WSObjectsReader> adapter,
 rapidjson::SizeType index
 ) :
-m_reader (adapter),
-m_index (index)
-    {
-    }
+m_reader(adapter),
+m_index(index)
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSObjectsReader::Instance WSObjectsReader::InstanceIterator::operator*() const
     {
-    return m_reader->GetInstance (m_index);
+    return m_reader->GetInstance(m_index);
     }
 
 /*--------------------------------------------------------------------------------------+

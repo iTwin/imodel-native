@@ -29,8 +29,8 @@ typedef std::shared_ptr<struct CachingDataSource> CachingDataSourcePtr;
 * @bsiclass                                                     Vincas.Razma   01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CachingDataSource :
-public ICachingDataSource,
-public std::enable_shared_from_this<CachingDataSource>
+    public ICachingDataSource,
+    public std::enable_shared_from_this<CachingDataSource>
     {
     public:
         friend struct CacheNavigationTask;
@@ -65,16 +65,16 @@ public std::enable_shared_from_this<CachingDataSource>
             BeFileNameCR temporaryDir
             );
 
-        void ExecuteNextSyncLocalChangesTask ();
-        ICancellationTokenPtr CreateCancellationToken (ICancellationTokenPtr cancellationToken);
+        void ExecuteNextSyncLocalChangesTask();
+        ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr cancellationToken);
 
-        SchemaKey ReadSchemaKey (CacheTransactionCR txn, ObjectIdCR schemaId);
+        SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
 
-        TempFilePtr GetTempFile (Utf8StringCR fileName, ObjectIdCR objectId); // TODO: create mockable file manager
-        TempFilePtr GetTempFileForSchema (SchemaKeyCR schemaKey);
+        TempFilePtr GetTempFile(Utf8StringCR fileName, ObjectIdCR objectId); // TODO: create mockable file manager
+        TempFilePtr GetTempFileForSchema(SchemaKeyCR schemaKey);
 
-        Utf8String GetObjectLabel (CacheTransactionCR txn, ObjectIdCR objectId);
-        Utf8String GetObjectLabel (CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
+        Utf8String GetObjectLabel(CacheTransactionCR txn, ObjectIdCR objectId);
+        Utf8String GetObjectLabel(CacheTransactionCR txn, ECInstanceKeyCR instanceKey);
 
         AsyncTaskPtr<Result> CacheObject
             (
@@ -88,10 +88,10 @@ public std::enable_shared_from_this<CachingDataSource>
             std::vector<ECSchemaPtr>& schemasOut
             );
 
-        void NotifyOnCacheSchemaChangedListeners ();
-        CachedResponseKey CreateSchemaListResponseKey (CacheTransactionCR txn);
+        void NotifyOnCacheSchemaChangedListeners();
+        CachedResponseKey CreateSchemaListResponseKey(CacheTransactionCR txn);
 
-        static BeFileName GetMetaSchemaPath ();
+        static BeFileName GetMetaSchemaPath();
 
         AsyncTaskPtr<DataOriginResult> CacheObjects
             (
@@ -117,7 +117,7 @@ public std::enable_shared_from_this<CachingDataSource>
             );
 
     public:
-        virtual ~CachingDataSource () override;
+        virtual ~CachingDataSource() override;
 
         //! Be sure to initialize APIs before executing caching code:
         //!     [Required] BeSQLite::EC::ECDb::Initialize()
@@ -133,7 +133,7 @@ public std::enable_shared_from_this<CachingDataSource>
             WorkerThreadPtr cacheAccessThread = nullptr
             );
 
-        //! Used for testing 
+        //! Used for testing
         WSCACHE_EXPORT static CachingDataSourcePtr Create
             (
             IWSRepositoryClientPtr client,
@@ -143,25 +143,25 @@ public std::enable_shared_from_this<CachingDataSource>
             BeFileNameCR temporaryDir
             );
 
-        WSCACHE_EXPORT IWSRepositoryClientPtr GetClient () const override;
-        WSCACHE_EXPORT void SetClient (IWSRepositoryClientPtr client) override;
+        WSCACHE_EXPORT IWSRepositoryClientPtr GetClient() const override;
+        WSCACHE_EXPORT void SetClient(IWSRepositoryClientPtr client) override;
 
-        WSCACHE_EXPORT void CancelAllTasksAndWait () override;
+        WSCACHE_EXPORT void CancelAllTasksAndWait() override;
 
-        WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas (ICancellationTokenPtr cancellationToken) override;
+        WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr cancellationToken) override;
 
-        WSCACHE_EXPORT CacheTransaction StartCacheTransaction () override;
-        WSCACHE_EXPORT WorkerThreadPtr GetCacheAccessThread () override;
+        WSCACHE_EXPORT CacheTransaction StartCacheTransaction() override;
+        WSCACHE_EXPORT WorkerThreadPtr GetCacheAccessThread() override;
 
-        WSCACHE_EXPORT ECSchemaList GetRepositorySchemas (CacheTransactionCR txn) override;
-        WSCACHE_EXPORT bvector<SchemaKey> GetRepositorySchemaKeys (CacheTransactionCR txn) override;
-        WSCACHE_EXPORT WSInfo GetServerInfo (CacheTransactionCR txn) override;
+        WSCACHE_EXPORT ECSchemaList GetRepositorySchemas(CacheTransactionCR txn) override;
+        WSCACHE_EXPORT bvector<SchemaKey> GetRepositorySchemaKeys(CacheTransactionCR txn) override;
+        WSCACHE_EXPORT WSInfo GetServerInfo(CacheTransactionCR txn) override;
 
-        WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren (const bset<Utf8String>& classesToAlwaysCacheChildren) override;
+        WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) override;
 
-        WSCACHE_EXPORT CachedResponseKey GetNavigationResponseKey (CacheTransactionCR txn, ObjectIdCR parentId) override;
-        WSCACHE_EXPORT CachedResponseKey GetNavigationResponseKey (CacheTransactionCR txn, ECInstanceKeyCR parentKey) override;
-        WSCACHE_EXPORT WSQueryPtr GetNavigationQuery (CacheTransactionCR txn, ObjectIdCR parentId, ISelectProviderPtr selectProvider = nullptr) override;
+        WSCACHE_EXPORT CachedResponseKey GetNavigationResponseKey(CacheTransactionCR txn, ObjectIdCR parentId) override;
+        WSCACHE_EXPORT CachedResponseKey GetNavigationResponseKey(CacheTransactionCR txn, ECInstanceKeyCR parentKey) override;
+        WSCACHE_EXPORT WSQueryPtr GetNavigationQuery(CacheTransactionCR txn, ObjectIdCR parentId, ISelectProviderPtr selectProvider = nullptr) override;
 
         WSCACHE_EXPORT AsyncTaskPtr<ObjectsResult> GetObject
             (

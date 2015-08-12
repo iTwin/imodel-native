@@ -76,6 +76,19 @@ TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorPassed_StatusIsInternalCacheE
     EXPECT_EQ("B", error.GetDescription());
     }
 
+TEST_F(CachingDataSourceErrorTests, Ctor_AsyncErrorAndStatusPassed_StatusAndMessageAndDescriptionSet)
+    {
+    auto error = CachingDataSource::Error(ICachingDataSource::Status::FunctionalityNotSupported, AsyncError("A", "B"));
+    ASSERT_EQ(ICachingDataSource::Status::FunctionalityNotSupported, error.GetStatus());
+    ASSERT_EQ("A", error.GetMessage());
+    EXPECT_EQ("B", error.GetDescription());
+
+    error = CachingDataSource::Error(ICachingDataSource::Status::ApplicationError, AsyncError("A", "B"));
+    ASSERT_EQ(ICachingDataSource::Status::ApplicationError, error.GetStatus());
+    ASSERT_EQ("A", error.GetMessage());
+    EXPECT_EQ("B", error.GetDescription());
+    }
+
 TEST_F(CachingDataSourceErrorTests, Ctor_NullCancellationTokenPassed_SetsStatus)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError, nullptr);

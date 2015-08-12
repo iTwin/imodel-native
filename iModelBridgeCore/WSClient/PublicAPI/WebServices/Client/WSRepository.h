@@ -26,19 +26,19 @@ struct WSRepository
         Utf8String m_pluginId;
 
     public:
-        WSCLIENT_EXPORT WSRepository ();
+        WSCLIENT_EXPORT WSRepository();
 
-        WSCLIENT_EXPORT Utf8StringCR GetId () const;
-        WSCLIENT_EXPORT Utf8StringCR GetLocation () const;
-        WSCLIENT_EXPORT Utf8StringCR GetLabel () const;
-        WSCLIENT_EXPORT Utf8StringCR GetDescription () const;
-        WSCLIENT_EXPORT Utf8StringCR GetPluginId () const;
+        WSCLIENT_EXPORT Utf8StringCR GetId() const;
+        WSCLIENT_EXPORT Utf8StringCR GetLocation() const;
+        WSCLIENT_EXPORT Utf8StringCR GetLabel() const;
+        WSCLIENT_EXPORT Utf8StringCR GetDescription() const;
+        WSCLIENT_EXPORT Utf8StringCR GetPluginId() const;
 
-        WSCLIENT_EXPORT void SetId (Utf8String id);
-        WSCLIENT_EXPORT void SetLocation (Utf8String location);
-        WSCLIENT_EXPORT void SetLabel (Utf8String label);
-        WSCLIENT_EXPORT void SetDescription (Utf8String description);
-        WSCLIENT_EXPORT void SetPluginId (Utf8String type);
+        WSCLIENT_EXPORT void SetId(Utf8String id);
+        WSCLIENT_EXPORT void SetLocation(Utf8String location);
+        WSCLIENT_EXPORT void SetLabel(Utf8String label);
+        WSCLIENT_EXPORT void SetDescription(Utf8String description);
+        WSCLIENT_EXPORT void SetPluginId(Utf8String type);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

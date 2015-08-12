@@ -33,9 +33,8 @@ typedef std::shared_ptr<Savepoint> SavepointPtr;
 struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
     {
     public:
-        virtual ~IECDbAdapter ()
-            {
-            };
+        virtual ~IECDbAdapter()
+            {};
 
         //! Get direct access to ECDb
         virtual ObservableECDb& GetECDb() = 0;

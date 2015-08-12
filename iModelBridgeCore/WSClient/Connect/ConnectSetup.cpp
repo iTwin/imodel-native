@@ -26,100 +26,100 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 #define BENTLEY_CONNECT_DISPLAYUSERNAME             "BentleyConnect_DisplayUserName"
 #define BENTLEY_CONNECT_USERID                      "BentleyConnect_UserId"
 
-bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred);
-bool GetToken (JsonValueCR messageDataObj, Utf8StringR token);
-Utf8String base64_scramble (Utf8String value, int multiplier);
+bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred);
+bool GetToken(JsonValueCR messageDataObj, Utf8StringR token);
+Utf8String base64_scramble(Utf8String value, int multiplier);
 
-void WebServices::ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
+void WebServices::ConnectSetup(JsonValueCR messageDataObj, bool requireToken)
     {
     Credentials cred;
-    bool validCredentials = GetCredentials (messageDataObj, cred);
+    bool validCredentials = GetCredentials(messageDataObj, cred);
 
     Utf8String token;
     if (validCredentials)
         {
-        bool tokenResult = GetToken (messageDataObj, token);
+        bool tokenResult = GetToken(messageDataObj, token);
 
         if (!requireToken || tokenResult)
             {
-            MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, true);
+            MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, true);
             }
         else
             {
-            MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, false);
+            MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
             }
         }
     else
         {
-        MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, false);
-        ConnectAuthenticationPersistence::GetShared ()->SetToken (nullptr);
+        MobileDgnApplication::AbstractUiState().SetValue(CONNECT_SIGNED_IN, false);
+        ConnectAuthenticationPersistence::GetShared()->SetToken(nullptr);
         }
 
-    if (!cred.GetUsername ().empty ())
+    if (!cred.GetUsername().empty())
         {
         // NOTE: Username is sent to the UI whether or not the signin was successful.
-        MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_USERNAME, cred.GetUsername ().c_str ());
+        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERNAME, cred.GetUsername().c_str());
         }
 
-    if (!token.empty ())
+    if (!token.empty())
         {
         // if we have a valid token build a display name for the user from the claims in the token
-        SamlToken sToken (token);
+        SamlToken sToken(token);
 
         Utf8String displayUserName = "";
         bmap<Utf8String, Utf8String> attributes;
-        BentleyStatus attributeStatus = sToken.GetAttributes (attributes);
+        BentleyStatus attributeStatus = sToken.GetAttributes(attributes);
         if (SUCCESS == attributeStatus)
             {
             Utf8String givenName = attributes["givenname"];
             Utf8String surName = attributes["surname"];
             displayUserName = givenName + " " + surName;
             }
-        MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str ());
-        MobileDgnApplication::AbstractUiState ().SetValue (BENTLEY_CONNECT_USERID, attributes["userid"].c_str ());
+        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_DISPLAYUSERNAME, displayUserName.c_str());
+        MobileDgnApplication::AbstractUiState().SetValue(BENTLEY_CONNECT_USERID, attributes["userid"].c_str());
         }
 
     Json::Value csSetup;
-    csSetup[CS_MESSAGE_FIELD_username] = cred.GetUsername ();
-    csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword ();
+    csSetup[CS_MESSAGE_FIELD_username] = cred.GetUsername();
+    csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword();
     csSetup[CS_MESSAGE_FIELD_token] = token;
 
     MobileDgnUi::SendMessageToWorkThreadInternal (CS_MESSAGE_SetCredentials, std::move (csSetup));
     }
 
-bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred)
+bool GetCredentials(JsonValueCR messageDataObj, CredentialsR cred)
     {
-    if (messageDataObj.isMember (AuthenticationData::USERNAME))
+    if (messageDataObj.isMember(AuthenticationData::USERNAME))
         {
-        Utf8String username = messageDataObj[AuthenticationData::USERNAME].asString ();
-        Utf8String password = messageDataObj[AuthenticationData::PASSWORD].asString ();
-        cred = Credentials (username, password);
-        ConnectAuthenticationPersistence::GetShared ()->SetCredentials (cred);
+        Utf8String username = messageDataObj[AuthenticationData::USERNAME].asString();
+        Utf8String password = messageDataObj[AuthenticationData::PASSWORD].asString();
+        cred = Credentials(username, password);
+        ConnectAuthenticationPersistence::GetShared()->SetCredentials(cred);
         }
     else
         {
-        cred = ConnectAuthenticationPersistence::GetShared ()->GetCredentials ();
+        cred = ConnectAuthenticationPersistence::GetShared()->GetCredentials();
         }
 
-    return cred.IsValid ();
+    return cred.IsValid();
     }
 
-bool GetToken (JsonValueCR messageDataObj, Utf8StringR token)
+bool GetToken(JsonValueCR messageDataObj, Utf8StringR token)
     {
-    if (messageDataObj.isMember (AuthenticationData::TOKEN))
+    if (messageDataObj.isMember(AuthenticationData::TOKEN))
         {
-        token = messageDataObj[AuthenticationData::TOKEN].asString ();
-        ConnectAuthenticationPersistence::GetShared ()->SetToken (std::make_shared<SamlToken> (token));
+        token = messageDataObj[AuthenticationData::TOKEN].asString();
+        ConnectAuthenticationPersistence::GetShared()->SetToken(std::make_shared<SamlToken>(token));
         }
     else
         {
-        SamlTokenPtr cachedToken = ConnectAuthenticationPersistence::GetShared ()->GetToken ();
-        if (cachedToken == nullptr || cachedToken->IsEmpty ())
+        SamlTokenPtr cachedToken = ConnectAuthenticationPersistence::GetShared()->GetToken();
+        if (cachedToken == nullptr || cachedToken->IsEmpty())
             {
             return false;
             }
 
-        token = cachedToken->AsString ();
+        token = cachedToken->AsString();
         }
     return true;
     }

@@ -29,25 +29,25 @@ struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteDbTransactionHandler : public ITransactio
         std::shared_ptr<Savepoint> m_transactionSavepoint;
 
     private:
-        DbResult RetryDbOperation (std::function<DbResult()> operation);
+        DbResult RetryDbOperation(std::function<DbResult()> operation);
 
     protected:
-        //! Called when busy error received (other connection is using database). Return true to retry, false to cancel. 
+        //! Called when busy error received (other connection is using database). Return true to retry, false to cancel.
         //! Count starts with 0 and incremented on each retry for same operation.
-        virtual bool OnBusy (uint64_t count);
+        virtual bool OnBusy(uint64_t count);
 
     public:
-        WSCACHE_EXPORT BeSQLiteDbTransactionHandler (BeSQLite::Db& db);
-        WSCACHE_EXPORT virtual ~BeSQLiteDbTransactionHandler ();
+        WSCACHE_EXPORT BeSQLiteDbTransactionHandler(BeSQLite::Db& db);
+        WSCACHE_EXPORT virtual ~BeSQLiteDbTransactionHandler();
 
         //! Begin new transaction if there is no transaction started. Error if transaction is already active.
-        WSCACHE_EXPORT virtual BentleyStatus BeginTransaction ();
+        WSCACHE_EXPORT virtual BentleyStatus BeginTransaction();
 
         //! Commit active transaction.
-        WSCACHE_EXPORT virtual BentleyStatus CommitTransaction () override;
+        WSCACHE_EXPORT virtual BentleyStatus CommitTransaction() override;
 
         //! Rollback active transaction.
-        WSCACHE_EXPORT virtual BentleyStatus RollbackTransaction () override;
+        WSCACHE_EXPORT virtual BentleyStatus RollbackTransaction() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

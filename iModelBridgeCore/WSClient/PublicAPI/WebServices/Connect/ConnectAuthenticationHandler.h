@@ -26,8 +26,8 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
         std::shared_ptr<WorkerThread> m_thread;
 
     private:
-        bool ShouldStopSendingToken (AttemptCR previousAttempt) const;
-        bool IsTokenAuthorization (Utf8StringCR auth) const;
+        bool ShouldStopSendingToken(AttemptCR previousAttempt) const;
+        bool IsTokenAuthorization(Utf8StringCR auth) const;
 
     public:
         WSCLIENT_EXPORT ConnectAuthenticationHandler
@@ -37,10 +37,10 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
             IHttpHandlerPtr customHttpHandler = nullptr
             );
 
-        WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler ();
+        WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler();
 
-        WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication (HttpResponseCR response) override;
-        WSCLIENT_EXPORT virtual AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization (AttemptCR previousAttempt) override;
+        WSCLIENT_EXPORT virtual bool _ShouldRetryAuthentication(HttpResponseCR response) override;
+        WSCLIENT_EXPORT virtual AsyncTaskPtr<AuthorizationResult> _RetrieveAuthorization(AttemptCR previousAttempt) override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

@@ -24,17 +24,17 @@ struct CacheTransaction : public Transaction
 
     public:
         //! Create active transaction.
-        WSCACHE_EXPORT CacheTransaction (IDataSourceCache& cache, ITransactionHandler* handler);
+        WSCACHE_EXPORT CacheTransaction(IDataSourceCache& cache, ITransactionHandler* handler);
         //! Copy not allowed, use explicit move.
-        WSCACHE_EXPORT CacheTransaction (const CacheTransaction&) = delete;
+        WSCACHE_EXPORT CacheTransaction(const CacheTransaction&) = delete;
         //! Move active transaction without ending it to prolong its scope.
-        WSCACHE_EXPORT CacheTransaction (CacheTransaction&&);
+        WSCACHE_EXPORT CacheTransaction(CacheTransaction&&);
         //! If active, rollback transaction without commiting it.
-        WSCACHE_EXPORT virtual ~CacheTransaction ();
+        WSCACHE_EXPORT virtual ~CacheTransaction();
 
-        //! Get cache for access in transaction. 
+        //! Get cache for access in transaction.
         //! Do not store referance to IDataSourceCache ouside transaction scope - only access when CacheTransaction is active.
-        WSCACHE_EXPORT IDataSourceCache& GetCache () const;
+        WSCACHE_EXPORT IDataSourceCache& GetCache() const;
     };
 
 typedef const CacheTransaction& CacheTransactionCR;

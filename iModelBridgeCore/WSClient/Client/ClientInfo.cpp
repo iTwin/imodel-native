@@ -26,20 +26,20 @@ Utf8String deviceId,
 Utf8String systemDescription,
 IHttpHeaderProviderPtr primaryHeaderProvider
 ) :
-m_applicationName (applicationName),
-m_applicationVersion (applicationVersion),
-m_applicationGUID (applicationGUID),
-m_deviceId (deviceId),
-m_systemDescription (systemDescription),
-m_languageTag (ClientInfo::DefaultLanguage),
-m_fallbackLanguageTag (ClientInfo::DefaultLanguage),
-m_primaryHeaderProvider (primaryHeaderProvider)
+m_applicationName(applicationName),
+m_applicationVersion(applicationVersion),
+m_applicationGUID(applicationGUID),
+m_deviceId(deviceId),
+m_systemDescription(systemDescription),
+m_languageTag(ClientInfo::DefaultLanguage),
+m_fallbackLanguageTag(ClientInfo::DefaultLanguage),
+m_primaryHeaderProvider(primaryHeaderProvider)
     {
-    BeAssert (!applicationName.empty ());
-    BeAssert (!applicationVersion.IsEmpty ());
-    BeAssert (!applicationGUID.empty ());
+    BeAssert(!applicationName.empty());
+    BeAssert(!applicationVersion.IsEmpty());
+    BeAssert(!applicationGUID.empty());
     //BeAssert (!deviceId.empty ()); // Re-add when Windows device id retrieval is implemented
-    BeAssert (!m_systemDescription.empty ());
+    BeAssert(!m_systemDescription.empty());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -53,21 +53,20 @@ Utf8String applicationGUID,
 IHttpHeaderProviderPtr primaryHeaderProvider
 )
     {
-    Utf8String deviceId = Device::GetDeviceId ();
+    Utf8String deviceId = Device::GetDeviceId();
 
-    Utf8String model = Device::GetModelName ();
-    if (!model.empty ())
+    Utf8String model = Device::GetModelName();
+    if (!model.empty())
         {
         model += "; ";
         }
 
-    Utf8PrintfString systemDescription ("%s%s %s",
-        model.c_str (),
-        Device::GetOSName ().c_str (),
-        Device::GetOSVersion ().c_str ());
+    Utf8PrintfString systemDescription("%s%s %s",
+        model.c_str(),
+        Device::GetOSName().c_str(),
+        Device::GetOSVersion().c_str());
 
-    return std::shared_ptr<ClientInfo> (new ClientInfo
-        (
+    return std::shared_ptr<ClientInfo>(new ClientInfo(
         applicationName,
         applicationVersion,
         applicationGUID,
@@ -80,18 +79,17 @@ IHttpHeaderProviderPtr primaryHeaderProvider
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClientInfo::~ClientInfo ()
-    {
-    }
+ClientInfo::~ClientInfo()
+    {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientInfo::SetLanguage (Utf8StringCR languageTag)
+void ClientInfo::SetLanguage(Utf8StringCR languageTag)
     {
     BeMutexHolder lock (m_headersCS);
     m_headers = nullptr;
-    if (languageTag.EqualsI (m_fallbackLanguageTag))
+    if (languageTag.EqualsI(m_fallbackLanguageTag))
         {
         m_languageTag = m_fallbackLanguageTag;
         }
@@ -104,7 +102,7 @@ void ClientInfo::SetLanguage (Utf8StringCR languageTag)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetLanguage () const
+Utf8String ClientInfo::GetLanguage() const
     {
     BeMutexHolder lock (m_headersCS);
     return m_languageTag;
@@ -113,7 +111,7 @@ Utf8String ClientInfo::GetLanguage () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientInfo::SetFallbackLanguage (Utf8StringCR languageTag)
+void ClientInfo::SetFallbackLanguage(Utf8StringCR languageTag)
     {
     BeMutexHolder lock (m_headersCS);
     m_headers = nullptr;
@@ -123,7 +121,7 @@ void ClientInfo::SetFallbackLanguage (Utf8StringCR languageTag)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetFallbackLanguage () const
+Utf8String ClientInfo::GetFallbackLanguage() const
     {
     BeMutexHolder lock (m_headersCS);
     return m_fallbackLanguageTag;
@@ -132,11 +130,11 @@ Utf8String ClientInfo::GetFallbackLanguage () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetAcceptLanguage () const
+Utf8String ClientInfo::GetAcceptLanguage() const
     {
     BeMutexHolder lock (m_headersCS);
 
-    if (m_languageTag.EqualsI (m_fallbackLanguageTag))
+    if (m_languageTag.EqualsI(m_fallbackLanguageTag))
         {
         return m_languageTag;
         }
@@ -147,7 +145,7 @@ Utf8String ClientInfo::GetAcceptLanguage () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetApplicationName () const
+Utf8String ClientInfo::GetApplicationName() const
     {
     return m_applicationName;
     }
@@ -155,7 +153,7 @@ Utf8String ClientInfo::GetApplicationName () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeVersion ClientInfo::GetApplicationVersion () const
+BeVersion ClientInfo::GetApplicationVersion() const
     {
     return m_applicationVersion;
     }
@@ -163,7 +161,7 @@ BeVersion ClientInfo::GetApplicationVersion () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetApplicationGUID () const
+Utf8String ClientInfo::GetApplicationGUID() const
     {
     return m_applicationGUID;
     }
@@ -171,7 +169,7 @@ Utf8String ClientInfo::GetApplicationGUID () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetDeviceId () const
+Utf8String ClientInfo::GetDeviceId() const
     {
     return m_deviceId;
     }
@@ -179,7 +177,7 @@ Utf8String ClientInfo::GetDeviceId () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetSystemDescription () const
+Utf8String ClientInfo::GetSystemDescription() const
     {
     return m_systemDescription;
     }
@@ -187,50 +185,50 @@ Utf8String ClientInfo::GetSystemDescription () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetUserAgent () const
+Utf8String ClientInfo::GetUserAgent() const
     {
-    return Utf8PrintfString ("%s (%s)", GetProductToken ().c_str (), m_systemDescription.c_str ());
+    return Utf8PrintfString("%s (%s)", GetProductToken().c_str(), m_systemDescription.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ClientInfo::GetProductToken () const
+Utf8String ClientInfo::GetProductToken() const
     {
-    return Utf8PrintfString ("%s/%d.%d",
-        m_applicationName.c_str (),
-        m_applicationVersion.GetMajor (),
-        m_applicationVersion.GetMinor ());
+    return Utf8PrintfString("%s/%d.%d",
+        m_applicationName.c_str(),
+        m_applicationVersion.GetMajor(),
+        m_applicationVersion.GetMinor());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClientInfo::FillHttpRequestHeaders (HttpRequestHeaders& headers) const
+void ClientInfo::FillHttpRequestHeaders(HttpRequestHeaders& headers) const
     {
     BeMutexHolder lock (m_headersCS);
     if (nullptr == m_headers)
         {
-        m_headers = std::make_shared<HttpRequestHeaders> ();
+        m_headers = std::make_shared<HttpRequestHeaders>();
 
         // Reporting application that connects
-        m_headers->SetUserAgent (GetUserAgent ());
+        m_headers->SetUserAgent(GetUserAgent());
 
         // Request localized response
-        m_headers->SetAcceptLanguage (GetAcceptLanguage ());
+        m_headers->SetAcceptLanguage(GetAcceptLanguage());
 
         // WSG feature usage tracking
-        m_headers->SetUuid (m_deviceId);
-        m_headers->SetAppGuid (m_applicationGUID);
+        m_headers->SetUuid(m_deviceId);
+        m_headers->SetAppGuid(m_applicationGUID);
         }
 
     if (nullptr != m_primaryHeaderProvider)
         {
-        m_primaryHeaderProvider->FillHttpRequestHeaders (headers);
+        m_primaryHeaderProvider->FillHttpRequestHeaders(headers);
         }
 
-    for (auto& pair : m_headers->GetMap ())
+    for (auto& pair : m_headers->GetMap())
         {
-        headers.SetValue (pair.first, pair.second);
+        headers.SetValue(pair.first, pair.second);
         }
     }

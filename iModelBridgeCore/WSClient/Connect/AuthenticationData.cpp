@@ -11,4 +11,3 @@
 const Utf8String AuthenticationData::USERNAME = "username";
 const Utf8String AuthenticationData::PASSWORD = "password";
 const Utf8String AuthenticationData::TOKEN = "token";
-
