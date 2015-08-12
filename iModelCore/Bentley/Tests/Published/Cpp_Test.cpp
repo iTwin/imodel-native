@@ -42,8 +42,10 @@ using namespace std::placeholders; //for _1, _2, _3...
     #define IS_GCC      1
 #elif defined (_MSC_VER)
     // See http://msdn.microsoft.com/en-us/library/vstudio/hh567368.aspx for which features are supported
-    #if (_MSC_VER >= 1900)
+    #if (_MSC_VER >= 2000)
         #error Unkown compiler
+    #elif (_MSC_VER >= 1900)
+        #define IS_VC14 1
     #elif (_MSC_VER >= 1800)
         #define IS_VC12 1
     #else
@@ -661,7 +663,7 @@ void test_explicitConversionOperator ()
 
 //  ---------------------------------------------------------------------
 // Control and query object alignment
-#if IS_GCC || IS_CLANG || IS_VC12
+#if IS_GCC || IS_CLANG || IS_VC12 || IS_VC14
     REPORT_MISSING_FEATURE(alignas)
 #else
     struct AlignAsTest
@@ -673,13 +675,13 @@ void test_explicitConversionOperator ()
     void test_alignas ()
         {
         AlignAsTest aat;
-        ASSERT_TRUE( (char*)&att.m_double == &att.m_byte+1 );
+        ASSERT_TRUE( (char*)&aat.m_double == &aat.m_byte+1 );
         }
 #endif
 
 //  ---------------------------------------------------------------------
 // double literals
-#if IS_GCC || IS_VC12
+#if IS_GCC || IS_VC12 || IS_VC14
     REPORT_MISSING_FEATURE(doubleLiterals)
 #else
     std::complex<long double> operator "" i(long double d)   // imaginary literal
