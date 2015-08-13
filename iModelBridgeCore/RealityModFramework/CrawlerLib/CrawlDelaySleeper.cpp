@@ -33,7 +33,7 @@ void CrawlDelaySleeper::Sleep(uint32_t seconds, WString const& domain)
         }
     m_AddDomainToMapMutex.unlock();
 
-    BeMutex& mutex = domainIterator->second;
+    std::mutex& mutex = domainIterator->second;
     mutex.lock();
     this_thread::sleep_for(chrono::seconds(seconds));
     mutex.unlock();

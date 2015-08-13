@@ -19,7 +19,7 @@ class CrawlerLibClient : ICrawlerObserver
     CrawlerLibClient()
         {
         //Use the CrawlerFactory to easily build a crawler. You are responsible of deleting it.
-        crawler = CrawlerFactory::CreateCrawler(20/*8 simultaneous downloads maximum by default*/);
+        crawler = CrawlerFactory::CreateCrawler(25/*8 simultaneous downloads maximum by default*/);
         }
 
     virtual ~CrawlerLibClient()
@@ -35,20 +35,19 @@ class CrawlerLibClient : ICrawlerObserver
 
     void Run()
         {
-        UrlPtr seed = new Seed(L"http://store.steampowered.com/");
+        UrlPtr seed = new Seed(L"http://usgs.gov");
 
         //Set the crawler options
-        crawler->SetMaxNumberOfLinkToCrawl(2000);
+        crawler->SetMaxNumberOfLinkToCrawl(200);
         crawler->SetAcceptExternalLinks(true);
         crawler->SetAcceptLinksInExternalLinks(false);
-        crawler->SetMaximumCrawlDepth(1000);
+        crawler->SetMaximumCrawlDepth(10000);
         crawler->SetRequestTimeoutInSeconds(15);
         crawler->SetUserAgent(L"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko");
         crawler->SetObserver(this);
 
         crawler->SetFollowAutoRedirects(true);
         crawler->SetMaxAutoRedirectCount(10);
-        //crawler->SetMaxHttpConnectionCount(5);
         crawler->ValidateSslCertificates(false);
 
         crawler->ValidateContentType(true);
@@ -57,8 +56,8 @@ class CrawlerLibClient : ICrawlerObserver
         validTypes.push_back(L"text/plain");
         crawler->SetListOfValidContentType(validTypes);
 
-        crawler->SetAcceptExternalLinks(true);
-        crawler->SetAcceptLinksInExternalLinks(true);
+        crawler->SetAcceptExternalLinks(false);
+        crawler->SetAcceptLinksInExternalLinks(false);
 
         crawler->SetRespectRobotTxt(true);
         crawler->SetRespectRobotTxtIfDisallowRoot(false);
@@ -67,7 +66,18 @@ class CrawlerLibClient : ICrawlerObserver
         crawler->SetCrawlLinksWithHtmlTagRelNoFollow(true);
         crawler->SetCrawlLinksFromPagesWithNoFollowMetaTag(true);
 
-        crawler->Crawl(seed);
+        future<StatusInt> asyncCrawl = async(launch::async, &Crawler::Crawl, crawler, seed);
+        this_thread::sleep_for(chrono::seconds(5));
+        printf("pause\n");
+        crawler->Pause();
+        this_thread::sleep_for(chrono::seconds(5));
+        printf("unpause\n");
+        crawler->Unpause();
+        this_thread::sleep_for(chrono::seconds(10));
+        printf("stop\n");
+        crawler->Stop();
+
+        asyncCrawl.get();
         }
 
     private:

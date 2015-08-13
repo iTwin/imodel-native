@@ -44,7 +44,7 @@ bool Politeness::CanDownloadUrl(UrlPtr const& url)
             DownloadRobotsTxt(url);
             iterator = m_RobotsTxtFilesPerDomain.find(url->GetDomainName());
             }
-        return IsContentDisallowUrl(iterator->second, url);
+        return !IsContentDisallowUrl(iterator->second, url);
         }
     }
 
@@ -54,16 +54,9 @@ bool Politeness::CanDownloadUrl(UrlPtr const& url)
 bool Politeness::IsContentDisallowUrl(RobotsTxtContentPtr const& content, UrlPtr const& url) const
     {
     if(content->IsRootDisallowed(m_UserAgent) && !m_RespectRobotsTxtIfDisallowRoot)
-        return true;
+        return false;
 
-    UrlPtrSet disallowedUrls;
-    content->GetDisallowedUrlsOf(disallowedUrls, m_UserAgent);
-    for(auto pUrl : disallowedUrls)
-        {
-        if(url->IsSubUrlOf(*pUrl))
-            return false;
-        }
-    return true;
+    return content->IsUrlDisallowed(url, m_UserAgent);
     }
 
 //---------------------------------------------------------------------------------------

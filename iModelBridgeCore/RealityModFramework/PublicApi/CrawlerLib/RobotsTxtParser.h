@@ -42,11 +42,14 @@ struct RobotsTxtContent : public RefCountedBase
     CRAWLERLIB_EXPORT WString const& GetRobotsTxtFile() const;
     CRAWLERLIB_EXPORT UrlPtr const& GetBaseUrl() const;
 
+    
+    CRAWLERLIB_EXPORT bool IsUrlDisallowed(UrlPtr url, UserAgent const& agent) const;
+
     CRAWLERLIB_EXPORT void GetUserAgents(std::vector<UserAgent>& agentVector) const;
     CRAWLERLIB_EXPORT void AddUserAgent(UserAgent const& agent);
 
-    CRAWLERLIB_EXPORT void GetDisallowedUrlsOf(UrlPtrSet& urlSet, UserAgent const& agent) const;
     CRAWLERLIB_EXPORT void AddDisallowedUrl(UserAgent const& agent, UrlPtr const& url);
+    CRAWLERLIB_EXPORT void AddAllowedUrl(UserAgent const& agent, UrlPtr const& url);
 
     CRAWLERLIB_EXPORT uint32_t GetCrawlDelay(UserAgent const& agent) const;
     CRAWLERLIB_EXPORT void SetCrawlDelay(UserAgent const& agent, uint32_t delay);
@@ -54,11 +57,15 @@ struct RobotsTxtContent : public RefCountedBase
     CRAWLERLIB_EXPORT bool IsRootDisallowed(UserAgent const& agent) const;
 
     private:
+    void GetDisallowedUrlsOf(UrlPtrSet& urlSet, UserAgent const& agent) const;
+    void GetAllowedUrlsOf(UrlPtrSet& urlSet, UserAgent const& agent) const;
     void AddAllDisallowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgent const& agent) const;
+    void AddAllAllowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgent const& agent) const;
 
     WString m_RobotTxtFile;
     UrlPtr m_BaseUrl;
     std::map<UserAgent, UrlPtrSet> m_DisallowedUrls;
+    std::map<UserAgent, UrlPtrSet> m_AllowedUrls;
     std::map<UserAgent, uint32_t> m_CrawlDelays;
     };
 
@@ -71,6 +78,7 @@ class RobotsTxtParser
     private:
     static const std::wregex s_UserAgentRegex; 
     static const std::wregex s_DisallowRegex; 
+    static const std::wregex s_AllowRegex; 
     static const std::wregex s_CrawlDelayRegex; 
     };
 END_BENTLEY_CRAWLERLIB_NAMESPACE

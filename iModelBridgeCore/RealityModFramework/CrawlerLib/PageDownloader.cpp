@@ -183,14 +183,6 @@ void PageDownloader::SetMaxAutoRedirectCount(long count)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void PageDownloader::SetMaxHttpConnectionCount(long count)
-    {
-    curl_easy_setopt(m_CurlHandle, CURLOPT_MAXCONNECTS, count);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Alexandre.Gariepy   08/15
-//+---------------+---------------+---------------+---------------+---------------+------
 void PageDownloader::ValidateSslCertificates(bool validate)
     {
     curl_easy_setopt(m_CurlHandle, CURLOPT_SSL_VERIFYPEER, validate);

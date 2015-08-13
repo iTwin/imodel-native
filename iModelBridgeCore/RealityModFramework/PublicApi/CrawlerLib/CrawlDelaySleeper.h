@@ -11,10 +11,11 @@
 #include <CrawlerLib/CrawlerLib.h>
 
 #include <Bentley/Bentley.h>
-#include <Bentley/BeThread.h>
+#include <Bentley/WString.h>
 
 #include <vector>
 #include <map>
+#include <mutex>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
@@ -24,8 +25,8 @@ struct CrawlDelaySleeper : RefCountedBase
     void Sleep(uint32_t seconds, WString const& domain);
 
     private:
-    std::map<WString, BentleyApi::BeMutex> m_MutexPerDomain;
-    BeMutex m_AddDomainToMapMutex;
+    std::map<WString, std::mutex> m_MutexPerDomain;
+    std::mutex m_AddDomainToMapMutex;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

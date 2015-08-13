@@ -17,7 +17,7 @@ const chrono::milliseconds Crawler::s_AsyncWaitTime = chrono::milliseconds(75);
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 Crawler::Crawler(UrlQueue* queue, std::vector<IPageDownloader*> const& downloaders)
-    : m_NumberOfDownloaders(downloaders.size())
+    : m_NumberOfDownloaders(downloaders.size()), m_StopFlag(false), m_PauseFlag(false)
     {
     curl_global_init(CURL_GLOBAL_ALL);
     m_pDownloaders = downloaders;
@@ -43,34 +43,62 @@ StatusInt Crawler::Crawl(UrlPtr const& seed)
     {
     m_pQueue->AddUrl(seed);
 
-    vector<future<PageContentPtr>> asyncResults(m_NumberOfDownloaders);
+    vector<future<PageContentPtr>> asyncDownloadThreads(m_NumberOfDownloaders);
     size_t i = 0;
-    while(m_pQueue->NumberOfUrls() > 0 || !AllDownloadsFinished(asyncResults))
+    while(!IsStopped() && (m_pQueue->NumberOfUrls() > 0 || !AllDownloadsFinished(asyncDownloadThreads)))
         {
-        if(!asyncResults[i].valid() && m_pQueue->NumberOfUrls() > 0) //After default construction, std::future is not valid
+        std::unique_lock<std::mutex> lock(m_PauseFlagMutex);
+        m_PauseFlagConditionVariable.wait(lock, [this]{return m_PauseFlag == false;});
+
+        future<PageContentPtr>& currentDownloadThread = asyncDownloadThreads[i];
+        IPageDownloader* currentDownloader = m_pDownloaders[i];
+
+        if(CanStartDownload(currentDownloadThread))
+            StartNextDownload(currentDownloadThread, currentDownloader);
+
+        if(IsDownloadResultReady(currentDownloadThread))
             {
-            DownloadJobPtr job = m_pQueue->NextDownloadJob();
-            asyncResults[i] = async(launch::async, &IPageDownloader::DownloadPage, m_pDownloaders[i], job);
-            }
-        if(asyncResults[i].valid() && asyncResults[i].wait_for(s_AsyncWaitTime) == future_status::ready)
-            {
-            PageContentPtr content = asyncResults[i].get();
-            for (auto link : content->GetLinks())
-                {
+            PageContentPtr pageContent = currentDownloadThread.get();
+            for (auto link : pageContent->GetLinks())
                 m_pQueue->AddUrl(link);
-                }
-            if(m_pQueue->NumberOfUrls() > 0)
-                {
-                DownloadJobPtr job = m_pQueue->NextDownloadJob();
-                asyncResults[i] = async(launch::async, &IPageDownloader::DownloadPage, m_pDownloaders[i], job);
-                }
+
+            if(CanStartDownload(currentDownloadThread))
+                StartNextDownload(currentDownloadThread, currentDownloader);
+
             if(m_pObserver != NULL)
-                m_pObserver->OnPageCrawled(content);
+                m_pObserver->OnPageCrawled(pageContent);
             }
-        i = (i + 1) % m_NumberOfDownloaders;
+        i = (i + 1) % m_NumberOfDownloaders; //Cycle throught the downlaod
         }
 
+    DiscardRemainingDownloads(asyncDownloadThreads);
+
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Crawler::CanStartDownload(future<PageContentPtr> const& asyncDownloadThread) const
+    {
+    return !asyncDownloadThread.valid() && m_pQueue->NumberOfUrls() > 0; //After default construction, std::future is not valid
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Crawler::IsDownloadResultReady(future<PageContentPtr> const& asyncDownloadThread) const
+    {
+    return asyncDownloadThread.valid() && asyncDownloadThread.wait_for(s_AsyncWaitTime) == future_status::ready;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void Crawler::StartNextDownload(future<PageContentPtr>& asyncDownloadThread, IPageDownloader* downloaderToUse)
+    {
+    DownloadJobPtr job = m_pQueue->NextDownloadJob();
+    asyncDownloadThread = async(launch::async, &IPageDownloader::DownloadPage, downloaderToUse, job);
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,6 +112,18 @@ bool Crawler::AllDownloadsFinished(vector<future<PageContentPtr>> const& downloa
             return false;
         }
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void Crawler::DiscardRemainingDownloads(vector<future<PageContentPtr>>& downloads) const
+    {
+    for(auto download = downloads.begin(); download != downloads.end(); ++download)
+        {
+        if(download->valid())
+            download->get();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -136,15 +176,6 @@ void Crawler::SetMaxAutoRedirectCount(long count)
     {
     for(auto downloader : m_pDownloaders)
         downloader->SetMaxAutoRedirectCount(count);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Alexandre.Gariepy   08/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void Crawler::SetMaxHttpConnectionCount(long count)
-    {
-    for(auto downloader : m_pDownloaders)
-        downloader->SetMaxHttpConnectionCount(count);
     }
 
 //---------------------------------------------------------------------------------------
@@ -246,4 +277,41 @@ void Crawler::SetCrawlLinksFromPagesWithNoFollowMetaTag(bool crawlLinks)
     {
     for(auto downloader : m_pDownloaders)
         downloader->SetParsePagesWithNoFollowMetaTag(crawlLinks);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void Crawler::Pause()
+    {
+    std::lock_guard<std::mutex> lock(m_PauseFlagMutex);
+    m_PauseFlag = true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void Crawler::Unpause()
+    {
+        {
+        std::lock_guard<std::mutex> lock(m_PauseFlagMutex);
+        m_PauseFlag = false;
+        }
+    m_PauseFlagConditionVariable.notify_one();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void Crawler::Stop()
+    {
+    m_StopFlag.store(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bool Crawler::IsStopped() const
+    {
+    return m_StopFlag.load(memory_order_relaxed);
     }

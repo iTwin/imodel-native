@@ -87,18 +87,6 @@ TEST_F(PolitenessTester, WhenAnUnknownDomainIsQueriedTheRobotsTxtIsDownloadedThe
     politeness->CanDownloadUrl(anotherUrlInSameDomain);
     }
 
-TEST_F(PolitenessTester, WhenAnUrlIsInTheRobotsTxtDisallowListAllOfItSubUrlAreDisallowed)
-    {
-    UrlPtr disallowedUrl = new Url(L"/foo", seed);
-    UrlPtr disallowedSubUrl = new Url(L"/foo/toto.html", seed);
-    EXPECT_CALL(*downloader, DownloadRobotsTxt(_)).WillOnce(Return(GetRobotsTxtContentThatDisallows(disallowedUrl)));
-
-    politeness->SetRespectRobotTxt(true);
-    EXPECT_FALSE(politeness->CanDownloadUrl(disallowedUrl));
-    EXPECT_FALSE(politeness->CanDownloadUrl(disallowedSubUrl));
-    EXPECT_TRUE(politeness->CanDownloadUrl(seed));
-    }
-
 TEST_F(PolitenessTester, WhenRootIsDisallowedPolitenessCanDownloadFromUrlAnyway)
     {
     UrlPtr root = new Url(L"/", seed);

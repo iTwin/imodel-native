@@ -15,6 +15,7 @@ using namespace std;
 
 const std::wregex RobotsTxtParser::s_UserAgentRegex = wregex(L"^[Uu]ser-[Aa]gent\\s*:\\s*(\\S+)\\s*#?.*");
 const std::wregex RobotsTxtParser::s_DisallowRegex = wregex(L"^[Dd]isallow\\s*:\\s*(\\S+)\\s*#?.*");
+const std::wregex RobotsTxtParser::s_AllowRegex = wregex(L"^[Aa]llow\\s*:\\s*(\\S+)\\s*#?.*");
 const std::wregex RobotsTxtParser::s_CrawlDelayRegex = wregex(L"^[Cc]rawl-[Dd]elay\\s*:\\s*(\\d+)\\s*#?.*");
 
 //---------------------------------------------------------------------------------------
@@ -76,6 +77,31 @@ void RobotsTxtContent::AddUserAgent(UserAgent const& agent)
     {
     UrlPtrSet emptySet;
     m_DisallowedUrls.emplace(agent, emptySet);
+    m_AllowedUrls.emplace(agent, emptySet);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+bool RobotsTxtContent::IsUrlDisallowed(UrlPtr url, UserAgent const& agent) const
+    {
+    UrlPtrSet allowedUrls;
+    GetAllowedUrlsOf(allowedUrls, agent);
+    for(auto allowed : allowedUrls)
+        {
+        if(url->IsSubUrlOf(*allowed))
+            return false;
+        }
+
+    UrlPtrSet disallowedUrls;
+    GetDisallowedUrlsOf(disallowedUrls, agent);
+    for(auto disallowed : disallowedUrls)
+        {
+        if(url->IsSubUrlOf(*disallowed))
+            return true;
+        }
+
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -106,6 +132,37 @@ void RobotsTxtContent::AddAllDisallowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserA
 void RobotsTxtContent::AddDisallowedUrl(UserAgent const& agent, UrlPtr const& url)
     {
     m_DisallowedUrls.at(agent).insert(url);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void RobotsTxtContent::GetAllowedUrlsOf(UrlPtrSet& urlSet, UserAgent const& agent) const
+    {
+    AddAllAllowedUrlsOfAgentToSet(urlSet, agent);
+    AddAllAllowedUrlsOfAgentToSet(urlSet, UserAgent(L"*"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void RobotsTxtContent::AddAllAllowedUrlsOfAgentToSet(UrlPtrSet& urlSet, UserAgent const& agent) const
+    {
+    auto iterator = m_AllowedUrls.find(UserAgent(agent));
+    if(iterator != m_AllowedUrls.end())
+        {
+        for(auto url : iterator->second)
+            urlSet.insert(url);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void RobotsTxtContent::AddAllowedUrl(UserAgent const& agent, UrlPtr const& url)
+    {
+    if(!IsUrlDisallowed(url, agent))
+        m_AllowedUrls.at(agent).insert(url);
     }
 
 //---------------------------------------------------------------------------------------
@@ -190,6 +247,19 @@ RobotsTxtContentPtr RobotsTxtParser::ParseRobotsTxt(WString const& robotTxtFileC
                     {
                     UrlPtr disallowedUrl = new Url(match[1].str().c_str(), baseUrl);
                     content->AddDisallowedUrl(agent, disallowedUrl);
+                    }
+                catch(InvalidUrlException&) {}
+                }
+            lastLineWasUserAgent = false;
+            }
+        else if(regex_match(line.c_str(), match, s_AllowRegex))
+            {
+            for(auto agent : agentsConcernedByCurrentRule)
+                {
+                try
+                    {
+                    UrlPtr allowedUrl = new Url(match[1].str().c_str(), baseUrl);
+                    content->AddAllowedUrl(agent, allowedUrl);
                     }
                 catch(InvalidUrlException&) {}
                 }

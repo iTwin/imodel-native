@@ -56,7 +56,6 @@ class PageDownloaderMock : public IPageDownloader
     MOCK_METHOD1(SetRequestTimeoutInSeconds, void(long timeout));
     MOCK_METHOD1(SetFollowAutoRedirects, void(bool follow));
     MOCK_METHOD1(SetMaxAutoRedirectCount, void(long count));
-    MOCK_METHOD1(SetMaxHttpConnectionCount, void(long count));
     MOCK_METHOD1(ValidateSslCertificates, void(bool validate));
     MOCK_METHOD1(ValidateContentType, void(bool validate));
     MOCK_METHOD1(SetListOfValidContentType, void(bvector<WString> const& types));
@@ -273,15 +272,6 @@ TEST_F(MultiDownloaderCrawlerTester, SettingMaxAutoRedirectCountUpdatesAllDownlo
     EXPECT_CALL(*downloader2, SetMaxAutoRedirectCount(maxRedirect));
 
     crawler->SetMaxAutoRedirectCount(maxRedirect);
-    }
-
-TEST_F(MultiDownloaderCrawlerTester, SettingMaxHttpConnectionCountUpdatesAllDownloaders)
-    {
-    long maxConnectionCount = 15;
-    EXPECT_CALL(*downloader1, SetMaxHttpConnectionCount(maxConnectionCount));
-    EXPECT_CALL(*downloader2, SetMaxHttpConnectionCount(maxConnectionCount));
-
-    crawler->SetMaxHttpConnectionCount(maxConnectionCount);
     }
 
 TEST_F(MultiDownloaderCrawlerTester, SettingSslValidationUpdatesAllDownloaders)

@@ -32,7 +32,6 @@ class IPageDownloader
     virtual void SetRequestTimeoutInSeconds(long timeout) = 0;
     virtual void SetFollowAutoRedirects(bool follow) = 0;
     virtual void SetMaxAutoRedirectCount(long count) = 0;
-    virtual void SetMaxHttpConnectionCount(long count) = 0;
     virtual void ValidateSslCertificates(bool validate) = 0;
     virtual void ValidateContentType(bool validate) = 0 ;
     virtual void SetListOfValidContentType(bvector<WString> const& types) = 0;
@@ -52,7 +51,6 @@ class PageDownloader : public IPageDownloader
     CRAWLERLIB_EXPORT void SetRequestTimeoutInSeconds(long timeout) override;
     CRAWLERLIB_EXPORT void SetFollowAutoRedirects(bool follow) override;
     CRAWLERLIB_EXPORT void SetMaxAutoRedirectCount(long count) override;
-    CRAWLERLIB_EXPORT void SetMaxHttpConnectionCount(long count) override;
     CRAWLERLIB_EXPORT void ValidateSslCertificates(bool validate) override;
     CRAWLERLIB_EXPORT void ValidateContentType(bool validate) override;
     CRAWLERLIB_EXPORT void SetListOfValidContentType(bvector<WString> const& types) override;

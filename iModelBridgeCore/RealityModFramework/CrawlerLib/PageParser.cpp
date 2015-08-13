@@ -62,8 +62,8 @@ void PageParser::AddLinksFromText(WString const& text, UrlPtr const& url, PageCo
     for(auto i = words_begin; i != words_end; ++i)
         {
         wcmatch match = *i;
-        WCharCP completeHtmlATag = match[0].str().c_str();
-        if(m_ParseLinksRelNoFollow || !regex_match(completeHtmlATag, PageParser::s_RelNoFollowRegex))
+        WString completeHtmlATag = match[0].str().c_str();
+        if(m_ParseLinksRelNoFollow || !regex_match(completeHtmlATag.c_str(), PageParser::s_RelNoFollowRegex))
             {
             WString linkString = match[1].str().c_str();
             try
