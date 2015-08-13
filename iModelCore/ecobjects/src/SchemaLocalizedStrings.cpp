@@ -246,13 +246,14 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
             {
             lastCaClassName = WString(caClassName);
             caInstance = caContainer->GetLocalAttributeAsConsolidated(caClassName);
-            if (!caInstance.IsValid())
-                {
-                LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute or container cannot be found given the key '%ls'", it.second.second, it.first);
-                continue;
-                }
             }
         
+        if (!caInstance.IsValid())
+            {
+            LOG.errorv(L"Cannot apply the localized string '%ls' because the custom attribute or container cannot be found given the key '%ls'", it.second.second, it.first);
+            continue;
+            }
+
         // have ECValue hold the copy because we're not going to hold onto CA strings
         ECValueAccessor accessor;
         if (ECOBJECTS_STATUS_Success != ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, caPropertyAccessor.c_str()) ||

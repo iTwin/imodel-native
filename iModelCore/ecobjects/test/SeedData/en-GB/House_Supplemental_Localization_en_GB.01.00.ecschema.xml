@@ -234,6 +234,22 @@
                     <Value>!!Jamil!!</Value>
                     <IsGUID>False</IsGUID>
                 </LocalizationData>
+                <!--The following 3 entries don't have a corrisponding CA in the specified container, should not crash, just log error-->
+                <LocalizationData>
+                    <Key>Standard:House.01.00:Door:Height@Standard:EditorCustomAttributes.01.02:StandardValues:ValueMap[0].DisplayString:6eef6648</Key>
+                    <Value>!!None!!</Value>
+                    <IsGUID>False</IsGUID>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>Standard:House.01.00:Door:Height@Standard:EditorCustomAttributes.01.02:StandardValues:ValueMap[1].DisplayString:733fd2b4</Key>
+                    <Value>!!Constant!!</Value>
+                    <IsGUID>False</IsGUID>
+                </LocalizationData>
+                <LocalizationData>
+                    <Key>Standard:House.01.00:Door:Height@Standard:EditorCustomAttributes.01.02:StandardValues:ValueMap[2].DisplayString:bdd1e466</Key>
+                    <Value>!!Tapered!!</Value>
+                    <IsGUID>False</IsGUID>
+                </LocalizationData>
                 <LocalizationData>
                     <Key>Standard:House.01.00:Door:Thickness.DisplayLabel:ad48f341</Key>
                     <Value>!!Thickness!!</Value>
