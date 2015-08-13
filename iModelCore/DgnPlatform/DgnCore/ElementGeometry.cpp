@@ -1279,18 +1279,21 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
             auto colors = fbb.CreateVector (keyColors);
             auto values = fbb.CreateVector (keyValues);
 
-            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(), 0, elParams.GetFillTransparency(),
-                                                      (FB::GradientMode) gradient.GetMode(), gradient.GetFlags(), 
-                                                      gradient.GetAngle(), gradient.GetTint(), gradient.GetShift(), 
-                                                      colors, values);
+            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
+                                            0, 0, 0, elParams.GetFillTransparency(),
+                                            (FB::GradientMode) gradient.GetMode(), gradient.GetFlags(), 
+                                            gradient.GetAngle(), gradient.GetTint(), gradient.GetShift(), 
+                                            colors, values);
             fbb.Finish (mloc);
             }
         else
             {
-            bool useFillColor = !elParams.IsFillColorFromSubCategoryAppearance();
+            bool isBgFill = elParams.IsFillColorFromViewBackground();
+            bool useFillColor = !isBgFill && !elParams.IsFillColorFromSubCategoryAppearance();
 
-            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(), useFillColor ? elParams.GetFillColor().GetValue() : 0, elParams.GetFillTransparency());
-
+            auto mloc = FB::CreateAreaFill (fbb, (FB::FillDisplay) elParams.GetFillDisplay(),
+                                            useFillColor ? elParams.GetFillColor().GetValue() : 0, useFillColor, isBgFill,
+                                            elParams.GetFillTransparency());
             fbb.Finish (mloc);
             }
 
@@ -1662,12 +1665,23 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElemDisplayParamsR elPar
 
                 if (GradientMode::None == mode)
                     {
-                    ColorDef fillColor(ppfb->color());
-
-                    if (elParams.IsFillColorFromSubCategoryAppearance() || fillColor != elParams.GetFillColor())
+                    if (ppfb->useColor())
                         {
-                        elParams.SetFillColor(fillColor);
-                        changed = true;
+                        ColorDef fillColor(ppfb->color());
+
+                        if (elParams.IsFillColorFromSubCategoryAppearance() || fillColor != elParams.GetFillColor())
+                            {
+                            elParams.SetFillColor(fillColor);
+                            changed = true;
+                            }
+                        }
+                    else if (ppfb->isBgColor())
+                        {
+                        if (!elParams.IsFillColorFromViewBackground())
+                            {
+                            elParams.SetFillColorToViewBackground();
+                            changed = true;
+                            }
                         }
                     }
                 else
