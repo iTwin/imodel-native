@@ -310,7 +310,7 @@ BitMaskCP get() const {return m_mask;}
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/12
 //=======================================================================================
-template <bool defaultVal> struct BitMaskRef
+template <bool defaultVal> struct BitMaskRef : NonCopyableClass
 {
 private:
     BitMaskP    m_mask;
