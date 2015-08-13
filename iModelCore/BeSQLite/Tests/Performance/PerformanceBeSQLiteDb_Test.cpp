@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifdef WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
+
 #include "BeSQLitePerformanceTests.h"
 #include <PerformanceTestingHelper/PerformanceTestingHelpers.h>
 #ifdef WIP_PUBLISHED_API
@@ -412,4 +414,6 @@ TEST_F(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerI
             m_stopwatch.GetElapsedSeconds() * 1000.0);
         }
     }
+
+#endif//def WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
 

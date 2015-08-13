@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifdef WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
+
 #if defined (BENTLEY_WIN32)
     #include <Windows.h>
 #endif
@@ -1080,3 +1082,4 @@ TEST_F(PerformanceSqlStatementTests, ExecuteCreateEmptyViewWithMultipleCalls)
     }
 
 
+#endif//def WIP_DOES_NOT_BUILD_ON_ANDROID_OR_IOS
