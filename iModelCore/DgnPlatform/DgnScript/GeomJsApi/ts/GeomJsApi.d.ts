@@ -90,12 +90,16 @@ declare module BentleyApi.Dgn {
     class JsCurvePrimitive implements IDisposable {
         constructor ();
         static CreateLineSegment (segment : JsDSegment3dP) : JsCurvePrimitiveP;
+        CurvePrimitiveType(): cxx_double;
+        PointAtFraction(f: cxx_double): JsDPoint3dP; 
+
         _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
 
     type JsCurvePrimitiveP = cxx_pointer<JsCurvePrimitive>;
+
 
 
 }

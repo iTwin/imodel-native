@@ -27,6 +27,8 @@ JSSTRUCT(JsDPoint3d);
 JSSTRUCT(JsDVector3d);
 JSSTRUCT(JsDEllipse3d);
 JSSTRUCT(JsDSegment3d);
+JSSTRUCT(JsDRay3d);
+JSSTRUCT(JsDPoint3dDVector3dDVector3d);
 JSSTRUCT(JsCurvePrimitive);
 JSSTRUCT(JsCurveVector);
 JSSTRUCT(JsSolidPrimitive);
@@ -49,7 +51,9 @@ friend struct JsDSegment3d;
 friend struct JsCurvePrimitive;
 friend struct JsCurveVector;
 friend struct JsDVector3d;
-friend struct JsDVector3d;
+friend struct JsDRay3d;
+friend struct JsDPoint3dDVector3dDVector3d;
+
 private:
     DPoint3d m_point;
 
@@ -111,6 +115,50 @@ public:
 };
 
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsDRay3d : RefCountedBase
+{
+    DRay3d m_data;
+
+    JsDRay3d() {}
+    JsDRay3d (DPoint3dCR point, DVec3dCR vector) {m_data.InitFromOriginAndVector (point, vector);}
+    JsDRay3d (JsDPoint3dP point, JsDVector3dP vector) {m_data.InitFromOriginAndVector (point->m_point, vector->m_vector);}
+
+    JsDRay3d (double x0, double y0, double z0, double ux, double uy, double uz)
+        {m_data.InitFromOriginAndVector (DPoint3d::From (x0, y0, z0), DVec3d::From (ux, uy, uz));}
+
+    JsDPoint3dP GetStartPoint() {return new JsDPoint3d (m_data.origin);}
+    JsDVector3dP     GetVector () {return new JsDVector3d (m_data.direction);}
+    void SetStartPoint (JsDPoint3dP point) {m_data.origin = point->m_point;}
+    void SetVector (JsDVector3dP vector) {m_data.direction = vector->m_vector;}
+
+    JsDPoint3dP PointAtFraction (double f)
+        {
+        return new JsDPoint3d (m_data.FractionParameterToPoint (f));
+        }
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct JsDPoint3dDVector3dDVector3d: RefCountedBase
+{
+private:
+    DPlane3dByVectors m_data;
+public:
+    JsDPoint3dDVector3dDVector3d (DPoint3dCR origin, DVec3dCR vectorU, DVec3dCR vectorV)
+        : m_data (origin, vectorU, vectorV)
+        {}
+    JsDPoint3dDVector3dDVector3d (JsDPoint3dP origin, JsDVector3dP vectorU, JsDVector3dP vectorV)
+        : m_data (origin->m_point, vectorU->m_vector, vectorV->m_vector)
+        {}
+
+    JsDPoint3dP Point (){return new JsDPoint3d (m_data.origin);}
+    JsDVector3dP VectorU (){return new JsDVector3d (m_data.vectorU);}
+    JsDVector3dP VectorV (){return new JsDVector3d (m_data.vectorV);}
+};
 
 
 //=======================================================================================
@@ -138,8 +186,15 @@ struct JsDSegment3d : RefCountedBase
         m_segment.FractionParameterToPoint (xyz, f);
         return new JsDPoint3d (xyz);
         }
-    
+    JsDRay3dP PointAndDerivativeAtFraction (double f)
+        {
+        DPoint3d xyz;
+        DVec3d tangent;
+        m_segment.FractionParameterToTangent (xyz, tangent, f);
+        return new JsDRay3d (xyz, tangent);
+        }
 };
+
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
@@ -164,24 +219,39 @@ void SetDegrees (double degrees){m_angle = AngleInDegrees::FromDegrees (degrees)
 struct JsDEllipse3d : RefCountedBase
 {
     friend struct JsCurvePrimitive;
+    private:
     DEllipse3d m_ellipse;
 
-    JsDEllipse3d() {}
-    JsDEllipse3d (DPoint3dCR center, DVec3dCR vector0, DVec3dCR vector90, double startRadians, double sweepRadians)
+    JsDEllipse3d (DEllipse3dCR ellipse) : m_ellipse (ellipse)
         {
-        m_ellipse.InitFromVectors (center, vector0, vector90, startRadians, sweepRadians);
         }
+    public:
+    JsDEllipse3d() {}
     JsDEllipse3d (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90,
                 JsAngleP startAngle, JsAngleP sweepAngle)
-        {
-        m_ellipse.InitFromVectors
-                (
-                center->m_point, vector0->m_vector, vector90->m_vector,
-                startAngle->m_angle.Radians (),
-                sweepAngle->m_angle.Radians ()
-                );
-        }
+        : m_ellipse(DEllipse3d::FromVectors (
+                    center->m_point, vector0->m_vector, vector90->m_vector,
+                    startAngle->m_angle.Radians (),
+                    sweepAngle->m_angle.Radians ()
+                    ))
+         {}
        
+    static JsDEllipse3dP FromCoordinates (
+            double cx, double cy, double cz,
+            double v0x, double v0y, double v0z,
+            double v90x, double v90y, double v90z,
+            JsAngleP startAngle,
+            JsAngleP sweepAngle)
+            {
+            return new JsDEllipse3d
+                (DEllipse3d::From (
+                    cx, cy, cz,
+                    v0x, v0y, v0z,
+                    v90x, v90y, v90z,
+                    startAngle->m_angle.Radians (),
+                    sweepAngle->m_angle.Radians ()
+                ));            
+            }
 
     JsDPoint3d * GetCenter() {return new JsDPoint3d (m_ellipse.center);}
     JsDVector3d * GetVector0() {return new JsDVector3d (m_ellipse.vector0);}
@@ -200,6 +270,14 @@ struct JsDEllipse3d : RefCountedBase
         DPoint3d xyz;
         m_ellipse.FractionParameterToPoint (xyz, f);
         return new JsDPoint3d (xyz);
+        }
+    JsDRay3dP PointAndDerivativeAtFraction (double f)
+        {
+        DPoint3d xyz;
+        DVec3d derivative1;
+        DVec3d derivative2;
+        m_ellipse.FractionParameterToDerivatives (xyz, derivative1, derivative2, f);
+        return new JsDRay3d (xyz, derivative1);
         }
     
 };
@@ -222,7 +300,27 @@ struct JsCurvePrimitive: RefCountedBase
         return new JsCurvePrimitive (cp);
         }
     
-    int GetCurvePrimitiveType (){return m_curvePrimitive->GetCurvePrimitiveType ();}
+    double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
+    JsDPoint3dP PointAtFraction (double f)
+        {
+        DPoint3d xyz;
+        if (m_curvePrimitive->FractionToPoint (f, xyz))
+            {
+            return new JsDPoint3d (xyz);
+            }
+        return nullptr;
+        }
+
+    JsDRay3dP PointAndDerivativeAtFraction (double f)
+        {
+        DPoint3d xyz;
+        DVec3d derivative1;
+        if (m_curvePrimitive->FractionToPoint (f, xyz, derivative1))
+            {
+            return new JsDRay3d (xyz, derivative1);
+            }
+        return nullptr;
+        }
 };
 
 
