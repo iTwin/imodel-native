@@ -11,6 +11,7 @@ ChangeManagerTests.IsSyncActive_SyncSetActiveToTrue_True # notified Vincas
 CachingDataSourceTests.* # notified Vincas
 ChangeManagerTests.* # notified Vincas
 *DataSourceCache*
+ECDbAdapterTests.*
 
 # Fails on Android. Notified Vincas
 FileUtilTests.TruncateFilePath_FileWithNoExtension_TruncatesFileName
@@ -20,4 +21,3 @@ FileUtilTests.TruncateFilePath_MaxPathSmallerThanDirectory_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error
 FileUtilTests.TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error
 FileUtilTests.TruncateFilePath_PathIsFolder_Error
-
