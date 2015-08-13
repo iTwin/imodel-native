@@ -28,35 +28,35 @@ struct IECSqlArrayValue;
 struct IECSqlValue : NonCopyableClass
     {
 private:
-    virtual ECSqlColumnInfoCR _GetColumnInfo () const = 0;
+    virtual ECSqlColumnInfoCR _GetColumnInfo() const = 0;
 
-    virtual bool _IsNull () const = 0;
+    virtual bool _IsNull() const = 0;
 
     //__PUBLISH_SECTION_END__
-    virtual IECSqlPrimitiveValue const& _GetPrimitive () const = 0;
+    virtual IECSqlPrimitiveValue const& _GetPrimitive() const = 0;
     //__PUBLISH_SECTION_START__
-    virtual IECSqlStructValue const& _GetStruct () const = 0;
-    virtual IECSqlArrayValue const& _GetArray () const = 0;
+    virtual IECSqlStructValue const& _GetStruct() const = 0;
+    virtual IECSqlArrayValue const& _GetArray() const = 0;
 
 
 public:
-    ECDB_EXPORT virtual ~IECSqlValue () {}
+    ECDB_EXPORT virtual ~IECSqlValue() {}
 
     //! Gets the metadata of this value
     //! @return ECSQL column metadata.
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
-    ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo () const;
+    ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo() const;
 
     //! Indicates whether the value is %NULL or not.
     //! @return true if column value is %NULL, false otherwise
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
-    ECDB_EXPORT bool IsNull () const;
+    ECDB_EXPORT bool IsNull() const;
 
     //! Gets value as a binary / blob
     //! @param[out] binarySize the size of the blob in bytes.
     //! @return The binary value
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
-    ECDB_EXPORT void const* GetBinary (int* binarySize = nullptr) const;
+    ECDB_EXPORT void const* GetBinary(int* binarySize = nullptr) const;
 
     //! Gets the value as a boolean value.
     //! @return Value as boolean
@@ -64,7 +64,7 @@ public:
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
-    ECDB_EXPORT bool GetBoolean () const;
+    ECDB_EXPORT bool GetBoolean() const;
 
     //! Gets the value as a DateTime value.
     //! @return DateTime value
@@ -72,13 +72,13 @@ public:
     //! @note Possible errors:
     //! - column data type is not DateTime
     //! @see @ref ECDbCodeSampleECSqlStatementAndDateTimeProperties
-    ECDB_EXPORT DateTime GetDateTime () const;
+    ECDB_EXPORT DateTime GetDateTime() const;
 
 //__PUBLISH_SECTION_END__
     //! Gets the value as DateTime Julian Day ticks in hecto-nanoseconds.
     //! @param[out] metadata DateTime metadata.
     //! @return Julian Day ticks in hecto-nanoseconds
-    ECDB_EXPORT uint64_t GetDateTimeJulianDays (DateTime::Info& metadata) const;
+    ECDB_EXPORT uint64_t GetDateTimeJulianDays(DateTime::Info& metadata) const;
 //__PUBLISH_SECTION_START__
 
     //! Gets the value as a double
@@ -87,7 +87,7 @@ public:
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
-    ECDB_EXPORT double GetDouble () const;
+    ECDB_EXPORT double GetDouble() const;
 
     //! Gets the value as an integer
     //! @return Integer value
@@ -95,7 +95,7 @@ public:
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
-    ECDB_EXPORT int GetInt () const;
+    ECDB_EXPORT int GetInt() const;
 
     //! Gets the value as Int64
     //! @return Int64 value
@@ -103,7 +103,7 @@ public:
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
-    ECDB_EXPORT int64_t GetInt64 () const;
+    ECDB_EXPORT int64_t GetInt64() const;
 
     //! Gets the value as UTF-8 encoded string
     //! @return UTF-8 encoded string value
@@ -111,7 +111,7 @@ public:
     //! @note Possible errors:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
-    ECDB_EXPORT Utf8CP GetText () const;
+    ECDB_EXPORT Utf8CP GetText() const;
 
     //! Gets the value as Point2D
     //! @return Point2D value
@@ -133,7 +133,7 @@ public:
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not Geometry
-    void const* GetGeometryBlob (int* blobSize = nullptr) const;
+    void const* GetGeometryBlob(int* blobSize = nullptr) const;
     //__PUBLISH_SECTION_START__
 
     //! Gets the value as an IGeometry value.
@@ -141,7 +141,7 @@ public:
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not IGeometry
-    ECDB_EXPORT IGeometryPtr GetGeometry () const;
+    ECDB_EXPORT IGeometryPtr GetGeometry() const;
    
     //! Gets the value as a BeRepositoryBasedId
     //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
@@ -150,26 +150,21 @@ public:
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data does not hold a repository-based id
-    template <class TBeRepositoryBasedId>
-    TBeRepositoryBasedId GetId () const
-        {
-        static_assert (std::is_convertible<TBeRepositoryBasedId*, BeRepositoryBasedId*>::value, "Template parameter must be subclass of BeRepositoryBasedId.");
-        return TBeRepositoryBasedId (GetInt64 ());
-        }
+    BeInt64Id GetId() const {return BeInt64Id(GetInt64());}
 
     //! Used to access the value if it is a struct value
     //! @return Struct value
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not an ECStruct
-    ECDB_EXPORT IECSqlStructValue const& GetStruct () const;
+    ECDB_EXPORT IECSqlStructValue const& GetStruct() const;
 
     //! Used to access the value if it is an array value
     //! @return Array value
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - column data type is not an array
-    ECDB_EXPORT IECSqlArrayValue const& GetArray () const;
+    ECDB_EXPORT IECSqlArrayValue const& GetArray() const;
     };
 
 //=======================================================================================
@@ -181,18 +176,18 @@ public:
 struct IECSqlStructValue : NonCopyableClass
     {
 private:
-    virtual int _GetMemberCount () const = 0;
-    virtual IECSqlValue const& _GetValue (int  columnIndex) const = 0;
+    virtual int _GetMemberCount() const = 0;
+    virtual IECSqlValue const& _GetValue(int  columnIndex) const = 0;
 
 public:
-    ECDB_EXPORT virtual ~IECSqlStructValue () {}
+    ECDB_EXPORT virtual ~IECSqlStructValue() {}
 
     //! Returns the number of struct members this struct value has.
     //! @return number of struct members of this struct value.
-    ECDB_EXPORT int GetMemberCount () const;
+    ECDB_EXPORT int GetMemberCount() const;
     
     //! Returns the value of the struct member at the given index
-    ECDB_EXPORT IECSqlValue const& GetValue (int structMemberIndex) const;
+    ECDB_EXPORT IECSqlValue const& GetValue(int structMemberIndex) const;
     };
 
 //=======================================================================================
@@ -213,19 +208,19 @@ public:
     private:
         IECSqlArrayValue const* m_arrayValue;
 
-        bool IsAtEnd () const;
-        bool IsEndIterator () const;
+        bool IsAtEnd() const;
+        bool IsEndIterator() const;
 
     public:
         // end iterator
-        ECDB_EXPORT const_iterator ();
-        ECDB_EXPORT explicit const_iterator (IECSqlArrayValue const& arrayValue);
-        ECDB_EXPORT ~const_iterator ();
+        ECDB_EXPORT const_iterator();
+        ECDB_EXPORT explicit const_iterator(IECSqlArrayValue const& arrayValue);
+        ECDB_EXPORT ~const_iterator();
         //copyable
-        ECDB_EXPORT const_iterator (const_iterator const& rhs);
+        ECDB_EXPORT const_iterator(const_iterator const& rhs);
         ECDB_EXPORT const_iterator& operator= (const_iterator const& rhs);
         //moveable
-        ECDB_EXPORT const_iterator (const_iterator&& rhs);
+        ECDB_EXPORT const_iterator(const_iterator&& rhs);
         ECDB_EXPORT const_iterator& operator= (const_iterator&& rhs);
 
         ECDB_EXPORT IECSqlValue const* operator* () const;
@@ -234,28 +229,28 @@ public:
         ECDB_EXPORT bool operator!= (const_iterator const& rhs) const;
         };
 private:
-    virtual void _MoveNext (bool onInitializingIterator = false) const = 0;
-    virtual bool _IsAtEnd () const = 0;
-    virtual IECSqlValue const* _GetCurrent () const = 0;
-    virtual int _GetArrayLength () const = 0;
+    virtual void _MoveNext(bool onInitializingIterator = false) const = 0;
+    virtual bool _IsAtEnd() const = 0;
+    virtual IECSqlValue const* _GetCurrent() const = 0;
+    virtual int _GetArrayLength() const = 0;
 
 public:
-    ECDB_EXPORT virtual ~IECSqlArrayValue () {}
+    ECDB_EXPORT virtual ~IECSqlArrayValue() {}
 
     //! Gets an iterator for iterating the array
     //! @remarks This invalidates any other already existing iterators of the same IECSqlArrayValue.
     //! @return Array iterator
-    ECDB_EXPORT const_iterator begin () const;
+    ECDB_EXPORT const_iterator begin() const;
     //! Gets the array's end iterator
     //! @return Array's end iterator
-    ECDB_EXPORT const_iterator end () const;
+    ECDB_EXPORT const_iterator end() const;
 
     //! Gets the number of elements in the array.
     //! @remarks If the array length is not needed upfront, prefer to iterate through the array using
     //! its iterator and count the instances while going. Calling GetArrayLength can be costly as it might require
     //! %ECDb to perform a separate query into the %ECDb file.
     //! @return number of elements in the array
-    ECDB_EXPORT int GetArrayLength () const;
+    ECDB_EXPORT int GetArrayLength() const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

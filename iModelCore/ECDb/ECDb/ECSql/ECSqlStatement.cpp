@@ -178,6 +178,7 @@ ECSqlStatus ECSqlStatement::BindText (int parameterIndex, Utf8CP value, IECSqlBi
     return GetBinder (parameterIndex).BindText (value, makeCopy, byteCount);
     }
 
+#if defined (NEEDS_WORK_BE_IDS)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     04/2014
 //---------------------------------------------------------------------------------------
@@ -185,6 +186,7 @@ ECSqlStatus ECSqlStatement::BindId (int parameterIndex, BeRepositoryBasedId valu
     {
     return GetBinder (parameterIndex).BindId (value);
     }
+#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013

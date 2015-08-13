@@ -17,24 +17,24 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::Prepare (ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
+ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
-    BeAssert (exp.IsComplete ());
-    ctx.PushScope (exp);
+    BeAssert(exp.IsComplete());
+    ctx.PushScope(exp);
 
-    auto const& classMap = exp.GetClassNameExp ()->GetInfo ().GetMap ();
+    auto const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
     NativeSqlSnippets insertNativeSqlSnippets;
-    auto stat = GenerateNativeSqlSnippets (insertNativeSqlSnippets, ctx, exp, classMap);
+    auto stat = GenerateNativeSqlSnippets(insertNativeSqlSnippets, ctx, exp, classMap);
     if (stat != ECSqlStatus::Success)
         return stat;
     
-    if (classMap.IsRelationshipClassMap ())
-        stat = PrepareInsertIntoRelationship (ctx, insertNativeSqlSnippets, exp , classMap);
+    if (classMap.IsRelationshipClassMap())
+        stat = PrepareInsertIntoRelationship(ctx, insertNativeSqlSnippets, exp , classMap);
     else
-        stat = PrepareInsertIntoClass (ctx, insertNativeSqlSnippets, classMap);
+        stat = PrepareInsertIntoClass(ctx, insertNativeSqlSnippets, classMap);
     if (stat==ECSqlStatus::Success)
-        stat = ECSqlInsertPreparer::PrepareStepTask (ctx, exp);
-    ctx.PopScope ();
+        stat = ECSqlInsertPreparer::PrepareStepTask(ctx, exp);
+    ctx.PopScope();
     return stat;
     }
 
@@ -96,40 +96,40 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
     BeAssert(noneSelectPreparedStmt != nullptr && "Expecting ECSqlNoneSelectPreparedStatement");
     int ecsqlParameterIndex = 1;
     ECSqlStatus stat = ECSqlStatus::Success;
-    auto& propertyList = exp.GetPropertyNameListExp ()->GetChildren ();
-    auto& valueList = exp.GetValuesExp ()->GetChildren ();
+    auto& propertyList = exp.GetPropertyNameListExp()->GetChildren();
+    auto& valueList = exp.GetValuesExp()->GetChildren();
     ECSqlBinder* binder = nullptr;
     std::set<ParameterExp const*> namedParameterList;
-    for (size_t i = 0; i < exp.GetPropertyNameListExp ()->GetChildrenCount (); i++)
+    for (size_t i = 0; i < exp.GetPropertyNameListExp()->GetChildrenCount(); i++)
         {
         auto propNameExp = static_cast<PropertyNameExp const*> (propertyList[i]);
         auto valueExp = static_cast<ValueExp const*> (valueList[i]);
-        auto nParameterInValueExp = GetParamterCount (*valueExp,namedParameterList);
-        auto const& typeInfo = propNameExp->GetTypeInfo ();
+        auto nParameterInValueExp = GetParamterCount(*valueExp,namedParameterList);
+        auto const& typeInfo = propNameExp->GetTypeInfo();
 
         if (nParameterInValueExp == 0)
             continue;
 
-        if (ecsqlParameterMap.TryGetBinder (binder, ecsqlParameterIndex) != ECSqlStatus::Success)
+        if (ecsqlParameterMap.TryGetBinder(binder, ecsqlParameterIndex) != ECSqlStatus::Success)
             {
-            BeAssert (false && "Failed to find binder for given value expression");
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName(), ecsqlParameterIndex);
+            BeAssert(false && "Failed to find binder for given value expression");
+            return ctx.SetError(ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName(), ecsqlParameterIndex);
             }
 
-        if (typeInfo.GetKind () == ECSqlTypeInfo::Kind::Struct)
+        if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::Struct)
             {
-            stat = SetupBindStructParameter (binder, propNameExp->GetPropertyMap (), noneSelectPreparedStmt, ctx, exp);
+            stat = SetupBindStructParameter(binder, propNameExp->GetPropertyMap(), noneSelectPreparedStmt, ctx, exp);
             if ( stat != ECSqlStatus::Success)
                 {
                 return stat;
                 }
             }
 
-        else if (typeInfo.GetKind () == ECSqlTypeInfo::Kind::StructArray)
+        else if (typeInfo.GetKind() == ECSqlTypeInfo::Kind::StructArray)
             {                            
             if (auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (binder))
                 {
-                stat = SetupBindStructArrayParameter (structArrayBinder, propNameExp->GetPropertyMap (), noneSelectPreparedStmt, ctx, exp);
+                stat = SetupBindStructArrayParameter(structArrayBinder, propNameExp->GetPropertyMap(), noneSelectPreparedStmt, ctx, exp);
                 if (stat != ECSqlStatus::Success)
                     {
                     return stat;
@@ -137,8 +137,8 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
                 }
             else
                 {
-                BeAssert (false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError (ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
                 }
             }
 
@@ -152,33 +152,33 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
 // @bsimethod                                    Muhammad.zaighum                    8/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::SetupBindStructParameter (ECSqlBinder* binder, PropertyMapCR propertyMap, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
+ECSqlStatus ECSqlInsertPreparer::SetupBindStructParameter(ECSqlBinder* binder, PropertyMapCR propertyMap, ECSqlNonSelectPreparedStatement* noneSelectPreparedStmt, ECSqlPrepareContext& ctx, InsertStatementExp const& exp)
     {
-    for (auto childPropertyMap : propertyMap.GetChildren ())
+    for (auto childPropertyMap : propertyMap.GetChildren())
         {
-        auto& propertyBinder = static_cast<ECSqlBinder&>(binder->BindStruct ().GetMember (childPropertyMap->GetProperty ().GetName ().c_str ()));
-        if (childPropertyMap->GetProperty ().GetIsStruct ())
+        auto& propertyBinder = static_cast<ECSqlBinder&>(binder->BindStruct().GetMember(childPropertyMap->GetProperty().GetName().c_str()));
+        if (childPropertyMap->GetProperty().GetIsStruct())
             {
-            if (SetupBindStructParameter (&propertyBinder, *childPropertyMap, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
+            if (SetupBindStructParameter(&propertyBinder, *childPropertyMap, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {
-                BeAssert (false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError (ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
                 }
             }
 
-        else if (childPropertyMap->GetAsPropertyMapToTable () != nullptr)
+        else if (childPropertyMap->GetAsPropertyMapToTable() != nullptr)
             {
             auto structArrayBinder = dynamic_cast<StructArrayToSecondaryTableECSqlBinder*> (&propertyBinder);
             if (structArrayBinder == nullptr)
                 {
-                BeAssert (false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError (ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
                 }
 
-            if (SetupBindStructArrayParameter (structArrayBinder, *childPropertyMap, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
+            if (SetupBindStructArrayParameter(structArrayBinder, *childPropertyMap, noneSelectPreparedStmt, ctx, exp) != ECSqlStatus::Success)
                 {
-                BeAssert (false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
-                return ctx.SetError (ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                BeAssert(false && "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Expecting a StructArrayToSecondaryTableECSqlBinder for parameter");
                 }
             }
         }
@@ -221,9 +221,9 @@ NativeSqlSnippets& nativeSqlSnippets,
 IClassMap const& classMap
 )
     {
-    PreparePrimaryKey (ctx, nativeSqlSnippets, classMap);
+    PreparePrimaryKey(ctx, nativeSqlSnippets, classMap);
     //build SQLite SQL
-    BuildNativeSqlInsertStatement (ctx.GetSqlBuilderR (), nativeSqlSnippets);
+    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets);
 
     return ECSqlStatus::Success;
     }
@@ -232,57 +232,57 @@ IClassMap const& classMap
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, IClassMap const& classMap)
+ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, IClassMap const& classMap)
     {
-    BeAssert (classMap.IsRelationshipClassMap ());
-    BeAssert (ctx.GetClassMapViewMode () == IClassMap::View::DomainClass && "Relationship classes that are also used as structs are not supported.");
+    BeAssert(classMap.IsRelationshipClassMap());
+    BeAssert(ctx.GetClassMapViewMode() == IClassMap::View::DomainClass && "Relationship classes that are also used as structs are not supported.");
 
     auto const& relationshipClassMap = static_cast<RelationshipClassMapCR> (classMap);
 
-    auto const& specialTokenMap = exp.GetPropertyNameListExp ()->GetSpecialTokenExpIndexMap ();
-    if (specialTokenMap.IsUnset (ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset (ECSqlSystemProperty::TargetECInstanceId))
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
+    auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
+    if (specialTokenMap.IsUnset(ECSqlSystemProperty::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemProperty::TargetECInstanceId))
+        return ctx.SetError(ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
 
     //Validate and if need be determine SourceECClassId and TargetECClassId
     ECClassId sourceECClassId = ECClass::UNSET_ECCLASSID; //remains unset if is parametrized
-    auto stat = ValidateConstraintClassId (sourceECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Source);
+    auto stat = ValidateConstraintClassId(sourceECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Source);
     if (stat != ECSqlStatus::Success)
         return stat;
 
     ECClassId targetECClassId = ECClass::UNSET_ECCLASSID;  //remains unset if is parametrized
-    stat = ValidateConstraintClassId (targetECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Target);
+    stat = ValidateConstraintClassId(targetECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Target);
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    if (relationshipClassMap.GetClassMapType () == ClassMap::Type::RelationshipLinkTable)
-        return PrepareInsertIntoLinkTableRelationship (ctx, nativeSqlSnippets, relationshipClassMap, sourceECClassId, targetECClassId);
+    if (relationshipClassMap.GetClassMapType() == ClassMap::Type::RelationshipLinkTable)
+        return PrepareInsertIntoLinkTableRelationship(ctx, nativeSqlSnippets, relationshipClassMap, sourceECClassId, targetECClassId);
     else
-        return PrepareInsertIntoEndTableRelationship (ctx, nativeSqlSnippets, exp, relationshipClassMap, sourceECClassId, targetECClassId);
+        return PrepareInsertIntoEndTableRelationship(ctx, nativeSqlSnippets, exp, relationshipClassMap, sourceECClassId, targetECClassId);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassMapCR relationshipClassMap, ECClassId sourceECClassId, ECClassId targetECClassId)
+ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassMapCR relationshipClassMap, ECClassId sourceECClassId, ECClassId targetECClassId)
     {
-    PreparePrimaryKey (ctx, nativeSqlSnippets, relationshipClassMap);
+    PreparePrimaryKey(ctx, nativeSqlSnippets, relationshipClassMap);
 
     if (sourceECClassId >= ECClass::UNSET_ECCLASSID)
         {
-        auto stat = PrepareConstraintClassId (nativeSqlSnippets, ctx, *relationshipClassMap.GetSourceECClassIdPropMap (), sourceECClassId);
+        auto stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipClassMap.GetSourceECClassIdPropMap(), sourceECClassId);
         if (stat != ECSqlStatus::Success)
             return stat;
         }
 
     if (targetECClassId >= ECClass::UNSET_ECCLASSID)
         {
-        auto stat = PrepareConstraintClassId (nativeSqlSnippets, ctx, *relationshipClassMap.GetTargetECClassIdPropMap (), targetECClassId);
+        auto stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipClassMap.GetTargetECClassIdPropMap(), targetECClassId);
         if (stat != ECSqlStatus::Success)
             return stat;
         }
 
-    BuildNativeSqlInsertStatement (ctx.GetSqlBuilderR (), nativeSqlSnippets);
+    BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets);
     return ECSqlStatus::Success;
     }
 
@@ -302,9 +302,9 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
     std::vector<size_t> expIndexSkipList;
     //if ECInstanceId was specified, put it in skip list as it will always be ignored for end table mappings
-    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex (ECSqlSystemProperty::ECInstanceId);
+    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemProperty::ECInstanceId);
     if (ecinstanceIdExpIndex >= 0)
-        expIndexSkipList.push_back ((size_t) ecinstanceIdExpIndex);
+        expIndexSkipList.push_back((size_t) ecinstanceIdExpIndex);
 
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
     int thisEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(thisEnd == ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECInstanceId : ECSqlSystemProperty::TargetECInstanceId);
@@ -327,34 +327,34 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
         //usually ECInstanceId is auto-generated by ECSqlStatement. For end-table mappings this must not be done, as we have
         //the ECInstanceId already (as it is the same as this end's ECInstanceId).
-        auto classId = relationshipClassMap.GetClass ().GetId ();
-        auto parameterExp = exp.GetValuesExp ()->TryGetAsParameterExpP (thisEndECInstanceIdIndexUnsigned);
+        auto classId = relationshipClassMap.GetClass().GetId();
+        auto parameterExp = exp.GetValuesExp()->TryGetAsParameterExpP (thisEndECInstanceIdIndexUnsigned);
         if (parameterExp != nullptr)
             {
             ECSqlBinder* thisEndECInstanceIdBinder = nullptr;
-            auto stat = preparedStatement->GetParameterMapR ().TryGetBinder (thisEndECInstanceIdBinder, parameterExp->GetParameterIndex ());
+            auto stat = preparedStatement->GetParameterMapR ().TryGetBinder(thisEndECInstanceIdBinder, parameterExp->GetParameterIndex());
             if (stat != ECSqlStatus::Success)
                 {
-                BeAssert (false && "Could not find this end constraint ECInstanceId parameter binder.");
-                return ctx.SetError (ECSqlStatus::ProgrammerError, "Could not find this end constraint  ECInstanceId parameter binder.");
+                BeAssert(false && "Could not find this end constraint ECInstanceId parameter binder.");
+                return ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find this end constraint  ECInstanceId parameter binder.");
                 }
 
-            BeAssert (thisEndECInstanceIdBinder != nullptr);
-            thisEndECInstanceIdBinder->SetOnBindRepositoryBasedIdEventHandler ([preparedStatement, classId] (BeRepositoryBasedId const& bindValue)
+            BeAssert(thisEndECInstanceIdBinder != nullptr);
+            thisEndECInstanceIdBinder->SetOnBindRepositoryBasedIdEventHandler([preparedStatement, classId] (ECInstanceId const& bindValue)
                 {
-                BeAssert (preparedStatement != nullptr);
-                preparedStatement->SetECInstanceKeyInfo (ECSqlInsertPreparedStatement::ECInstanceKeyInfo (classId, ECInstanceId (bindValue.GetValue ())));
+                BeAssert(preparedStatement != nullptr);
+                preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, ECInstanceId(bindValue.GetValue())));
                 });
             }
         else
             {
             auto const& ecinstanceIdValueSnippet = ecinstanceIdValueSnippets[0];
-            Utf8CP ecinstanceidStr = ecinstanceIdValueSnippet.ToString ();
+            Utf8CP ecinstanceidStr = ecinstanceIdValueSnippet.ToString();
             uint64_t ecinstanceid = 0ULL;
-            if (BeStringUtilities::ParseUInt64 (ecinstanceid, ecinstanceidStr) != SUCCESS)
-                return ctx.SetError (ECSqlStatus::InvalidECSql, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
+            if (BeStringUtilities::ParseUInt64(ecinstanceid, ecinstanceidStr) != SUCCESS)
+                return ctx.SetError(ECSqlStatus::InvalidECSql, "'%s' is an invalid ECInstanceId value.", ecinstanceidStr);
 
-            preparedStatement->SetECInstanceKeyInfo (ECSqlInsertPreparedStatement::ECInstanceKeyInfo (classId, ECInstanceId (ecinstanceid)));
+            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, ECInstanceId(ecinstanceid)));
             }
 
         }
@@ -404,30 +404,30 @@ InsertStatementExp const& exp,
 IClassMap const& classMap
 )
     {
-    auto status = ECSqlExpPreparer::PrepareClassRefExp (insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, exp.GetClassNameExp ());
+    auto status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, exp.GetClassNameExp());
     if (status != ECSqlStatus::Success)
         return status;
 
-    auto propNameListExp = exp.GetPropertyNameListExp ();
-    status = ECSqlExpPreparer::PreparePropertyNameListExp (insertSqlSnippets.m_propertyNamesNativeSqlSnippets, ctx, propNameListExp);
+    auto propNameListExp = exp.GetPropertyNameListExp();
+    status = ECSqlExpPreparer::PreparePropertyNameListExp(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, ctx, propNameListExp);
     if (status != ECSqlStatus::Success)
         return status;
 
-    status = ECSqlExpPreparer::PrepareValueExpListExp (insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp (), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
+    status = ECSqlExpPreparer::PrepareValueExpListExp(insertSqlSnippets.m_valuesNativeSqlSnippets, ctx, exp.GetValuesExp(), propNameListExp, insertSqlSnippets.m_propertyNamesNativeSqlSnippets);
     if (status != ECSqlStatus::Success)
         return status;
 
-    if (insertSqlSnippets.m_propertyNamesNativeSqlSnippets.size () != insertSqlSnippets.m_valuesNativeSqlSnippets.size ())
+    if (insertSqlSnippets.m_propertyNamesNativeSqlSnippets.size() != insertSqlSnippets.m_valuesNativeSqlSnippets.size())
         {
-        BeAssert (false && "Error preparing insert statement. Number of property name items does not match number of value items. This should have been caught by parser already.");
-        return ctx.SetError (ECSqlStatus::ProgrammerError, "Error preparing insert statement. Number of property name items does not match number of value items. This should have been caught by parser already.");
+        BeAssert(false && "Error preparing insert statement. Number of property name items does not match number of value items. This should have been caught by parser already.");
+        return ctx.SetError(ECSqlStatus::ProgrammerError, "Error preparing insert statement. Number of property name items does not match number of value items. This should have been caught by parser already.");
         }
 
-    insertSqlSnippets.m_ecinstanceIdMode = ValidateUserProvidedECInstanceId (insertSqlSnippets.m_ecinstanceIdExpIndex, ctx, exp, classMap);
-    if (!ctx.IsSuccess ())
-        return ctx.GetStatus ();
+    insertSqlSnippets.m_ecinstanceIdMode = ValidateUserProvidedECInstanceId(insertSqlSnippets.m_ecinstanceIdExpIndex, ctx, exp, classMap);
+    if (!ctx.IsSuccess())
+        return ctx.GetStatus();
 
-    BeAssert (insertSqlSnippets.m_ecinstanceIdMode != ECInstanceIdMode::Invalid);
+    BeAssert(insertSqlSnippets.m_ecinstanceIdMode != ECInstanceIdMode::Invalid);
     return ECSqlStatus::Success;
     }
 
@@ -435,11 +435,11 @@ IClassMap const& classMap
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlInsertPreparer::PreparePrimaryKey (ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, IClassMap const& classMap)
+void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, IClassMap const& classMap)
     {
     //for embedded class view, the ECSQL must contain the primary key props (ParentECInstanceId, ECPropertyId, ECArrayIndex). None
     //of them is auto-generated by ECDb. That case doesn't have a class id either. So therefore just return in that case.
-    if (ctx.GetClassMapViewMode () == IClassMap::View::EmbeddedType)
+    if (ctx.GetClassMapViewMode() == IClassMap::View::EmbeddedType)
         return;
 
     const auto ecinstanceIdMode = nativeSqlSnippets.m_ecinstanceIdMode;
@@ -452,55 +452,55 @@ void ECSqlInsertPreparer::PreparePrimaryKey (ECSqlPrepareContext& ctx, NativeSql
         if (ecinstanceIdMode == ECInstanceIdMode::NotUserProvided)
             {
             //if not user provided ecinstanceid snippet will be appended to column names
-            ecinstanceidIndex = (int) nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.size ();
+            ecinstanceidIndex = (int) nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.size();
             PropertyMapCP ecInstanceIdPropMap = nullptr;
-            if (!classMap.GetPropertyMaps ().TryGetPropertyMap (ecInstanceIdPropMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING))
+            if (!classMap.GetPropertyMaps().TryGetPropertyMap(ecInstanceIdPropMap, PropertyMapECInstanceId::PROPERTYACCESSSTRING))
                 {
-                ctx.SetError (ECSqlStatus::ProgrammerError, "ECInstanceId property map is always expected to exist for domain classes.");
-                BeAssert (false && "ECInstanceId property map is always expected to exist for domain classes.");
+                ctx.SetError(ECSqlStatus::ProgrammerError, "ECInstanceId property map is always expected to exist for domain classes.");
+                BeAssert(false && "ECInstanceId property map is always expected to exist for domain classes.");
                 return;
                 }
 
-            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back (move (ecInstanceIdPropMap->ToNativeSql (nullptr, ECSqlType::Insert, false)));
-            nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back (NativeSqlBuilder::List {NativeSqlBuilder ()});
+            nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(ecInstanceIdPropMap->ToNativeSql(nullptr, ECSqlType::Insert, false)));
+            nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List {NativeSqlBuilder()});
             }
         else if (ecinstanceIdMode == ECInstanceIdMode::UserProvidedNull)
             {
-            BeAssert (nativeSqlSnippets.m_ecinstanceIdExpIndex >= 0 &&
-                      (int)nativeSqlSnippets.m_valuesNativeSqlSnippets.size () > nativeSqlSnippets.m_ecinstanceIdExpIndex &&
-                      nativeSqlSnippets.m_valuesNativeSqlSnippets[nativeSqlSnippets.m_ecinstanceIdExpIndex].size () == 1);
+            BeAssert(nativeSqlSnippets.m_ecinstanceIdExpIndex >= 0 &&
+                      (int)nativeSqlSnippets.m_valuesNativeSqlSnippets.size() > nativeSqlSnippets.m_ecinstanceIdExpIndex &&
+                      nativeSqlSnippets.m_valuesNativeSqlSnippets[nativeSqlSnippets.m_ecinstanceIdExpIndex].size() == 1);
 
             ecinstanceidIndex = nativeSqlSnippets.m_ecinstanceIdExpIndex;
-            nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0] = NativeSqlBuilder ();
+            nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0] = NativeSqlBuilder();
             }
 
         //add binder for the ecinstanceid parameter
         auto& ecsqlStmt = ctx.GetECSqlStatementR ();
         auto preparedECSqlStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
         size_t ecinstanceidBinderIndex = 0;
-        auto ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder (ecinstanceidBinderIndex, ecsqlStmt, ECSqlTypeInfo (PRIMITIVETYPE_Long));
+        auto ecinstanceidBinder = preparedECSqlStatement->GetParameterMapR ().AddInternalBinder(ecinstanceidBinderIndex, ecsqlStmt, ECSqlTypeInfo(PRIMITIVETYPE_Long));
         if (ecinstanceidBinder == nullptr)
             {
-            ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to create internal ECInstanceId parameter binder.");
-            BeAssert (false && "Failed to create internal ECInstanceId parameter binder.");
+            ctx.SetError(ECSqlStatus::ProgrammerError, "Failed to create internal ECInstanceId parameter binder.");
+            BeAssert(false && "Failed to create internal ECInstanceId parameter binder.");
             return;
             }
 
-        preparedECSqlStatement->SetECInstanceKeyInfo (ECSqlInsertPreparedStatement::ECInstanceKeyInfo (classMap.GetClass ().GetId (), *ecinstanceidBinder));
+        preparedECSqlStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classMap.GetClass().GetId(), *ecinstanceidBinder));
         //add SQLite parameter for the ecinstanceid (internal parameters's ECSqlParameterIndex is made negative to distinguish them from real ECSQL parameter)
-        nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter (nullptr, (-1) * (int) ecinstanceidBinderIndex, 1);
+        nativeSqlSnippets.m_valuesNativeSqlSnippets[ecinstanceidIndex][0].AppendParameter(nullptr, (-1) * (int) ecinstanceidBinderIndex, 1);
         }
 
     //if table has a class id column, handle this here
-    auto classIdColumn = classMap.GetTable ().FindColumnCP(ECDB_COL_ECClassId);
+    auto classIdColumn = classMap.GetTable().FindColumnCP(ECDB_COL_ECClassId);
     if (classIdColumn != nullptr)
         {
-        NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder (classIdColumn->GetName ().c_str())};
-        nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back (move (classIdNameSqliteSnippets));
+        NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdColumn->GetName().c_str())};
+        nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
 
-        NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder ()};
-        classIdSqliteSnippets[0].Append (classMap.GetClass ().GetId ());
-        nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back (move (classIdSqliteSnippets));
+        NativeSqlBuilder::List classIdSqliteSnippets {NativeSqlBuilder()};
+        classIdSqliteSnippets[0].Append(classMap.GetClass().GetId());
+        nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
         }
     }
 
@@ -529,36 +529,36 @@ ECN::ECRelationshipEnd constraintEnd
     //        subclasses, too, in case of a polymorphic constraint).
     //        If check failed -> InvalidECSql as user ommitted XXClassId in case where ECSqlStatement cannot derive it
     //        If check succeeded, return class id
-    auto const& constraintMap = relationshipClassMap.GetConstraintMap (constraintEnd);
-    auto constraintClassIdPropMap = constraintMap.GetECClassIdPropMap ();
-    Utf8String constraintClassIdPropName (constraintClassIdPropMap->GetPropertyAccessString ());
-    int constraintClassIdExpIndex = GetConstraintClassIdExpIndex (exp, constraintEnd);
+    auto const& constraintMap = relationshipClassMap.GetConstraintMap(constraintEnd);
+    auto constraintClassIdPropMap = constraintMap.GetECClassIdPropMap();
+    Utf8String constraintClassIdPropName(constraintClassIdPropMap->GetPropertyAccessString());
+    int constraintClassIdExpIndex = GetConstraintClassIdExpIndex(exp, constraintEnd);
     if (constraintClassIdExpIndex >= 0)
         //user specified constraint class id in ECSQL
         {
         bool isParameter = false;
-        auto stat = GetConstraintClassIdExpValue (isParameter, retrievedConstraintClassId, ctx, *exp.GetValuesExp (), (size_t) constraintClassIdExpIndex, constraintClassIdPropName.c_str ());
+        auto stat = GetConstraintClassIdExpValue(isParameter, retrievedConstraintClassId, ctx, *exp.GetValuesExp(), (size_t) constraintClassIdExpIndex, constraintClassIdPropName.c_str());
         if (stat != ECSqlStatus::Success)
             return stat;
 
         //retrievedConstraintClassId < 0 means user specified parameter for it
-        if (!isParameter && !constraintMap.ClassIdMatchesConstraint (retrievedConstraintClassId))
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.", 
-                            retrievedConstraintClassId, constraintClassIdPropName.c_str ());
+        if (!isParameter && !constraintMap.ClassIdMatchesConstraint(retrievedConstraintClassId))
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Invalid value %lld for property %s. None of the respective constraint's ECClasses match that ECClassId.", 
+                            retrievedConstraintClassId, constraintClassIdPropName.c_str());
 
         return ECSqlStatus::Success;
         }
     //Sometime SourceECClassId/TargetECClassId  propertyMap is mapped to another table where ECClassId exist.
     //In this case if user did not specify it is not a error..
-    if (!constraintClassIdPropMap->IsMappedToPrimaryTable () || constraintClassIdPropMap->GetFirstColumn()->GetUserFlags() == ECDbSystemColumnECClassId)
+    if (!constraintClassIdPropMap->IsMappedToPrimaryTable() || constraintClassIdPropMap->GetFirstColumn()->GetUserFlags() == ECDbSystemColumnECClassId)
         {
         return ECSqlStatus::Success;
         }
 
     //user did not specify constraint class id in ECSQL -> try to find it which checks whether user should have specified one (because of ambiguity)
-    if (!constraintMap.TryGetSingleClassIdFromConstraint (retrievedConstraintClassId))
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.", 
-                            constraintClassIdPropName.c_str ());
+    if (!constraintMap.TryGetSingleClassIdFromConstraint(retrievedConstraintClassId))
+        return ctx.SetError(ECSqlStatus::InvalidECSql, "%s can only be omitted from an ECSQL INSERT statement if the constraint consists of only one ECClass (counting subclasses, too, in case of polymorphic constraints) and that ECClass is not 'AnyClass'.", 
+                            constraintClassIdPropName.c_str());
  
     return ECSqlStatus::Success;
     }
@@ -568,11 +568,11 @@ ECN::ECRelationshipEnd constraintEnd
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-int ECSqlInsertPreparer::GetConstraintClassIdExpIndex (InsertStatementExp const& exp, ECN::ECRelationshipEnd constraintEnd)
+int ECSqlInsertPreparer::GetConstraintClassIdExpIndex(InsertStatementExp const& exp, ECN::ECRelationshipEnd constraintEnd)
     {
     ECSqlSystemProperty constraintClassIdPropertyKind = constraintEnd == ECN::ECRelationshipEnd_Source ? ECSqlSystemProperty::SourceECClassId : ECSqlSystemProperty::TargetECClassId;
-    auto propNameListExp = exp.GetPropertyNameListExp ();
-    return propNameListExp->GetSpecialTokenExpIndexMap ().GetIndex (constraintClassIdPropertyKind);
+    auto propNameListExp = exp.GetPropertyNameListExp();
+    return propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(constraintClassIdPropertyKind);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -581,17 +581,17 @@ int ECSqlInsertPreparer::GetConstraintClassIdExpIndex (InsertStatementExp const&
 //static
 ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter, ECClassId& constraintClassId, ECSqlPrepareContext& ctx, ValueExpListExp const& valueListExp, size_t valueExpIndex, Utf8CP constraintClassIdPropertyName)
     {
-    auto constraintECClassIdValueExp = valueListExp.GetChildren ().Get<Exp> (valueExpIndex);
-    const auto expType = constraintECClassIdValueExp->GetType ();
+    auto constraintECClassIdValueExp = valueListExp.GetChildren().Get<Exp> (valueExpIndex);
+    const auto expType = constraintECClassIdValueExp->GetType();
 
     if (expType == Exp::Type::ConstantValue)
         {
         auto constraintECClassIdConstantValueExp = static_cast<ConstantValueExp const*> (constraintECClassIdValueExp);
-        auto const& typeInfo = constraintECClassIdConstantValueExp->GetTypeInfo ();
-        if (!typeInfo.IsExactNumeric ())
-            return ctx.SetError (ECSqlStatus::InvalidECSql, "Value of %s must be an integral number (which is not NULL).", constraintClassIdPropertyName);
+        auto const& typeInfo = constraintECClassIdConstantValueExp->GetTypeInfo();
+        if (!typeInfo.IsExactNumeric())
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "Value of %s must be an integral number (which is not NULL).", constraintClassIdPropertyName);
 
-        constraintClassId = constraintECClassIdConstantValueExp->GetValueAsInt64 ();
+        constraintClassId = constraintECClassIdConstantValueExp->GetValueAsInt64();
         isParameter = false;
         return ECSqlStatus::Success;
         }
@@ -603,32 +603,32 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         }
 
 
-    return ctx.SetError (ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
+    return ctx.SetError(ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement only literal values or parameters are allowed for the %s property.", constraintClassIdPropertyName);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyMapCR constraintClassIdPropMap, ECClassId constraintClassId)
+ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId(NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyMapCR constraintClassIdPropMap, ECClassId constraintClassId)
     {
     BeAssert(constraintClassId >= ECClass::UNSET_ECCLASSID);
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
-    if (constraintClassIdPropMap.IsVirtual ())
+    if (constraintClassIdPropMap.IsVirtual())
         return ECSqlStatus::Success;
 
-    if (!constraintClassIdPropMap.IsMappedToPrimaryTable () || constraintClassIdPropMap.GetFirstColumn ()->GetUserFlags () == ECDbSystemColumnECClassId)
+    if (!constraintClassIdPropMap.IsMappedToPrimaryTable() || constraintClassIdPropMap.GetFirstColumn()->GetUserFlags() == ECDbSystemColumnECClassId)
         {
         return ECSqlStatus::Success;
         }
 
-    auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql (nullptr, ECSqlType::Insert, false);
-    if (!classIdColSqlSnippet.empty ())
+    auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql(nullptr, ECSqlType::Insert, false);
+    if (!classIdColSqlSnippet.empty())
         {
-        insertNativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back (move (classIdColSqlSnippet));
+        insertNativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdColSqlSnippet));
         NativeSqlBuilder classIdSnippet;
-        classIdSnippet.Append (constraintClassId);
-        insertNativeSqlSnippets.m_valuesNativeSqlSnippets.push_back (NativeSqlBuilder::List{ move (classIdSnippet) });
+        classIdSnippet.Append(constraintClassId);
+        insertNativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(NativeSqlBuilder::List{ move(classIdSnippet) });
         }
 
     return ECSqlStatus::Success;
@@ -650,31 +650,31 @@ NativeSqlSnippets const& insertSqlSnippets
     //into a list of list of native sql snippets. At this point we don't need that jaggedness anymore and flatten it out
     //before building the final SQLite sql string.
     const std::vector<size_t> emptyIndexSkipList;
-    auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList (insertSqlSnippets.m_propertyNamesNativeSqlSnippets, emptyIndexSkipList);
-    auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList (insertSqlSnippets.m_valuesNativeSqlSnippets, emptyIndexSkipList);
+    auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, emptyIndexSkipList);
+    auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, emptyIndexSkipList);
 
-    insertBuilder.Append ("INSERT INTO ").Append (insertSqlSnippets.m_classNameNativeSqlSnippet);
+    insertBuilder.Append("INSERT INTO ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet);
 
-    insertBuilder.AppendSpace ().AppendParenLeft ().Append (propertyNamesNativeSqlSnippets);
-    if (!insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets.empty ())
+    insertBuilder.AppendSpace().AppendParenLeft().Append(propertyNamesNativeSqlSnippets);
+    if (!insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets.empty())
         {
-        if (!propertyNamesNativeSqlSnippets.empty ())
-            insertBuilder.AppendComma ();
+        if (!propertyNamesNativeSqlSnippets.empty())
+            insertBuilder.AppendComma();
 
-        insertBuilder.Append (insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets);
+        insertBuilder.Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets);
         }
 
-    insertBuilder.AppendParenRight ();
-    insertBuilder.Append (" VALUES ").AppendParenLeft ().Append (valuesNativeSqlSnippets);
-    if (!insertSqlSnippets.m_pkValuesNativeSqlSnippets.empty ())
+    insertBuilder.AppendParenRight();
+    insertBuilder.Append(" VALUES ").AppendParenLeft().Append(valuesNativeSqlSnippets);
+    if (!insertSqlSnippets.m_pkValuesNativeSqlSnippets.empty())
         {
-        if (!valuesNativeSqlSnippets.empty ())
-            insertBuilder.AppendComma ();
+        if (!valuesNativeSqlSnippets.empty())
+            insertBuilder.AppendComma();
 
-        insertBuilder.Append (insertSqlSnippets.m_pkValuesNativeSqlSnippets);
+        insertBuilder.Append(insertSqlSnippets.m_pkValuesNativeSqlSnippets);
         }
 
-    insertBuilder.AppendParenRight ();
+    insertBuilder.AppendParenRight();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -694,20 +694,20 @@ RelationshipClassEndTableMapCR classMap
     //the list will contain more than one snippet. Consequently the list of ECSQL expressions is translated
     //into a list of list of native sql snippets. At this point we don't need that jaggedness anymore and flatten it out
     //before building the final SQLite sql string.
-    auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList (insertSqlSnippets.m_propertyNamesNativeSqlSnippets, expIndexSkipList);
-    auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList (insertSqlSnippets.m_valuesNativeSqlSnippets, expIndexSkipList);
+    auto propertyNamesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_propertyNamesNativeSqlSnippets, expIndexSkipList);
+    auto valuesNativeSqlSnippets = NativeSqlBuilder::FlattenJaggedList(insertSqlSnippets.m_valuesNativeSqlSnippets, expIndexSkipList);
 
-    updateBuilder.Append ("UPDATE ").Append (insertSqlSnippets.m_classNameNativeSqlSnippet).Append (" SET ");
-    updateBuilder.Append (propertyNamesNativeSqlSnippets, " = ", valuesNativeSqlSnippets);
+    updateBuilder.Append("UPDATE ").Append(insertSqlSnippets.m_classNameNativeSqlSnippet).Append(" SET ");
+    updateBuilder.Append(propertyNamesNativeSqlSnippets, " = ", valuesNativeSqlSnippets);
 
     //add WHERE clause so that the right row in the end table is updated
-    updateBuilder.Append (" WHERE ").Append (insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
+    updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, " = ", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
     //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
     //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    auto otherEndECInstanceIdColumnSqlSnippets = classMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Update, false);
+    auto otherEndECInstanceIdColumnSqlSnippets = classMap.GetOtherEndECInstanceIdPropMap()->ToNativeSql(nullptr, ECSqlType::Update, false);
     for (auto const& otherEndECInstanceIdColSnippet : otherEndECInstanceIdColumnSqlSnippets)
         {
-        updateBuilder.Append (" AND ").Append (otherEndECInstanceIdColSnippet).Append (" IS NULL");
+        updateBuilder.Append(" AND ").Append(otherEndECInstanceIdColSnippet).Append(" IS NULL");
         }
     }
 
@@ -716,41 +716,41 @@ RelationshipClassEndTableMapCR classMap
 // @bsimethod                                    Krischan.Eberle                    07/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedECInstanceId (int& ecinstanceIdExpIndex, ECSqlPrepareContext& ctx, InsertStatementExp const& exp, IClassMap const& classMap)
+ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedECInstanceId(int& ecinstanceIdExpIndex, ECSqlPrepareContext& ctx, InsertStatementExp const& exp, IClassMap const& classMap)
     {
     ecinstanceIdExpIndex = -1;
 
-    if (ctx.IsEmbeddedStatement ())
+    if (ctx.IsEmbeddedStatement())
         return ECInstanceIdMode::NotUserProvided; 
 
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
-    auto propNameListExp = exp.GetPropertyNameListExp ();
-    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap ().GetIndex (ECSqlSystemProperty::ECInstanceId);
+    auto propNameListExp = exp.GetPropertyNameListExp();
+    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemProperty::ECInstanceId);
     if (ecinstanceIdExpIndex < 0)
         return ECInstanceIdMode::NotUserProvided; //-> auto-generate
 
-    auto valueExp = exp.GetValuesExp ()->GetChildren ().Get<Exp> (ecinstanceIdExpIndex);
-    BeAssert (valueExp != nullptr);
-    if (ECSqlExpPreparer::IsNullExp (*valueExp))
+    auto valueExp = exp.GetValuesExp()->GetChildren().Get<Exp> (ecinstanceIdExpIndex);
+    BeAssert(valueExp != nullptr);
+    if (ECSqlExpPreparer::IsNullExp(*valueExp))
         return ECInstanceIdMode::UserProvidedNull; //-> auto-generate
         
     //now we know that user provided a not-null ECInstanceId
 
     //for end table relationships we ignore the user provided ECInstanceId
     //as end table relationships don't hve their own ECInstanceId
-    const bool isEndTableRelationship = classMap.GetClassMapType () == IClassMap::Type::RelationshipEndTable;
+    const bool isEndTableRelationship = classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable;
 
     auto preparedStatement = ctx.GetECSqlStatementR ().GetPreparedStatementP<ECSqlInsertPreparedStatement> ();
-    BeAssert (preparedStatement != nullptr);
-    ECClassId classId = classMap.GetClass ().GetId ();
-    const Exp::Type expType = valueExp->GetType ();
+    BeAssert(preparedStatement != nullptr);
+    ECClassId classId = classMap.GetClass().GetId();
+    const Exp::Type expType = valueExp->GetType();
     if (expType == Exp::Type::ConstantValue)
         {
         if (!isEndTableRelationship)
             {
             ConstantValueExp const* constValueExp = static_cast<ConstantValueExp const*> (valueExp);
-            ECInstanceId instanceId (constValueExp->GetValueAsInt64 ());
-            preparedStatement->SetECInstanceKeyInfo (ECSqlInsertPreparedStatement::ECInstanceKeyInfo (classId, instanceId));
+            ECInstanceId instanceId(constValueExp->GetValueAsInt64());
+            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, instanceId));
             }
         }
     else if (expType == Exp::Type::Parameter)
@@ -758,38 +758,38 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
         ParameterExp const* paramExp = static_cast<ParameterExp const*> (valueExp);
 
         ECSqlBinder* ecinstanceidBinder = nullptr;
-        auto stat = preparedStatement->GetParameterMapR ().TryGetBinder (ecinstanceidBinder, paramExp->GetParameterIndex ());
+        auto stat = preparedStatement->GetParameterMapR ().TryGetBinder(ecinstanceidBinder, paramExp->GetParameterIndex());
         if (stat != ECSqlStatus::Success)
             {
-            ctx.SetError (ECSqlStatus::ProgrammerError, "Could not find ECInstanceId parameter binder.");
-            BeAssert (false && "Could not find ECInstanceId parameter binder.");
+            ctx.SetError(ECSqlStatus::ProgrammerError, "Could not find ECInstanceId parameter binder.");
+            BeAssert(false && "Could not find ECInstanceId parameter binder.");
             return ECInstanceIdMode::Invalid;
             }
 
-        BeAssert (ecinstanceidBinder != nullptr);
+        BeAssert(ecinstanceidBinder != nullptr);
 
         if (isEndTableRelationship)
             {
             //for end table relationships we ignore the user provided ECInstanceId
             //as end table relationships don't hve their own ECInstanceId
-            BeAssert (dynamic_cast<SystemPropertyECSqlBinder*> (ecinstanceidBinder) != nullptr);
+            BeAssert(dynamic_cast<SystemPropertyECSqlBinder*> (ecinstanceidBinder) != nullptr);
             auto systemPropBinder = static_cast<SystemPropertyECSqlBinder*> (ecinstanceidBinder);
-            systemPropBinder->SetIsNoop ();
+            systemPropBinder->SetIsNoop();
             }
         else
             {
             //capture the bound ecinstanceid in the prepared statement so that it can be returned from Step
-            ecinstanceidBinder->SetOnBindRepositoryBasedIdEventHandler ([preparedStatement] (BeRepositoryBasedId const& bindValue)
+            ecinstanceidBinder->SetOnBindRepositoryBasedIdEventHandler([preparedStatement] (ECInstanceId const& bindValue)
                 {
-                preparedStatement->GetECInstanceKeyInfo ().SetBoundECInstanceId (ECInstanceId (bindValue.GetValue ()));
+                preparedStatement->GetECInstanceKeyInfo().SetBoundECInstanceId(ECInstanceId(bindValue.GetValue()));
                 });
 
-            preparedStatement->SetECInstanceKeyInfo (ECSqlInsertPreparedStatement::ECInstanceKeyInfo (classId, *ecinstanceidBinder));
+            preparedStatement->SetECInstanceKeyInfo(ECSqlInsertPreparedStatement::ECInstanceKeyInfo(classId, *ecinstanceidBinder));
             }
         }
     else
         {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
+        ctx.SetError(ECSqlStatus::InvalidECSql, "ECInstanceId in an ECSQL INSERT statement can only be NULL, a literal or a parameter.");
         return ECInstanceIdMode::Invalid;
         }
 

@@ -1929,7 +1929,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ?, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
 
-        ECInstanceId expectedId(BeRepositoryId(3), 444);
+        BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << statement.GetLastStatusMessage().c_str();
 
         ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
@@ -1947,7 +1947,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_ParameterInSelectClause)
         ECSqlStatement statement;
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT -?, S FROM ecsql.PSA LIMIT 1")) << statement.GetLastStatusMessage().c_str();
 
-        ECInstanceId expectedId(BeRepositoryId(3), 444);
+        BeRepositoryBasedId expectedId(BeRepositoryId(3), 444);
         ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expectedId)) << statement.GetLastStatusMessage().c_str();
 
         ASSERT_EQ(ECSqlStepStatus::HasRow, statement.Step());
