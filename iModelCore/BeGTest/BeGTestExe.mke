@@ -137,7 +137,6 @@ always:
 
 # Link everything to the Delivery dir    
 always:
-    python $(SrcBsiCommon)build/CreateSymLinks.py -m $(BuildContext)Delivery=$(o)
-    python $(SrcBsiCommon)build/CreateSymLinks.py -a $(BuildContext)Delivery=$(o)
-    python $(SrcBsiCommon)build/CreateSymLinks.py -m $(BuildContext)Delivery=$(BuildContext)SubParts/Assemblies
-    
+    ~linkmultifiles "$(BuildContext)Delivery=$(o)"
+    ~linkmultidirs "$(BuildContext)Delivery=$(o)"
+    ~linkmultifiles "$(BuildContext)Delivery=$(BuildContext)SubParts/Assemblies"
