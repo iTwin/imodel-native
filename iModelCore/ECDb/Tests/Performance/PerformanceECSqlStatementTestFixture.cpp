@@ -16,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // *** WIP_STUB_FOR_MISSING_CLASS_PerformanceResultRecorder
 struct PerformanceResultRecorder
 {
-static void PerformanceResultRecorder::LogToDb(Utf8String,Utf8String,double,Utf8String,int optional=0) {;}
+static void LogToDb(Utf8String,Utf8String,double,Utf8String,int optional=0) {;}
 };
 
 /*---------------------------------------------------------------------------------**//**
