@@ -26,7 +26,9 @@ friend struct JsCurvePrimitive;
 friend struct JsCurveVector;
 friend struct JsDVector3d;
 friend struct JsDRay3d;
+friend struct JsDRange3d;
 friend struct JsDPoint3dDVector3dDVector3d;
+
 
 private:
     DPoint3d m_point;

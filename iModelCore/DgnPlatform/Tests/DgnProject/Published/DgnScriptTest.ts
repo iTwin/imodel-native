@@ -55,7 +55,7 @@ module DgnScriptTests {
         checker.IsNearJsDPoint3d(pointD1, pointD1);
     }
     // Run the tests
-    debugger;
+    //debugger;
 
     //BentleyApi.Dgn.JsUtils.ReportError('hello world');
     test1();
