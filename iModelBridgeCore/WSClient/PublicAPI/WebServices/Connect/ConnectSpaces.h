@@ -108,7 +108,7 @@ struct ConnectSpaces
         static std::map<Utf8String, StatusAction> sm_actionMap;
         static Utf8String sm_eulaUrlBase;
 
-        BeCriticalSection m_credentialsCriticalSection;
+        BeMutex m_credentialsCriticalSection;
         Credentials m_credentials;
         SamlToken m_token;
         SamlToken m_eulaToken;
