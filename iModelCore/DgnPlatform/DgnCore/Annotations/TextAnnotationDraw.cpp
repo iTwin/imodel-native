@@ -27,6 +27,24 @@ void TextAnnotationDraw::CopyFrom(TextAnnotationDrawCR rhs)
     m_documentTransform = rhs.m_documentTransform;
     }
 
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     07/2014
+//=======================================================================================
+struct PopTransformClipOnDestruct
+{
+private:
+    bool m_isCancelled;
+    ViewContextR m_context;
+
+    void Pop() { if (!m_isCancelled) { m_context.PopTransformClip(); } }
+
+public:
+    explicit PopTransformClipOnDestruct(ViewContextR context) : m_isCancelled(false), m_context(context) {}
+    ~PopTransformClipOnDestruct() { Pop(); }
+    void CallThenCancel() { Pop(); Cancel(); }
+    void Cancel() { m_isCancelled = true; }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
@@ -39,7 +57,7 @@ BentleyStatus TextAnnotationDraw::Draw(ViewContextR context) const
         return status;
 
     context.PushTransform(m_documentTransform);
-    CallbackOnDestruct autoPopDocumentTransform([&]() { context.PopTransformClip(); });
+    PopTransformClipOnDestruct autoPopDocumentTransform(context);
 
     AnnotationTextBlockLayout textLayout(*m_annotation->GetTextCP());
     AnnotationTextBlockDraw textDraw(textLayout);
