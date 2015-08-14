@@ -160,16 +160,6 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindText(int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
 
-#if defined (NEEDS_WORK_BE_IDS)
-    //! Binds a BeRepositoryBasedId to the parameter
-    //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
-    //! this method to bind them to a parameter.
-    //! @param[in] parameterIndex Parameter index
-    //! @param[in] value Value to bind
-    //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindId(int parameterIndex, BeRepositoryBasedId value);
-#endif
-
     //! Binds a BeInt64Id subclass to the parameter. Binds NULL if the id is not valid.
     //! @param[in] parameterIndex Parameter index
     //! @param[in] id Value to bind.
