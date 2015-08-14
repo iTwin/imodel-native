@@ -1219,11 +1219,12 @@ void DgnModel::Solver::FromJson(Utf8CP str)
 +---------------+---------------+---------------+---------------+---------------+------*/
 EC::ECInstanceId ComponentModelSolution::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
     {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(ComponentModelId=? AND Parameters=?)");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE ComponentModelId=? AND Parameters=?");
     stmt->BindId(1, cmid);
     stmt->BindText(2, solutionName, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
         return EC::ECInstanceId();
+
     return stmt->GetValueId<EC::ECInstanceId>(0);
     }
 
@@ -1232,7 +1233,7 @@ EC::ECInstanceId ComponentModelSolution::QuerySolutionId(DgnModelId cmid, Utf8St
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentModelSolution::Query(Solution& sln, EC::ECInstanceId sid)
     {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(Id=?)");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE Id=?");
     stmt->BindId(1, sid);
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::NotFound;

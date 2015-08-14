@@ -416,45 +416,6 @@ DG_INLINE double PatternParams::GetAnnotationScale() const {return annotationsca
 
 DG_INLINE void ElemMatSymb::SetIndexedRasterPattern(int32_t index, uint32_t rasterPat) {m_elementStyle = IS_LINECODE(index) ? index : 0; m_rasterPat = rasterPat; m_extSymbID = 0;}
 
-DG_INLINE ColorDef ElemDisplayParams::GetLineColor() const {BeAssert(m_appearanceOverrides.m_color || m_resolved); return m_lineColor;}
-DG_INLINE ColorDef ElemDisplayParams::GetFillColor() const {BeAssert(m_appearanceOverrides.m_fill || m_resolved); return m_fillColor;}
-DG_INLINE FillDisplay ElemDisplayParams::GetFillDisplay() const {return m_fillDisplay;}
-DG_INLINE GradientSymbCP ElemDisplayParams::GetGradient() const {return m_gradient.get(); }
-DG_INLINE PatternParamsCP ElemDisplayParams::GetPatternParams() const {return m_pattern.get();}
-DG_INLINE LineStyleInfoCP ElemDisplayParams::GetLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return m_styleInfo.get();}
-DG_INLINE uint32_t ElemDisplayParams::GetWeight() const {BeAssert(m_appearanceOverrides.m_weight || m_resolved); return m_weight;}
-DG_INLINE DgnGeometryClass ElemDisplayParams::GetGeometryClass() const {return m_geometryClass;}
-DG_INLINE DgnMaterialId ElemDisplayParams::GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material;}
-DG_INLINE double ElemDisplayParams::GetTransparency() const {return m_elmTransparency;}
-DG_INLINE double ElemDisplayParams::GetFillTransparency() const {return m_fillTransparency;}
-DG_INLINE int32_t ElemDisplayParams::GetDisplayPriority() const {return m_elmPriority;}
-DG_INLINE double ElemDisplayParams::GetNetTransparency() const {BeAssert(m_resolved); return m_netElmTransparency;}
-DG_INLINE double ElemDisplayParams::GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
-DG_INLINE int32_t ElemDisplayParams::GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;}
-
-DG_INLINE void ElemDisplayParams::SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
-DG_INLINE void ElemDisplayParams::SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_fillColor = color;}
-DG_INLINE void ElemDisplayParams::SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
-DG_INLINE void ElemDisplayParams::SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
-DG_INLINE void ElemDisplayParams::SetPatternParams (PatternParamsP pattern) {m_pattern = pattern;}
-DG_INLINE void ElemDisplayParams::SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
-DG_INLINE void ElemDisplayParams::SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
-DG_INLINE void ElemDisplayParams::SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
-DG_INLINE void ElemDisplayParams::SetMaterial(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
-DG_INLINE void ElemDisplayParams::SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;}
-DG_INLINE void ElemDisplayParams::SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
-DG_INLINE void ElemDisplayParams::SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;}
-DG_INLINE void ElemDisplayParams::SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;}
-DG_INLINE bool ElemDisplayParams::IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
-DG_INLINE bool ElemDisplayParams::IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
-DG_INLINE bool ElemDisplayParams::IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
-DG_INLINE bool ElemDisplayParams::IsMaterialFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_material;}
-DG_INLINE bool ElemDisplayParams::IsFillColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_fill;}
-DG_INLINE void ElemDisplayParams::SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
-DG_INLINE void ElemDisplayParams::SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
-DG_INLINE DgnCategoryId ElemDisplayParams::GetCategoryId() const {return m_categoryId;}
-DG_INLINE DgnSubCategoryId ElemDisplayParams::GetSubCategoryId() const {return m_subCategoryId;}
-
 DG_INLINE bool PlotInfo::IsScreeningSet() const {return m_hasScreening;}
 DG_INLINE double PlotInfo::GetScreening() const {return m_screening;}
 DG_INLINE void PlotInfo::SetScreening(double screen, bool set) {if (set) m_screening = screen; m_hasScreening = set;};

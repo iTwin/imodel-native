@@ -659,40 +659,46 @@ inline flatbuffers::Offset<Material> CreateMaterial(flatbuffers::FlatBufferBuild
 struct AreaFill : private flatbuffers::Table {
   FillDisplay fill() const { return static_cast<FillDisplay>(GetField<int8_t>(4, 0)); }
   uint32_t color() const { return GetField<uint32_t>(6, 0); }
-  double transparency() const { return GetField<double>(8, 0); }
-  GradientMode mode() const { return static_cast<GradientMode>(GetField<int8_t>(10, 0)); }
-  uint16_t flags() const { return GetField<uint16_t>(12, 0); }
-  double angle() const { return GetField<double>(14, 0); }
-  double tint() const { return GetField<double>(16, 0); }
-  double shift() const { return GetField<double>(18, 0); }
-  const flatbuffers::Vector<uint32_t> *colors() const { return GetPointer<const flatbuffers::Vector<uint32_t> *>(20); }
-  const flatbuffers::Vector<double> *values() const { return GetPointer<const flatbuffers::Vector<double> *>(22); }
+  uint8_t useColor() const { return GetField<uint8_t>(8, 0); }
+  uint8_t isBgColor() const { return GetField<uint8_t>(10, 0); }
+  double transparency() const { return GetField<double>(12, 0); }
+  GradientMode mode() const { return static_cast<GradientMode>(GetField<int8_t>(14, 0)); }
+  uint16_t flags() const { return GetField<uint16_t>(16, 0); }
+  double angle() const { return GetField<double>(18, 0); }
+  double tint() const { return GetField<double>(20, 0); }
+  double shift() const { return GetField<double>(22, 0); }
+  const flatbuffers::Vector<uint32_t> *colors() const { return GetPointer<const flatbuffers::Vector<uint32_t> *>(24); }
+  const flatbuffers::Vector<double> *values() const { return GetPointer<const flatbuffers::Vector<double> *>(26); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int8_t>(verifier, 4 /* fill */) &&
            VerifyField<uint32_t>(verifier, 6 /* color */) &&
-           VerifyField<double>(verifier, 8 /* transparency */) &&
-           VerifyField<int8_t>(verifier, 10 /* mode */) &&
-           VerifyField<uint16_t>(verifier, 12 /* flags */) &&
-           VerifyField<double>(verifier, 14 /* angle */) &&
-           VerifyField<double>(verifier, 16 /* tint */) &&
-           VerifyField<double>(verifier, 18 /* shift */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 20 /* colors */) &&
+           VerifyField<uint8_t>(verifier, 8 /* useColor */) &&
+           VerifyField<uint8_t>(verifier, 10 /* isBgColor */) &&
+           VerifyField<double>(verifier, 12 /* transparency */) &&
+           VerifyField<int8_t>(verifier, 14 /* mode */) &&
+           VerifyField<uint16_t>(verifier, 16 /* flags */) &&
+           VerifyField<double>(verifier, 18 /* angle */) &&
+           VerifyField<double>(verifier, 20 /* tint */) &&
+           VerifyField<double>(verifier, 22 /* shift */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 24 /* colors */) &&
            verifier.Verify(colors()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 22 /* values */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 26 /* values */) &&
            verifier.Verify(values()) &&
            verifier.EndTable();
   }
   bool has_fill() const { return CheckField(4); }
   bool has_color() const { return CheckField(6); }
-  bool has_transparency() const { return CheckField(8); }
-  bool has_mode() const { return CheckField(10); }
-  bool has_flags() const { return CheckField(12); }
-  bool has_angle() const { return CheckField(14); }
-  bool has_tint() const { return CheckField(16); }
-  bool has_shift() const { return CheckField(18); }
-  bool has_colors() const { return CheckField(20); }
-  bool has_values() const { return CheckField(22); }
+  bool has_useColor() const { return CheckField(8); }
+  bool has_isBgColor() const { return CheckField(10); }
+  bool has_transparency() const { return CheckField(12); }
+  bool has_mode() const { return CheckField(14); }
+  bool has_flags() const { return CheckField(16); }
+  bool has_angle() const { return CheckField(18); }
+  bool has_tint() const { return CheckField(20); }
+  bool has_shift() const { return CheckField(22); }
+  bool has_colors() const { return CheckField(24); }
+  bool has_values() const { return CheckField(26); }
 };
 
 struct AreaFillBuilder {
@@ -700,18 +706,20 @@ struct AreaFillBuilder {
   flatbuffers::uoffset_t start_;
   void add_fill(FillDisplay fill) { fbb_.AddElement<int8_t>(4, static_cast<int8_t>(fill), 0); }
   void add_color(uint32_t color) { fbb_.AddElement<uint32_t>(6, color, 0); }
-  void add_transparency(double transparency) { fbb_.AddElement<double>(8, transparency, 0); }
-  void add_mode(GradientMode mode) { fbb_.AddElement<int8_t>(10, static_cast<int8_t>(mode), 0); }
-  void add_flags(uint16_t flags) { fbb_.AddElement<uint16_t>(12, flags, 0); }
-  void add_angle(double angle) { fbb_.AddElement<double>(14, angle, 0); }
-  void add_tint(double tint) { fbb_.AddElement<double>(16, tint, 0); }
-  void add_shift(double shift) { fbb_.AddElement<double>(18, shift, 0); }
-  void add_colors(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> colors) { fbb_.AddOffset(20, colors); }
-  void add_values(flatbuffers::Offset<flatbuffers::Vector<double>> values) { fbb_.AddOffset(22, values); }
+  void add_useColor(uint8_t useColor) { fbb_.AddElement<uint8_t>(8, useColor, 0); }
+  void add_isBgColor(uint8_t isBgColor) { fbb_.AddElement<uint8_t>(10, isBgColor, 0); }
+  void add_transparency(double transparency) { fbb_.AddElement<double>(12, transparency, 0); }
+  void add_mode(GradientMode mode) { fbb_.AddElement<int8_t>(14, static_cast<int8_t>(mode), 0); }
+  void add_flags(uint16_t flags) { fbb_.AddElement<uint16_t>(16, flags, 0); }
+  void add_angle(double angle) { fbb_.AddElement<double>(18, angle, 0); }
+  void add_tint(double tint) { fbb_.AddElement<double>(20, tint, 0); }
+  void add_shift(double shift) { fbb_.AddElement<double>(22, shift, 0); }
+  void add_colors(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> colors) { fbb_.AddOffset(24, colors); }
+  void add_values(flatbuffers::Offset<flatbuffers::Vector<double>> values) { fbb_.AddOffset(26, values); }
   AreaFillBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AreaFillBuilder &operator=(const AreaFillBuilder &);
   flatbuffers::Offset<AreaFill> Finish() {
-    auto o = flatbuffers::Offset<AreaFill>(fbb_.EndTable(start_, 10));
+    auto o = flatbuffers::Offset<AreaFill>(fbb_.EndTable(start_, 12));
     return o;
   }
 };
@@ -719,6 +727,8 @@ struct AreaFillBuilder {
 inline flatbuffers::Offset<AreaFill> CreateAreaFill(flatbuffers::FlatBufferBuilder &_fbb,
    FillDisplay fill = FillDisplay_None,
    uint32_t color = 0,
+   uint8_t useColor = 0,
+   uint8_t isBgColor = 0,
    double transparency = 0,
    GradientMode mode = GradientMode_None,
    uint16_t flags = 0,
@@ -737,6 +747,8 @@ inline flatbuffers::Offset<AreaFill> CreateAreaFill(flatbuffers::FlatBufferBuild
   builder_.add_color(color);
   builder_.add_flags(flags);
   builder_.add_mode(mode);
+  builder_.add_isBgColor(isBgColor);
+  builder_.add_useColor(useColor);
   builder_.add_fill(fill);
   return builder_.Finish();
 }

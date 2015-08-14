@@ -38,7 +38,7 @@
     typedef structunion _sName_ const*    _name_##CP; \
     typedef structunion _sName_ const&    _name_##CR;}
 
-#define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1 (_sName_,_name_,struct)
+#define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1(_sName_,_name_,struct)
 
 #define DGNPLATFORM_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -279,19 +279,18 @@ END_BENTLEY_NAMESPACE
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-ECINSTANCE_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
-ECINSTANCE_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
-ECINSTANCE_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
-ECINSTANCE_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
-ECINSTANCE_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
-ECINSTANCE_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
-ECINSTANCE_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory. @ingroup DgnCategoryGroup
-ECINSTANCE_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
-ECINSTANCE_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
+BEREPOSITORYBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup DgnElementGroup
+BEREPOSITORYBASED_ID_CLASS(DgnGeomPartId)      //!< An Id that is assigned to a DgnGeomPart.
+BEREPOSITORYBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup DgnModelGroup
+BEREPOSITORYBASED_ID_CLASS(DgnViewId)          //!< An Id that is assigned to a view. See DgnDb#Views, ViewController. @ingroup DgnViewGroup
+BEREPOSITORYBASED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
+BEREPOSITORYBASED_ID_CLASS(DgnLinkId)          //!< An Id that is assigned to a DGN link. See DgnLinkTable.
 
-BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
-BEREPOSITORYBASED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
-
+BESERVER_ISSUED_ID_CLASS(DgnCategoryId)      //!< An Id that is assigned to a DgnCategory.  A DgnElement belongs to exactly one DgnCategory. @ingroup DgnCategoryGroup
+BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
+BESERVER_ISSUED_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory. @ingroup DgnCategoryGroup
+BESERVER_ISSUED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
+BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId);
 
@@ -307,8 +306,8 @@ typedef struct dgn_ModelHandler::Model& ModelHandlerR;
 //=======================================================================================
 struct BeRepositoryBasedIdSet : bset<BeRepositoryBasedId>
 {
-    DGNPLATFORM_EXPORT void FromJson (Json::Value const& in);
-    DGNPLATFORM_EXPORT void ToJson (Json::Value& out) const;
+    DGNPLATFORM_EXPORT void FromJson(Json::Value const& in);
+    DGNPLATFORM_EXPORT void ToJson(Json::Value& out) const;
 };
 
 //=======================================================================================
@@ -337,15 +336,15 @@ public:
     bool empty() const {return m_set.empty();}
     void clear() {m_set.clear();}
     size_t size() const {return m_set.size();}
-    bpair<iterator,bool> insert (IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
-    void insert (const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
-    size_t erase (IdType const& val) {return ((T_SetType&)m_set).erase(val);}
-    iterator erase (iterator it) {return ((T_SetType&)m_set).erase(it);}
+    bpair<iterator,bool> insert(IdType const& val) {BeAssert(val.IsValid()); return ((T_SetType&)m_set).insert(val);}
+    void insert(const_iterator first, const_iterator last) {((T_SetType&)m_set).insert(first,last);}
+    size_t erase(IdType const& val) {return ((T_SetType&)m_set).erase(val);}
+    iterator erase(iterator it) {return ((T_SetType&)m_set).erase(it);}
 
     bool Contains(IdType id) const {return end() != find(id);}
 
-    void FromJson (Json::Value const& in) {m_set.FromJson(in);}
-    void ToJson (Json::Value& out) const {m_set.ToJson(out);}
+    void FromJson(Json::Value const& in) {m_set.FromJson(in);}
+    void ToJson(Json::Value& out) const {m_set.ToJson(out);}
 
     BeRepositoryBasedIdSet const& GetRepositoryBasedIdSet() const { return m_set; }
 };
@@ -357,15 +356,13 @@ typedef IdSet<DgnCategoryId> DgnCategoryIdSet;  //!< IdSet with DgnCategoryId me
 //=======================================================================================
 //! A DgnClassId is the local id for an ECClass in a DgnDb.
 //=======================================================================================
-struct DgnClassId : BeInt64Id<DgnClassId>
+struct DgnClassId : BeInt64Id
 {
     DgnClassId() {Invalidate();}
     explicit DgnClassId(int64_t val) : BeInt64Id(val) {}
-    DgnClassId(DgnClassId&& rhs) : BeInt64Id<DgnClassId> (std::move(rhs)) {}
-    DgnClassId(DgnClassId const& rhs) : BeInt64Id<DgnClassId>(rhs) {}
+    DgnClassId(DgnClassId&& rhs) : BeInt64Id(std::move(rhs)) {}
+    DgnClassId(DgnClassId const& rhs) : BeInt64Id(rhs) {}
     DgnClassId& operator=(DgnClassId const& rhs) {m_id = rhs.m_id; return *this;}
-    bool Validate() const {return m_id!=0 && m_id!=-1;}
-    void Invalidate() {m_id = -1;}
 };
 
 //=======================================================================================
@@ -374,8 +371,8 @@ struct DgnClassId : BeInt64Id<DgnClassId>
 struct DgnElementKey : BeSQLite::EC::ECInstanceKey
 {
     DgnElementKey() : BeSQLite::EC::ECInstanceKey() {}
-    DgnElementKey (ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey (classId, instanceId) {}
-    DgnElementKey (DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey (classId.GetValue(), instanceId) {}
+    DgnElementKey(ECN::ECClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId, instanceId) {}
+    DgnElementKey(DgnClassId classId, BeSQLite::EC::ECInstanceId instanceId) : BeSQLite::EC::ECInstanceKey(classId.GetValue(), instanceId) {}
 
     //! Converts an ECInstanceKey to a DgnElementKey.
     //! @note Does a simple type conversion without checking if the specified ECInstanceKey is a valid DgnElementKey
@@ -784,13 +781,13 @@ enum class ClipVolumePass
 //  types in a few places where it is important that the type be a 32-bit integer.  Once we encountered
 //  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not
 //  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
-#if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined(BENTLEYCONFIG_GRAPHICS_OPENGL)
+#if defined (BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined (BENTLEYCONFIG_GRAPHICS_OPENGL)
     typedef int32_t QvInt32;
     typedef uint32_t QvUInt32;
     typedef short QvInt16;
     typedef unsigned short QvUInt16;
 #else
-    #if !defined(BENTLEYCONFIG_GRAPHICS_DIRECTX)
+    #if !defined (BENTLEYCONFIG_GRAPHICS_DIRECTX)
         #error Expect BENTLEYCONFIG_GRAPHICS_DIRECTX when BENTLEYCONFIG_GRAPHICS_OPENGLES is not defined
     #endif
 
@@ -871,17 +868,6 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMAXUI8     UINT64_MAX
 
 //=======================================================================================
-//! @ingroup DgnColorGroup
-// @bsiclass                                                    Keith.Bentley   04/15
-//=======================================================================================
-struct HsvColorDef
-{
-    int32_t  hue;           /* red=0, yellow, green, cyan, blue, magenta */
-    int32_t  saturation;    /* 0=white, 100=no white, tints */
-    int32_t  value;         /* 0=black, 100=no black, shades */
-};
-
-//=======================================================================================
 //! RGBA values for a color
 //! @ingroup DgnColorGroup
 //=======================================================================================
@@ -895,8 +881,8 @@ private:
     uint32_t* AsUInt32() {return reinterpret_cast<uint32_t*>(this);}
 
 public:
-    void SetColors (Byte r, Byte g, Byte b, Byte a) {m_red = r; m_green = g; m_blue = b; m_alpha = a;}
-    void SetAllColors (Byte val) {m_red = m_green = m_blue = val;}
+    void SetColors(Byte r, Byte g, Byte b, Byte a) {m_red = r; m_green = g; m_blue = b; m_alpha = a;}
+    void SetAllColors(Byte val) {m_red = m_green = m_blue = val;}
     void SetRed(Byte v) {m_red=v;}
     void SetGreen(Byte v) {m_green=v;}
     void SetBlue(Byte v) {m_blue=v;}
@@ -912,9 +898,9 @@ public:
     bool operator==(ColorDef const& rhs) const {return GetValue() == rhs.GetValue();}
     bool operator!=(ColorDef const& rhs) const {return GetValue() != rhs.GetValue();}
 
-    ColorDef () {*AsUInt32() = 0;}
-    explicit ColorDef (uint32_t intval) {*AsUInt32()=intval;}
-    ColorDef (Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors (red,green,blue,alpha);}
+    ColorDef() {*AsUInt32() = 0;}
+    explicit ColorDef(uint32_t intval) {*AsUInt32()=intval;}
+    ColorDef(Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors(red,green,blue,alpha);}
 
     static ColorDef Black()       {return ColorDef(0,0,0);}
     static ColorDef White()       {return ColorDef(0xff,0xff,0xff);}

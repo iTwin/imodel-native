@@ -139,6 +139,8 @@ table AreaFill
     {
     fill:FillDisplay;
     color:uint;
+    useColor:ubyte;  // color overrides sub-category appearance
+    isBgColor:ubyte; // color matches view background
     transparency:double;
     mode:GradientMode;
     flags:ushort;

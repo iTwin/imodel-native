@@ -984,119 +984,12 @@ void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int li
     m_output->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
     }
 
-const double VISIBILITY_GOAL       = 40.0;
-const int    HSV_SATURATION_WEIGHT = 4;
-const int    HSV_VALUE_WEIGHT      = 2;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   08/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static double colorVisibilityCheck(ColorDef fg, ColorDef bg)
-    {
-    // Compute luminosity...
-    double red   = abs(fg.GetRed()   - bg.GetRed());
-    double green = abs(fg.GetGreen() - bg.GetGreen());
-    double blue  = abs(fg.GetBlue()  - bg.GetBlue());
-
-    return (0.30 * red) + (0.59 * green) + (0.11 * blue);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   08/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void adjustHSVColor(HsvColorDef& fgHsv, bool darkenColor, int delta)
-    {
-    if (darkenColor)
-        {
-        int     weightedDelta = delta*HSV_VALUE_WEIGHT;
-
-        if (fgHsv.value >= weightedDelta)
-            {
-            fgHsv.value -= weightedDelta;
-            }
-        else
-            {
-            weightedDelta -= fgHsv.value;
-
-            fgHsv.value = 0;
-            fgHsv.saturation = fgHsv.saturation + weightedDelta < 100 ? fgHsv.saturation + weightedDelta : 100;
-            }
-        }
-    else
-        {
-        int weightedDelta = delta*HSV_SATURATION_WEIGHT;
-
-        if (fgHsv.saturation >= weightedDelta)
-            {
-            fgHsv.saturation -= weightedDelta;
-            }
-        else
-            {
-            weightedDelta -= fgHsv.saturation;
-
-            fgHsv.saturation = 0;
-            fgHsv.value = fgHsv.value + weightedDelta < 100 ? fgHsv.value + weightedDelta : 100;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void adjustColorForContrast(ColorDef& fg, ColorDef bg, ColorDef vw)
-    {
-    double visibility = colorVisibilityCheck(fg, bg);
-
-    if (VISIBILITY_GOAL <= visibility)
-        return;
-
-    int         adjPercent = (int) (((VISIBILITY_GOAL - visibility) / 255.0) * 100.0);
-    HsvColorDef brightHSV, darkerHSV, fgHSV;
-
-    ColorUtil::ConvertRgbToHsv(&fgHSV, &fg);
-
-    darkerHSV = fgHSV;
-    brightHSV = fgHSV;
-
-    adjustHSVColor(darkerHSV, true,  adjPercent);
-    adjustHSVColor(brightHSV, false, adjPercent);
-
-    ColorDef bright, darker;
-
-    bright = darker = fg; // NOTE: Initialize to original color to preserve transparency
-    ColorUtil::ConvertHsvToRgb(&darker, &darkerHSV);
-    ColorUtil::ConvertHsvToRgb(&bright, &brightHSV);
-
-    if (bright == bg) // Couldn't adjust brighter...
-        {
-        fg = darker;
-        return;
-        }
-
-    if (darker == bg) // Couldn't adjust darker...
-        {
-        fg = bright;
-        return;
-        }
-
-    // NOTE: Best choice is the one most visible against the background color...
-    fg = (colorVisibilityCheck(bright, vw) >= colorVisibilityCheck(darker, vw)) ? bright : darker;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::AdjustColorForContrast(ColorDef thisColor, ColorDef againstColor) const
     {
-    ColorDef fg, bg, vw;
-
-    fg = thisColor;
-    bg = againstColor;
-    vw = GetBackgroundColor();
-
-    adjustColorForContrast(fg, bg, vw);
-
-    return fg;
+    return ColorUtil::AdjustForContrast(thisColor, againstColor, GetBackgroundColor());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1108,7 +1001,7 @@ ColorDef DgnViewport::MakeTransparentIfOpaque(ColorDef color, int transparency)
     if (0 != color.GetAlpha())
         return color;
 
-    return  MakeColorTransparency(color, transparency);
+    return MakeColorTransparency(color, transparency);
     }
 
 /*---------------------------------------------------------------------------------**//**
