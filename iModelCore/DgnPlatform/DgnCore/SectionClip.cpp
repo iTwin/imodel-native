@@ -831,14 +831,14 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
         return GetClipBoundaryByShape (clip, /*target, vp*/maxRange, pass, settings, displayCutGeometry);
 
     ConvexClipPlaneSet  convexSet;
-    DMatrix3d           dMatrix;
+    DVec3d column0, column1, column2;
     DVec3d              normal;
 
     DPoint3dVector      pts;
     this->GetPoints (pts, 0, 1);
     DPoint3d            origin = pts[0];
 
-    dMatrix.initFromRotMatrix (&this->GetRotationMatrix ());
+    GetRotationMatrix.GetColumns (column0, column1, column2);
 
     double      frontDepth = this->GetSize (CLIPVOLUME_SIZE_FrontDepth);
     double      backDepth  = this->GetSize (CLIPVOLUME_SIZE_BackDepth);
@@ -847,32 +847,32 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
     if (frontDepth < 0.0)
         {
         frontDepth = -frontDepth;
-        dMatrix.column[1].Negate ();
+        column1.Negate ();
         }
 
     switch (pass)
         {
         case ClipVolumePass::InsideBackward:
-            normal.negate ((DVec3d *)&dMatrix.column[1]);
+            normal.Negate (column1);
             convexSet.push_back (ClipPlane (normal, origin, !displayCutGeometry));
             break;
 
         case ClipVolumePass::InsideForward:
-            convexSet.push_back (ClipPlane (dMatrix.column[1], origin, !displayCutGeometry));
+            convexSet.push_back (ClipPlane (column1, origin, !displayCutGeometry));
             break;
         }
 
     // These are the front and back planes.   - We dont currently display cut geometry on these - so they are aways visible (dont test displayCutGeometry).
     if (this->GetCrop (CLIPVOLUME_CROP_Front) && pass != ClipVolumePass::InsideBackward)
         {
-        normal.negate ((DVec3d *)&dMatrix.column[1]);
+        normal.Negate (column1);
 
         convexSet.push_back  (ClipPlane (normal, normal.DotProduct (origin) - frontDepth, false /* Invisible*/));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_Back) && pass != ClipVolumePass::InsideForward)
         {
-        convexSet.push_back (ClipPlane (dMatrix.column[1], dMatrix.column[1].DotProduct (origin) - backDepth, false /* Invisible*/));
+        convexSet.push_back (ClipPlane (column1, column1.DotProduct (origin) - backDepth, false /* Invisible*/));
         }
 
     // These are the boundary clips.  
@@ -880,24 +880,24 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
 
     if (this->GetCrop (CLIPVOLUME_CROP_StartSide) && !noClipBoundary)
         {
-        convexSet.push_back (ClipPlane (dMatrix.column[0], origin, !displayBoundaryCutPlanes));
+        convexSet.push_back (ClipPlane (column0, origin, !displayBoundaryCutPlanes));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_EndSide) && !noClipBoundary)
         {
-        normal.negate ((DVec3d *) &dMatrix.column[0]);
+        normal.Negate (column0);
 
         convexSet.push_back (ClipPlane (normal, normal.DotProduct (origin) - this->GetWidth(), !displayBoundaryCutPlanes));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_Bottom) && !noClipBoundary)
         {
-        convexSet.push_back (ClipPlane (dMatrix.column[2], dMatrix.column[2].DotProduct (origin) + this->GetSize (CLIPVOLUME_SIZE_BottomHeight), !displayBoundaryCutPlanes));
+        convexSet.push_back (ClipPlane (column2, column2.DotProduct (origin) + this->GetSize (CLIPVOLUME_SIZE_BottomHeight), !displayBoundaryCutPlanes));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_Top) && !noClipBoundary)
         {
-        normal.negate ((DVec3d *)&dMatrix.column[2]);
+        normal.Negate (column2);
         convexSet.push_back (ClipPlane (normal, normal.DotProduct (origin) - this->GetSize (CLIPVOLUME_SIZE_TopHeight), !displayBoundaryCutPlanes));
         }
    
