@@ -129,34 +129,9 @@ BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeomSt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeomPartId DgnGeomParts::GetHighestGeomPartId()
-    {
-    if (!m_highestGeomPartId.IsValid())
-        {
-        BeLuid nextRepo(m_dgndb.GetRepositoryId().GetNextRepositoryId().GetValue(),0);
-        Statement stmt;
-        
-        stmt.Prepare(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id<?");
-        stmt.BindInt64(1,nextRepo.GetValue());
-
-        DbResult result = stmt.Step();
-        UNUSED_VARIABLE(result);
-        BeAssert(result == BE_SQLITE_ROW);
-
-        m_highestGeomPartId.m_id = stmt.GetValueInt64(0);
-        }
-
-    return m_highestGeomPartId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
     {
-    GetHighestGeomPartId();
-    m_highestGeomPartId.UseNext();
-
+    m_dgndb.GetNextRepositoryBasedId(m_highestGeomPartId, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Id");
     return m_highestGeomPartId;
     }
 

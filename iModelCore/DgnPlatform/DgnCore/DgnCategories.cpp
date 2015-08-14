@@ -20,7 +20,7 @@ DbResult DgnCategories::Insert(DgnCategories::Category& row, DgnCategories::SubC
 
     // NOTE: we need to get the CategoryId from the SubCategory table, not the category table. That's because the DgnCategoryId
     // is equal to the default DgnSubCategoryId, but there are more entries in the SubCategory table than the category table.
-    DbResult status = m_dgndb.GetNextRepositoryBasedId(row.m_categoryId, DGN_TABLE(DGN_CLASSNAME_SubCategory), "Id");
+    DbResult status = m_dgndb.GetServerIssuedId(row.m_categoryId, DGN_TABLE(DGN_CLASSNAME_SubCategory), "Id");
 
     Statement stmt;
     stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Category) " (Id,Code,Label,Descr,Rank,Scope) VALUES(?,?,?,?,?,?)");
@@ -211,7 +211,7 @@ DbResult DgnCategories::InsertSubCategory (SubCategory& subCategory)
 
     if (!subCategory.GetSubCategoryId().IsValid())
         {
-        DbResult rc = m_dgndb.GetNextRepositoryBasedId(subCategory.m_subCategoryId, DGN_TABLE(DGN_CLASSNAME_SubCategory), "Id");
+        DbResult rc = m_dgndb.GetServerIssuedId(subCategory.m_subCategoryId, DGN_TABLE(DGN_CLASSNAME_SubCategory), "Id");
         if (BE_SQLITE_OK != rc)
             return rc;
         }
