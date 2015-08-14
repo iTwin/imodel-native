@@ -199,7 +199,16 @@ BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
     return SUCCESS;
     }
 
-void        BeLuid::CreateRandom() {sqlite3_randomness(sizeof(BeLuid), &m_luid.u);}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeRepositoryBasedId::CreateRandom(BeRepositoryId repo) 
+    {
+    uint32_t random;
+    sqlite3_randomness(sizeof(random), &random);
+    *this = BeRepositoryBasedId(repo,random);
+    }
+
 void        Statement::Finalize() {if (m_stmt){sqlite3_finalize(m_stmt);m_stmt=nullptr;}}
 DbResult    Statement::Step() {return m_stmt ? (DbResult) sqlite3_step(m_stmt) : BE_SQLITE_ERROR;}
 DbResult    Statement::Reset() {return (DbResult)sqlite3_reset(m_stmt);}
@@ -211,7 +220,6 @@ DbResult    Statement::BindText(int col, Utf8CP val, MakeCopy makeCopy, int nByt
 DbResult    Statement::BindZeroBlob(int col, int size) {return (DbResult)sqlite3_bind_zeroblob(m_stmt, col, size);}
 DbResult    Statement::BindBlob(int col, void const* val, int size, MakeCopy makeCopy) { return (DbResult)sqlite3_bind_blob(m_stmt, col, val, size, makeCopy==MakeCopy::Yes ? SQLITE_TRANSIENT : SQLITE_STATIC);}
 DbResult    Statement::BindGuid(int col, BeGuidCR guid) {return (DbResult)sqlite3_bind_blob(m_stmt, col, &guid, sizeof(guid), SQLITE_TRANSIENT);}
-DbResult    Statement::BindLuid(int col, BeLuid luid) {return (DbResult)sqlite3_bind_int64(m_stmt, col, luid.GetValue());}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
@@ -236,7 +244,6 @@ Utf8CP      DbValue::GetValueText() const             {return (Utf8CP)sqlite3_va
 int         DbValue::GetValueInt() const              {return sqlite3_value_int(m_val);}
 int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int64(m_val);}
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
-BeLuid      DbValue::GetValueLuid() const             {return BeLuid((uint64_t) GetValueInt64());}
 BeGuid      DbValue::GetValueGuid() const {BeGuid guid; memcpy(&guid, GetValueBlob(), sizeof(guid)); return guid;}
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
@@ -1236,7 +1243,7 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
             whereParams->Bind(stmt);
 
         BeRepositoryBasedId lastId(m_dbFile->m_repositoryId.GetNextRepositoryId(), 0);
-        stmt.BindInt64(1, lastId.GetValue());
+        stmt.BindInt64(1, lastId.GetValueUnchecked());
 
         DbResult result = stmt.Step();
         BeAssert(result == BE_SQLITE_ROW);
@@ -1248,6 +1255,41 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
         BeRepositoryBasedId firstId(m_dbFile->m_repositoryId, 1);
         value = ((currMax < firstId.GetValue()) ? firstId : BeRepositoryBasedId(currMax+1));
         }
+    return  BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/12
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, NamedParams* whereParams)
+    {
+    //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
+    //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
+    //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
+    if (value.IsValid())
+        value.UseNext();
+    else
+        {
+        Utf8String sql(SqlPrintfString("SELECT max(%s) FROM %s", colName, tableName, colName));
+        if (whereParams)
+            {
+            sql.append(" AND ");
+            sql.append(whereParams->GetWhere());
+            }
+
+        Statement stmt;
+        stmt.Prepare(*this, sql.c_str());
+        if (whereParams)
+            whereParams->Bind(stmt);
+
+        DbResult result = stmt.Step();
+        BeAssert(result == BE_SQLITE_ROW);
+        if (result != BE_SQLITE_ROW)
+            return  result;
+
+        value = BeServerIssuedId(stmt.GetValueInt64(0) + 1);
+        }
+
     return  BE_SQLITE_OK;
     }
 
