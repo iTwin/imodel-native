@@ -30,12 +30,17 @@ public:
         TestItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed) {}
         };
 
+protected:
+    void AssertSchemaImport(TestItem const&, Utf8CP ecdbFileName) const;
+    void AssertSchemaImport(ECDbR, bool& asserted, TestItem const&, Utf8CP ecdbFileName) const;
+    void AssertSchemaImport(bool& asserted, ECDbCR, TestItem const&) const;
+
+    void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereClause = nullptr);
+    void AssertIndex(ECDbCR, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);
+
 public:
     SchemaImportTestFixture() { ECDbTestProject::Initialize(); }
     virtual ~SchemaImportTestFixture() {}
-
-    void AssertSchemaImport(TestItem const&, Utf8CP ecdbFileName) const;
-    void AssertSchemaImport(ECDbR, bool& asserted, TestItem const&, Utf8CP ecdbFileName) const;
     };
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -116,6 +116,18 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return stat;
         }
 
+    if (SUCCESS != Save())
+        {
+        ClearCache();
+        schemaImportContext.GetIssueListener().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error,
+                                                      "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
+
+        m_schemaImportContext = nullptr;
+        return MapStatus::Error;
+        }
+
+    m_lightWeightMapCache.Reset();
+
     if (CreateOrUpdateRequiredTables() != SUCCESS)
         {
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
@@ -126,17 +138,17 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    if (SUCCESS != Save ())
+    //WIP: need to save another time to write the effective indices' where clause
+    if (SUCCESS != Save())
         {
-        ClearCache ();
-        schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
-            "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
+        ClearCache();
+        schemaImportContext.GetIssueListener().Report(ECDbSchemaManager::IImportIssueListener::Severity::Error,
+                                                      "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
 
         m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
-    
-    m_lightWeightMapCache.Reset ();
+
     //This has to evaluated after map is saved
     if (EvaluateDMLPolicyForEachClass () != BentleyStatus::SUCCESS)
         return MapStatus::Error;
@@ -532,8 +544,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
             column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECDbSystemColumnECArraryIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType () == PersistenceType::Persisted)
                 {
-                auto index = table->CreateIndex ((table->GetName() + "_StructArrayIndex").c_str());
-                index->SetIsUnique (true);
+                ECDbSqlIndex* index = table->CreateIndex ((table->GetName() + "_StructArrayIndex").c_str(), true);
                 index->Add (ECDB_COL_ParentECInstanceId);
                 index->Add (ECDB_COL_ECPropertyPathId);
                 index->Add (ECDB_COL_ECArrayIndex);
@@ -1509,7 +1520,7 @@ void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder)
     for (ECClassId const& classId : *classIds)
         {
         if (!isFirstItem)
-            sqlBuilder.AppendComma();
+            sqlBuilder.AppendComma(false);
 
         sqlBuilder.Append(classId);
 

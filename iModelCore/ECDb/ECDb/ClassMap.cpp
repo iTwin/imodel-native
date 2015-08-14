@@ -536,8 +536,7 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& map
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        auto index = m_table->CreateIndex(nullptr);
-        index->SetIsUnique(false);
+        ECDbSqlIndex* index = m_table->CreateIndex(nullptr, false, GetClass().GetId());
         for (auto column : columns)
             index->Add(column->GetName().c_str());
 
@@ -562,11 +561,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
         i++;
-        auto index = m_table->CreateIndex(indexInfo->GetName());
+        auto index = m_table->CreateIndex(indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId());
         if (index == nullptr)
             return ERROR;
-
-        index->SetIsUnique(indexInfo->GetIsUnique());
 
         Utf8String whereExpression;
         bool error = false;
@@ -729,17 +726,11 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
                     }
                 }
             }
-        index->SetWhereExpression(whereExpression.c_str());
+        index->SetAdditionalWhereExpression(whereExpression.c_str());
         if (error || !index->IsValid())
             {
             index->Drop();
             return ERROR;
-            }
-        else
-            {
-            //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-            GetECDbMap().AssertIfIsNotImportingSchema();
-            GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
             }
         }
 

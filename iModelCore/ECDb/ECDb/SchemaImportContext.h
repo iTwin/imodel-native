@@ -41,9 +41,9 @@ public:
 
     void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMapInfo>&) const;
     std::vector<std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>>> const& GetClassMapInfoCache() const { return m_classMapInfoCache; }
-    void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
+ /*   void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
     bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;
-
+    */
     ECDbSchemaManager::IImportIssueListener const& GetIssueListener () const { return m_importIssueListener; }
     };
 

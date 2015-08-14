@@ -673,8 +673,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         return;
         }
 
-    auto index = persistenceEndTable.CreateIndex (name.c_str ());
-    index->SetIsUnique (isUniqueIndex);
+    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex, GetClass().GetId());
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index");
@@ -684,7 +683,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
     BeAssert (GetOtherEndECInstanceIdPropMap() != nullptr && GetOtherEndECInstanceIdPropMap()->GetFirstColumn() != nullptr);
     index->Add (GetOtherEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
     Utf8String whereExpr = "[" + GetOtherEndECInstanceIdPropMap ()->GetFirstColumn ()->GetName () + "] IS NOT NULL";
-    index->SetWhereExpression (whereExpr.c_str ());
+    index->SetAdditionalWhereExpression (whereExpr.c_str ());
     }
 
    
@@ -1129,8 +1128,8 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
             break;
         }
     
-    auto existingIndex = GetTable().GetDbDefR ().FindIndexP (name.c_str ());
-    if (existingIndex)
+    ECDbSqlIndex* existingIndex = GetTable().GetDbDefR ().FindIndexP (name.c_str ());
+    if (existingIndex != nullptr)
         {
         if (&existingIndex->GetTable () == &GetTable ())
             return existingIndex;
@@ -1140,12 +1139,7 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
         return nullptr;
         }
 
-    auto index = GetTable ().CreateIndex (name.c_str ());
-    index->SetIsUnique (isUniqueIndex);
-
-    //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-    GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
-    return index;
+    return GetTable().CreateIndex(name.c_str(), isUniqueIndex, GetClass().GetId());
     }
     
 /*---------------------------------------------------------------------------------**//**
