@@ -2,7 +2,7 @@
 |
 |     $Source: src/ExpressionNode.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -1498,6 +1498,19 @@ WString         Node::ToString() const
     return _ToString();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString DotNode::_ToString() const
+    {
+    WString str (L".");
+    for (auto const& qualifier : GetQualifiers())
+        str.append (qualifier).append (2, ':');
+
+    str.append (GetName());
+    return str;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013
 //---------------------------------------------------------------------------------------
@@ -2698,6 +2711,177 @@ WString Node::ToExpressionString() const
     return traverser.Traverse (*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* A little state machine which remaps any schema/class/property names within the
+* ECExpression which may have been renamed.
+* @bsistruct                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExpressionRemapper : NodeVisitor
+    {
+private:
+    enum State
+        {
+        kState_AwaitingAccessor,        // default state - awaiting a DotNode
+        kState_ProcessingAccessors,     // processing a series of dot nodes
+        kState_AwaitingRightBracket     // ignoring everything within [brackets]. It's possible we'll miss dot nodes in here - but not in our current use cases.
+        };
+
+    ECSchemaCR          m_preSchema;
+    ECSchemaCR          m_postSchema;
+    IECSchemaRemapperCR m_remapper;
+
+    ECClassCP           m_currentClass;
+    State               m_state;
+    bool                m_anyRemapped;
+    bool                m_schemaRenamed;
+
+    ExpressionRemapper (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper)
+      : m_preSchema (pre), m_postSchema (post), m_remapper (remapper), m_currentClass (nullptr),
+        m_state (kState_AwaitingAccessor), m_anyRemapped (false), m_schemaRenamed (!pre.GetName().Equals (post.GetName()))
+    {
+    //
+    }
+
+    virtual bool    OpenParens() override                       { return ProcessOther(); }
+    virtual bool    CloseParens() override                      { return ProcessOther(); }
+    virtual bool    StartArguments(NodeCR node) override        { return ProcessOther(); }
+    virtual bool    EndArguments(NodeCR node) override          { return ProcessOther(); }
+    virtual bool    Comma() override                            { return ProcessOther(); }
+    virtual bool    ProcessUnits (UnitSpecCR units) override    { return ProcessOther(); }
+    virtual bool    StartArrayIndex(NodeCR node) override       { return ProcessArrayIndex (false); }
+    virtual bool    EndArrayIndex(NodeCR node) override         { return ProcessArrayIndex (true); }
+
+    virtual bool    ProcessNode(NodeCR node) override;
+
+    bool            ProcessDot (DotNodeCR node);
+    bool            ProcessArrayIndex (bool isEnd);
+    bool            ProcessOther();
+
+    void            Await();
+public:
+    static bool         Remap (NodeR node, ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR schemaRemapper)
+        {
+        ExpressionRemapper exprRemapper (pre, post, schemaRemapper);
+        node.Traverse (exprRemapper);
+        return exprRemapper.m_anyRemapped;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionRemapper::ProcessArrayIndex (bool isEnd)
+    {
+    BeAssert ((!isEnd && kState_ProcessingAccessors == m_state) || (isEnd && kState_AwaitingRightBracket == m_state));
+    m_state = isEnd ? kState_AwaitingAccessor : kState_AwaitingRightBracket;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpressionRemapper::Await()
+    {
+    m_currentClass = nullptr;
+    m_state = kState_AwaitingAccessor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionRemapper::ProcessOther()
+    {
+    if (kState_ProcessingAccessors == m_state)
+        {
+        // finished with the current chain of member accessors
+        Await();
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionRemapper::ProcessNode (NodeCR node)
+    {
+    // Ignore everything inside [brackets]
+    if (kState_AwaitingRightBracket == m_state)
+        return true;
+
+    auto dot = dynamic_cast<DotNodeCP> (&node);
+    return nullptr != dot ? ProcessDot (*dot) : ProcessOther();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionRemapper::ProcessDot (DotNodeCR node)
+    {
+    DotNodeR dot = const_cast<DotNodeR> (node);
+
+    bvector<WString>& qualifiers = dot.GetQualifiers();
+    if (2 == qualifiers.size())
+        {
+        // The qualifiers give us a schema + class name. We require these on the first DotNode in a sequence;
+        // the ECClasses for subsequent unqualified accessors can be looked up within the preceding ECClass.
+        m_currentClass = nullptr;
+        WStringR schemaName = qualifiers[0];
+        if (schemaName.Equals (m_preSchema.GetName()))
+            {
+            schemaName = m_postSchema.GetName();
+            if (m_schemaRenamed)
+                m_anyRemapped = true;
+
+            WStringR className = qualifiers[1];
+            if (m_remapper.ResolveClassName (className, m_postSchema))
+                m_anyRemapped = true;
+
+            m_currentClass = m_postSchema.GetClassCP (className.c_str());
+            }
+        }
+
+    m_state = kState_ProcessingAccessors;
+
+    if (nullptr == m_currentClass)
+        return true;
+
+    // Look up the property by access string. Note the access string within a DotNode will always refer to a single ECProperty, not a member of an embedded struct.
+    WString propName (dot.GetName());
+    if (m_remapper.ResolvePropertyName (propName, *m_currentClass))
+        {
+        dot.SetName (propName.c_str());
+        m_anyRemapped = true;
+        }
+
+    // This dot node may be followed by:
+    //  - another dot node, accessing a member of a struct property, or
+    //  - an array index, followed by another dot node, accessing a member of a struct array member, or
+    //  - anything else, in which case this is probably a primitive property
+    // Need to identify the struct ECClass for the first two cases
+
+    ECPropertyCP prop = m_currentClass->GetPropertyP (propName.c_str());
+    m_currentClass = nullptr;
+    if (nullptr != prop)
+        {
+        ArrayECPropertyCP arrayProp = nullptr;
+        auto structProp = prop->GetAsStructProperty();
+        if (nullptr != structProp)
+            m_currentClass = &structProp->GetType();
+        else if (nullptr != (arrayProp = prop->GetAsArrayProperty()))
+            m_currentClass = arrayProp->GetStructElementType();
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Node::Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR schemaRemapper)
+    {
+    return ExpressionRemapper::Remap (*this, pre, post, schemaRemapper);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2013

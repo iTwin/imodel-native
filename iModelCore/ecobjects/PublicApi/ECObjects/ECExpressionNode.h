@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECExpressionNode.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -403,6 +403,7 @@ protected:
 public:
     void                    PushQualifier(WCharCP rightName);
     bvector<WString> const& GetQualifiers() const { return m_qualifiers; }
+    bvector<WString>&       GetQualifiers() { return m_qualifiers; }
     wchar_t const*          GetName() const { return m_value.c_str(); }
     void                    SetName (WCharCP name) { m_value = name; }
     static IdentNodePtr     Create(wchar_t const*name) { return new IdentNode(name); }
@@ -418,30 +419,21 @@ public:
 struct          DotNode : IdentNode
 {
 private:
-    WString                 m_memberName;
-
     virtual bool        _Traverse(NodeVisitorR visitor) const
         {
         return visitor.ProcessNode(*this); 
         }
 
 protected:
-    virtual WString     _ToString() const override 
-        {
-        return L"." + m_memberName;
-        }
+    virtual WString     _ToString() const override;
 
     //  May want to distinguish between compiled category and resolved category
     virtual ExpressionToken _GetOperation () const override { return TOKEN_Dot; }
-
     virtual bool            _HasError () override { return false; }
-
 public:
+    DotNode (WCharCP memberName) : IdentNode(memberName) { }
 
-    wchar_t const*   GetMemberName() const { return m_memberName.c_str(); }
-
-                DotNode (wchar_t const* memberName) : IdentNode(memberName), m_memberName(memberName) {}
-    static DotNodePtr Create(wchar_t const* memberName) { return new DotNode(memberName); }
+    static DotNodePtr Create (WCharCP memberName) { return new DotNode (memberName); }
 
 }; //  End of DotNode
 

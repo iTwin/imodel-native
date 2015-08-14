@@ -663,5 +663,130 @@ TEST_F (MethodsReturningInstancesTests, InstanceMethods)
     EXPECT_EQ (result.GetECValue()->GetInteger(), 2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+struct ExpressionRemappingTest : ECTestFixture, IECSchemaRemapper
+    {
+private:
+    ECSchemaPtr     m_preSchema;
+    ECSchemaPtr     m_postSchema;
+
+    ECSchemaPtr     CreateSchema (bool rename);
+
+    WString         GetName (WCharCP name, bool rename) const
+        {
+        WString newName (name);
+        if (rename)
+            newName.ToUpper();
+
+        return newName;
+        }
+
+    WString         GetOldName (WCharCP name) const
+        {
+        WString oldName (name);
+        oldName.ToLower();
+        return oldName;
+        }
+
+    virtual bool    _ResolveClassName (WStringR className, ECSchemaCR schema) const override
+        {
+        if (&schema != m_postSchema.get() || nullptr == m_preSchema->GetClassCP (GetOldName (className.c_str()).c_str()))
+            return false;
+
+        className.ToUpper();
+        return true;
+        }
+    virtual bool    _ResolvePropertyName (WStringR propName, ECClassCR ecClass) const override
+        {
+        if (&ecClass.GetSchema() == m_postSchema.get())
+            {
+            ECClassCP oldClass = m_preSchema->GetClassCP (GetOldName (ecClass.GetName().c_str()).c_str());
+            if (nullptr != oldClass && nullptr != oldClass->GetPropertyP (propName.c_str()))
+                {
+                propName.ToUpper();
+                return true;
+                }
+            }
+
+        return false;
+        }
+
+public:
+    ExpressionRemappingTest() : m_preSchema (CreateSchema (false)), m_postSchema (CreateSchema (true)) { }
+
+    void            Expect (WCharCP input, WCharCP output)
+        {
+        NodePtr expr = ECEvaluator::ParseValueExpressionAndCreateTree (input);
+        EXPECT_NOT_NULL (expr.get());
+
+        WString str = expr->ToExpressionString();
+        EXPECT_TRUE (str.Equals (input)) << L"Input: " << input << " Round-tripped: " << str.c_str();
+
+        bool anyRemapped = expr->Remap (*m_preSchema, *m_postSchema, *this);
+        EXPECT_EQ (anyRemapped, 0 != wcscmp (input, output));
+
+        str = expr->ToExpressionString();
+        EXPECT_TRUE (str.Equals (output)) << L"Expected: " << output << " Actual: " << str.c_str() << " Input: " << input;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr ExpressionRemappingTest::CreateSchema (bool rename)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema (schema, GetName (L"schema", rename), 1, 0);
+
+    ECClassP structClass;
+    schema->CreateClass (structClass, GetName (L"struct", rename));
+    structClass->SetIsStruct (true);
+
+    ECClassP subStructClass;
+    schema->CreateClass (subStructClass, GetName (L"substruct", rename));
+    subStructClass->SetIsStruct (true);
+
+    PrimitiveECPropertyP primProp;
+    subStructClass->CreatePrimitiveProperty (primProp, GetName (L"bool", rename), PRIMITIVETYPE_Boolean);
+
+    StructECPropertyP structProp;
+    structClass->CreateStructProperty (structProp, GetName (L"substruct", rename), *subStructClass);
+    structClass->CreatePrimitiveProperty (primProp, GetName (L"int", rename), PRIMITIVETYPE_Integer);
+
+    ECClassP ecClass;
+    schema->CreateClass (ecClass, GetName (L"class", rename));
+
+    ecClass->CreatePrimitiveProperty (primProp, GetName (L"string", rename), PRIMITIVETYPE_String);
+
+    ArrayECPropertyP arrayProp;
+    ecClass->CreateArrayProperty (arrayProp, GetName (L"doubles", rename), PRIMITIVETYPE_Double);
+    ecClass->CreateArrayProperty (arrayProp, GetName (L"structs", rename), structClass);
+    ecClass->CreateStructProperty (structProp, GetName (L"struct", rename), *structClass);
+
+    return schema;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ExpressionRemappingTest, Remap)
+    {
+    static WCharCP s_expressions[][2] =
+        {
+            { L"this.schema::class::string", L"this.SCHEMA::CLASS::STRING" },
+            { L"this.schema::class::doubles[0]", L"this.SCHEMA::CLASS::DOUBLES[0]" },
+            { L"this.schema::class::struct.int", L"this.SCHEMA::CLASS::STRUCT.INT" },
+            { L"this.schema::class::struct.substruct.bool", L"this.SCHEMA::CLASS::STRUCT.SUBSTRUCT.BOOL" },
+            { L"this.schema::class::structs[0].int", L"this.SCHEMA::CLASS::STRUCTS[0].INT" },
+            { L"this.schema::class::structs[0].substruct.bool", L"this.SCHEMA::CLASS::STRUCTS[0].SUBSTRUCT.BOOL" },
+            { L"System.String.CompareI(this.DgnCustomItemTypes_Schema::Class::Struct.Prop,\"abc\")", L"System.String.CompareI(this.DgnCustomItemTypes_Schema::Class::Struct.Prop,\"abc\")" },
+        };
+
+    for (auto const& pair : s_expressions)
+        Expect (pair[0], pair[1]);
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
