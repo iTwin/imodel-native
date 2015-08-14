@@ -267,6 +267,78 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP DgnScriptLibrary::ECPrimtiveTypeToString(ECN::PrimitiveType pt)
+    {
+    switch(pt)
+        {
+        case ECN::PRIMITIVETYPE_Boolean:    return "boolean";
+        case ECN::PRIMITIVETYPE_DateTime:   return "datetime";
+        case ECN::PRIMITIVETYPE_Double:     return "double";
+        case ECN::PRIMITIVETYPE_IGeometry:  return "igeometry";
+        case ECN::PRIMITIVETYPE_Integer:    return "integer";
+        case ECN::PRIMITIVETYPE_Long:       return "long";
+        case ECN::PRIMITIVETYPE_String:     return "string";
+        case ECN::PRIMITIVETYPE_Point2D:    return "point2d";
+        case ECN::PRIMITIVETYPE_Point3D:    return "point3d";
+        }
+    
+    return "binary";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::PrimitiveType DgnScriptLibrary::ECPrimtiveTypeFromString(Utf8CP str)
+    {
+    switch(*str)
+        {
+        case 'b': 
+            {
+            switch (str[1])
+                {
+                case 'o': return ECN::PRIMITIVETYPE_Boolean;
+                case 'i': return ECN::PRIMITIVETYPE_Binary;
+                }
+            break;
+            }
+            
+        case 'd': 
+            {
+            switch (str[1])
+                {
+                case 'o': return ECN::PRIMITIVETYPE_Double;
+                case 'a': return ECN::PRIMITIVETYPE_DateTime;
+                }
+            break;
+            }
+
+        case 'p':
+            return (0==BeStringUtilities::Stricmp(str, "dpoint2d"))? ECN::PRIMITIVETYPE_Point2D: ECN::PRIMITIVETYPE_Point3D;
+            
+        case 'i': 
+            {
+            switch (str[1])
+                {
+                case 'n': return ECN::PRIMITIVETYPE_Integer;
+                case 'g': return ECN::PRIMITIVETYPE_IGeometry;
+                }
+            break;
+            }
+
+        case 'l': 
+            return ECN::PRIMITIVETYPE_Long;
+
+        case 's': 
+            return ECN::PRIMITIVETYPE_String;
+        }
+   
+    BeDataAssert(false);
+    return ECN::PRIMITIVETYPE_Binary;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& jv, ECN::ECValue const& v)
     {
     if (!v.IsPrimitive())

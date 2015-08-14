@@ -98,21 +98,49 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             explicit Parameter(Json::Value const&);
           public:
             //! Construct a new Parameter
-            Parameter(Utf8CP n, Scope s, ECN::ECValueCR v) : m_name(n), m_scope(s), m_value(v) {;}
+            DGNPLATFORM_EXPORT Parameter(Utf8CP n, Scope s, ECN::ECValueCR v);
             //! Get the scope of this parameter
             Scope GetScope() const {return m_scope;}
             //! Get the name of this parameter
             Utf8StringCR GetName() const {return m_name;}
             //! Get the value of this parameter
-            ECN::ECValueCR GetValue() const {return m_value;}
+            DGNPLATFORM_EXPORT ECN::ECValueCR GetValue() const;
             //! Set the value of this parameter
             DGNPLATFORM_EXPORT DgnDbStatus SetValue(ECN::ECValueCR newValue);
+            };
+
+        //! A parameter set
+        struct ParameterSet
+            {
+          private:
+            bvector<Parameter> m_parameters;
+          public:
+            ParameterSet() {;}
+            explicit ParameterSet(Json::Value const&);
+            explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
+
+            Json::Value ToJson() const;
+
+            //! Get a parameter by name
+            DGNPLATFORM_EXPORT Parameter const* GetParameter(Utf8StringCR pname) const;
+
+            //! Get a parameter by name
+            DGNPLATFORM_EXPORT Parameter* GetParameterP(Utf8StringCR pname);
+
+            //! Convert this parameter set to a string that can be used as a key in the ComponentModelSolution table.
+            Utf8String ComputeSolutionName() const;
+
+            bvector<Parameter>::const_iterator begin() const {return m_parameters.begin();}
+            bvector<Parameter>::const_iterator end() const {return m_parameters.end();}
+
+            bvector<Parameter>::iterator begin() {return m_parameters.begin();}
+            bvector<Parameter>::iterator end() {return m_parameters.end();}
             };
 
       private:
         Type        m_type;
         Utf8String  m_name;
-        bvector<Parameter> m_parameters;
+        ParameterSet m_parameters;
 
         void FromJson(Utf8CP);
         Utf8String ToJson() const;
@@ -121,14 +149,14 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
       public:
         //! @private
-        Solver() {m_type = Type::None;}
+        DGNPLATFORM_EXPORT Solver();
 
         //! Construct a Solver specification, in preparation for creating a new DgnModel. 
         //! @see DgnScriptLibrary
         //! @param type         The solver type
         //! @param identifier   Identifies the solver. The meaning of this identifier varies, depending on the type of the solver.
         //! @param parameters   The parameters to be passed to the solver
-        Solver(Type type, Utf8CP identifier, bvector<Parameter> const& parameters) : m_type(type), m_name(identifier), m_parameters(parameters) {;}
+        DGNPLATFORM_EXPORT Solver(Type type, Utf8CP identifier, bvector<Parameter> const& parameters);
 
         //! Test if this object specifies a solver
         bool IsValid() const {return Type::None != GetType();}
@@ -137,13 +165,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! Get the identifier of the solver
         Utf8StringCR GetName() const {return m_name;}
         //! Get the parameters of the solver
-        bvector<Parameter> const& GetParameters() const {return m_parameters;}
-        //! Get a parameter by name
-        DGNPLATFORM_EXPORT Parameter GetParameter(Utf8StringCR pname) const;
-        //! Set a parameter's value by name
-        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValue(Utf8StringCR pname, ECN::ECValueCR value);
+        DGNPLATFORM_EXPORT ParameterSet const& GetParameters() const;
         //! Set the values of the parameters of the solver. Only matching parameters are updated.
-        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValues(bvector<Parameter> const& values);
+        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValues(ParameterSet const& values);
         };
 
     //========================================================================================
@@ -622,9 +646,6 @@ public:
     //! Get the solver that is used to validate this model.
     Solver const& GetSolver() const {return m_solver;}
 
-    //! Get the solver that is used to validate this model for modifying its parameters.
-    Solver& GetSolverR() {return m_solver;}
-
     //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
     //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
     //! This method is called only if elements in this model were added, deleted, or modified or if this model object itself was added or modified.
@@ -1022,16 +1043,14 @@ public:
      * or DgnDbStatus::SQLiteError if some other error prevented the transaction from being saved to the DgnDb.
      * @see ComputeSolutionName, GetSolver, Solver::GetParameters
     */
-    DGNPLATFORM_EXPORT DgnDbStatus Solve();
+    DGNPLATFORM_EXPORT DgnDbStatus Solve(Solver::ParameterSet const& parameters);
 
     //! Compute the code that would be used by a row in ComponentModelSolutions to refer to the current solution of this model.
     //! @return a generated name for the current solution
     //! @see ComponentModel::GetSolver::GetParametersValues
     DGNPLATFORM_EXPORT Utf8String ComputeSolutionName();
 
-    DGNPLATFORM_EXPORT static DgnDbStatus GetSolutionParametersFromECProperties(bvector<Solver::Parameter>& parameters, ECN::IECInstanceCR instance);
-
-    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(bvector<Solver::Parameter> const& parameters);
+    DGNPLATFORM_EXPORT static DgnDbStatus GetSolutionParametersFromECProperties(Solver::ParameterSet& parameters, ECN::IECInstanceCR instance);
 
     //! Import the specified ECSchema into the target DgnDb.
     //! This must be done \em once before any ComponentModelSolutions are created for ComponentModels that are defined in the schema.

@@ -1367,6 +1367,12 @@ public:
     //! @param typeRequired The ECType required, if known
     //! @return non-zero if the property could not be converted.
     DGNPLATFORM_EXPORT static BentleyStatus ToECFromJson(ECN::ECValue& ec, Json::Value const& json, ECN::PrimitiveType typeRequired);
+
+    //! @private
+    static Utf8CP ECPrimtiveTypeToString(ECN::PrimitiveType pt);
+    //! @private
+    static ECN::PrimitiveType ECPrimtiveTypeFromString(Utf8CP);
+
 };
 
 //=======================================================================================

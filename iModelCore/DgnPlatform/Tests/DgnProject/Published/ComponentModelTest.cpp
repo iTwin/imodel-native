@@ -10,6 +10,7 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeNumerical.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -123,7 +124,8 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
     statement.BindId(1, model.GetModelId());
     while (BE_SQLITE_ROW == statement.Step())
         {
-        ASSERT_TRUE( allowedClasses.find(statement.GetValueId<DgnClassId>(0)) != allowedClasses.end() );
+        DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
+        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8String("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str());
         }
     }
 
@@ -306,22 +308,24 @@ void ComponentModelTest::Developer_TestWidgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
+    DgnModel::Solver::ParameterSet params = cm->GetSolver().GetParameters();
+
     for (int i=0; i<10; ++i)
         {
-        cm->GetSolverR().SetParameterValue("X", ECN::ECValue(cm->GetSolver().GetParameter("X").GetValue().GetDouble() + 1*i));
-        cm->GetSolverR().SetParameterValue("Y", ECN::ECValue(cm->GetSolver().GetParameter("Y").GetValue().GetDouble() + 2*i));
-        cm->GetSolverR().SetParameterValue("Z", ECN::ECValue(cm->GetSolver().GetParameter("Z").GetValue().GetDouble() + 3*i));
+        params.GetParameterP("X")->SetValue(ECN::ECValue(1*i));
+        params.GetParameterP("Y")->SetValue(ECN::ECValue(2*i));
+        params.GetParameterP("Z")->SetValue(ECN::ECValue(3*i));
 
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve() );
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
     
         cm->FillModel();
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(), cm->GetSolver().GetParameter("X").GetValue().GetDouble(), 
-                                                        cm->GetSolver().GetParameter("Y").GetValue().GetDouble(),
-                                                        cm->GetSolver().GetParameter("Z").GetValue().GetDouble());
+        checkSlabDimensions(*el->ToGeometricElement(),  params.GetParameter("X")->GetValue().GetDouble(), 
+                                                        params.GetParameter("Y")->GetValue().GetDouble(),
+                                                        params.GetParameter("Z")->GetValue().GetDouble());
         }
 
     CloseComponentDb();
@@ -337,22 +341,24 @@ void ComponentModelTest::Developer_TestGadgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
+    DgnModel::Solver::ParameterSet params = cm->GetSolver().GetParameters();
+
     for (int i=0; i<10; ++i)
         {
-        cm->GetSolverR().SetParameterValue("Q", ECN::ECValue(cm->GetSolver().GetParameter("Q").GetValue().GetDouble() + 1*i));
-        cm->GetSolverR().SetParameterValue("W", ECN::ECValue(cm->GetSolver().GetParameter("W").GetValue().GetDouble() + 2*i));
-        cm->GetSolverR().SetParameterValue("R", ECN::ECValue(cm->GetSolver().GetParameter("R").GetValue().GetDouble() + 3*i));
+        params.GetParameterP("Q")->SetValue(ECN::ECValue(1*i));
+        params.GetParameterP("W")->SetValue(ECN::ECValue(2*i));
+        params.GetParameterP("R")->SetValue(ECN::ECValue(3*i));
 
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve() );
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
     
         cm->FillModel();
         ASSERT_EQ( 1 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(), cm->GetSolver().GetParameter("Q").GetValue().GetDouble(), 
-                                                        cm->GetSolver().GetParameter("W").GetValue().GetDouble(),
-                                                        cm->GetSolver().GetParameter("R").GetValue().GetDouble());
+        checkSlabDimensions(*el->ToGeometricElement(),  params.GetParameter("Q")->GetValue().GetDouble(), 
+                                                        params.GetParameter("W")->GetValue().GetDouble(),
+                                                        params.GetParameter("R")->GetValue().GetDouble());
         }
 
     CloseComponentDb();
@@ -448,19 +454,17 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
+    DgnModel::Solver::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
     for (auto pname : parmsToChange.getMemberNames())
         {
-        componentModel->GetSolverR().SetParameterValue(pname.c_str(), ECN::ECValue(parmsToChange[pname].asDouble()));
+        DgnModel::Solver::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
+        ASSERT_NE( nullptr , sparam );
+        ECN::ECValue ecv;
+        DgnScriptLibrary::ToECFromJson(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
+        sparam->SetValue(ecv);
         }
 
-    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve() );
-
-    // Verify that solution captured and saved the parameter values that we specified (which might have been only a subset of the full parameter set)
-    //Json::Value solvedParms = componentModel->GetSolver().GetParametersAsJson();
-    //for (auto pn : parmsToChange.getMemberNames())
-    //    {
-    //    ASSERT_TRUE( parmsToChange[pn] == solvedParms[pn] ) << "Solving a CM should result in saving the specified parameter values";
-    //    }
+    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(newParameterValues) );
 
     //  -------------------------------------------------------
     //  ComponentModel - Capture (or look up) the solution geometry
@@ -521,9 +525,11 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
 
     // Make sure that no component model elements are accidentally copied into the instances model
     bset<DgnClassId> targetModelElementClasses;
+    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
+    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Widget")));
+    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Gadget")));
     targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
-    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Widget")));
-    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Gadget")));
+    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
     checkElementClassesInModel(*targetModel, targetModelElementClasses);
     }
 

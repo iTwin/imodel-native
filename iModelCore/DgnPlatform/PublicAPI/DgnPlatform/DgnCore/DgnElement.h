@@ -1308,8 +1308,8 @@ struct InstanceBackedItem : DgnElement::Item
 {
     ECN::IECInstancePtr m_instance;
 
-    Utf8String _GetECSchemaName() const override {return MyECClassName();}
-    Utf8String _GetECClassName() const override {return DGN_CLASSNAME_ElementItem;}
+    Utf8String _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName();}
+    Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
@@ -1317,8 +1317,6 @@ struct InstanceBackedItem : DgnElement::Item
     InstanceBackedItem() {;}
 
     void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
-
-    static Utf8CP MyECClassName() {return DGN_ECSCHEMA_NAME;}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
