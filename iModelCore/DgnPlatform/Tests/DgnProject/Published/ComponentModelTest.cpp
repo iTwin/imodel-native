@@ -212,16 +212,16 @@ void ComponentModelTest::Developer_CreateCMs()
     DgnModel::Solver::Parameter::Scope ip = DgnModel::Solver::Parameter::Scope::Instance;
     DgnModel::Solver::Parameter::Scope tp = DgnModel::Solver::Parameter::Scope::Type;
     bvector<DgnModel::Solver::Parameter> wparameters;
-    wparameters.push_back(DgnModel::Solver::Parameter("X", tp, Json::Value(1))); 
-    wparameters.push_back(DgnModel::Solver::Parameter("Y", tp, Json::Value(1))); 
-    wparameters.push_back(DgnModel::Solver::Parameter("Z", tp, Json::Value(1))); 
-    wparameters.push_back(DgnModel::Solver::Parameter("Other", ip, Json::Value("Something else")));
+    wparameters.push_back(DgnModel::Solver::Parameter("X", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(DgnModel::Solver::Parameter("Y", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(DgnModel::Solver::Parameter("Z", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(DgnModel::Solver::Parameter("Other", ip, ECN::ECValue("Something else")));
     DgnModel::Solver wsolver(DgnModel::Solver::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
     bvector<DgnModel::Solver::Parameter> gparameters; 
-    gparameters.push_back(DgnModel::Solver::Parameter("Q", tp, Json::Value(1))); 
-    gparameters.push_back(DgnModel::Solver::Parameter("W", tp, Json::Value(1))); 
-    gparameters.push_back(DgnModel::Solver::Parameter("R", tp, Json::Value(1))); 
-    gparameters.push_back(DgnModel::Solver::Parameter("T", ip, Json::Value("Some other parm")));
+    gparameters.push_back(DgnModel::Solver::Parameter("Q", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(DgnModel::Solver::Parameter("W", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(DgnModel::Solver::Parameter("R", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(DgnModel::Solver::Parameter("T", ip, ECN::ECValue("Some other parm")));
     DgnModel::Solver gsolver(DgnModel::Solver::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
     // Create the models
@@ -306,22 +306,22 @@ void ComponentModelTest::Developer_TestWidgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
-    Json::Value parms = cm->GetSolver().GetParametersAsJson();  // make a copy
-
     for (int i=0; i<10; ++i)
         {
-        parms["X"] = parms["X"].asDouble() + 1*i;
-        parms["Y"] = parms["Y"].asDouble() + 2*i;
-        parms["Z"] = parms["Z"].asDouble() + 3*i;
+        cm->GetSolverR().SetParameterValue("X", ECN::ECValue(cm->GetSolver().GetParameter("X").GetValue().GetDouble() + 1*i));
+        cm->GetSolverR().SetParameterValue("Y", ECN::ECValue(cm->GetSolver().GetParameter("Y").GetValue().GetDouble() + 2*i));
+        cm->GetSolverR().SetParameterValue("Z", ECN::ECValue(cm->GetSolver().GetParameter("Z").GetValue().GetDouble() + 3*i));
 
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(parms) );
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve() );
     
         cm->FillModel();
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(), parms["X"].asDouble(), parms["Y"].asDouble(), parms["Z"].asDouble());
+        checkSlabDimensions(*el->ToGeometricElement(), cm->GetSolver().GetParameter("X").GetValue().GetDouble(), 
+                                                        cm->GetSolver().GetParameter("Y").GetValue().GetDouble(),
+                                                        cm->GetSolver().GetParameter("Z").GetValue().GetDouble());
         }
 
     CloseComponentDb();
@@ -337,22 +337,22 @@ void ComponentModelTest::Developer_TestGadgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
-    Json::Value parms = cm->GetSolver().GetParametersAsJson();  // make a copy
-
     for (int i=0; i<10; ++i)
         {
-        parms["Q"] = parms["Q"].asDouble() + 1*i;
-        parms["W"] = parms["W"].asDouble() + 2*i;
-        parms["R"] = parms["R"].asDouble() + 3*i;
+        cm->GetSolverR().SetParameterValue("Q", ECN::ECValue(cm->GetSolver().GetParameter("Q").GetValue().GetDouble() + 1*i));
+        cm->GetSolverR().SetParameterValue("W", ECN::ECValue(cm->GetSolver().GetParameter("W").GetValue().GetDouble() + 2*i));
+        cm->GetSolverR().SetParameterValue("R", ECN::ECValue(cm->GetSolver().GetParameter("R").GetValue().GetDouble() + 3*i));
 
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(parms) );
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve() );
     
         cm->FillModel();
         ASSERT_EQ( 1 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(), parms["Q"].asDouble(), parms["W"].asDouble(), parms["R"].asDouble());
+        checkSlabDimensions(*el->ToGeometricElement(), cm->GetSolver().GetParameter("Q").GetValue().GetDouble(), 
+                                                        cm->GetSolver().GetParameter("W").GetValue().GetDouble(),
+                                                        cm->GetSolver().GetParameter("R").GetValue().GetDouble());
         }
 
     CloseComponentDb();
@@ -448,14 +448,19 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
-    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(parmsToChange) );
+    for (auto pname : parmsToChange.getMemberNames())
+        {
+        componentModel->GetSolverR().SetParameterValue(pname.c_str(), ECN::ECValue(parmsToChange[pname].asDouble()));
+        }
+
+    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve() );
 
     // Verify that solution captured and saved the parameter values that we specified (which might have been only a subset of the full parameter set)
-    Json::Value solvedParms = componentModel->GetSolver().GetParametersAsJson();
-    for (auto pn : parmsToChange.getMemberNames())
-        {
-        ASSERT_TRUE( parmsToChange[pn] == solvedParms[pn] ) << "Solving a CM should result in saving the specified parameter values";
-        }
+    //Json::Value solvedParms = componentModel->GetSolver().GetParametersAsJson();
+    //for (auto pn : parmsToChange.getMemberNames())
+    //    {
+    //    ASSERT_TRUE( parmsToChange[pn] == solvedParms[pn] ) << "Solving a CM should result in saving the specified parameter values";
+    //    }
 
     //  -------------------------------------------------------
     //  ComponentModel - Capture (or look up) the solution geometry

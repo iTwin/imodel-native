@@ -1350,11 +1350,11 @@ public:
     //! @return non-zero error status if the file could not be found
     DGNPLATFORM_EXPORT static DgnDbStatus ReadText(Utf8StringR contents, BeFileNameCR fileName);
 
-    //! Utility function to convert ECProperties to JSON properties
+    //! Utility function to convert ECProperty values to JSON properties
     //! @param json     The JSON object to be populated
     //! @param ec       an ECObject that contains values
     //! @param props    comma-separated list of property names
-    //! @return non-zero if a property could not be converted.
+    //! @return non-zero if even one ECProperty value could not be converted.
     DGNPLATFORM_EXPORT static BentleyStatus ToJsonPropertiesFromECProperties(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props);
 
     //! Utility function to convert an ECValue to a JSON value
@@ -1636,11 +1636,6 @@ public:
 
     //! @name Capturing Solutions
     //@{
-    //! Compute the code that would be used by a row in ComponentModelSolutions to refer to a solution with the specified parameters.
-    //! @param[in] parms    The solver parameters
-    //! @return a generated name for the solution
-    //! @see ComponentModel::GetSolver::GetParametersAsJson
-    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(Json::Value const& parms);
 
     //! Look up a captured solution from a solution name
     //! @param[in] componentModelId Identifies the local copy of the ComponentModel

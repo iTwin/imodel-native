@@ -11,7 +11,6 @@
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 static std::pair<ECN::PrimitiveType, BentleyStatus> jsonTypeToEcPrimitiveType(Json::Value const& jsonValue)
     {
     if (jsonValue.isBool())
@@ -24,6 +23,28 @@ static std::pair<ECN::PrimitiveType, BentleyStatus> jsonTypeToEcPrimitiveType(Js
         return std::make_pair(ECN::PRIMITIVETYPE_String, BSISUCCESS);
     
     return std::make_pair(PRIMITIVETYPE_Binary, BSIERROR);
+    }e
++---------------+---------------+---------------+---------------+---------------+------*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus ecPrimitiveValueToJson(Json::Value& json, ECN::ECValueCR ecv)
+    {
+    if (ECN::VALUEKIND_Primitive != ecv.GetKind())
+        return DgnDbStatus::BadArg;
+    json["Type"] = (int)ecv.GetPrimitiveType();
+    json["Value"] = ecv.ToString().c_str();
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus ecPrimitiveValueFromJson(ECN::ECValueR ecv, Json::Value const& json)
+    {
+    ecv = ECValue(json["Value"].asCString());
+    return ecv.ConvertToPrimitiveType((ECN::PrimitiveType)(json["Type"].asInt()))? DgnDbStatus::Success: DgnDbStatus::BadArg;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,12 +293,28 @@ DgnModel::~DgnModel()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus toJsonPropertiesFromECValues(Json::Value& json, bvector<DgnModel::Solver::Parameter> const& parms)
+    {
+    for (auto const& parm : parms)
+        {
+        if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json[parm.GetName().c_str()], parm.GetValue()))
+            return BSIERROR;
+        }
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::Solver::Solve(DgnModelR model)
     {
     if (Type::Script == m_type)
         {
         int retval;
-        DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), GetParametersAsJson());
+        Json::Value parmsJson(Json::objectValue);
+        toJsonPropertiesFromECValues(parmsJson, GetParameters());
+        DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), parmsJson);
         if (xstatus != DgnDbStatus::Success || 0 != retval)
             {
             TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Model solver failed");   // *** NEEDS WORK: Get failure description from ModelSolver
@@ -302,20 +339,40 @@ DgnModel::Solver::Parameter DgnModel::Solver::GetParameter(Utf8StringCR pname) c
         if (parameter.GetName().EqualsI(pname))
             return parameter;
         }
-    return DgnModel::Solver::Parameter("", Parameter::Scope::Class, Json::objectValue);
+    return DgnModel::Solver::Parameter("", Parameter::Scope::Class, ECValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::Solver::SetParameterValue(Utf8StringCR pname, Json::Value const& value)
+DgnDbStatus DgnModel::Solver::Parameter::SetValue(ECN::ECValueCR valueIn)
+    {
+    if (!m_value.IsPrimitive())
+        {
+        if (m_value.GetKind() != valueIn.GetKind())
+            return DgnDbStatus::BadArg;
+        m_value = valueIn;
+        }
+    else
+        {
+        ECN::ECValue value = valueIn;
+        if (!value.ConvertToPrimitiveType(m_value.GetPrimitiveType()))
+            return DgnDbStatus::BadArg;
+        m_value = value;
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::Solver::SetParameterValue(Utf8StringCR pname, ECN::ECValueCR valueIn)
     {
     for (auto& parameter : m_parameters)
         {
         if (parameter.GetName().EqualsI(pname))
             {
-            parameter.m_value = value;
-            return DgnDbStatus::Success;
+            return parameter.SetValue(valueIn);
             }
         }
     return DgnDbStatus::NotFound;
@@ -324,14 +381,15 @@ DgnDbStatus DgnModel::Solver::SetParameterValue(Utf8StringCR pname, Json::Value 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value DgnModel::Solver::GetParametersAsJson() const
+DgnDbStatus DgnModel::Solver::SetParameterValues(bvector<Parameter> const& parms)
     {
-    Json::Value json;
-    for (auto& parameter : m_parameters)
+    for (auto const& parm : parms)
         {
-        json[parameter.GetName().c_str()] = parameter.GetValue();
+        DgnDbStatus status = SetParameterValue(parm.GetName(), parm.GetValue());
+        if (DgnDbStatus::Success != status)
+            return status;
         }
-    return json;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1073,7 +1131,7 @@ Json::Value DgnModel::Solver::Parameter::ToJson() const
     Json::Value v;
     v["Scope"] = (Scope::Class == m_scope)? PARARMETER_SCOPE_CLASS: (Scope::Type == m_scope)? PARARMETER_SCOPE_TYPE: PARARMETER_SCOPE_INSTANCE;
     v["Name"] = m_name.c_str();
-    v["Value"] = m_value;
+    ecPrimitiveValueToJson(v["Value"], m_value);
     return v;
     }
 
@@ -1085,7 +1143,7 @@ DgnModel::Solver::Parameter::Parameter(Json::Value const& json)
     auto s = json["Scope"].asInt();
     m_scope = (PARARMETER_SCOPE_CLASS == s)? Scope::Class: (PARARMETER_SCOPE_TYPE == s)? Scope::Type: Scope::Instance;
     m_name = json["Name"].asCString();
-    m_value = json["Value"];
+    ecPrimitiveValueFromJson(m_value, json["Value"]);
     }
 
 // *** Persistent values *** Do not change ***
@@ -1198,15 +1256,38 @@ DgnDbStatus ComponentModelSolution::Solution::QueryGeomStream(GeomStreamR geom, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ComponentModel::ComputeSolutionName()
     {
-    return ComponentModelSolution::ComputeSolutionName(GetSolver().GetParametersAsJson());
+    return ComputeSolutionName(m_solver.GetParameters());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModelSolution::ComputeSolutionName(Json::Value const& parms)
+DgnDbStatus ComponentModel::GetSolutionParametersFromECProperties(bvector<Solver::Parameter>& parameters, ECN::IECInstanceCR instance)
     {
-    return Json::FastWriter::ToString(parms).c_str();
+    for (auto& parameter : parameters)
+        {
+        ECN::ECValue ecv;
+        if (ECN::ECOBJECTS_STATUS_Success != instance.GetValue(ecv, parameter.GetName().c_str()))
+            {
+            BeDataAssert(false);
+            return DgnDbStatus::BadArg;
+            }
+        parameter.SetValue(ecv);
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentModel::ComputeSolutionName(bvector<Solver::Parameter> const& parameters)
+    {
+    Json::Value json(Json::objectValue);
+    for (auto& parameter : parameters)
+        {
+        ecPrimitiveValueToJson(json[parameter.GetName().c_str()], parameter.GetValue());
+        }
+    return Json::FastWriter::ToString(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1398,8 +1479,7 @@ DgnDbStatus ComponentModelSolution::CreateSolutionInstanceItem(DgnElementR insta
         ECN::ECValue ecv;
         itemProperties->GetValue(ecv, param.GetName().c_str()); // call GetValue in order to get the TYPE
 
-        if (BSISUCCESS != DgnScriptLibrary::ToECFromJson(ecv, param.GetValue(), ecv.GetPrimitiveType())
-         || ECN::ECOBJECTS_STATUS_Success != itemProperties->SetValue(param.GetName().c_str(), ecv))
+        if (ECN::ECOBJECTS_STATUS_Success != itemProperties->SetValue(param.GetName().c_str(), param.GetValue()))
             {
             BeDataAssert(false);
             return DgnDbStatus::WrongClass;
@@ -1440,16 +1520,12 @@ DgnDbStatus ComponentModelSolution::ExecuteEGA(DgnElementR el, DPoint3dCR origin
         return DgnDbStatus::NotFound;
         }
 
-    Json::Value params(Json::objectValue);
-    if (BSISUCCESS != DgnScriptLibrary::ToJsonPropertiesFromECProperties(params, itemInstance, paramNames))
-        {
-        BeDataAssert(false);
-        DGNCORELOG->warningv("generated component model item [class %s] properties do not match inputs specified in its EGASpecifier custom attribute", itemInstance.GetClass().GetName().c_str());
-        return DgnDbStatus::NotFound;
-        }
+    bvector<DgnModel::Solver::Parameter> parms = cm->GetSolver().GetParameters();
+
+    ComponentModel::GetSolutionParametersFromECProperties(parms, itemInstance); // Set the parameter values to what I have saved
 
     ComponentModelSolution solutions(db);
-    BeSQLite::EC::ECInstanceId sid = solutions.QuerySolutionId(cm->GetModelId(), ComputeSolutionName(params));
+    BeSQLite::EC::ECInstanceId sid = solutions.QuerySolutionId(cm->GetModelId(), ComponentModel::ComputeSolutionName(parms));
     Solution sln;
     if (DgnDbStatus::Success != solutions.Query(sln, BeSQLite::EC::ECInstanceId(sid)))
         return DgnDbStatus::NotFound;
@@ -1866,23 +1942,13 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     for (auto const& parm: m_solver.GetParameters())
         {
         Utf8String parmname = parm.GetName();
-        Json::Value const& parmvalue = parm.GetValue();
-
-        BentleyStatus typeMappingStatus;
-        ECN::PrimitiveType ptype;
-        std::tie(ptype, typeMappingStatus) = jsonTypeToEcPrimitiveType(parmvalue);
-        if (typeMappingStatus != BSISUCCESS)
-            {
-            BeDataAssert(false && "component model parameter cannot be converted to an ECProperty");
-            DGNCORELOG->warningv("component model parameter [%s] cannot be converted to an ECProperty", parmname.c_str());
-            continue;
-            }
+        ECN::ECValue parmvalue = parm.GetValue();
 
         ECN::ECPropertyP baseClassProperty = baseClass->GetPropertyP(parmname.c_str());
         if (nullptr != baseClassProperty)
             {
             // The base class has a property for this parameter, so I don't need to add one.
-            if (!baseClassProperty->GetIsPrimitive() || baseClassProperty->GetAsPrimitiveProperty()->GetType() != ptype)
+            if (!baseClassProperty->GetIsPrimitive() || baseClassProperty->GetAsPrimitiveProperty()->GetType() != parmvalue.GetPrimitiveType())
                 {
                 BeDataAssert(false && "component model parameter is incompatible with existing base class ECProperty");
                 DGNCORELOG->warningv("component model parameter [%s] is incompatible with existing base class ECProperty", parmname.c_str());
@@ -1896,7 +1962,7 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
         if (ECN::ECOBJECTS_STATUS_Success != stat)
             return DgnDbStatus::BadRequest;
         
-        ecprop->SetType(ptype);
+        ecprop->SetType(parmvalue.GetPrimitiveType());
 
         paramsList.append(paramsListSep).append(parmname);
         paramsListSep = ",";
@@ -1989,11 +2055,8 @@ void ComponentModel::_FromPropertiesJson(Json::Value const& json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModel::Solve(Json::Value const& parms)
+DgnDbStatus ComponentModel::Solve()
     {
-    for (auto const& parmname : parms.getMemberNames())
-        m_solver.SetParameterValue(parmname.c_str(), parms[parmname.c_str()]);
-
     auto status = Update();
     if (DgnDbStatus::Success != status)
         return status;

@@ -90,16 +90,23 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
           private:
             Scope   m_scope;
             Utf8String m_name;
-            Json::Value m_value;
+            ECN::ECValue m_value;
             friend struct Solver;
-          public:
-            explicit Parameter(Json::Value const&);
-            Parameter(Utf8CP n, Scope s, Json::Value const& v) : m_name(n), m_scope(s), m_value(v) {;}
-            Scope GetScope() const {return m_scope;}
-            Utf8StringCR GetName() const {return m_name;}
-            Json::Value const& GetValue() const {return m_value;}
-
+            //! Serialize this Parameter in JSON format
             Json::Value ToJson() const;
+            //! Deserialize a Parameter from a stored JSON object
+            explicit Parameter(Json::Value const&);
+          public:
+            //! Construct a new Parameter
+            Parameter(Utf8CP n, Scope s, ECN::ECValueCR v) : m_name(n), m_scope(s), m_value(v) {;}
+            //! Get the scope of this parameter
+            Scope GetScope() const {return m_scope;}
+            //! Get the name of this parameter
+            Utf8StringCR GetName() const {return m_name;}
+            //! Get the value of this parameter
+            ECN::ECValueCR GetValue() const {return m_value;}
+            //! Set the value of this parameter
+            DGNPLATFORM_EXPORT DgnDbStatus SetValue(ECN::ECValueCR newValue);
             };
 
       private:
@@ -131,13 +138,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         Utf8StringCR GetName() const {return m_name;}
         //! Get the parameters of the solver
         bvector<Parameter> const& GetParameters() const {return m_parameters;}
-        //! Get the parameters of the solver as properties of a Json object. This is a convenient way to get a copy of the parameters when all you need is their names and values. 
-        //! The Json representation of the Solver's parameters can be used as inputs to ComponentModel::Solve and ComponentModelSolution::ComputeSolutionName.
-        DGNPLATFORM_EXPORT Json::Value GetParametersAsJson() const;
         //! Get a parameter by name
         DGNPLATFORM_EXPORT Parameter GetParameter(Utf8StringCR pname) const;
-        //! Get a parameter by name
-        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValue(Utf8StringCR pname, Json::Value const& value);
+        //! Set a parameter's value by name
+        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValue(Utf8StringCR pname, ECN::ECValueCR value);
+        //! Set the values of the parameters of the solver. Only matching parameters are updated.
+        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValues(bvector<Parameter> const& values);
         };
 
     //========================================================================================
@@ -918,11 +924,11 @@ public:
             return BSIERROR;
 
         // Define the Solver parameters for use by this component. The script solver references these parameters by name, so this definition and the script must agree.
-        Json::Value parameters(Json::objectValue);
-        parameters["X"] = 1;
-        parameters["Y"] = 1;
-        parameters["Z"] = 1;
-        parameters["Other"] = "Something else";
+        bmap<Utf8String, ECN::ECValue> parameters;
+        parameters["X"] = ECValue(1.0);
+        parameters["Y"] = ECValue(1);
+        parameters["Z"] = ECValue(1);
+        parameters["Other"] = ECValue("Something else");
         // Identify the script solver that should be invoked. In this example, we assume that a script program 
         // called "Test" is registered in the script library. We assume that it defines and registers a model solver called "Widget".
         DgnModel::Solver wsolver(DgnModel::Solver::Type::Script, "Test.Widget", parameters); 
@@ -1004,32 +1010,28 @@ public:
         if (!cm.IsValid())
             return BSIERROR;
 
-        Json::Value parms = cm->GetSolver().GetParameters();  // make a copy
+                // *** TBD
 
-        // Solve the model a few times, with varying parameter values
-        for (int i=0; i<10; ++i)
-            {
-            parms["X"] = parms["X"].asDouble() + 1*i;
-            parms["Y"] = parms["Y"].asDouble() + 2*i;
-            parms["Z"] = parms["Z"].asDouble() + 3*i;
+        if (DgnDbStatus::Success != cm->Solve())
+            printf("Solve failed\n");
 
-            if (DgnDbStatus::Success != cm->Solve(parms))
-                printf("Solve failed\n");
-            }
         return BSISUCCESS;
         }
      @endverbatim
-     * @param[in] parameters   The parameters to pass to the solver
      * @return DgnDbStatus::Success if the solution was created and written to the component model; DgnDbStatus::ValidationFailed if the solver failed; 
      * or DgnDbStatus::SQLiteError if some other error prevented the transaction from being saved to the DgnDb.
      * @see ComputeSolutionName, GetSolver, Solver::GetParameters
     */
-    DGNPLATFORM_EXPORT DgnDbStatus Solve(Json::Value const& parameters);
+    DGNPLATFORM_EXPORT DgnDbStatus Solve();
 
     //! Compute the code that would be used by a row in ComponentModelSolutions to refer to the current solution of this model.
     //! @return a generated name for the current solution
-    //! @see ComponentModel::GetSolver::GetParametersAsJson
+    //! @see ComponentModel::GetSolver::GetParametersValues
     DGNPLATFORM_EXPORT Utf8String ComputeSolutionName();
+
+    DGNPLATFORM_EXPORT static DgnDbStatus GetSolutionParametersFromECProperties(bvector<Solver::Parameter>& parameters, ECN::IECInstanceCR instance);
+
+    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(bvector<Solver::Parameter> const& parameters);
 
     //! Import the specified ECSchema into the target DgnDb.
     //! This must be done \em once before any ComponentModelSolutions are created for ComponentModels that are defined in the schema.
