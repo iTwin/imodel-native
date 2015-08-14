@@ -10,5 +10,5 @@
 
 #include "../../WebServicesTestsHelper.h"
 
-class ISelectProviderTests : public ::testing::Test
+class ISelectProviderTests : public WSClientBaseTest
     {};
