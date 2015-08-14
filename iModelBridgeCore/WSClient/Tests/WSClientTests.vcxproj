@@ -45,6 +45,7 @@
     <ClInclude Include="Published\WebServices\Cache\Transactions\StubCacheTransactionManager.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECDbAdapterTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ECDbHelperTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\ISelectProviderTests.h" />
@@ -167,6 +168,7 @@
     <ClCompile Include="Published\WebServices\Cache\Transactions\BeSQLiteDbTransactionHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbAdapterTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ECDbHelperTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ExtendedDataAdapterTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\ISelectProviderTests.cpp" />

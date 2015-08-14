@@ -140,6 +140,7 @@
     <ClInclude Include="Published\WebServices\Cache\MockQueryProvider.h" />
     <ClInclude Include="Published\WebServices\Cache\ServerQueryHelperTests.h" />
     <ClInclude Include="Published\WebServices\Cache\Util\FileUtilTests.h" />
+    <ClInclude Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -296,6 +297,7 @@
     <ClCompile Include="Published\WebServices\Cache\ChangeGraphTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\ServerQueryHelperTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\Util\FileUtilTests.cpp" />
+    <ClCompile Include="Published\WebServices\Cache\Util\ECExpressionHelperTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />
