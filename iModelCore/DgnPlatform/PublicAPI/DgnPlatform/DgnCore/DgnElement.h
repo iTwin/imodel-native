@@ -1298,4 +1298,27 @@ public:
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
+//=======================================================================================
+//! Can be used as the base class for an Item that uses an IECInstance to cache its properties in memory.
+//! @note There is no AspectHandler for InstanceBackedItem. A class that derives from InstanceBackedItem must
+//! register its own handler.
+// @bsiclass                                                BentleySystems
+//=======================================================================================
+struct InstanceBackedItem : DgnElement::Item
+{
+    ECN::IECInstancePtr m_instance;
+
+    Utf8String _GetECSchemaName() const override {return MyECClassName();}
+    Utf8String _GetECClassName() const override {return DGN_CLASSNAME_ElementItem;}
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
+
+    InstanceBackedItem() {;}
+
+    void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
+
+    static Utf8CP MyECClassName() {return DGN_ECSCHEMA_NAME;}
+};
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE

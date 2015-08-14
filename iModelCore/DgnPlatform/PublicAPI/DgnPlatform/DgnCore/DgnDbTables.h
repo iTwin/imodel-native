@@ -1355,14 +1355,20 @@ public:
     //! @param ec       an ECObject that contains values
     //! @param props    comma-separated list of property names
     //! @return non-zero if a property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props);
+    DGNPLATFORM_EXPORT static BentleyStatus ToJsonPropertiesFromECProperties(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props);
 
-    //! Utility function to convert ECProperties to JSON properties
-    //! @param json     The JSON object to be populated
-    //! @param ec       an ECObject that contains values
-    //! @param prop     the name of a property
+    //! Utility function to convert an ECValue to a JSON value
+    //! @param json     The JSON object to be set
+    //! @param ec       an ECValue to convert
     //! @return non-zero if the property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop);
+    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::ECValue const& ec);
+
+    //! Utility function to convert a JSON value to an ECValue
+    //! @param ecvalue  The ECValue to set
+    //! @param json     The JSON value
+    //! @param typeRequired The ECType required, if known
+    //! @return non-zero if the property could not be converted.
+    DGNPLATFORM_EXPORT static BentleyStatus ToECFromJson(ECN::ECValue& ec, Json::Value const& json, ECN::PrimitiveType typeRequired);
 };
 
 //=======================================================================================
@@ -1630,9 +1636,10 @@ public:
 
     //! @name Capturing Solutions
     //@{
-    //! Compute the code that would be used by row in ComponentModelSolutions to refer to a solution with the specified parameters.
+    //! Compute the code that would be used by a row in ComponentModelSolutions to refer to a solution with the specified parameters.
     //! @param[in] parms    The solver parameters
     //! @return a generated name for the solution
+    //! @see ComponentModel::GetSolver::GetParametersAsJson
     DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(Json::Value const& parms);
 
     //! Look up a captured solution from a solution name
@@ -1658,15 +1665,29 @@ public:
 
     //! @name Creating a Solution Instance
     //@{
-    //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
+    //! A convenience method to create a new element that will hold an instance of a captured solution geometry. The caller must insert the returned element into the Db.
+    //! This convenience method creates an element based on the class specified by ComponentModel::GetElementECClassName and assigns it to the category
+    //! specified by ComponentModel::GetElementCategoryName. The caller should call CreateSolutionInstanceItem next.
+    //! @note The caller does not have to call this method to capture an instance. The caller could create an instance element based on a different class or in a different category, as long as it is 
+    //! compatible with the ComponentModel's generated item.
     //! @param[in] destinationModel The model where the instance will be inserted by the caller
-    //! @param[in] componentSchemaName The 
     //! @param[in] solutionId Identifies a captured solution. See CaptureSolution and QuerySolutionId
-    //! @param[in] origin The instance placement origin
-    //! @param[in] angles The instance placement angles
-    //! @return An new element that could be inserted as an instance of a captured solution
-    //! @see CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+    //! @param[in] origin The element's placement origin
+    //! @param[in] angles The element's placement angles
+    //! @return An new element that could be inserted as an instance of a captured solution (but only \em after calling CreateSolutionInstanceItem)
+    //! @see CreateSolutionInstanceItem, CaptureSolution, QuerySolution
+    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+
+    //! Create an item that holds the geometry from specified solution and set it on the specified element.
+    //! @param instanceElement  The element to update with the new item
+    //! @param itemProperties   An ECInstance that contains the item's properties. It is up to the caller to transfer these properties to the DgnElement::Item object before inserting or updating the element.
+    //! @param solutionId       Identifies the solution to use
+    //! @param componentSchemaName  The name of the schema (in the element's DgnDb) that defines the component model item ECClass definition
+    //! @return non-zero error status if the item could not be created
+    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId);
+
+    //! @private
+    static DgnDbStatus ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
     //@}
     };
 

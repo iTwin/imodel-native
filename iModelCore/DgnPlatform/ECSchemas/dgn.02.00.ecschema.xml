@@ -21,13 +21,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
+        <!-- NEEDS WORK: ComponentModelId should be a FOREIGN KEY -->
         <ECProperty propertyName="ComponentModelId" typeName="long"/>
         <ECProperty propertyName="Parameters" typeName="string"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementInstancesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -44,6 +45,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
+
+    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
+        <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
+        <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
+    </ECClass>
 
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>

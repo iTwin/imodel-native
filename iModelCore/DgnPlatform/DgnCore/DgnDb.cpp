@@ -267,13 +267,16 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
+BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& jv, ECN::ECValue const& v)
     {
-    ECN::ECValue v;
-    if (ec.GetValue(v, prop) != ECN::ECOBJECTS_STATUS_Success || v.IsNull() || !v.IsPrimitive())
+    if (!v.IsPrimitive())
         return BSIERROR;
 
-    auto& jv = json[prop];
+    if (v.IsNull())
+        {
+        jv = Json::nullValue;
+        return BSISUCCESS;
+        }
 
     switch(v.GetPrimitiveType())
         {
@@ -301,14 +304,38 @@ BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
+BentleyStatus DgnScriptLibrary::ToECFromJson(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
+    {
+    if (jsonValue.isBool())
+        v = ECN::ECValue(jsonValue.asBool());
+    else if (jsonValue.isIntegral())
+        v = ECN::ECValue(jsonValue.asInt64());
+    else if (jsonValue.isDouble())
+        v = ECN::ECValue(jsonValue.asDouble());
+    else if (jsonValue.isString())
+        v = ECN::ECValue(jsonValue.asString().c_str());
+    else
+        v.SetIsNull(true);
+
+    if (!v.IsNull() && !v.ConvertToPrimitiveType(typeRequired))
+        v.SetIsNull(true);
+
+    return v.IsNull()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnScriptLibrary::ToJsonPropertiesFromECProperties(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
     {
     size_t offset = 0;
     Utf8String parm;
     while ((offset = props.GetNextToken (parm, ",", offset)) != Utf8String::npos)
         {
         parm.Trim();
-        if (ToJsonFromEC(json, ec, parm.c_str()) != BSISUCCESS)
+        ECN::ECValue ecv;
+        ec.GetValue(ecv, parm.c_str());
+        if (ToJsonFromEC(json[parm.c_str()], ecv) != BSISUCCESS)
             return BSIERROR;
         }
     return BSISUCCESS;
