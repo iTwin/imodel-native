@@ -673,7 +673,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         return;
         }
 
-    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex, GetClass().GetId());
+    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex);
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index");
