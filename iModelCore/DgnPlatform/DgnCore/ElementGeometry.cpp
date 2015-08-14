@@ -1008,7 +1008,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
             for (FaceAttachment attachment : faceAttachmentsVec)
                 {
                 // NOTE: First entry is base symbology, it's redundant with GeomStream, storing it makes implementing Get easier/cleaner...
-                FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_MATERIAL...
+                FB::DPoint2d       uv(0.0, 0.0); // NEEDSWORK_WIP_MATERIAL - Add geometry specific material mappings to ElemDisplayParams/ElemMatSymb...
                 ElemDisplayParams  faceParams;
 
                 attachment.ToElemDisplayParams (faceParams);
@@ -1298,6 +1298,18 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
             }
 
         Append (Operation (OpCode::AreaFill, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+        }
+
+    // NEEDSWORK_WIP_MATERIAL - Not sure what we need to store per-geometry...assume we'll still need this stuff even if material is from sub-category...
+    if (elParams.GetMaterial().IsValid())
+        {
+        bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
+        FlatBufferBuilder fbb;
+
+        auto mloc = FB::CreateMaterial (fbb, useMaterial, useMaterial ? elParams.GetMaterial().GetValue() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
+        fbb.Finish (mloc);
+
+        Append (Operation (OpCode::Material, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
     }
 
@@ -1703,6 +1715,24 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElemDisplayParamsR elPar
 
                     gradientPtr->SetKeys ((uint16_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
                     elParams.SetGradient(gradientPtr.get());
+                    }
+                }
+            break;
+            }
+
+        case OpCode::Material:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+
+            // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of ElemDisplayParams...
+            if (ppfb->useMaterial())
+                {
+                DgnMaterialId material(ppfb->materialId());
+
+                if (elParams.IsMaterialFromSubCategoryAppearance() || material != elParams.GetMaterial())
+                    {
+                    elParams.SetMaterial(material);
+                    changed = true;
                     }
                 }
             break;
