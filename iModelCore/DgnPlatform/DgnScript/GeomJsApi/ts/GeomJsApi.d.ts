@@ -43,8 +43,8 @@ declare module BentleyApi.Dgn {
     //! A strongly typed angle, with explicitly named access to degrees and radians
     class JsAngle implements IDisposable {
         
-        //static JsAngle FromDegrees () : cxx_double;
-        //static JsAngle FromRadians () : cxx_double;
+        static CreateDegrees (value : cxx_double) : JsAngleP;
+        static CreateRadians (value : cxx_double) : JsAngleP;
         Radians : cxx_double;
         Degrees : cxx_double;
         _OnDispose(): void;
@@ -116,6 +116,8 @@ declare module BentleyApi.Dgn {
     class JsCurvePrimitive implements IDisposable {
         constructor ();
         static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
+        static CreateEllipticArc(arc: JsDEllipse3dP): JsCurvePrimitiveP;
+        static CreateLineString(points: JsDPoint3dArrayP): JsCurvePrimitiveP;
         CurvePrimitiveType(): cxx_double;
         PointAtFraction(f: cxx_double): JsDPoint3dP; 
 

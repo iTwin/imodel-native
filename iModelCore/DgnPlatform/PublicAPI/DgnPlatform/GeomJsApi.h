@@ -51,8 +51,8 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
 #include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
-#include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
+#include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

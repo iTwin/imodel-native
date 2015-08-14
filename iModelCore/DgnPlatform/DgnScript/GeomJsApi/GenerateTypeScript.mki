@@ -48,6 +48,7 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDEllipse3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsCurvePrimitive.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JSDRange3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JSDPoint3dArray.h\
                  $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \

@@ -24,12 +24,26 @@ struct JsCurvePrimitive: RefCountedBase
 
     JsCurvePrimitive (ICurvePrimitivePtr curvePrimitive) : m_curvePrimitive (curvePrimitive) {}
 
-    static JsCurvePrimitiveP CreateLineSegment (JsDSegment3dP segment)
+    static JsCurvePrimitiveP CreateLineSegment (JsDSegment3dP data)
         {
-        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (segment->m_segment);
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLine (data->m_segment);
         return new JsCurvePrimitive (cp);
         }
     
+    static JsCurvePrimitiveP CreateEllipticArc (JsDEllipse3dP data)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateArc (data->m_ellipse);
+        return new JsCurvePrimitive (cp);
+        }
+
+    static JsCurvePrimitiveP CreateLineString (JsDPoint3dArrayP data)
+        {
+        ICurvePrimitivePtr cp = ICurvePrimitive::CreateLineString (data->Data ());
+        return new JsCurvePrimitive (cp);
+        }
+
+
+
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
     JsDPoint3dP PointAtFraction (double f)
         {

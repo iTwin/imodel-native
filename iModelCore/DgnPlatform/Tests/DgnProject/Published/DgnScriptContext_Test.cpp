@@ -201,7 +201,7 @@ TEST(DgnScriptTest, RunScripts)
     printf ("Hello world\n");
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
-    printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
+    //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
     }
 
