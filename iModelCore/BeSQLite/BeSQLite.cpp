@@ -2127,10 +2127,20 @@ DbResult Db::GetExpirationDate (DateTime& xdate) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::SaveExpirationDate (DateTime const& xdate)
     {
-    if (xdate.IsValid() && xdate.GetInfo().GetKind() != DateTime::Kind::Utc)
+    if (!xdate.IsValid())
         return BE_SQLITE_ERROR;
 
-    return SavePropertyString (Properties::ExpirationDate(), Utf8String(xdate.ToString()));
+    if (xdate.GetInfo().GetKind() != DateTime::Kind::Utc)
+        return BE_SQLITE_ERROR;
+
+    Utf8String xdateString(xdate.ToString());
+    if (xdateString.empty())
+        {
+        BeAssert(false); // a valid DateTime generated an empty string?
+        return BE_SQLITE_ERROR;
+        }
+    
+    return SavePropertyString (Properties::ExpirationDate(), xdateString);
     }
 
 /*---------------------------------------------------------------------------------**//**
