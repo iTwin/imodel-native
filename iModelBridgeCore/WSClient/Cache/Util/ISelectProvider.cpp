@@ -7,6 +7,8 @@
  +--------------------------------------------------------------------------------------*/
 
 #include <WebServices/Cache/Util/ISelectProvider.h>
+#include <WebServices/Cache/Util/ECExpressionHelper.h>
+#include <WebServices/Cache/Util/ECCustomAttributeHelper.h>
 
 USING_NAMESPACE_EC
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -57,6 +59,17 @@ void ISelectProvider::SelectProperties::AddProperty(ECPropertyCP ecProperty)
         }
 
     m_ecProperties.push_back(ecProperty);
+
+    // Add properties that are required for calculating this property value
+    // Required for caching property into ECDb as it re-calculates such value
+    Utf8String ecExpression = ECCustomAttributeHelper::GetString(ecProperty, L"CalculatedECPropertySpecification", L"ECExpression");
+    if (!ecExpression.empty())
+        {
+        for (auto requiredProperty : ECExpressionHelper::GetRequiredProperties(ecExpression, ecProperty->GetClass()))
+            {
+            AddProperty(requiredProperty);
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
