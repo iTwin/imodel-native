@@ -1300,10 +1300,14 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
         Append (Operation (OpCode::AreaFill, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
-    // NEEDSWORK_WIP_MATERIAL - Not sure what we need to store per-geometry...assume we'll still need this stuff even if material is from sub-category...
-    if (elParams.GetMaterial().IsValid())
+    // NEEDSWORK_WIP_MATERIAL - Not sure what we need to store per-geometry...
+    //                          I assume we'll still need optional uv settings even when using sub-category material.
+    //                          So we need a way to check for that case as we can't call GetMaterial 
+    //                          when !useMaterial because ElemDisplayParams::Resolve hasn't been called...
+    bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
+
+    if (useMaterial && elParams.GetMaterial().IsValid())
         {
-        bool useMaterial = !elParams.IsMaterialFromSubCategoryAppearance();
         FlatBufferBuilder fbb;
 
         auto mloc = FB::CreateMaterial (fbb, useMaterial, useMaterial ? elParams.GetMaterial().GetValue() : 0, nullptr, nullptr, 0.0, 0.0, 0.0);
