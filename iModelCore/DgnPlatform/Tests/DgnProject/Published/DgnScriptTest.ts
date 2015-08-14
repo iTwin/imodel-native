@@ -59,9 +59,11 @@ module DgnScriptTests {
         var arrayA = new BentleyApi.Dgn.JsDPoint3dArray();
         arrayA.Add(new BentleyApi.Dgn.JsDPoint3d(1, 2, 3));
         arrayA.Add(new BentleyApi.Dgn.JsDPoint3d(2, 3, 4));
+        arrayA.Add(new BentleyApi.Dgn.JsDPoint3d(4, 3, 4));
+        checker.NearDouble(3, arrayA.Size(), true);
+        var cpLineStringA = BentleyApi.Dgn.JsCurvePrimitive.CreateLineString(arrayA);
+        var pointB = cpLineStringA.PointAtFraction(0.5);
 
-
-        checker.NearDouble(2, arrayA.Size(), true);
         
     }
 
