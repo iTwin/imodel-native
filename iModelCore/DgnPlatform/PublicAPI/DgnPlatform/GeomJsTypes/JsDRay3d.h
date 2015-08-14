@@ -16,10 +16,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDRay3d : RefCountedBase
+struct JsDRay3d : JsGeomWrapperBase<DRay3d>
 {
-private:
-    DRay3d m_data;
 public:
     JsDRay3d() {}
     JsDRay3d (DPoint3dCR point, DVec3dCR vector) {m_data.InitFromOriginAndVector (point, vector);}

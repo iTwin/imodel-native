@@ -21,6 +21,15 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct _JsStructName_;  \
 typedef struct _JsStructName_ * _JsStructName_##P;
 
+template<typename NativeType>
+struct JsGeomWrapperBase : RefCountedBase   
+{
+protected:
+NativeType m_data;
+public:
+NativeType Get () const {return m_data;}
+};
+
 JSSTRUCT(JsDPoint3d);
 JSSTRUCT(JsDVector3d);
 JSSTRUCT(JsDEllipse3d);
