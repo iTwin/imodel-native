@@ -54,6 +54,10 @@ declare module BentleyApi.Dgn {
     type JsAngleP = cxx_pointer<JsAngle>;
 
 
+
+ 
+
+
     //! A wrapper for BentleyApi::DEllipse3d
     class JsDEllipse3d implements IDisposable {
         constructor (
@@ -85,11 +89,33 @@ declare module BentleyApi.Dgn {
 
     type JsDSegment3dP = cxx_pointer<JsDSegment3d>;
 
+    type JsDPoint3dArrayP = cxx_pointer<JsDPoint3dArray>;
+
+    //! A wrapper for BentleyApi::DSegment3d
+    class JsDPoint3dArray implements IDisposable {
+        constructor();
+
+        Add(value: JsDPoint3dP): void;
+
+        Size(): cxx_double;
+        Clear (): void;
+        Append(other: JsDPoint3dArrayP): void;
+
+        At(index: cxx_double): JsDPoint3dP;
+
+        _OnDispose(): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+
+
+
 
     //! A wrapper for BentleyApi::DSegment3d
     class JsCurvePrimitive implements IDisposable {
         constructor ();
-        static CreateLineSegment (segment : JsDSegment3dP) : JsCurvePrimitiveP;
+        static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
         CurvePrimitiveType(): cxx_double;
         PointAtFraction(f: cxx_double): JsDPoint3dP; 
 

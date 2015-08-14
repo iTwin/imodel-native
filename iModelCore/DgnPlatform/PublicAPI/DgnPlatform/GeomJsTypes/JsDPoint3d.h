@@ -28,6 +28,7 @@ friend struct JsDVector3d;
 friend struct JsDRay3d;
 friend struct JsDRange3d;
 friend struct JsDPoint3dDVector3dDVector3d;
+friend struct JsDPoint3dArray;
 
 
 private:
