@@ -68,7 +68,7 @@ module DgnScriptTests {
     }
 
     // Run the tests
-    debugger;
+    //debugger;
 
     //BentleyApi.Dgn.JsUtils.ReportError('hello world');
     test1();

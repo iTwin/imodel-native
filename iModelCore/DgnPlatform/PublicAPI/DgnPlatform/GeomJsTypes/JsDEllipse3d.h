@@ -18,7 +18,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct JsDEllipse3d : RefCountedBase
 {
-    friend struct JsCurvePrimitive;
     private:
     DEllipse3d m_ellipse;
 
@@ -30,12 +29,14 @@ struct JsDEllipse3d : RefCountedBase
     JsDEllipse3d (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90,
                 JsAngleP startAngle, JsAngleP sweepAngle)
         : m_ellipse(DEllipse3d::FromVectors (
-                    center->m_point, vector0->m_vector, vector90->m_vector,
-                    startAngle->m_angle.Radians (),
-                    sweepAngle->m_angle.Radians ()
+                    center->Get (), vector0->Get (), vector90->Get (),
+                    startAngle->GetRadians (),
+                    sweepAngle->GetRadians ()
                     ))
          {}
        
+    DEllipse3d Get (){return m_ellipse;}
+    
     static JsDEllipse3dP FromCoordinates (
             double cx, double cy, double cz,
             double v0x, double v0y, double v0z,
@@ -48,8 +49,8 @@ struct JsDEllipse3d : RefCountedBase
                     cx, cy, cz,
                     v0x, v0y, v0z,
                     v90x, v90y, v90z,
-                    startAngle->m_angle.Radians (),
-                    sweepAngle->m_angle.Radians ()
+                    startAngle->GetRadians (),
+                    sweepAngle->GetRadians ()
                 ));            
             }
 
@@ -59,11 +60,11 @@ struct JsDEllipse3d : RefCountedBase
     JsAngle * GetStartAngle () {return new JsAngle (AngleInDegrees::FromRadians (m_ellipse.start));}
     JsAngle * GetSweepAngle () {return new JsAngle (AngleInDegrees::FromRadians (m_ellipse.sweep));}
 
-    void SetCenter     (JsDPoint3dP center) {m_ellipse.center = center->m_point;}
-    void SetVector0    (JsDVector3dP vector0) {m_ellipse.vector0 = vector0->m_vector;}
-    void SetVector90   (JsDVector3dP vector90) {m_ellipse.vector90 = vector90->m_vector;}
-    void SetStartAngle (JsAngleP angle) {m_ellipse.start = angle->m_angle.Radians ();}
-    void SetSweepAngle (JsAngleP angle) {m_ellipse.sweep = angle->m_angle.Radians ();}
+    void SetCenter     (JsDPoint3dP center) {m_ellipse.center = center->Get ();}
+    void SetVector0    (JsDVector3dP vector0) {m_ellipse.vector0 = vector0->Get ();}
+    void SetVector90   (JsDVector3dP vector90) {m_ellipse.vector90 = vector90->Get ();}
+    void SetStartAngle (JsAngleP angle) {m_ellipse.start = angle->GetRadians ();}
+    void SetSweepAngle (JsAngleP angle) {m_ellipse.sweep = angle->GetRadians ();}
     
     JsDPoint3dP PointAtFraction (double f)
         {

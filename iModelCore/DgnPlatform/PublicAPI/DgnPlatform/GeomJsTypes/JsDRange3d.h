@@ -19,18 +19,19 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct JsDRange3d : RefCountedBase
 {
+private:
     DRange3d m_range;
-
+public:
     JsDRange3d() {m_range.Init ();}
 
     JsDPoint3dP GetLow() {return new JsDPoint3d (m_range.low);}
     JsDPoint3dP GetHigh() {return new JsDPoint3d (m_range.high);}
-    void SetLow (JsDPoint3dP point) {m_range.low = point->m_point;}
-    void SetHigh (JsDPoint3dP point) {m_range.high = point->m_point;}
+    void SetLow (JsDPoint3dP point) {m_range.low = point->Get ();}
+    void SetHigh (JsDPoint3dP point) {m_range.high = point->Get ();}
 
     bool IsNull (){return m_range.IsNull ();}
     void Extend (double x, double y, double z){m_range.Extend (x,y,z);}
-    void Extend (JsDPoint3dP point){m_range.Extend (point->m_point);}
+    void Extend (JsDPoint3dP point){m_range.Extend (point->Get ());}
     void Init (){m_range.Init ();}
 
 

@@ -19,18 +19,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct JsDPoint3d : RefCountedBase
 {
-friend struct JsDVector3d;
-friend struct JsDEllipse3d;
-friend struct JsDSegment3d;
-friend struct JsCurvePrimitive;
-friend struct JsCurveVector;
-friend struct JsDVector3d;
-friend struct JsDRay3d;
-friend struct JsDRange3d;
-friend struct JsDPoint3dDVector3dDVector3d;
-friend struct JsDPoint3dArray;
-
-
 private:
     DPoint3d m_point;
 
@@ -38,7 +26,7 @@ public:
     JsDPoint3d() {m_point.Init(0,0,0);}
     JsDPoint3d(DPoint3dCR pt) : m_point(pt) {;}
     JsDPoint3d(double x, double y, double z) {m_point.x=x; m_point.y=y; m_point.z=z;}
-    DPoint3d GetDPoint3d (){return m_point;}
+    DPoint3d Get (){return m_point;}
 
     double GetX() {return m_point.x;}
     double GetY() {return m_point.y;}
