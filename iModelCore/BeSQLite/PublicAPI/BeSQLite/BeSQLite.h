@@ -78,7 +78,7 @@ worry about uniqueness.
 within a BeRepository to 2^32 (4 billion). Of course it permits 4 billion different BeRepositories. It is often the best
 compromise of performance and flexibility for tables with lots of activity.
 
-    -# Use #BeServerIssuedId. A BeServerIssuedId is a 4-byte number that is unique because it is issued by a
+    -# Use #BeServerIssuedId. A BeServerIssuedId is an 8-byte number that is unique because it is issued by a
 synchronized id-administration server, enforced outside of the scope of BeSQLite. BeServerIssuedIds therefore cannot be
 created locally and require a connection to the (one, globally administered) server to obtain a new value. Generally
 they are useful for "rarely changed but often used" ids such as styles and fonts, etc.
@@ -279,6 +279,8 @@ public:
     //! Construct a copy.
     BeInt64Id(BeInt64Id const& rhs) {m_id = rhs.m_id;}
 
+    BeInt64Id& operator=(BeInt64Id const& rhs) {m_id = rhs.m_id; return *this;}
+
     bool IsValid() const {return Validate();}
 
     //! Compare two BeInt64Id for equality
@@ -361,9 +363,19 @@ struct BeServerIssuedId : BeInt64Id
 
     //! Construct a BeServerIssuedId from a 64 bit value.
     explicit BeServerIssuedId(int64_t u) : BeInt64Id(u) {}
+    BeServerIssuedId& operator=(BeServerIssuedId const& rhs) {m_id = rhs.m_id; return *this;}
+    BeServerIssuedId(BeServerIssuedId&& rhs) : BeInt64Id(std::move(rhs)) {} 
+    BeServerIssuedId(BeServerIssuedId const& rhs) : BeInt64Id(rhs) {} 
 };
 
-#define BESERVER_ISSUED_ID_CLASS(classname) struct classname : BeServerIssuedId {classname() : BeServerIssuedId() {} explicit classname(int64_t u) : BeServerIssuedId(u) {}};
+#define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {classname() : superclass() {} \
+    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
+    classname(classname const& rhs) : superclass(rhs) {} \
+    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
+    explicit classname(int64_t v) : superclass(v) {} \
+    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */ };
+
+#define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeServerIssuedId)
 
 //=======================================================================================
 // Base class for 32 bit Ids. Subclasses must supply GetInvalidValue.
