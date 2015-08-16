@@ -26,10 +26,10 @@ public:
     JsDRay3d (double x0, double y0, double z0, double ux, double uy, double uz)
         {m_data.InitFromOriginAndVector (DPoint3d::From (x0, y0, z0), DVec3d::From (ux, uy, uz));}
 
-    JsDPoint3dP GetStartPoint() {return new JsDPoint3d (m_data.origin);}
-    JsDVector3dP     GetVector () {return new JsDVector3d (m_data.direction);}
-    void SetStartPoint (JsDPoint3dP point) {m_data.origin = point->Get ();}
-    void SetVector (JsDVector3dP vector) {m_data.direction = vector->Get ();}
+    JsDPoint3dP GetOrigin() {return new JsDPoint3d (m_data.origin);}
+    JsDVector3dP     GetDirection() {return new JsDVector3d (m_data.direction);}
+    void SetOrigin (JsDPoint3dP point) {m_data.origin = point->Get ();}
+    void SetDirection (JsDVector3dP vector) {m_data.direction = vector->Get ();}
 
     JsDPoint3dP PointAtFraction (double f)
         {
