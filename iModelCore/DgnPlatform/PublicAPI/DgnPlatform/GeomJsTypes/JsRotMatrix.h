@@ -36,27 +36,27 @@ public:
             );
         }
         
-    JsRotMatrixP CreateIdentity (){return new JsRotMatrix (RotMatrix::FromIdentity ());}
-    JsRotMatrixP CreateUniformScale (double s){return new JsRotMatrix (RotMatrix::FromScale (s));}
-    JsRotMatrixP CreateScale (double scaleX, double scaleY, double scaleZ){return new JsRotMatrix (RotMatrix::FromScaleFactors (scaleX, scaleY, scaleZ));}
-    JsRotMatrixP CreateColumns (JsDVector3dP vectorU, JsDVector3dP vectorV, JsDVector3dP vectorZ)
+    static JsRotMatrixP CreateIdentity (){return new JsRotMatrix (RotMatrix::FromIdentity ());}
+    static JsRotMatrixP CreateUniformScale (double s){return new JsRotMatrix (RotMatrix::FromScale (s));}
+    static JsRotMatrixP CreateScale (double scaleX, double scaleY, double scaleZ){return new JsRotMatrix (RotMatrix::FromScaleFactors (scaleX, scaleY, scaleZ));}
+    static JsRotMatrixP CreateColumns (JsDVector3dP vectorU, JsDVector3dP vectorV, JsDVector3dP vectorZ)
         {return new JsRotMatrix (RotMatrix::FromColumnVectors (vectorU->Get  (), vectorV->Get  (), vectorZ->Get  ()));}
-    JsRotMatrixP CreateRows (JsDVector3dP vectorU, JsDVector3dP vectorV, JsDVector3dP vectorZ)
+    static JsRotMatrixP CreateRows (JsDVector3dP vectorU, JsDVector3dP vectorV, JsDVector3dP vectorZ)
         {return new JsRotMatrix (RotMatrix::FromRowVectors (vectorU->Get  (), vectorV->Get  (), vectorZ->Get  ()));}
-    JsRotMatrixP CreateRotationAroundVector (JsDVector3dP axis, JsAngleP angle)
+    static JsRotMatrixP CreateRotationAroundVector (JsDVector3dP axis, JsAngleP angle)
         {return new JsRotMatrix (RotMatrix::FromVectorAndRotationAngle (axis->Get  (), angle->GetRadians ()));}
-    JsRotMatrixP Create90DegreeRotationAroundVector (JsDVector3dP axis)
+    static JsRotMatrixP Create90DegreeRotationAroundVector (JsDVector3dP axis)
         {return new JsRotMatrix (RotMatrix::FromRotate90 (axis->Get  ()));}
-    JsRotMatrixP CreateDirectionalScale (JsDVector3dP direction, double scale)
+    static JsRotMatrixP CreateDirectionalScale (JsDVector3dP direction, double scale)
         {return new JsRotMatrix (RotMatrix::FromDirectionAndScale (direction->Get  (), scale));}
     // TODO: square and normalize !!!
     
-    JsRotMatrixP Create1Vector (JsDVector3dP direction, double axisIndex)
+    static JsRotMatrixP Create1Vector (JsDVector3dP direction, double axisIndex)
         {
         // remark: always normalize.
         return new JsRotMatrix (RotMatrix::From1Vector (direction->Get  (), (int)floor (axisIndex), true));
         }
-    JsRotMatrixP CreateFromXYVectors (JsDVector3dP vectorX, JsDVector3dP vectorY, double axisIndex)
+    static JsRotMatrixP CreateFromXYVectors (JsDVector3dP vectorX, JsDVector3dP vectorY, double axisIndex)
         {
         return new JsRotMatrix (RotMatrix::From2Vectors     (vectorX->Get  (), vectorY->Get ()));
         }
@@ -112,22 +112,23 @@ public:
             return nullptr;
         }
     
-    DVec3d GetColumnX() {return DVec3d::FromColumn (m_data, 0);}
-    DVec3d GetColumnY() {return DVec3d::FromColumn (m_data, 1);}
-    DVec3d GetColumnZ() {return DVec3d::FromColumn (m_data, 2);}
+    JsDVector3dP GetColumnX() {return new JsDVector3d (DVec3d::FromColumn (m_data, 0));}
+    JsDVector3dP GetColumnY() {return new JsDVector3d (DVec3d::FromColumn (m_data, 1));}
+    JsDVector3dP GetColumnZ() {return new JsDVector3d (DVec3d::FromColumn (m_data, 2));}
+    JsDVector3dP GetRowX() {return new JsDVector3d (DVec3d::FromRow (m_data, 0));}
+    JsDVector3dP GetRowY() {return new JsDVector3d (DVec3d::FromRow (m_data, 1));}
+    JsDVector3dP GetRowZ() {return new JsDVector3d (DVec3d::FromRow (m_data, 2));}
     
-    void SetColumnX(DVec3dCR value) {m_data.SetColumn (value, 0);}
-    void SetColumnY(DVec3dCR value) {m_data.SetColumn (value, 1);}
-    void SetColumnZ(DVec3dCR value) {m_data.SetColumn (value, 2);}
+    void SetColumnX(JsDVector3dP value) {m_data.SetColumn (value->Get (), 0);}
+    void SetColumnY(JsDVector3dP value) {m_data.SetColumn (value->Get (), 1);}
+    void SetColumnZ(JsDVector3dP value) {m_data.SetColumn (value->Get (), 2);}
+
+    void SetRowX(JsDVector3dP value) {m_data.SetRow (value->Get (), 0);}
+    void SetRowY(JsDVector3dP value) {m_data.SetRow (value->Get (), 1);}
+    void SetRowZ(JsDVector3dP value) {m_data.SetRow (value->Get (), 2);}
 
 
-    DVec3d GetRowX() {return DVec3d::FromRow (m_data, 0);}
-    DVec3d GetRowY() {return DVec3d::FromRow (m_data, 1);}
-    DVec3d GetRowZ() {return DVec3d::FromRow (m_data, 2);}
     
-    void SetRowX(DVec3dCR value) {m_data.SetRow (value, 0);}
-    void SetRowY(DVec3dCR value) {m_data.SetRow (value, 1);}
-    void SetRowZ(DVec3dCR value) {m_data.SetRow (value, 2);}
     
     double At (double ai, double aj)
         {

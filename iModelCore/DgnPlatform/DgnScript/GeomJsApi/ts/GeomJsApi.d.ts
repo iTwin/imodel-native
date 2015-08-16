@@ -91,7 +91,7 @@ declare module BentleyApi.Dgn {
 
     type JsDPoint3dArrayP = cxx_pointer<JsDPoint3dArray>;
 
-    //! A wrapper for BentleyApi::DSegment3d
+    //! A wrapper for BentleyApi::DPoint3dArray
     class JsDPoint3dArray implements IDisposable {
         constructor();
 
@@ -108,7 +108,77 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
+    type JsRotMatrixP = cxx_pointer<JsRotMatrix>;
 
+    //! A wrapper for BentleyApi::JsRotMatrix
+    class JsRotMatrix implements IDisposable {
+        constructor();
+        constructor
+            (
+            axx : cxx_double, axy : cxx_double, axz : cxx_double,
+            ayx : cxx_double, ayy : cxx_double, ayz : cxx_double,
+            azx : cxx_double, azy : cxx_double, azz : cxx_double
+            );
+        static CreateIdentity () : JsRotMatrixP;
+        static CreateUniformScale (scaleFactor : cxx_double) : JsRotMatrixP;
+        
+        ColumnX : JsDVector3dP;        
+        ColumnY : JsDVector3dP;        
+        ColumnZ : JsDVector3dP;        
+
+        RowX: JsDVector3dP;        
+        RowY: JsDVector3dP;        
+        RowZ: JsDVector3dP;        
+
+        CreateScale (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : JsRotMatrixP;
+        CreateColumns (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
+        CreateRows (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
+
+        CreateRotationAroundVector (axis : JsDVector3dP, angle : JsAngleP) : JsRotMatrixP;
+        Create90DegreeRotationAroundVector (axis : JsDVector3dP) : JsRotMatrixP;
+        CreateDirectionalScale (direction : JsDVector3dP, scale : cxx_double) : JsRotMatrixP;
+        // TODO: square and normalize !!!
+        
+        Create1Vector (direction : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
+        CreateFromXYVectors (vectorX : JsDVector3dP, vectorY : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
+        MultiplyVector (vector : JsDVector3dP) : JsDVector3dP;        
+        MultiplyTransposeVector (vector : JsDVector3dP) : JsDVector3dP;        
+
+        MultiplyComponents (vector : JsDVector3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+            
+        MultiplyTransposeComponents (vector : JsDVector3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+
+        Solve (rightHandSide : JsDVector3dP) : JsDVector3dP;
+
+         MultiplyMatrix (other : JsRotMatrixP) : JsRotMatrixP;
+
+         Transpose () : JsRotMatrixP;
+         Inverse () : JsRotMatrixP;
+        At(ai : cxx_double, aj : cxx_double) : cxx_double;
+        SetAt (ai : cxx_double, aj : cxx_double, value : cxx_double) : void;
+            
+        ScaleColumnsInPlace (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : void;
+
+        ScaleRowsInPlace (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : void;
+
+        Determinant () : cxx_double;
+        ConditionNumber () : cxx_double;
+        SumSquares () : cxx_double;
+        SumDiagonalSquares () : cxx_double;
+        MaxAbs () : cxx_double;
+        MaxDiff (other : JsRotMatrixP) : cxx_double;
+        
+        IsIdentity () : cxx_bool;
+        IsDigaonal () : cxx_bool;
+        IsSignedPermutation () : cxx_bool;
+        IsRigid () : cxx_bool;
+        HasUnitLengthMutuallyPerpendicularRowsAndColumns () : cxx_bool;
+
+
+        _OnDispose(): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
 
 
 
