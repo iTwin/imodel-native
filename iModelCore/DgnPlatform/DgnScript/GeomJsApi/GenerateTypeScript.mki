@@ -49,6 +49,7 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsCurvePrimitive.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDRange3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsRotMatrix.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsTransform.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dArray.h\
                  $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)

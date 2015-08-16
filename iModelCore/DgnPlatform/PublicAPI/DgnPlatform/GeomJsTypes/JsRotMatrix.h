@@ -73,14 +73,14 @@ public:
         return new JsDVector3d (result);
         }        
 
-    JsDVector3dP MultiplyComponents (JsDVector3dP vector, double x, double y, double z)
+    JsDVector3dP MultiplyXYZ (JsDVector3dP vector, double x, double y, double z)
         {
         DVec3d result;
         m_data.MultiplyComponents (result, x, y, z);
         return new JsDVector3d (result);
         }        
         
-    JsDVector3dP MultiplyTransposeComponents (JsDVector3dP vector, double x, double y, double z)
+    JsDVector3dP MultiplyTransposeXYZ (JsDVector3dP vector, double x, double y, double z)
         {
         DVec3d result;
         m_data.MultiplyTransposeComponents (result, x, y, z);
