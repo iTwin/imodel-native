@@ -1253,14 +1253,12 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
     BeSQLite::Statement stmt;
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.Name = 'BaseHasClassA'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-
-    Utf8String whereClauseValue;
-    ASSERT_EQ (SUCCESS, whereClauseValue.Sprintf ("ECClassId = %lld", stmt.GetValueInt64 (0)));
+    ECClassId classId = stmt.GetValueInt64(0);
     stmt.Finalize ();
 
     //verify that entry in the ec_Index table exists for relationship table BaseHasClassA
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT ec_Index.Name, ec_Index.IsUnique from ec_Index where ec_Index.WhereClause = ?"));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, whereClauseValue, Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Name, IsUnique from ec_Index where ClassId = ?"));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, classId));
     while (DbResult::BE_SQLITE_ROW == stmt.Step ())
         {
         ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
@@ -1271,14 +1269,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
 
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.Name = 'BaseHasClassB'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-
-    ASSERT_EQ (SUCCESS, whereClauseValue.Sprintf ("ECClassId = %lld", stmt.GetValueInt64 (0)));
-    stmt.Finalize ();
+    classId = stmt.GetValueInt64(0);
+    stmt.Finalize();
 
     //verify that entry in ec_Index table also exists for relationship table BaseHasClassB
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT ec_Index.Name, ec_Index.IsUnique from ec_Index where ec_Index.WhereClause = ?"));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, whereClauseValue, Statement::MakeCopy::No));
-    while (DbResult::BE_SQLITE_ROW == stmt.Step ())
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Name, IsUnique from ec_Index where ClassId = ?"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindInt64(1, classId));
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
         {
         ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
         Utf8String indexName = stmt.GetValueText (0);
