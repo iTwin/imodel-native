@@ -32,6 +32,9 @@ Politeness::~Politeness()
     delete m_pDownloader;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
 bool Politeness::CanDownloadUrl(UrlPtr const& url)
     {
     if(!m_RespectRobotsTxt)

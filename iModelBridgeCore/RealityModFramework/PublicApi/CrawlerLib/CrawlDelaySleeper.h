@@ -9,6 +9,7 @@
 #pragma once
 
 #include <CrawlerLib/CrawlerLib.h>
+#include <CrawlerLib/Url.h>
 
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
@@ -22,10 +23,10 @@ BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 struct CrawlDelaySleeper : RefCountedBase
     {
     public:
-    void Sleep(uint32_t seconds, WString const& domain);
+    void Sleep(uint32_t seconds, DomainName const& domain);
 
     private:
-    std::map<WString, std::mutex> m_MutexPerDomain;
+    std::map<DomainName, std::mutex> m_MutexPerDomain;
     std::mutex m_AddDomainToMapMutex;
     };
 

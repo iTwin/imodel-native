@@ -59,6 +59,6 @@ class Politeness : public IPoliteness
     uint32_t m_MaxCrawlDelay;
     UserAgent m_UserAgent;
 
-    std::map<WString, RobotsTxtContentPtr> m_RobotsTxtFilesPerDomain;
+    std::map<DomainName, RobotsTxtContentPtr> m_RobotsTxtFilesPerDomain;
     };
 END_BENTLEY_CRAWLERLIB_NAMESPACE

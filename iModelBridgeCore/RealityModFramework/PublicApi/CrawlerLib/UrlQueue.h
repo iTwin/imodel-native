@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicApi/CrawlerLib/UrlQueue.h $
-| 
+|
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
@@ -50,8 +50,8 @@ class UrlQueue
     bool m_AcceptLinksInExternalLinks;
     uint32_t m_MaximumCrawlDepth;
 
-    std::map<WString, std::queue<UrlPtr>>           m_QueuesPerDomain;
-    std::map<WString, std::queue<UrlPtr>>::iterator m_CurrentDomain;
+    std::map<DomainName, std::queue<UrlPtr>>           m_QueuesPerDomain;
+    std::map<DomainName, std::queue<UrlPtr>>::iterator m_CurrentDomain;
 
     UrlPtrSet m_VisitedUrls;
     IPoliteness* m_pPoliteness;

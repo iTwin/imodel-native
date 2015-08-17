@@ -20,13 +20,32 @@
 #include <exception>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+struct DomainName
+    {
+    friend struct Url;
+    friend struct Seed;
+
+    public:
+    inline bool operator==(DomainName const& other) const {return m_DomainName.Equals(other.m_DomainName);}
+    inline bool operator<(DomainName const& other) const {return m_DomainName < other.m_DomainName;}
+
+    CRAWLERLIB_EXPORT WString const& GetWString() const {return m_DomainName;}
+
+    private:
+    DomainName() {}
+    DomainName(WString const& domainName) {m_DomainName = domainName;}
+
+    WString m_DomainName;
+    };
+
 struct Url : public RefCountedBase
     {
     public:
     CRAWLERLIB_EXPORT Url(WString const& url, UrlPtr const& parent);
     CRAWLERLIB_EXPORT virtual ~Url() {}
 
-    CRAWLERLIB_EXPORT inline WString const& GetDomainName() const {return m_DomainName;}
+    CRAWLERLIB_EXPORT inline DomainName const& GetDomainName() const {return m_DomainName;}
     CRAWLERLIB_EXPORT inline WString const& GetUrlWString() const {return m_Url;}
     CRAWLERLIB_EXPORT inline UrlPtr const& GetParent() const {return m_Parent;}
     CRAWLERLIB_EXPORT inline uint32_t GetDepth() const {return m_Depth;}
@@ -38,12 +57,12 @@ struct Url : public RefCountedBase
 
 
     protected:
-    Url() {} 
+    Url() {}
     void RemoveTrailingSlash(WString& urlString) const;
 
     UrlPtr m_Parent;
     WString m_Url;
-    WString m_DomainName;
+    DomainName m_DomainName;
     bool m_IsExternalPage;
     uint32_t m_Depth;
 

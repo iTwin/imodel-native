@@ -18,7 +18,7 @@ using namespace std;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void CrawlDelaySleeper::Sleep(uint32_t seconds, WString const& domain)
+void CrawlDelaySleeper::Sleep(uint32_t seconds, DomainName const& domain)
     {
     if(seconds <= 0)
         return;
@@ -27,7 +27,7 @@ void CrawlDelaySleeper::Sleep(uint32_t seconds, WString const& domain)
     auto domainIterator = m_MutexPerDomain.find(domain);
     if(domainIterator == m_MutexPerDomain.end())
         {
-        m_MutexPerDomain.emplace(piecewise_construct, forward_as_tuple(domain), forward_as_tuple()); //BeMutex is non copyable class,
+        m_MutexPerDomain.emplace(piecewise_construct, forward_as_tuple(domain), forward_as_tuple()); //std::mutex is non copyable class,
                                                                                                      //therefore the picewise_construct
         domainIterator = m_MutexPerDomain.find(domain);
         }

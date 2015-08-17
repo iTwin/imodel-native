@@ -33,7 +33,6 @@ struct UrlMock : public Url //Skips the url validation
         }
     virtual ~UrlMock() { }
 
-    inline void SetDomainName(WString const& domainName) {m_DomainName = domainName;}
     inline void SetUrlWString(WString const& url) {m_Url = url;}
     inline void SetParent(UrlPtr const& parent) {m_Parent = parent;}
     inline void SetDepth(uint32_t depth) {m_Depth = depth;}

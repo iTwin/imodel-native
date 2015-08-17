@@ -81,13 +81,13 @@ TEST_F(UrlTester, TheParentIsCorrectlySet)
 TEST_F(UrlTester, CanParseUrlDomain)
     {
     Url url(aValidUrlString, parentUrl);
-    ASSERT_STREQ(L"the-domain.com", url.GetDomainName().c_str());
+    ASSERT_STREQ(L"the-domain.com", url.GetDomainName().GetWString().c_str());
     }
 
 TEST_F(UrlTester, CanParseUrlWithWwwDomain)
     {
     Url url(aValidUrlStringWith_www, parentUrl);
-    ASSERT_STREQ(L"the-domain.com", url.GetDomainName().c_str());
+    ASSERT_STREQ(L"the-domain.com", url.GetDomainName().GetWString().c_str());
     }
 
 TEST_F(UrlTester, CanParseARelativeUrl)

@@ -12,6 +12,7 @@
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
 
+#define __DEMO_PAUSE_STOP_FROM_OTHER_THREAD__ 0
 
 class CrawlerLibClient : ICrawlerObserver
     {
@@ -66,6 +67,11 @@ class CrawlerLibClient : ICrawlerObserver
         crawler->SetCrawlLinksWithHtmlTagRelNoFollow(true);
         crawler->SetCrawlLinksFromPagesWithNoFollowMetaTag(true);
 
+#if __DEMO_PAUSE_STOP_FROM_OTHER_THREAD__
+        //It is possible to pause and stop the crawling from another thread.
+        //To demo this feature, Crawler::Crawl is launched in an separate thread
+        //and the current thread calls pause, unpause and stop
+
         future<StatusInt> asyncCrawl = async(launch::async, &Crawler::Crawl, crawler, seed);
         this_thread::sleep_for(chrono::seconds(5));
         printf("pause\n");
@@ -78,6 +84,9 @@ class CrawlerLibClient : ICrawlerObserver
         crawler->Stop();
 
         asyncCrawl.get();
+#else
+        crawler->Crawl(seed);
+#endif
         }
 
     private:

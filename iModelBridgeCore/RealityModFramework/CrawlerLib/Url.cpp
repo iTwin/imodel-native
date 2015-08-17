@@ -30,7 +30,7 @@ Url::Url(WString const& url, UrlPtr const& parent)
         }
     else if(regex_match(url.c_str(), s_RelativeUrlRegex))
         {
-        m_Url = WPrintfString(L"http://%ls%ls", parent->GetDomainName().c_str(), url.c_str());
+        m_Url = WPrintfString(L"http://%ls%ls", parent->GetDomainName().m_DomainName.c_str(), url.c_str());
         m_DomainName = parent->GetDomainName();
         }
     else if(regex_match(url.c_str(), match, s_RelativeUrlWithDotRegex))
@@ -44,7 +44,7 @@ Url::Url(WString const& url, UrlPtr const& parent)
             }
         else
             {
-            m_Url = WPrintfString(L"http://%ls%ls", parent->GetDomainName().c_str(), match[1].str().c_str());
+            m_Url = WPrintfString(L"http://%ls%ls", parent->GetDomainName().m_DomainName.c_str(), match[1].str().c_str());
             }
         m_DomainName = parent->GetDomainName();
         }
@@ -55,7 +55,7 @@ Url::Url(WString const& url, UrlPtr const& parent)
     RemoveTrailingSlash(m_Url);
     m_Parent = parent;
     m_Depth = parent->GetDepth() + 1;
-    m_IsExternalPage = !m_DomainName.Equals(parent->GetDomainName());
+    m_IsExternalPage = !(m_DomainName == parent->GetDomainName());
     }
 
 //---------------------------------------------------------------------------------------

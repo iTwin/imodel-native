@@ -261,7 +261,7 @@ void Crawler::SetRobotsTxtUserAgent(WString const& userAgent)
 //+---------------+---------------+---------------+---------------+---------------+------
 void Crawler::SetMaxRobotTxtCrawlDelay(uint32_t delayInSeconds)
     {
-    m_pQueue->SetMaxRobotTxtCrawlDelay(delay);
+    m_pQueue->SetMaxRobotTxtCrawlDelay(delayInSeconds);
     }
 
 //---------------------------------------------------------------------------------------
