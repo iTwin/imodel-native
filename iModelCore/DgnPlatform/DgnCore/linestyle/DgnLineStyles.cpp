@@ -16,7 +16,7 @@ using namespace std;
 //=======================================================================================
 #define DGN_STYLE_TYPE_Line "1"
 
-//-------------------------------------------------------------------------------   --------
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
@@ -28,7 +28,7 @@ BentleyStatus DgnLineStyles::Insert (DgnStyleId& newStyleId, Utf8CP name, LsComp
     LsDefinition::InitializeJsonObject(jsonObj, componentId, componentType, flags, unitDefinition);
     Utf8String data = Json::FastWriter::ToString(jsonObj);
 
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(newStyleId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
+    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetServerIssuedId(newStyleId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
 
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Data) VALUES (?," DGN_STYLE_TYPE_Line ",?,?)");

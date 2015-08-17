@@ -879,7 +879,7 @@ private:
     BeSQLite::StatementCache    m_stmts;
     BeSQLite::SnappyFromBlob    m_snappyFrom;
     BeSQLite::SnappyToBlob      m_snappyTo;
-    DgnElementIdSet             m_selectedElements;
+    DgnElementIdSet             m_selectionSet;
     mutable BeSQLite::BeDbMutex m_mutex;
 
     void OnReclaimed(DgnElementCR);
@@ -892,7 +892,6 @@ private:
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
-    DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
     DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
     DgnDbStatus PerformDelete(DgnElementCR);
@@ -985,8 +984,8 @@ public:
     //! If you have a DgnElement, call GetElementKey on it rather than using this method.
     DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
 
-    DgnElementIdSet const& GetSelectedElements() const {return m_selectedElements;}
-    DgnElementIdSet& GetSelectedElementsR() {return m_selectedElements;}
+    DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
+    DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
 };
 
 //=======================================================================================
@@ -1003,7 +1002,6 @@ private:
     DgnGeomPartId m_highestGeomPartId; // 0 means not yet valid. Highest DgnGeomPartId (for current repositoryId)
 
 public:
-    DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
 
 public:

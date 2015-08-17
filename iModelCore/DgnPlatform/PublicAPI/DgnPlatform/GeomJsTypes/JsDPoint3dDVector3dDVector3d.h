@@ -25,16 +25,16 @@ public:
         : m_data (origin, vectorU, vectorV)
         {}
     JsDPoint3dDVector3dDVector3d (JsDPoint3dP origin, JsDVector3dP vectorU, JsDVector3dP vectorV)
-        : m_data (origin->m_point, vectorU->m_vector, vectorV->m_vector)
+        : m_data (origin->Get (), vectorU->Get (), vectorV->Get ())
         {}
 
     JsDPoint3dP GetPoint (){return new JsDPoint3d (m_data.origin);}
     JsDVector3dP GetVectorU (){return new JsDVector3d (m_data.vectorU);}
     JsDVector3dP GetVectorV (){return new JsDVector3d (m_data.vectorV);}
 
-    void SetPoint (JsDPoint3dP data){m_data.origin = data->m_point;}
-    void SetVectorU (JsDVector3dP data){m_data.vectorU = data->m_vector;}
-    void SetVectorV (JsDVector3dP data){m_data.vectorV = data->m_vector;}
+    void SetPoint (JsDPoint3dP data){m_data.origin = data->Get ();}
+    void SetVectorU (JsDVector3dP data){m_data.vectorU = data->Get ();}
+    void SetVectorV (JsDVector3dP data){m_data.vectorV = data->Get ();}
 
 };
 
