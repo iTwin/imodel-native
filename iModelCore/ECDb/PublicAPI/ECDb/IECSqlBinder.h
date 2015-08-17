@@ -128,12 +128,12 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
 
-    //! Binds a BeRepositoryBasedId to the parameter
-    //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
+    //! Binds a BeInt64Id to the parameter. If the id is invalid, NULL is bound to the parameter.
+    //! @remarks As @ref ECInstanceId "ECInstanceIds" are BeInt64Id, you can use
     //! this method to bind them to a parameter.
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindId(BeInt64Id value);
+    ECSqlStatus BindId(BeInt64Id value) { return value.IsValid() ? BindInt64(value.GetValue()) : BindNull(); }
 
     //! Gets a binder which is used to bind struct values
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder

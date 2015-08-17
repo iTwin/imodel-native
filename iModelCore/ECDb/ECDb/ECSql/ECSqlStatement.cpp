@@ -157,6 +157,14 @@ ECSqlStatus ECSqlStatement::BindInt64 (int parameterIndex, int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::BindId(int parameterIndex, BeInt64Id value)
+    {
+    return GetBinder(parameterIndex).BindId(value);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle     07/2013
+//---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::BindPoint2D (int parameterIndex, DPoint2dCR value)
     {
     return GetBinder (parameterIndex).BindPoint2D (value);

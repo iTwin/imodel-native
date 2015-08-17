@@ -227,41 +227,6 @@ ECSqlStatus SystemPropertyECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::Mak
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus SystemPropertyECSqlBinder::_BindId(ECInstanceId value)
-    {
-    if (m_systemProperty != ECSqlSystemProperty::ECInstanceId && m_systemProperty != ECSqlSystemProperty::ParentECInstanceId &&
-        m_systemProperty != ECSqlSystemProperty::SourceECInstanceId && m_systemProperty != ECSqlSystemProperty::TargetECInstanceId)
-        return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind BeRepositoryBasedId value to %s parameter.", SystemPropertyToString());
-
-    auto stat = FailIfConstraintClassIdViolation(value.GetValue());
-    if (stat != ECSqlStatus::Success)
-        return stat;
-
-    if (auto eh = GetOnBindEventHandler())
-        {
-        auto es = eh->BindId(value);
-        if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
-        }
-
-    if (!IsNoop())
-        {
-        const auto sqliteStat = GetSqliteStatementR ().BindId(m_sqliteIndex, value);
-        if (sqliteStat != BE_SQLITE_OK)
-            return SetError(sqliteStat, "ECSqlStatement::BindId");
-        }
-
-    auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
-    if (onBindEventHandler != nullptr)
-        onBindEventHandler(value);
-
-    m_bindValueIsNull = false;
-    return ResetStatus();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveBinder& SystemPropertyECSqlBinder::_BindPrimitive()

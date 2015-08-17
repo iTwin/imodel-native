@@ -249,33 +249,6 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindText(Utf8CP value, IECSqlBi
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindId(ECInstanceId value)
-    {
-    const auto stat = CanBind(PRIMITIVETYPE_Long);
-    if (stat != ECSqlStatus::Success)
-        return stat;
-
-    if (auto eh = GetOnBindEventHandler())
-        {
-        auto es = eh->BindId(value);
-        if (es != ECSqlStatus::Success)
-            return GetStatusContext().SetError(es, "OnBindEventHandler Failed");
-        }
-
-    const auto sqliteStat = GetSqliteStatementR ().BindId(m_sqliteIndex, value);
-    if (sqliteStat != BE_SQLITE_OK)
-        return SetError(sqliteStat, "ECSqlStatement::BindId");
-
- /*   auto onBindEventHandler = GetOnBindRepositoryBasedIdEventHandler();
-    if (onBindEventHandler != nullptr)
-        onBindEventHandler(value);
-        */
-    return ResetStatus();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveBinder& PrimitiveToSingleColumnECSqlBinder::_BindPrimitive()

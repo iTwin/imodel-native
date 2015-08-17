@@ -447,17 +447,6 @@ ECSqlStatus PrimitiveECSqlParameterValue::_BindText(Utf8CP value, IECSqlBinder::
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlParameterValue::_BindId(ECInstanceId value)
-    {
-    if (!value.IsValid())
-        return GetStatusContext().SetError(ECSqlStatus::UserError, "Cannot bind an invalid BeRepositoryBasedId.");
-
-    return _BindInt64(value.GetValue());
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveBinder& PrimitiveECSqlParameterValue::_BindPrimitive()

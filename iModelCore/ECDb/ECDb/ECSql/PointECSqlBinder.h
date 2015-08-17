@@ -40,7 +40,6 @@ private:
     virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
     virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
     virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-    virtual ECSqlStatus _BindId(ECInstanceId value) override;
 
     bool IsPoint3D () const {return m_isPoint3D;}
 public:

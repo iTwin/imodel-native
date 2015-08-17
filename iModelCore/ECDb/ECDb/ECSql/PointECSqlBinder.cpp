@@ -183,14 +183,6 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindText(Utf8CP stringValue, IECSqlBinde
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus PointToColumnsECSqlBinder::_BindId(ECInstanceId value)
-    {
-    return GetStatusContext().SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind BeRepositoryBasedId value to Point2D / Point3D parameter.");
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
 IECSqlPrimitiveBinder& PointToColumnsECSqlBinder::_BindPrimitive()
