@@ -39,22 +39,22 @@ public:
         };
 
 private:
-    virtual ECSqlStatus _BindNull () = 0;
-    virtual IECSqlPrimitiveBinder& _BindPrimitive () = 0;
-    virtual IECSqlStructBinder& _BindStruct () = 0;
-    virtual IECSqlArrayBinder& _BindArray (uint32_t initialCapacity) = 0;
+    virtual ECSqlStatus _BindNull() = 0;
+    virtual IECSqlPrimitiveBinder& _BindPrimitive() = 0;
+    virtual IECSqlStructBinder& _BindStruct() = 0;
+    virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) = 0;
 
 public:
-    ECDB_EXPORT virtual ~IECSqlBinder () {}
+    ECDB_EXPORT virtual ~IECSqlBinder() {}
 
     //! Binds an ECSQL @c %NULL to the parameter
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindNull ();
+    ECDB_EXPORT ECSqlStatus BindNull();
 
     //! Binds a boolean value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBoolean (bool value);
+    ECDB_EXPORT ECSqlStatus BindBoolean(bool value);
 
     //! Binds a binary / BLOB value to the parameter
     //! @param[in] value Value to bind
@@ -63,31 +63,31 @@ public:
     //!            Only pass IECSqlBinder::MakeCopy::No if @p value remains valid until
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBinary (const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy);
+    ECDB_EXPORT ECSqlStatus BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy);
 
     //! Binds a DateTime value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDateTime (DateTimeCR value);
+    ECDB_EXPORT ECSqlStatus BindDateTime(DateTimeCR value);
 
 //__PUBLISH_SECTION_END__
     //! Binds a %DateTime value expressed as Julian Day ticks to the parameter
     //! @param[in] julianDayTicksHns DateTime value as Julian Day ticks in hecto-nanoseconds
     //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata);
+    ECDB_EXPORT ECSqlStatus BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata);
 
 //__PUBLISH_SECTION_START__
 
     //! Binds a double value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDouble (double value);
+    ECDB_EXPORT ECSqlStatus BindDouble(double value);
 
     //! Binds an IGeometry value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindGeometry (IGeometryCR value);
+    ECDB_EXPORT ECSqlStatus BindGeometry(IGeometryCR value);
 
 //__PUBLISH_SECTION_END__
     //! Binds a Bentley Geometry FlatBuffer blob to the parameter
@@ -97,28 +97,28 @@ public:
     //!            Only pass IECSqlBinder::MakeCopy::No if @p value remains valid until
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
-    ECSqlStatus BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy);
+    ECSqlStatus BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy);
 //__PUBLISH_SECTION_START__
 
     //! Binds a 32-bit integer value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt (int value);
+    ECDB_EXPORT ECSqlStatus BindInt(int value);
 
     //! Binds a 64-bit integer value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt64 (int64_t value);
+    ECDB_EXPORT ECSqlStatus BindInt64(int64_t value);
 
     //! Binds a Point2D value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint2D (DPoint2dCR value);
+    ECDB_EXPORT ECSqlStatus BindPoint2D(DPoint2dCR value);
 
     //! Binds a Point3D value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint3D (DPoint3dCR value);
+    ECDB_EXPORT ECSqlStatus BindPoint3D(DPoint3dCR value);
 
     //! Binds a UTF-8 encoded string to the parameter
     //! @param[in] value Value to bind
@@ -126,20 +126,20 @@ public:
     //!             Only pass IECSqlBinder::MakeCopy::No if @p value will remain valid until the statement's bindings are cleared.
     //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization. 
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindText (Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
+    ECDB_EXPORT ECSqlStatus BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
 
     //! Binds a BeRepositoryBasedId to the parameter
     //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
     //! this method to bind them to a parameter.
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindId (BeRepositoryBasedId value);
+    ECDB_EXPORT ECSqlStatus BindId(BeInt64Id value);
 
     //! Gets a binder which is used to bind struct values
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Struct parameter binder
-    ECDB_EXPORT IECSqlStructBinder& BindStruct ();
+    ECDB_EXPORT IECSqlStructBinder& BindStruct();
     
     //! Gets a binder which is used to bind primitive array values.
     //! @remarks In case of error, e.g. if the parameter
@@ -147,7 +147,7 @@ public:
     //! returns the appropriate error-code.
     //! @param[in] initialCapacity Initial capacity of the array to bind. 
     //! @return Array parameter binder
-    ECDB_EXPORT IECSqlArrayBinder& BindArray (uint32_t initialCapacity);
+    ECDB_EXPORT IECSqlArrayBinder& BindArray(uint32_t initialCapacity);
     };
 
 //=======================================================================================
@@ -158,21 +158,21 @@ public:
 struct IECSqlStructBinder : NonCopyableClass
     {
 private:
-    virtual IECSqlBinder& _GetMember (Utf8CP structMemberPropertyName) = 0;
+    virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) = 0;
     //__PUBLISH_SECTION_END__
-    virtual IECSqlBinder& _GetMember (ECN::ECPropertyId structMemberPropertyId) = 0;
+    virtual IECSqlBinder& _GetMember(ECN::ECPropertyId structMemberPropertyId) = 0;
     //__PUBLISH_SECTION_START__
 
 public:
-    ECDB_EXPORT virtual ~IECSqlStructBinder () {}
+    ECDB_EXPORT virtual ~IECSqlStructBinder() {}
 
     //! Binds a value to the specified struct member property
     //! @param[in] structMemberPropertyName Property name of the struct member to bind the value to
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT IECSqlBinder& GetMember (Utf8CP structMemberPropertyName);
+    ECDB_EXPORT IECSqlBinder& GetMember(Utf8CP structMemberPropertyName);
 
     //__PUBLISH_SECTION_END__
-    IECSqlBinder& GetMember (ECN::ECPropertyId structMemberPropertyId);
+    IECSqlBinder& GetMember(ECN::ECPropertyId structMemberPropertyId);
     //__PUBLISH_SECTION_START__
     };
 
@@ -185,16 +185,16 @@ public:
 struct IECSqlArrayBinder : NonCopyableClass
     {
 private:
-    virtual IECSqlBinder& _AddArrayElement () = 0;
+    virtual IECSqlBinder& _AddArrayElement() = 0;
 
 public:
 
-    ECDB_EXPORT virtual ~IECSqlArrayBinder () {}
+    ECDB_EXPORT virtual ~IECSqlArrayBinder() {}
 
     //! Adds a new array element to the array to be bound to the parameter and
     //! returns the new element's binder to bind a value to that element
     //! @return Binder to bind a value to the new array element
-    ECDB_EXPORT IECSqlBinder& AddArrayElement ();
+    ECDB_EXPORT IECSqlBinder& AddArrayElement();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

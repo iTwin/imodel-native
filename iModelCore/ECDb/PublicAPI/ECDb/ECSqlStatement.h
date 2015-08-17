@@ -51,11 +51,11 @@ private:
 
 public:
     //! Initializes a new unprepared ECSqlStatement.
-    ECDB_EXPORT ECSqlStatement ();
+    ECDB_EXPORT ECSqlStatement();
     //! Destroys the ECSqlStatement and all internal resources.
-    ECDB_EXPORT virtual ~ECSqlStatement ();
+    ECDB_EXPORT virtual ~ECSqlStatement();
     //! Move constructor
-    ECDB_EXPORT ECSqlStatement (ECSqlStatement&& rhs);
+    ECDB_EXPORT ECSqlStatement(ECSqlStatement&& rhs);
     //! Move assignment operator
     ECDB_EXPORT ECSqlStatement& operator= (ECSqlStatement&& rhs);
 
@@ -64,17 +64,17 @@ public:
     //! are finalized.
     //! After having called Finalize, the ECSqlStatement can be re-prepared.
     //! Any ECSqlEventHandler currently being registered with this ECSqlStatement stay registered.
-    ECDB_EXPORT void Finalize ();
+    ECDB_EXPORT void Finalize();
 
     //! Prepares the statement with the specified ECSQL
     //! @param[in] ecdb ECDb context
     //! @param[in] ecsql ECSQL
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus Prepare (ECDbCR ecdb, Utf8CP ecsql);
+    ECDB_EXPORT ECSqlStatus Prepare(ECDbCR ecdb, Utf8CP ecsql);
 
     //! Indicates whether this statement is already prepared or not.
     //! @return true, if it is prepared. false otherwise
-    ECDB_EXPORT bool IsPrepared () const;
+    ECDB_EXPORT bool IsPrepared() const;
     
     //! @name Methods to bind values to an ECSQL parameter
     //! @{
@@ -91,13 +91,13 @@ public:
     //! finds all Foo rows where MyProp is unset.
     //!
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindNull (int parameterIndex);
+    ECDB_EXPORT ECSqlStatus BindNull(int parameterIndex);
 
     //! Binds a boolean value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBoolean (int parameterIndex, bool value);
+    ECDB_EXPORT ECSqlStatus BindBoolean(int parameterIndex, bool value);
 
     //! Binds a binary / BLOB value to the parameter
     //! @param[in] parameterIndex Parameter index
@@ -107,49 +107,49 @@ public:
     //! IECSqlBinder::MakeCopy::No if @p value remains valid until
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBinary (int parameterIndex, const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy);
+    ECDB_EXPORT ECSqlStatus BindBinary(int parameterIndex, const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy);
 
     //! Binds a DateTime value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDateTime (int parameterIndex, DateTimeCR value);
+    ECDB_EXPORT ECSqlStatus BindDateTime(int parameterIndex, DateTimeCR value);
 
     //! Binds a double value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindDouble (int parameterIndex, double value);
+    ECDB_EXPORT ECSqlStatus BindDouble(int parameterIndex, double value);
 
     //! Binds an IGeometry value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindGeometry (int parameterIndex, IGeometryCR value);
+    ECDB_EXPORT ECSqlStatus BindGeometry(int parameterIndex, IGeometryCR value);
 
     //! Binds a 32-bit integer value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt (int parameterIndex, int value);
+    ECDB_EXPORT ECSqlStatus BindInt(int parameterIndex, int value);
 
     //! Binds a 64-bit integer value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindInt64 (int parameterIndex, int64_t value);
+    ECDB_EXPORT ECSqlStatus BindInt64(int parameterIndex, int64_t value);
 
     //! Binds a Point2D value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint2D (int parameterIndex, DPoint2dCR value);
+    ECDB_EXPORT ECSqlStatus BindPoint2D(int parameterIndex, DPoint2dCR value);
 
     //! Binds a Point3D value to the parameter
     //! @param[in] parameterIndex Parameter index
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindPoint3D (int parameterIndex, DPoint3dCR value);
+    ECDB_EXPORT ECSqlStatus BindPoint3D(int parameterIndex, DPoint3dCR value);
 
     //! Binds a UTF-8 encoded string to the parameter
     //! @param[in] parameterIndex Parameter index
@@ -158,28 +158,20 @@ public:
     //!             Only pass IECSqlBinder::MakeCopy::No if @p value will remain valid until the statement's bindings are cleared.
     //! @param[in] byteCount Number of bytes (not characters) in @p value. If negative, it will be calculated from value. Passing this value is only an optimization. 
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindText (int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
-
-    //! Binds a BeRepositoryBasedId to the parameter
-    //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
-    //! this method to bind them to a parameter.
-    //! @param[in] parameterIndex Parameter index
-    //! @param[in] value Value to bind
-    //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindId (int parameterIndex, BeRepositoryBasedId value);
+    ECDB_EXPORT ECSqlStatus BindText(int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount = -1);
 
     //! Binds a BeInt64Id subclass to the parameter. Binds NULL if the id is not valid.
     //! @param[in] parameterIndex Parameter index
     //! @param[in] id Value to bind.
     //! @return ECSqlStatus::Success or error codes
-    template <class T_Id> ECSqlStatus BindId(int parameterIndex, BeInt64Id<T_Id> id) {return id.IsValid() ? BindInt64(parameterIndex, id.GetValue()) : BindNull(parameterIndex);}
+    ECSqlStatus BindId(int parameterIndex, BeInt64Id id) {return id.IsValid() ? BindInt64(parameterIndex, id.GetValue()) : BindNull(parameterIndex);}
 
     //! Gets a binder which is used to bind a struct value to the specified parameter
     //! @param[in] parameterIndex Parameter index
     //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Struct parameter binder
-    ECDB_EXPORT IECSqlStructBinder& BindStruct (int parameterIndex);
+    ECDB_EXPORT IECSqlStructBinder& BindStruct(int parameterIndex);
 
     //! Gets a binder which is used to bind an array to the specified parameter
     //! @param[in] parameterIndex Parameter index
@@ -188,7 +180,7 @@ public:
     //! is not an array, a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Array parameter binder
-    ECDB_EXPORT IECSqlArrayBinder& BindArray (int parameterIndex, uint32_t initialArrayCapacity);
+    ECDB_EXPORT IECSqlArrayBinder& BindArray(int parameterIndex, uint32_t initialArrayCapacity);
     
     //! Gets a binder to bind a value to the parameter at the specified index.
     //! @param[in] parameterIndex Parameter index
@@ -196,7 +188,7 @@ public:
     //! a no-op binder will be returned. Calling methods on the no-op binder
     //! returns the appropriate error-code.
     //! @return Parameter binder
-    ECDB_EXPORT IECSqlBinder& GetBinder (int parameterIndex);
+    ECDB_EXPORT IECSqlBinder& GetBinder(int parameterIndex);
 
     //! Gets the parameter index for a named parameter
     //! 
@@ -207,11 +199,11 @@ public:
     //!
     //! @param[in] parameterName Name of the binding parameter
     //! @return Parameter index
-    ECDB_EXPORT int GetParameterIndex (Utf8CP parameterName) const;
+    ECDB_EXPORT int GetParameterIndex(Utf8CP parameterName) const;
 
     //! Resets all parameter bindings
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus ClearBindings ();
+    ECDB_EXPORT ECSqlStatus ClearBindings();
 
     //! @}
 
@@ -224,23 +216,23 @@ public:
     //! @return ECSqlStepStatus::HasRow if Step returned data which is ready to be processed by the caller. 
     //!         ECSqlStepStatus::Done if the reader has finished executing successfully.
     //!         Error codes in case of errors.
-    ECDB_EXPORT ECSqlStepStatus Step ();
+    ECDB_EXPORT ECSqlStepStatus Step();
 
     //! Perform a single step on this (previously prepared) @b insert statement
     //! @remarks This overload is intended for insert statements only as it returns the ECInstanceKey of the inserted row.
     //! @param[out] ecInstanceKey The ECInstanceKey of the inserted row.
     //! @return ECSqlStepStatus::Done if the statement has finished executing successfully.
     //!         Error codes in case of errors.
-    ECDB_EXPORT ECSqlStepStatus Step (ECInstanceKey& ecInstanceKey) const;
+    ECDB_EXPORT ECSqlStepStatus Step(ECInstanceKey& ecInstanceKey) const;
 
     //! Resets the statement, so that it can be reiterated.
     //! @remarks Reset does not clear the bindings of the statement. Call ECSqlStatement::ClearBindings to do that.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus Reset ();
+    ECDB_EXPORT ECSqlStatus Reset();
 
     //! Gets the number of ECSQL columns in the result set returned after calling Step on a SELECT statement.
     //! @return Number of ECSQL columns in the result set
-    ECDB_EXPORT int GetColumnCount () const;
+    ECDB_EXPORT int GetColumnCount() const;
 
     //! @name Get metadata for a given column in the result set
     //! @{
@@ -251,7 +243,7 @@ public:
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo (int columnIndex) const;
+    ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo(int columnIndex) const;
 
     //! @}
 
@@ -264,7 +256,7 @@ public:
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT bool IsValueNull (int columnIndex) const;
+    ECDB_EXPORT bool IsValueNull(int columnIndex) const;
 
     //! Gets the binary / blob value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -274,7 +266,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not binary
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT void const* GetValueBinary (int columnIndex, int* binarySize = nullptr) const;
+    ECDB_EXPORT void const* GetValueBinary(int columnIndex, int* binarySize = nullptr) const;
 
     //! Gets the value of the specific column as a boolean value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -284,7 +276,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT bool GetValueBoolean (int columnIndex) const;
+    ECDB_EXPORT bool GetValueBoolean(int columnIndex) const;
 
     //! Gets the DateTime value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -294,7 +286,7 @@ public:
     //! - column data type is not DateTime
     //! - @p columnIndex is out of bounds
     //! @see @ref ECDbCodeSampleECSqlStatementAndDateTimeProperties
-    ECDB_EXPORT DateTime GetValueDateTime (int columnIndex) const;
+    ECDB_EXPORT DateTime GetValueDateTime(int columnIndex) const;
 
     //! Gets the value of the specific column as a double value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -304,7 +296,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT double GetValueDouble (int columnIndex) const;
+    ECDB_EXPORT double GetValueDouble(int columnIndex) const;
 
     //! Gets the value of the specific column as an IGeometry value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -313,7 +305,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not IGeometry
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IGeometryPtr GetValueGeometry (int columnIndex) const;
+    ECDB_EXPORT IGeometryPtr GetValueGeometry(int columnIndex) const;
 
     //! Gets the value of the specific column as an integer value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -323,7 +315,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT int GetValueInt (int columnIndex) const;
+    ECDB_EXPORT int GetValueInt(int columnIndex) const;
 
     //! Gets the value of the specific column as an Int64 value.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -333,7 +325,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT int64_t GetValueInt64 (int columnIndex) const;
+    ECDB_EXPORT int64_t GetValueInt64(int columnIndex) const;
 
     //! Gets the Point2D value of the specific column.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
@@ -361,7 +353,7 @@ public:
     //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
     //!   those types can implicitly be converted into each other.
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT Utf8CP GetValueText (int columnIndex) const;
+    ECDB_EXPORT Utf8CP GetValueText(int columnIndex) const;
 
     //! Gets the value as a BeRepositoryBasedId
     //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
@@ -372,9 +364,9 @@ public:
     //! @note Possible errors:
     //! - column data does not hold a repository-based id
     template <class TBeRepositoryBasedId>
-    TBeRepositoryBasedId GetValueId (int columnIndex) const
+    TBeRepositoryBasedId GetValueId(int columnIndex) const
         {
-        return TBeRepositoryBasedId (GetValueInt64 (columnIndex));
+        return TBeRepositoryBasedId(GetValueInt64(columnIndex));
         }
 
     //! Gets the array value of the specified column.
@@ -384,7 +376,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not an array
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IECSqlArrayValue const& GetValueArray (int columnIndex) const;
+    ECDB_EXPORT IECSqlArrayValue const& GetValueArray(int columnIndex) const;
 
     //! Gets the struct value of the specified column.
     //! @return Struct value for the column
@@ -392,7 +384,7 @@ public:
     //! @note Possible errors:
     //! - column data type is not an ECStruct
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IECSqlStructValue const& GetValueStruct (int columnIndex) const;
+    ECDB_EXPORT IECSqlStructValue const& GetValueStruct(int columnIndex) const;
 
     //! Gets the value of the specified column.
     //! @remarks This is the generic way of getting the value of a specified column in the result set. 
@@ -401,7 +393,7 @@ public:
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
     //! - @p columnIndex is out of bounds
-    ECDB_EXPORT IECSqlValue const& GetValue (int columnIndex) const;
+    ECDB_EXPORT IECSqlValue const& GetValue(int columnIndex) const;
 
     //! @}
 
@@ -412,14 +404,14 @@ public:
     //! If the last call to ECSqlStatement was successful, ECSqlStatus::Success will be returned.
     //! @return Status from last call to ECSqlStatement
     //! @see @ref ECSqlStatementErrorReporting
-    ECDB_EXPORT ECSqlStatus GetLastStatus () const;
+    ECDB_EXPORT ECSqlStatus GetLastStatus() const;
 
     //! Gets the status message for the status returned from the last call to a method of ECSqlStatement.
     //! If the last call to ECSqlStatement was successful, i.e. return ECSqlStatus::Success, the status message
     //! will correspond to the successful call (and will therefore usually be empty). 
     //! @return Status message from last call to ECSqlStatement
     //! @see @ref ECSqlStatementErrorReporting
-    ECDB_EXPORT Utf8String GetLastStatusMessage () const;
+    ECDB_EXPORT Utf8String GetLastStatusMessage() const;
     //! @}
 
 
@@ -430,18 +422,18 @@ public:
     //! @remarks Results in an error if the ECSqlStatement has not been prepared yet
     //! @return ECSQL statement string
     //! @see @ref ECSqlStatementErrorReporting
-    ECDB_EXPORT Utf8CP GetECSql () const;
+    ECDB_EXPORT Utf8CP GetECSql() const;
 
     //! Gets the SQLite SQL statement to which this ECSQL statement was translated to internally.
     //! @remarks Results in an error if the ECSqlStatement has not been prepared yet
     //! @return SQLite SQL statement
     //! @see @ref ECSqlStatementErrorReporting
-    ECDB_EXPORT Utf8CP GetNativeSql () const;
+    ECDB_EXPORT Utf8CP GetNativeSql() const;
 
     //! Gets the ECDb handle which was used to prepare this statement.
     //! @remarks Only call this for a prepared statement!
     //! @return ECDb handle used to prepare this statement or nullptr if statement is not prepared.
-    ECDbCP GetECDb () const;
+    ECDbCP GetECDb() const;
 //__PUBLISH_SECTION_START__
     };
 
@@ -467,12 +459,12 @@ private:
 public:
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-    CachedECSqlStatement () : ECSqlStatement (), m_refCount (0) {}
-    ~CachedECSqlStatement () {}
+    CachedECSqlStatement() : ECSqlStatement(), m_refCount(0) {}
+    ~CachedECSqlStatement() {}
 
-    uint32_t AddRef () const {return ++m_refCount;}
-    uint32_t GetRefCount () const {return m_refCount;}
-    ECDB_EXPORT uint32_t Release ();
+    uint32_t AddRef() const {return ++m_refCount;}
+    uint32_t GetRefCount() const {return m_refCount;}
+    ECDB_EXPORT uint32_t Release();
     };
 
 typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
@@ -505,16 +497,16 @@ private:
     mutable bvector<CachedECSqlStatementPtr> m_entries;
     size_t m_maxSize;
 
-    CachedECSqlStatement* FindEntry (Utf8CP ecsql) const;
-    CachedECSqlStatement* AddStatement (ECDbCR ecdb, Utf8CP ecsql) const;
+    CachedECSqlStatement* FindEntry(Utf8CP ecsql) const;
+    CachedECSqlStatement* AddStatement(ECDbCR ecdb, Utf8CP ecsql) const;
 
 public:
     //! Initializes a new ECSqlStatementCache of the specified size.
     //! @param [in] maxSize Maximum number of statements the cache can hold. If a new statement is added
     //! to a full cache, the oldest statement is removed.
     //! @param [in] name Name for the cache in case apps use multiple caches and need to tell between them
-    ECDB_EXPORT explicit ECSqlStatementCache (size_t maxSize, Utf8CP name = nullptr);
-    ~ECSqlStatementCache () {Empty ();}
+    ECDB_EXPORT explicit ECSqlStatementCache(size_t maxSize, Utf8CP name = nullptr);
+    ~ECSqlStatementCache() {Empty();}
     
     //! Gets a cached and prepared statement for the specified ECSQL.
     //! If there was no statement in the cache for the ECSQL, a new one will be prepared and cached.
@@ -523,23 +515,23 @@ public:
     //! @param [in] ecdb ECDb file
     //!  @param [in] ecsql ECSQL string for which to return a prepared statement
     //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-    ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement (ECDbCR ecdb, Utf8CP ecsql) const;
+    ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql) const;
 
     //! Returns whether the cache is currently empty or not.
     //! @return true if cache is empty, false otherwise
-    bool IsEmpty () const {return m_entries.empty ();}
+    bool IsEmpty() const {return m_entries.empty();}
     //! Returns number of currently cached statements
     //! @return Number of currently cached statements
-    size_t Size () const {return m_entries.size ();}
+    size_t Size() const {return m_entries.size();}
     //! Empties the cache, thus releasing any cached statements
-    ECDB_EXPORT void Empty ();
+    ECDB_EXPORT void Empty();
 
     //! Gets the name of the cache
     //! @return Cache's name or nullptr if not set
-    Utf8CP GetName () const { return m_name.c_str (); }
+    Utf8CP GetName() const { return m_name.c_str(); }
 
     //! Logs the ECSQL strings of the currently cached ECSqlStatements.
-    ECDB_EXPORT void Log () const;
+    ECDB_EXPORT void Log() const;
     };
 
 //__PUBLISH_SECTION_END__
@@ -550,12 +542,12 @@ public:
 struct ECSqlParseTreeFormatter
     {
 private:
-    ECSqlParseTreeFormatter ();
-    ~ECSqlParseTreeFormatter ();
+    ECSqlParseTreeFormatter();
+    ~ECSqlParseTreeFormatter();
 
 public:
-    ECDB_EXPORT static bool ParseAndFormatECSqlParseNodeTree (Utf8StringR parseNodeTree, Utf8StringR error, Utf8CP ecsql);
-    ECDB_EXPORT static bool ParseAndFormatECSqlExpTree (Utf8StringR expTree, Utf8StringR expTreeToECSql, Utf8StringR error, Utf8CP ecsql, ECDbR db);
+    ECDB_EXPORT static bool ParseAndFormatECSqlParseNodeTree(Utf8StringR parseNodeTree, Utf8StringR error, Utf8CP ecsql);
+    ECDB_EXPORT static bool ParseAndFormatECSqlExpTree(Utf8StringR expTree, Utf8StringR expTreeToECSql, Utf8StringR error, Utf8CP ecsql, ECDbR db);
     };
 
 //__PUBLISH_SECTION_START__

@@ -479,7 +479,7 @@ IECSqlValue const& value
     //if (instance.GetClass ().GetId () != value.GetColumnInfo ().GetRootClass ().GetId ())
     //    return ERROR;
 
-    return ECInstanceAdapterHelper::SetECInstanceId (instance, value.GetId<ECInstanceId> ());
+    return ECInstanceAdapterHelper::SetECInstanceId (instance, value.GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**

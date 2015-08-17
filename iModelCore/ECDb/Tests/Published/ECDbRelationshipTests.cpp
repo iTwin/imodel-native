@@ -620,7 +620,7 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     ecsql = "INSERT INTO ecsqltestKeys.PSA (I) VALUES(?)";
     stat = statement.Prepare(ecdb, ecsql);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
-    statement.BindInt64(1, instanceKey.GetECInstanceId().m_id);
+    statement.BindId(1, instanceKey.GetECInstanceId());
 
     stepStatus = statement.Step();
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();

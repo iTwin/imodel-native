@@ -179,14 +179,6 @@ ECSqlStatus ECSqlStatement::BindText (int parameterIndex, Utf8CP value, IECSqlBi
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::BindId (int parameterIndex, BeRepositoryBasedId value)
-    {
-    return GetBinder (parameterIndex).BindId (value);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& ECSqlStatement::BindStruct (int parameterIndex) 
