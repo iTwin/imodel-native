@@ -297,20 +297,6 @@ void   ModelViewportManager::Remove (BePointCloud::PointCloudScene* pScene)
         }    
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Simon.Normand                   11/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void   ModelViewportManager::Remove (int viewIndex)
-    {
-    for ( PTViewportMapItor itr = m_viewportsMap.begin(); itr != m_viewportsMap.end(); /* NOINCREMENT */ )
-        {
-        if ( itr->first.GetView() == viewIndex)
-            CleanUp (itr);
-        else
-            ++itr;
-        }
-    }
-
 // Static member initialization
 ViewPortManager* ViewPortManager::s_instance=NULL;
 ModelViewportManager* ModelViewportManager::s_instance=NULL;

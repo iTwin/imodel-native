@@ -50,24 +50,17 @@ struct PTViewportInfo
 struct PTViewportID
     {
     public:
-        PTViewportID () : m_dgnModelP(0), m_sceneP(0), m_msView(0) 
+        PTViewportID () : m_dgnModelP(0), m_sceneP(0) 
             {
             m_rangeUOR.Init ();
             }
-        PTViewportID (DgnModelP modelRefP, BePointCloud::PointCloudScene* sceneP, int view) : m_dgnModelP(modelRefP), m_sceneP(sceneP), m_msView(view)
+        PTViewportID (DgnModelP modelRefP, BePointCloud::PointCloudScene* sceneP) : m_dgnModelP(modelRefP), m_sceneP(sceneP)
             {
             m_rangeUOR.Init ();
             }
-        PTViewportID (DgnModelP modelRefP, BePointCloud::PointCloudScene* sceneP, int view, DRange3dR rangeUOR) : m_dgnModelP(modelRefP), m_sceneP(sceneP), m_msView(view), m_rangeUOR (rangeUOR) 
+        PTViewportID (DgnModelP modelRefP, BePointCloud::PointCloudScene* sceneP, DRange3dR rangeUOR) : m_dgnModelP(modelRefP), m_sceneP(sceneP), m_rangeUOR (rangeUOR) 
             {}
-        
-        bool operator ==  (PTViewportID const & object) const
-            {
-            if (m_dgnModelP ==  object.m_dgnModelP && m_sceneP == object.m_sceneP && m_msView == object.m_msView)
-                return true;
 
-            return false;
-            }
         bool operator <  (PTViewportID const & object) const 
             {
             if (m_dgnModelP < object.m_dgnModelP)
@@ -76,8 +69,6 @@ struct PTViewportID
                 {
                 if (m_sceneP < object.m_sceneP)
                     return true;
-                if (m_sceneP == object.m_sceneP)
-                    return m_msView < object.m_msView;
                 }
 
             return false;
@@ -85,14 +76,12 @@ struct PTViewportID
 
         DgnModelP GetDgnModelP () const {return m_dgnModelP;}
         BePointCloud::PointCloudScene* GetScene () const {return m_sceneP;}
-        int GetView () const {return m_msView;}
         DRange3dCR GetRange () const {return m_rangeUOR;}
 
     private:
 
         DgnModelP                           m_dgnModelP;
         BePointCloud::PointCloudScene*      m_sceneP;
-        int                                 m_msView;
         DRange3d                            m_rangeUOR;
     };
 

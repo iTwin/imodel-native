@@ -46,11 +46,9 @@ IProgressiveDisplay::Completion VisualizationManager::DrawToContext(ViewContextR
     // set the pointool viewport to use for this model, scene and view
     DRange3d pcRange;
     pointCloudTransform.Multiply(pcRange, pointCloudRange);
-#if defined (NEEDS_WORK_VIEWINDEX)
-    PTViewportID viewportId(context.GetViewport()->GetViewController().GetTargetModel(), const_cast<PointCloudScene*>(&pointCloudScene), context.GetViewport()->GetViewNumber(), pcRange);
-#else
-    PTViewportID viewportId(context.GetViewport()->GetViewController().GetTargetModel(), const_cast<PointCloudScene*>(&pointCloudScene), 0, pcRange);
-#endif
+
+    PTViewportID viewportId(context.GetViewport()->GetViewController().GetTargetModel(), const_cast<PointCloudScene*>(&pointCloudScene), pcRange);
+
     PointCloudVortex::SetViewport(ModelViewportManager::Get ().GetViewport (viewportId));
     SetViewportInfo (context, pointCloudTransform, pcRange);
     // Get view settings
