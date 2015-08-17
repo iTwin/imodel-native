@@ -1149,7 +1149,7 @@ bool DgnElements::IsElementIdUsed(DgnElementId id) const
 /*---------------------------------------------------------------------------------**//**
  DgnElementIds are 64 bits, divided into two 32 bit parts {high:low}. The high 32 bits are reserved for the
  repositoryId of the creator and the low 32 bits hold the identifier of the element. This scheme is
- designed to allow multiple users on differnt computers to create new elements without
+ designed to allow multiple users on different computers to create new elements without
  generating conflicting ids, since the repositoryId is intended to be unqiue for every copy of the project.
  We are allowed to make DgnElementIds in the range of [{repositoryid:1},{repositoryid+1:0}). So, find the highest currently
  used id in that range and add 1. If none, use the first id. If the highest possible id is already in use, search for an

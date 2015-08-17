@@ -412,7 +412,6 @@ DgnElementIdSet DgnElement::QueryChildren() const
     return elementIdSet;
     }
 
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/10
 //=======================================================================================
@@ -1549,7 +1548,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 
     if (nullptr != dynamic_cast<Item*>(aspect.get()))
         {
-        BeAssert(false && "You must use the DgnElement::Item class to load Items");
+        BeAssert(false); // You must use the DgnElement::Item class to load Items
         return nullptr;
         }
 

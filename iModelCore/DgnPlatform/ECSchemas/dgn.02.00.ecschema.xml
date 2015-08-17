@@ -189,8 +189,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <DbIndex>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>Color.Name</string>
-                            <string>Color.Book</string>
+                            <string>Name</string>
+                            <string>Book</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>
@@ -752,8 +752,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <DbIndex>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>Style.Type</string>
-                            <string>Style.Name</string>
+                            <string>Type</string>
+                            <string>Name</string>
                         </Properties>
                     </DbIndex>
                 </Indexes>

@@ -117,7 +117,7 @@ protected:
     };
 
 //static
-const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId(123);
+const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((int64_t)123);
 Utf8CP const PerformanceElementTestFixture::s_textVal = "bla bla";
 const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 

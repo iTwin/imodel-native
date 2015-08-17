@@ -537,7 +537,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     FB::TextStringStyle const& fbStyle = *fbText.style();
     TextStringStyle& style = text.m_style;
 
-    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId(fbStyle.fontId()));
+    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId((int64_t)fbStyle.fontId()));
     style.SetFont(T_HOST.GetFontAdmin().ResolveFont(dbFont));
     if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
     if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());

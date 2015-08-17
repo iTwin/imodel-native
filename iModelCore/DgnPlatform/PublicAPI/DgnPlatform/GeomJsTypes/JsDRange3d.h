@@ -17,21 +17,20 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDRange3d : RefCountedBase
+struct JsDRange3d : JsGeomWrapperBase<DRange3d>
 {
-    DRange3d m_range;
+public:
+    JsDRange3d() {m_data.Init ();}
 
-    JsDRange3d() {m_range.Init ();}
+    JsDPoint3dP GetLow() {return new JsDPoint3d (m_data.low);}
+    JsDPoint3dP GetHigh() {return new JsDPoint3d (m_data.high);}
+    void SetLow (JsDPoint3dP point) {m_data.low = point->Get ();}
+    void SetHigh (JsDPoint3dP point) {m_data.high = point->Get ();}
 
-    JsDPoint3dP GetLow() {return new JsDPoint3d (m_range.low);}
-    JsDPoint3dP GetHigh() {return new JsDPoint3d (m_range.high);}
-    void SetLow (JsDPoint3dP point) {m_range.low = point->m_point;}
-    void SetHigh (JsDPoint3dP point) {m_range.high = point->m_point;}
-
-    bool IsNull (){return m_range.IsNull ();}
-    void Extend (double x, double y, double z){m_range.Extend (x,y,z);}
-    void Extend (JsDPoint3dP point){m_range.Extend (point->m_point);}
-    void Init (){m_range.Init ();}
+    bool IsNull (){return m_data.IsNull ();}
+    void Extend (double x, double y, double z){m_data.Extend (x,y,z);}
+    void Extend (JsDPoint3dP point){m_data.Extend (point->Get ());}
+    void Init (){m_data.Init ();}
 
 
 };

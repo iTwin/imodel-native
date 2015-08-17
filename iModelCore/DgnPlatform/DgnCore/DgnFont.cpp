@@ -128,7 +128,7 @@ DgnFontCR DgnFontManager::ResolveFont(DgnFontCP font) { return T_HOST.GetFontAdm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
-DgnFontId DgnFonts::DbFontMapDirect::Iterator::Entry::GetId() const { Verify(); return DgnFontId(m_sql->GetValueInt(0)); }
+DgnFontId DgnFonts::DbFontMapDirect::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueId<DgnFontId>(0); }
 DgnFontType DgnFonts::DbFontMapDirect::Iterator::Entry::GetType() const { Verify(); return (DgnFontType)m_sql->GetValueInt(1); }
 Utf8CP DgnFonts::DbFontMapDirect::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(2); }
 
@@ -221,7 +221,7 @@ DgnFontPtr DgnFonts::DbFontMapDirect::QueryByTypeAndName(DgnFontType type, Utf8C
     if (BE_SQLITE_ROW != query.Step())
         return nullptr;
 
-    return DgnFontPersistence::Db::FromDb(m_dbFonts, DgnFontId((uint32_t)query.GetValueInt(0)), type, name, (ByteCP)query.GetValueBlob(1), (size_t)query.GetColumnBytes(1));
+    return DgnFontPersistence::Db::FromDb(m_dbFonts, query.GetValueId<DgnFontId>(0), type, name, (ByteCP)query.GetValueBlob(1), (size_t)query.GetColumnBytes(1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ DgnFontId DgnFonts::DbFontMapDirect::QueryIdByTypeAndName(DgnFontType type, Utf8
     if (BE_SQLITE_ROW != query.Step())
         return DgnFontId();
 
-    return DgnFontId((uint32_t)query.GetValueInt(0));
+    return query.GetValueId<DgnFontId>(0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -295,16 +295,14 @@ BentleyStatus DgnFonts::DbFontMapDirect::Insert(DgnFontCR font, DgnFontId& id)
         return ERROR;
         }
     
-    Statement idQuery;
-    idQuery.Prepare(m_dbFonts.m_db, SqlPrintfString("SELECT MAX(Id) FROM %s", m_dbFonts.m_tableName.c_str()));
+    id.Invalidate();
+    DbResult rc= m_dbFonts.m_db.GetServerIssuedId(id, m_dbFonts.m_tableName.c_str(), "Id");
 
-    if (BE_SQLITE_ROW != idQuery.Step())
+    if (BE_SQLITE_OK != rc)
         {
         BeAssert(false);
         return ERROR;
         }
-    
-    id = DgnFontId(idQuery.GetValueInt(0) + 1);
 
     Statement insert;
     insert.Prepare(m_dbFonts.m_db, SqlPrintfString("INSERT INTO %s (Id,Type,Name,Metadata) VALUES (?,?,?,?)", m_dbFonts.m_tableName.c_str()));

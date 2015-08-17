@@ -21,6 +21,15 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct _JsStructName_;  \
 typedef struct _JsStructName_ * _JsStructName_##P;
 
+template<typename NativeType>
+struct JsGeomWrapperBase : RefCountedBase   
+{
+protected:
+NativeType m_data;
+public:
+NativeType Get () const {return m_data;}
+};
+
 JSSTRUCT(JsDPoint3d);
 JSSTRUCT(JsDVector3d);
 JSSTRUCT(JsDEllipse3d);
@@ -37,6 +46,9 @@ JSSTRUCT(JsAngle);
 JSSTRUCT(JsBsplineSurface);
 JSSTRUCT(JsYawPitchRollAngles);
 
+JSSTRUCT(JsDPoint3dArray)
+JSSTRUCT(JsDoubleArray)
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
@@ -48,6 +60,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
 #include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 
 

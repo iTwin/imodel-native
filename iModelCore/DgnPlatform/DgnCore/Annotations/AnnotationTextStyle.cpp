@@ -137,8 +137,8 @@ static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLOR_VALUE = Ele
 ElementColor AnnotationTextStyle::GetColor() const { return ElementColor(getIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE)); }
 void AnnotationTextStyle::SetColor(ElementColor value) { setIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE, value.ToInt64()); }
 
-static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_FONTID_VALUE = 0; // See definition of BeServerIssuedId, of which DgnFontId is a sub-class.
-DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
+static const int64_t DEFAULT_FONTID_VALUE = 0; // See definition of BeServerIssuedId, of which DgnFontId is a sub-class.
+DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((int64_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
 void AnnotationTextStyle::SetFontId(DgnFontId value) { setIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE, value.GetValue()); }
 
 static const AnnotationTextStylePropertyBag::T_Real DEFAULT_HEIGHT_VALUE = 1.0;

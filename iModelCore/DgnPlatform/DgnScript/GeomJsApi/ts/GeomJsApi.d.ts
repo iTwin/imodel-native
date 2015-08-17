@@ -43,8 +43,8 @@ declare module BentleyApi.Dgn {
     //! A strongly typed angle, with explicitly named access to degrees and radians
     class JsAngle implements IDisposable {
         
-        //static JsAngle FromDegrees () : cxx_double;
-        //static JsAngle FromRadians () : cxx_double;
+        static CreateDegrees (value : cxx_double) : JsAngleP;
+        static CreateRadians (value : cxx_double) : JsAngleP;
         Radians : cxx_double;
         Degrees : cxx_double;
         _OnDispose(): void;
@@ -52,6 +52,10 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
     type JsAngleP = cxx_pointer<JsAngle>;
+
+
+
+ 
 
 
     //! A wrapper for BentleyApi::DEllipse3d
@@ -85,11 +89,35 @@ declare module BentleyApi.Dgn {
 
     type JsDSegment3dP = cxx_pointer<JsDSegment3d>;
 
+    type JsDPoint3dArrayP = cxx_pointer<JsDPoint3dArray>;
+
+    //! A wrapper for BentleyApi::DSegment3d
+    class JsDPoint3dArray implements IDisposable {
+        constructor();
+
+        Add(value: JsDPoint3dP): void;
+
+        Size(): cxx_double;
+        Clear (): void;
+        Append(other: JsDPoint3dArrayP): void;
+
+        At(index: cxx_double): JsDPoint3dP;
+
+        _OnDispose(): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+
+
+
 
     //! A wrapper for BentleyApi::DSegment3d
     class JsCurvePrimitive implements IDisposable {
         constructor ();
-        static CreateLineSegment (segment : JsDSegment3dP) : JsCurvePrimitiveP;
+        static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
+        static CreateEllipticArc(arc: JsDEllipse3dP): JsCurvePrimitiveP;
+        static CreateLineString(points: JsDPoint3dArrayP): JsCurvePrimitiveP;
         CurvePrimitiveType(): cxx_double;
         PointAtFraction(f: cxx_double): JsDPoint3dP; 
 
