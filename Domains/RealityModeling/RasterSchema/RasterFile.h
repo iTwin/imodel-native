@@ -37,10 +37,11 @@ public:
             ImagePP::HRAStoredRaster*                       GetStoredRasterP();
             ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>         GetPhysicalCoordSys();
             ImagePP::HFCPtr<ImagePP::HRFPageDescriptor>     GetPageDescriptor() const;
+            void                                            GetCorners (DPoint3dP corners) const;
 
             DMatrix4d                                       GetPhysicalToLowerLeft() const;
-            DMatrix4d                                       GetGeoTransform();
-            GeoCoordinates::BaseGCSPtr                      GetBaseGcs();
+            DMatrix4d                                       GetGeoTransform() const;
+            GeoCoordinates::BaseGCSPtr                      GetBaseGcs() const;
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

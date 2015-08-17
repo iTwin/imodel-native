@@ -109,10 +109,6 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerP
     RasterFileProperties props;
     props.m_fileMonikerPtr = fileMoniker;
 
-    //&&ep - find real raster range
-    DRange2d range2d = DRange2d::From(1, 0);
-    props.m_boundingBox = range2d;
-
     // Open raster
     RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
     if (rasterFilePtr == nullptr)
@@ -121,10 +117,101 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerP
         return DgnModelId();
         }
 
+    // Find raster range (in the DgnDb world)
+    DRange2d rasterRange;
+    if (REPROJECT_Success != GetRasterExtentInUors(rasterRange, *rasterFilePtr, db))
+        {
+        // Can't get raster extent. Return invalid model.
+        return DgnModelId();
+        }
+    props.m_boundingBox = rasterRange;
+
     // Create model in DgnDb
     RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, utf8Name.c_str()), props);
     model->Insert();
     return model->GetModelId();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2015
+//----------------------------------------------------------------------------------------
+static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
+    {
+    if(REPROJECT_CSMAPERR_OutOfUsefulRange == status)   // This a warning
+        return REPROJECT_Success;
+
+    return status;   
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     7/2015
+//----------------------------------------------------------------------------------------
+ReprojectStatus RasterFileModelHandler::GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, DgnDbCR db) 
+    {
+    DPoint3d srcCornersCartesian[4];
+    rasterFile.GetCorners(srcCornersCartesian);
+
+    // Use raster GCS as source
+    GeoCoordinates::BaseGCSPtr sourceGcsPtr = rasterFile.GetBaseGcs();
+    DgnGCSP pDgnGcs = db.Units().GetDgnGCS();
+
+    ReprojectStatus status = REPROJECT_Success;
+    DPoint3d dgnCornersUors[4];
+    if(NULL == sourceGcsPtr.get() || NULL == pDgnGcs)
+        {
+        // Assume raster to be coincident.
+        memcpy(dgnCornersUors, srcCornersCartesian, sizeof(DPoint3d)*4);
+        }
+    else
+        {
+        GeoPoint srcCornersLatLong[4];
+        for(size_t i=0; i < 4; ++i)
+            {
+            if(REPROJECT_Success != (status = s_FilterGeocoordWarning(sourceGcsPtr->LatLongFromCartesian(srcCornersLatLong[i], srcCornersCartesian[i]))))
+                {
+                BeAssert(!"A source should always be able to represent itself in its GCS."); // That operation cannot fail or can it?
+                return status;
+                }
+            }
+
+        // Source latlong to DgnDb latlong.
+        GeoPoint dgnCornersLatLong[4];
+        for(size_t i=0; i < 4; ++i)
+            {
+            if(REPROJECT_Success != (status = s_FilterGeocoordWarning(sourceGcsPtr->LatLongFromLatLong(dgnCornersLatLong[i], srcCornersLatLong[i], *pDgnGcs))))
+                return status;
+            }
+
+        //Finally to UOR
+        for(uint32_t i=0; i < 4; ++i)
+            {
+            if(REPROJECT_Success != (status = s_FilterGeocoordWarning(pDgnGcs->UorsFromLatLong(dgnCornersUors[i], dgnCornersLatLong[i]))))
+                return status;
+            }
+        }
+
+    // Extract extent
+    double minX = dgnCornersUors[0].x;
+    double minY = dgnCornersUors[0].y;
+    double maxX = dgnCornersUors[0].x;
+    double maxY = dgnCornersUors[0].y;
+    for(uint32_t i=1; i < 4; ++i)
+        {
+        if (dgnCornersUors[i].x < minX)
+            minX = dgnCornersUors[i].x;
+        if (dgnCornersUors[i].y < minY)
+            minY = dgnCornersUors[i].y;
+        if (dgnCornersUors[i].x > maxX)
+            maxX = dgnCornersUors[i].x;
+        if (dgnCornersUors[i].y > maxY)
+            maxY = dgnCornersUors[i].y;
+        }
+    range.low.x = minX;
+    range.low.y = minY;
+    range.high.x = maxX;
+    range.high.y = maxY;
+
+    return status;
     }
 
 //----------------------------------------------------------------------------------------

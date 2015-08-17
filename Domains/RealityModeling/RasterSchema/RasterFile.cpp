@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 RasterFile::RasterFile(Utf8StringCR resolvedName)
     {
     m_storedRasterPtr = nullptr;
-    m_worldClusterPtr = nullptr;
+    m_worldClusterPtr = new HGFHMRStdWorldCluster();
     m_pageFilePtr = nullptr;
 
     m_HRFRasterFilePtr = OpenRasterFile(resolvedName);
@@ -80,7 +80,7 @@ HRAStoredRaster* RasterFile::GetStoredRasterP()
     if(NULL != m_storedRasterPtr)
         return m_storedRasterPtr.GetPtr();
 
-    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
+    HFCPtr<HGF2DCoordSys> pLogical = m_worldClusterPtr->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
     HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (GetMemoryPool(), m_HRFRasterFilePtr, 0/*page*/, pLogical);
 
     // Specify we do not want to use the file's clip shapes if any. Maybe we'll need to support the native clips some day...
@@ -120,7 +120,7 @@ uint32_t    RasterFile::GetHeight() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs() 
+GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs() const
     {
     IRasterBaseGcsCP pSrcFileGeocoding = GetPageDescriptor()->GetGeocodingCP();
 
@@ -238,10 +238,10 @@ DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-DMatrix4d RasterFile::GetGeoTransform()
+DMatrix4d RasterFile::GetGeoTransform() const
     {
     // Retrieve the logical CS associated to the world of the raster
-    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
+    HFCPtr<HGF2DCoordSys> pLogical = m_worldClusterPtr->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
 
     if (GetPageDescriptor()->HasTransfoModel())
         {
@@ -250,7 +250,7 @@ DMatrix4d RasterFile::GetGeoTransform()
         HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
 
         // Normalize to HGF2DWorld_HMRWORLD(lower left origin), which is the expected CS for QuadTree
-        HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldClusterP()->GetCoordSysReference(HGF2DWorld_HMRWORLD);
+        HFCPtr<HGF2DCoordSys> pHmrWorld = m_worldClusterPtr->GetCoordSysReference(HGF2DWorld_HMRWORLD);
         HFCPtr<HGF2DTransfoModel> pLogicalToHmrWorldTransfo(pLogical->GetTransfoModelTo(pHmrWorld));
         HFCPtr<HGF2DCoordSys> pLogicalToHmrWorld(new HGF2DCoordSys(*pLogicalToHmrWorldTransfo, pLogical));
         HFCPtr<HGF2DTransfoModel> pLogicalToCartesian(pLogicalToPhysRasterWorld->GetTransfoModelTo(pLogicalToHmrWorld));
@@ -382,4 +382,40 @@ HGF2DWorldCluster*   RasterFile::GetWorldClusterP()
         m_worldClusterPtr = new HGFHMRStdWorldCluster();
         }
     return m_worldClusterPtr.GetPtr();
+    }
+
+//----------------------------------------------------------------------------------------
+// This method returns the raster corners "in its own world"; that is, corners are transformed
+// into the CS of the raster.
+//
+// @bsimethod                                                       Eric.Paquet     7/2015
+//----------------------------------------------------------------------------------------
+void RasterFile::GetCorners (DPoint3dP corners) const
+    {
+    DPoint3d srcCorners[4];
+
+    uint32_t width = GetWidth();
+    uint32_t height = GetHeight();
+
+    // Start with corners of the physical raster
+    // lower left
+    srcCorners[0].x = 0;
+    srcCorners[0].y = 0;
+    srcCorners[0].z = 0;
+    // upper left
+    srcCorners[1].x = 0;
+    srcCorners[1].y = height;
+    srcCorners[1].z = 0;
+    // upper right
+    srcCorners[2].x = width;
+    srcCorners[2].y = height;
+    srcCorners[2].z = 0;
+    // lower right
+    srcCorners[3].x = width;
+    srcCorners[3].y = 0;
+    srcCorners[3].z = 0;
+
+    // Transform corners to the raster world
+    DMatrix4d geoTransform = GetGeoTransform();
+    geoTransform.MultiplyAndRenormalize(corners, srcCorners, 4);
     }

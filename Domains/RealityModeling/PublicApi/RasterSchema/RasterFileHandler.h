@@ -70,8 +70,11 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModelHandler : RasterModelHandler
 {
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
 
+private:
+                        static  ReprojectStatus GetRasterExtentInUors(DRange2d &range, RasterFileCR rasterFile, Dgn::DgnDbCR db);
+
 public:
-    RASTERSCHEMA_EXPORT static Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, Dgn::FileMonikerPtr fileMoniker);
+    RASTERSCHEMA_EXPORT static  Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, Dgn::FileMonikerPtr fileMoniker);
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE
