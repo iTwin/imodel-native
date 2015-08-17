@@ -45,6 +45,8 @@ JSSTRUCT(JsBsplineSurface);
 JSSTRUCT(JsAngle);
 JSSTRUCT(JsBsplineSurface);
 JSSTRUCT(JsYawPitchRollAngles);
+JSSTRUCT(JsRotMatrix);
+JSSTRUCT(JsTransform);
 
 JSSTRUCT(JsDPoint3dArray)
 JSSTRUCT(JsDoubleArray)
@@ -60,6 +62,8 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
 #include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
+#include <DgnPlatform/GeomJsTypes/JSRotMatrix.h>
+#include <DgnPlatform/GeomJsTypes/JSTransform.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 
