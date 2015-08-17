@@ -81,7 +81,7 @@ JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP 
     {
     DgnElement3dP e3d = dynamic_cast<DgnElement3dP>(e->m_el.get());
     if (nullptr != e3d)
-        m_builder = ElementGeometryBuilder::Create(*e3d, o->GetDPoint3d (), a->GetYawPitchRollAngles ());
+        m_builder = ElementGeometryBuilder::Create(*e3d, o->Get (), a->GetYawPitchRollAngles ());
     else
         {
         DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());

@@ -19,12 +19,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct JsAngle : RefCountedBase
 {
+private:
 AngleInDegrees m_angle;
-
+public:
 JsAngle (AngleInDegrees a) : m_angle (a){}
 JsAngle (){m_angle = AngleInDegrees::FromDegrees (0.0);}
-JsAngle *FromDegrees (double degrees){return new JsAngle (AngleInDegrees::FromDegrees (degrees));}
-JsAngle *FromRadians (double radians){return new JsAngle (AngleInDegrees::FromRadians (radians));}
+AngleInDegrees Get (){return m_angle;}
+static JsAngleP CreateDegrees (double degrees){return new JsAngle (AngleInDegrees::FromDegrees (degrees));}
+static JsAngleP CreateRadians (double radians){return new JsAngle (AngleInDegrees::FromRadians (radians));}
 double GetRadians (){return m_angle.Radians ();}
 double GetDegrees (){return m_angle.Degrees ();}
 void SetRadians (double radians){m_angle = AngleInDegrees::FromRadians (radians);}
