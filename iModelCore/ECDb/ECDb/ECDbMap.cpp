@@ -149,6 +149,8 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
+    m_lightWeightMapCache.Reset();
+
     //This has to evaluated after map is saved
     if (EvaluateDMLPolicyForEachClass () != BentleyStatus::SUCCESS)
         return MapStatus::Error;
@@ -834,7 +836,9 @@ BentleyStatus ECDbMap::Save()
         }
 
     stopWatch.Stop();
-    GetSQLManagerR ().Save ();
+    if (SUCCESS != GetSQLManagerR().Save())
+        return ERROR;
+
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         LOG.debugv ("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds () * 1000.0);
 
