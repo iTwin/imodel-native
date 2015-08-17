@@ -17,19 +17,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct ECSqlSelectTests : public ::testing::Test
     {
     public:
-        void SetUpTestDb(ECDbR ecdb)
-            {
-            BeFileName temporaryDir;
-            BeTest::GetHost().GetOutputRoot(temporaryDir);
-            BeSQLiteLib::Initialize(temporaryDir);
-
-            BeFileName dbPath;
-            BeTest::GetHost().GetDocumentsRoot(dbPath);
-            dbPath.AppendToPath(L"DgnDb");
-            dbPath.AppendToPath(L"ECSqlStatementTests.ecdb");
-
-            ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-            }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsiclass                             Muhammad Hassan                         06/15
@@ -310,8 +297,9 @@ TEST_F (ECSqlSelectTests, PopulateECSql_TestDbWithTestData)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlSelectTests, UnionTests)
     {
-    ECDb ecdb;
-    SetUpTestDb (ecdb);
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
     int rowCount;
     Utf8String ExpectedColumnValues;
     Utf8String ActualColumnValues;
@@ -404,8 +392,9 @@ TEST_F (ECSqlSelectTests, UnionTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlSelectTests, ExceptTests)
     {
-    ECDb ecdb;
-    SetUpTestDb (ecdb);
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactName FROM ECST.Supplier EXCEPT SELECT ContactName FROM ECST.Customer"));
@@ -428,8 +417,9 @@ TEST_F (ECSqlSelectTests, ExceptTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlSelectTests, IntersectTests)
     {
-    ECDb ecdb;
-    SetUpTestDb (ecdb);
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ContactName FROM ECST.Supplier INTERSECT SELECT ContactName FROM ECST.Customer ORDER BY ContactName"));
@@ -452,8 +442,9 @@ TEST_F (ECSqlSelectTests, IntersectTests)
 TEST_F (ECSqlSelectTests, NestedSelectStatementsTests)
     {
     Utf8CP ecSqlSelect = "SELECT ProductName From ECST.Products WHERE Price = ?";
-    ECDb ecdb;
-    SetUpTestDb (ecdb);
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
 
     ECSqlStatement stmt;
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ProductName, Price FROM ECST.Products WHERE Price > (SELECT AVG(Price) From ECST.Products) AND Price < 500"));
@@ -485,8 +476,9 @@ TEST_F (ECSqlSelectTests, NestedSelectStatementsTests)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlSelectTests, TestPredicateFunctionsInNestedSelectStatement)
     {
-    ECDb ecdb;
-    SetUpTestDb (ecdb);
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
     ECSqlStatement stmt;
 
     //Using Predicate function in nexted select statement
@@ -508,8 +500,9 @@ TEST_F (ECSqlSelectTests, TestPredicateFunctionsInNestedSelectStatement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ECSqlSelectTests, GroupByClauseTests)
     {
-    ECDb ecdb;
-    SetUpTestDb (ecdb);
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
     Utf8String expectedProductsNames;
     Utf8String actualProductsNames;
     double ExpectedSumOfAvgPrices;
