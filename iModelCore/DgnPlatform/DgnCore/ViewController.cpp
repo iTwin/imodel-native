@@ -1960,6 +1960,9 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
         return SUCCESS;
         }
 
+    if (&GetDgnDb() != &element->GetDgnDb() || !IsModelViewed(element->GetModelId()))
+        return SUCCESS;
+
     ViewContext::ContextMark mark(&context);
 
     // Allow element sub-class involvement for flashing sub-entities...

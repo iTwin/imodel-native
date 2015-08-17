@@ -302,7 +302,7 @@ DG_INLINE void IViewDraw::DefineQVGeometryMap(MaterialCR material, IStrokeForCac
 DG_INLINE void IViewDraw::PushClipStencil(QvElem* qvElem) {_PushClipStencil(qvElem);}
 DG_INLINE void IViewDraw::PopClipStencil() {_PopClipStencil(); }
 
-DG_INLINE void ICachedDraw::BeginCacheElement(QvCache* qvCache, bool is3d, double zDepth, uintptr_t elementId){_BeginCacheElement(qvCache, is3d, zDepth, elementId);}
+DG_INLINE void ICachedDraw::BeginCacheElement(QvCache* qvCache){_BeginCacheElement(qvCache);}
 DG_INLINE QvElem* ICachedDraw::EndCacheElement() {return _EndCacheElement();}
 DG_INLINE void ICachedDraw::AssignElementToView(QvView* qvView, QvElem* qvElem, int viewMode) {_AssignElementToView(qvView, qvElem, viewMode);}
 DG_INLINE QvElem* ICachedDraw::GetCacheElement() { return _GetCacheElement(); }

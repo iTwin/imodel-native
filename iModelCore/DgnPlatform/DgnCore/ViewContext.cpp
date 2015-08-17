@@ -1308,7 +1308,7 @@ QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache,
         qvCache = T_HOST.GetGraphicsAdmin()._GetTempElementCache();
 
     BeAssert(qvCache);
-    cachedDraw->BeginCacheElement(qvCache, m_is3dView, m_is3dView ? 0.0 : stroker._GetDisplayPriority(*this));
+    cachedDraw->BeginCacheElement(qvCache);
 
     AutoRestore<IDrawGeomP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
     AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
