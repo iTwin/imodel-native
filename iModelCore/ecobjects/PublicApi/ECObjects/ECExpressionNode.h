@@ -862,6 +862,7 @@ public:
     NodeCP      GetArgument (size_t i) const { return i < m_arguments.size() ? m_arguments[i].get() : NULL; }
     void        PushArgument(NodeR node) { m_arguments.push_back(&node); }
     ExpressionStatus EvaluateArguments(EvaluationResultVector& results, ExpressionContextR context);
+    NodePtrVector&  GetArguments() { return m_arguments; }
 };  //  End of struct ArgumentTreeNode
 
 /*=================================================================================**//**

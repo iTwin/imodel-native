@@ -2754,8 +2754,15 @@ private:
     virtual bool    ProcessNode(NodeCR node) override;
 
     bool            ProcessDot (DotNodeCR node);
+    bool            ProcessMethod (CallNodeCR node);
     bool            ProcessArrayIndex (bool isEnd);
     bool            ProcessOther();
+
+    void            ProcessIsOfClass (CallNodeR node);
+    void            ProcessFullyQualifiedAccessStringArguments (CallNodeR node);
+
+    template<size_t N> bool ExtractArguments (WStringP (&args)[N], CallNodeCR callNode);
+    template<size_t N> void ReplaceArguments (WStringP (&args)[N], CallNodeCR callNode);
 
     void            Await();
 public:
@@ -2810,7 +2817,11 @@ bool ExpressionRemapper::ProcessNode (NodeCR node)
         return true;
 
     auto dot = dynamic_cast<DotNodeCP> (&node);
-    return nullptr != dot ? ProcessDot (*dot) : ProcessOther();
+    if (nullptr != dot)
+        return ProcessDot (*dot);
+
+    auto call = dynamic_cast<CallNodeCP> (&node);
+    return nullptr != call ? ProcessMethod (*call) : ProcessOther();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2873,6 +2884,100 @@ bool ExpressionRemapper::ProcessDot (DotNodeCR node)
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A bit hard-codey...there are a handful of functions which take schema/class/property names
+* as arguments which may need to be remapped. This could be generalized, and made to
+* handle arguments that are not string literals - but our current use cases do not require
+* that.
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ExpressionRemapper::ProcessMethod (CallNodeCR node)
+    {
+    auto call = const_cast<CallNodeR>(node);
+    if (0 == wcscmp (call.GetMethodName(), L"IsPropertyValueSet") || 0 == wcscmp (call.GetMethodName(), L"ResolveSymbology"))
+        ProcessFullyQualifiedAccessStringArguments (call);
+    else if (0 == wcscmp (call.GetMethodName(), L"IsOfClass"))
+        ProcessIsOfClass (call);
+
+    // We will process the arguments immediately rather than await the StartArguments()/EndArguments() callbacks...
+    return ProcessOther();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<size_t N> bool ExpressionRemapper::ExtractArguments (WStringP (&args)[N], CallNodeCR callNode)
+    {
+    ArgumentTreeNode const* argNodes = callNode.GetArguments();
+    size_t nArgs = nullptr != argNodes ? argNodes->GetArgumentCount() : 0;
+    if (nArgs != N)
+        return false;
+
+    for (size_t i = 0; i < N; i++)
+        {
+        NodeCP argNode = argNodes->GetArgument (i);
+        auto literalNode = dynamic_cast<LiteralNode const*> (argNode);
+        if (nullptr == literalNode || !literalNode->GetInternalValue().IsString())
+            return false;
+
+        *args[i] = literalNode->GetInternalValue().GetString();
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<size_t N> void ExpressionRemapper::ReplaceArguments (WStringP (&args)[N], CallNodeCR callNode)
+    {
+    NodePtrVector& argNodes = const_cast<ArgumentTreeNode*> (callNode.GetArguments())->GetArguments();
+    for (size_t i = 0; i < N; i++)
+        {
+        auto literalNode = dynamic_cast<LiteralNode*> (argNodes[i].get());
+        ECValue v (args[i]->c_str());
+        literalNode->SetInternalValue (v);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpressionRemapper::ProcessIsOfClass (CallNodeR node)
+    {
+    WString className, schemaName;
+    WStringP args[2] = { &className, &schemaName };
+    if (!ExtractArguments (args, node) || !schemaName.Equals (m_preSchema.GetName()))
+        return;
+
+    bool remapped = m_schemaRenamed;
+    if (m_schemaRenamed)
+        schemaName = m_postSchema.GetName();
+
+    if (m_remapper.ResolveClassName (className, m_postSchema))
+        remapped = true;
+
+    if (remapped)
+        {
+        ReplaceArguments (args, node);
+        m_anyRemapped = true;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ExpressionRemapper::ProcessFullyQualifiedAccessStringArguments (CallNodeR node)
+    {
+    QualifiedECAccessor accessor;
+    WStringP args[3] = { &accessor.GetSchemaNameR(), &accessor.GetClassNameR(), &accessor.GetAccessStringR() };
+    if (ExtractArguments (args, node) && accessor.Remap (m_preSchema, m_postSchema, m_remapper))
+        {
+        ReplaceArguments (args, node);
+        m_anyRemapped = true;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

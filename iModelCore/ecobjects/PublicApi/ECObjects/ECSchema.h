@@ -1705,6 +1705,10 @@ public:
     ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, WCharCP accessString);
 //__PUBLISH_SECTION_END__
     ECOBJECTS_EXPORT bool       Remap (ECSchemaCR pre, ECSchemaCR post, IECSchemaRemapperCR remapper);
+
+    WStringR                    GetSchemaNameR()    { return m_schemaName; }
+    WStringR                    GetClassNameR()     { return m_className; }
+    WStringR                    GetAccessStringR()  { return m_accessString; }
 //__PUBLISH_SECTION_START__
     };
 
