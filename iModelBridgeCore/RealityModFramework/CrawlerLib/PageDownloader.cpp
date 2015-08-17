@@ -15,6 +15,7 @@ using namespace std;
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 PageDownloader::PageDownloader(CrawlDelaySleeperPtr sleeper)
+    : m_AbortDownload(false)
     {
     m_pSleeper = sleeper;
     m_CurlHandle = curl_easy_init();
@@ -125,6 +126,9 @@ void PageDownloader::SetDefaultSettings()
     m_ValidateContentType = true;
     m_ListOfValidContentTypes.push_back(wregex(L"text/html", regex_constants::icase));
     m_ListOfValidContentTypes.push_back(wregex(L"text/plain", regex_constants::icase));
+    curl_easy_setopt(m_CurlHandle, CURLOPT_NOPROGRESS, 0);
+    curl_easy_setopt(m_CurlHandle, CURLOPT_PROGRESSFUNCTION, CurlProgressCallback);
+    curl_easy_setopt(m_CurlHandle, CURLOPT_PROGRESSDATA, &m_AbortDownload);
     }
 
 //---------------------------------------------------------------------------------------
@@ -162,6 +166,20 @@ size_t PageDownloader::CurlWriteCallback(void* contents, size_t size, size_t nme
 size_t PageDownloader::CurlDiscardDataCallback(void* contents, size_t size, size_t nmemb, void* userp)
     {
     return size * nmemb;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+int PageDownloader::CurlProgressCallback(void* clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+    {
+    atomic<bool>* abortFlag = (atomic<bool>*) clientp;
+    bool aborted = abortFlag->load(memory_order_relaxed);
+
+    if(aborted)
+        return -1;
+
+    return 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -235,3 +253,10 @@ void PageDownloader::WaitToRespectCrawlDelay(DownloadJobPtr p_DownloadJob)
     m_pSleeper->Sleep(p_DownloadJob->GetCrawlDelay(), p_DownloadJob->GetUrlToDownload()->GetDomainName());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void PageDownloader::AbortDownload()
+    {
+    m_AbortDownload.store(true);
+    }

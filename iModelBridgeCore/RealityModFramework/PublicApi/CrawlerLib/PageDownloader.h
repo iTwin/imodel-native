@@ -20,6 +20,7 @@
 
 #include <curl/curl.h>
 #include <regex>
+#include <atomic>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 class IPageDownloader
@@ -37,6 +38,7 @@ class IPageDownloader
     virtual void SetListOfValidContentType(bvector<WString> const& types) = 0;
     virtual void SetParseLinksRelNoFollow(bool parse) = 0;
     virtual void SetParsePagesWithNoFollowMetaTag(bool parse) = 0;
+    virtual void AbortDownload() = 0;
     };
 
 class PageDownloader : public IPageDownloader
@@ -57,6 +59,8 @@ class PageDownloader : public IPageDownloader
     CRAWLERLIB_EXPORT void SetParseLinksRelNoFollow(bool parse) override;
     CRAWLERLIB_EXPORT void SetParsePagesWithNoFollowMetaTag(bool parse) override;
 
+    void AbortDownload() override;
+
     private:
     bool IsValidContentType();
     void SetDefaultSettings();
@@ -67,13 +71,17 @@ class PageDownloader : public IPageDownloader
 
     static size_t CurlWriteCallback(void *contents, size_t size, size_t nmemb, void *userp);
     static size_t CurlDiscardDataCallback(void *contents, size_t size, size_t nmemb, void *userp);
+    static int CurlProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
 
 
     CURL* m_CurlHandle;
     bool m_ValidateContentType;
     bvector<std::wregex> m_ListOfValidContentTypes;
+
     PageParser m_Parser;
     CrawlDelaySleeperPtr m_pSleeper;
+
+    std::atomic<bool> m_AbortDownload;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

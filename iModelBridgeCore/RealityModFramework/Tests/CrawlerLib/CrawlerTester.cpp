@@ -61,6 +61,7 @@ class PageDownloaderMock : public IPageDownloader
     MOCK_METHOD1(SetListOfValidContentType, void(bvector<WString> const& types));
     MOCK_METHOD1(SetParseLinksRelNoFollow, void(bool parse));
     MOCK_METHOD1(SetParsePagesWithNoFollowMetaTag, void(bool parse));
+    MOCK_METHOD0(AbortDownload, void());
     };
 
 class SingleDownloaderCrawlerTester : public ::testing::Test

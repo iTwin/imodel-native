@@ -117,12 +117,15 @@ bool Crawler::AllDownloadsFinished(vector<future<PageContentPtr>> const& downloa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void Crawler::DiscardRemainingDownloads(vector<future<PageContentPtr>>& downloads) const
+void Crawler::DiscardRemainingDownloads(vector<future<PageContentPtr>>& downloadThreads) const
     {
-    for(auto download = downloads.begin(); download != downloads.end(); ++download)
+    for(auto downloader : m_pDownloaders)
+        downloader->AbortDownload();
+
+    for(auto thread = downloadThreads.begin(); thread != downloadThreads.end(); ++thread)
         {
-        if(download->valid())
-            download->get();
+        if(thread->valid())
+            thread->get();
         }
     }
 
@@ -256,7 +259,7 @@ void Crawler::SetRobotsTxtUserAgent(WString const& userAgent)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void Crawler::SetMaxRobotTxtCrawlDelay(uint32_t delay)
+void Crawler::SetMaxRobotTxtCrawlDelay(uint32_t delayInSeconds)
     {
     m_pQueue->SetMaxRobotTxtCrawlDelay(delay);
     }
