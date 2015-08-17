@@ -991,6 +991,245 @@ TEST_F(SchemaImportTestFixture, EnforceLinkTableMapping)
     ASSERT_EQ(2, columns.size());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, UserDefinedIndexTest)
+    {
+            {
+            TestItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='Base' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.01.00'>"
+                "                <MapStrategy>"
+                "                   <Strategy>SharedTable</Strategy>"
+                "                   <IsPolymorphic>True</IsPolymorphic>"
+                "                 </MapStrategy>"
+                "                 <Indexes>"
+                "                   <DbIndex>"
+                "                       <Name>ix_base_code</Name>"
+                "                       <Properties>"
+                "                          <string>Code</string>"
+                "                       </Properties>"
+                "                   </DbIndex>"
+                "                 </Indexes>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='Code' typeName='string' />"
+                "    </ECClass>"
+                "    <ECClass typeName='Sub1' isDomainClass='True'>"
+                "        <BaseClass>Base</BaseClass>"
+                "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+                "    </ECClass>"
+                "    <ECClass typeName='Sub2' isDomainClass='True'>"
+                "        <BaseClass>Base</BaseClass>"
+                "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+                "    </ECClass>"
+                "</ECSchema>", true, "");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+            ASSERT_FALSE(asserted);
+
+            AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
+            }
+
+            {
+            TestItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                "    <ECClass typeName='Base' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.01.00'>"
+                "                <MapStrategy>"
+                "                   <Strategy>SharedTable</Strategy>"
+                "                   <IsPolymorphic>True</IsPolymorphic>"
+                "                 </MapStrategy>"
+                "                 <Indexes>"
+                "                   <DbIndex>"
+                "                       <Name>ix_base_code</Name>"
+                "                       <Properties>"
+                "                          <string>Code</string>"
+                "                       </Properties>"
+                "                   </DbIndex>"
+                "                 </Indexes>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='Code' typeName='string' />"
+                "    </ECClass>"
+                "    <ECClass typeName='Sub1' isDomainClass='True'>"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.01.00'>"
+                "                 <Indexes>"
+                "                   <DbIndex>"
+                "                       <Name>ix_sub1_prop</Name>"
+                "                       <Properties>"
+                "                          <string>Sub1_Prop</string>"
+                "                       </Properties>"
+                "                   </DbIndex>"
+                "                 </Indexes>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "        <BaseClass>Base</BaseClass>"
+                "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+                "    </ECClass>"
+                "    <ECClass typeName='Sub2' isDomainClass='True'>"
+                "        <BaseClass>Base</BaseClass>"
+                "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+                "    </ECClass>"
+                "</ECSchema>", true, "");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+            ASSERT_FALSE(asserted);
+
+            ECClassId classId = db.Schemas().GetECClassId("ts", "Sub1", ResolveSchema::BySchemaNamespacePrefix);
+            AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"}, {classId});
+            }
+
+        {
+        TestItem testItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Base' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <IsPolymorphic>True</IsPolymorphic>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_base_code</Name>"
+            "                       <Properties>"
+            "                          <string>Code</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub1' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_sub1_prop</Name>"
+            "                       <Properties>"
+            "                          <string>Sub1_Prop</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub2' isDomainClass='True'>"
+            "        <BaseClass>Sub1</BaseClass>"
+            "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", true, "");
+
+        ECDb db;
+        bool asserted = false;
+        AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ECClassId baseClassId = db.Schemas().GetECClassId("ts", "Base", ResolveSchema::BySchemaNamespacePrefix);
+        AssertIndex(db, "ix_sub1_prop", false, "ts_Base", {"Sub1_Prop"}, {baseClassId}, true);
+        }
+
+        {
+        TestItem testItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='Base' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                <MapStrategy>"
+            "                   <Strategy>SharedTable</Strategy>"
+            "                   <IsPolymorphic>True</IsPolymorphic>"
+            "                 </MapStrategy>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_base_code</Name>"
+            "                       <Properties>"
+            "                          <string>Code</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub1' isDomainClass='True'>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='Sub1_Prop' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub2' isDomainClass='True'>"
+            "        <BaseClass>Sub1</BaseClass>"
+            "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub3' isDomainClass='True'>"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.01.00'>"
+            "                 <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_sub3_prop</Name>"
+            "                       <Properties>"
+            "                          <string>Sub3_Prop</string>"
+            "                       </Properties>"
+            "                   </DbIndex>"
+            "                 </Indexes>"
+            "            </ClassMap>"
+            "        </ECCustomAttributes>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='Sub3_Prop' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", true, "");
+
+        TestItem secondSchemaTestItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema2' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='TestSchema' version='01.00' prefix='ts' />"
+            "    <ECClass typeName='Sub4' isDomainClass='True'>"
+            "        <BaseClass>ts:Sub3</BaseClass>"
+            "        <ECProperty propertyName='Sub4_Prop' typeName='double' />"
+            "    </ECClass>"
+            "</ECSchema>", true, "");
+        
+        ECDb db;
+        bool asserted = false;
+        AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
+        ASSERT_FALSE(asserted);
+
+        ECClassId sub3ClassId = db.Schemas().GetECClassId("ts", "Sub3", ResolveSchema::BySchemaNamespacePrefix);
+        AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
+        AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"}, {sub3ClassId});
+
+        db.SaveChanges();
+        db.ClearECDbCache();
+
+        asserted = false;
+        AssertSchemaImport(asserted, db, secondSchemaTestItem);
+        ASSERT_FALSE(asserted);
+
+        ECClassId sub4ClassId = db.Schemas().GetECClassId("ts2", "Sub4", ResolveSchema::BySchemaNamespacePrefix);
+        AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
+        AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"}, {sub3ClassId, sub4ClassId});
+        }
+    }
+
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
@@ -1014,14 +1253,12 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
     BeSQLite::Statement stmt;
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.Name = 'BaseHasClassA'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-
-    Utf8String whereClauseValue;
-    ASSERT_EQ (SUCCESS, whereClauseValue.Sprintf ("ECClassId = %lld", stmt.GetValueInt64 (0)));
+    ECClassId classId = stmt.GetValueInt64(0);
     stmt.Finalize ();
 
     //verify that entry in the ec_Index table exists for relationship table BaseHasClassA
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT ec_Index.Name, ec_Index.IsUnique from ec_Index where ec_Index.WhereClause = ?"));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, whereClauseValue, Statement::MakeCopy::No));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Name, IsUnique from ec_Index where ClassId = ?"));
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt64 (1, classId));
     while (DbResult::BE_SQLITE_ROW == stmt.Step ())
         {
         ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
@@ -1032,14 +1269,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, UniqueIndexesSupportFor1to1Relat
 
     ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Id from ec_Class where ec_Class.Name = 'BaseHasClassB'"));
     ASSERT_EQ (DbResult::BE_SQLITE_ROW, stmt.Step ());
-
-    ASSERT_EQ (SUCCESS, whereClauseValue.Sprintf ("ECClassId = %lld", stmt.GetValueInt64 (0)));
-    stmt.Finalize ();
+    classId = stmt.GetValueInt64(0);
+    stmt.Finalize();
 
     //verify that entry in ec_Index table also exists for relationship table BaseHasClassB
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT ec_Index.Name, ec_Index.IsUnique from ec_Index where ec_Index.WhereClause = ?"));
-    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindText (1, whereClauseValue, Statement::MakeCopy::No));
-    while (DbResult::BE_SQLITE_ROW == stmt.Step ())
+    ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT Name, IsUnique from ec_Index where ClassId = ?"));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, stmt.BindInt64(1, classId));
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
         {
         ASSERT_EQ (1, stmt.GetValueInt (1)) << "Index value for 1:1 Relationship is not Unique";
         Utf8String indexName = stmt.GetValueText (0);

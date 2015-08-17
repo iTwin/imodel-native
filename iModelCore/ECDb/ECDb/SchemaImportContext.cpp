@@ -78,7 +78,7 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
     {
     m_classMapInfoCache.push_back(std::make_pair(&classMap,std::move(info)));
     }
-
+/*
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
 //---------------------------------------------------------------------------------------
@@ -100,7 +100,7 @@ bool SchemaImportContext::TryGetClassIdToIndex(ECClassId& classId, ECDbSqlIndex 
     classId = it->second;
     return true;
     }
-
+    */
 //*************************************************************************************
 // NoopImportIssueListener
 //*************************************************************************************
