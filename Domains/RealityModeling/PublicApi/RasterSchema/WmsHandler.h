@@ -28,7 +28,10 @@ struct WmsMap
         };
 
     WmsMap();
-    RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+
+    //! Construct a a new WmsMap.  csType is deduce from version and format is set to "image/png".
+    //! By default a meta raster of 10 resolutions is generated.
+    RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csLabel);
 
     //! Return true if mandatory parameters are set. Does not validate with server.
     bool HasValidParameters() const;
@@ -50,9 +53,9 @@ struct WmsMap
     Utf8String m_version;           //! Wms server version
     Utf8String m_layers;            //! Comma-separated list of one or more map layers.
     Utf8String m_styles;            //! Comma-separated list of one rendering style per requested layer.
-    Utf8String m_csType;            //! Usually, 'SRS' for 1.1.1 and below. 'CRS' for 1.3 and above.
+    Utf8String m_csType;            //! Default to 'SRS' for 1.1.1 and below. 'CRS' for 1.3.
     Utf8String m_csLabel;           //! Coordinate System label. ex: "EPSG:4326"
-    Utf8String m_format;            //! Output format of map. Default is 'image/png'
+    Utf8String m_format;            //! Output format MIME type. Default is 'image/png'
 
     // Optional GetMap parameters
     Utf8String m_vendorSpecific;    //! [optional] Unparsed, server specific parameters that will be appended to the request. 

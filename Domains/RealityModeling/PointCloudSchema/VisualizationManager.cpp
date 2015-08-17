@@ -43,14 +43,16 @@ IProgressiveDisplay::Completion VisualizationManager::DrawToContext(ViewContextR
     PointCloudGcsFacility::GetTransformToUor(pointCloudTransform, wktString, rangeUOR, context.GetViewport()->GetViewController().GetTargetModel()->GetDgnDb());
 
     // Setup viewport
+    // set the pointool viewport to use for this model, scene and view
     DRange3d pcRange;
     pointCloudTransform.Multiply(pcRange, pointCloudRange);
-
-    // set the pointool viewport to use for this model, scene and view
+#if defined (NEEDS_WORK_VIEWINDEX)
     PTViewportID viewportId(context.GetViewport()->GetViewController().GetTargetModel(), const_cast<PointCloudScene*>(&pointCloudScene), context.GetViewport()->GetViewNumber(), pcRange);
+#else
+    PTViewportID viewportId(context.GetViewport()->GetViewController().GetTargetModel(), const_cast<PointCloudScene*>(&pointCloudScene), 0, pcRange);
+#endif
     PointCloudVortex::SetViewport(ModelViewportManager::Get ().GetViewport (viewportId));
     SetViewportInfo (context, pointCloudTransform, pcRange);
-
     // Get view settings
     RefCountedPtr<IPointCloudViewSettings> viewSettings = PointCloudViewSettings::GetPointCloudViewSettings(context);
 
