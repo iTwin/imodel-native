@@ -298,7 +298,7 @@ BentleyStatus DgnFonts::DbFontMapDirect::Insert(DgnFontCR font, DgnFontId& id)
     id.Invalidate();
     DbResult rc= m_dbFonts.m_db.GetServerIssuedId(id, m_dbFonts.m_tableName.c_str(), "Id");
 
-    if (BE_SQLITE_ROW != rc)
+    if (BE_SQLITE_OK != rc)
         {
         BeAssert(false);
         return ERROR;
