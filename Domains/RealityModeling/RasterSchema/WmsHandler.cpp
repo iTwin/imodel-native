@@ -68,7 +68,7 @@ WmsMap::WmsMap()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-WmsMap::WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel, Utf8CP vendorSpecific, bool isTransparent)
+ WmsMap::WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csLabel)
  :m_url(url),
   m_boundingBox(bbox),
   //m_metaWidth(),
@@ -76,13 +76,23 @@ WmsMap::WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8C
   m_version(version),
   m_layers(layers),
   m_styles(""),         // Default style.
-  m_csType(csType),
+  //m_csType(""), 
   m_csLabel(csLabel),
   m_format("image/png"),    // The standards says that all servers should support png.
-  m_vendorSpecific(vendorSpecific),
-  m_transparent(isTransparent),
+  m_vendorSpecific(""),
+  m_transparent(false),
   m_axisOrder(AxisOrder::Default)
     {
+    // 1.3.x use CRS.
+    if(m_version.size() >= sizeof("1.3") && memcmp(m_version.c_str(), "1.3", sizeof("1.3")-1) == 0)
+        {
+        m_csType = "CRS"; 
+        }
+    else     // 1.0.x and 1.1.x use SRS.
+        {
+        m_csType = "SRS";
+        }
+
     SetMetaSizeByResolutionCount(10);
     }
     
