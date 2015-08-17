@@ -189,8 +189,7 @@ Utf8String DgnElement::_GenerateDefaultCode()
     if (!m_elementId.IsValid())
         return "";
 
-    Utf8String className(GetElementClass()->GetName());
-    return Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
+    return Utf8PrintfString("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xFFFF & m_elementId.GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
