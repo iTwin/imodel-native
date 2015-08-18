@@ -646,16 +646,7 @@ struct ECDbSqlTable : NonCopyableClass
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, uint32_t userFlag) const;
-        ECDbSqlColumn const* GetFilteredColumnFirst (uint32_t userFlag) const
-            {
-            for (auto column : m_orderedColumns)
-                {
-                if (column->GetUserFlags () == userFlag)
-                    return column;
-                }
-
-            return nullptr;
-            }
+        ECDbSqlColumn const* GetFilteredColumnFirst (uint32_t userFlag) const;
 
         bool DeleteColumn (Utf8CP name);
         BentleyStatus FinishEditing ();
@@ -664,11 +655,7 @@ struct ECDbSqlTable : NonCopyableClass
         std::set<ECN::ECClassId> GetReferences () const;
         PersistenceManager const& GetPersistenceManager () const { return m_persistenceManager; }
         bool IsValid () const { return m_columns.size () > 0; }
-        size_t IndexOf (ECDbSqlColumn const& column) const
-            {
-            BeAssert (&(column.GetTable ()) == this);
-            return std::distance (m_orderedColumns.begin (), std::find (m_orderedColumns.begin (), m_orderedColumns.end (), &column));
-            }
+        size_t IndexOf (ECDbSqlColumn const& column) const;
     };
 
 //======================================================================================

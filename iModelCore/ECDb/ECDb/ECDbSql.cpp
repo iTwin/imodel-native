@@ -140,6 +140,7 @@ std::set<ECN::ECClassId> ECDbSqlTable::GetReferences () const
 
     return tmp;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -180,6 +181,21 @@ BentleyStatus ECDbSqlTable::GetFilteredColumnList (std::vector<ECDbSqlColumn con
 
     return columns.empty () ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+ECDbSqlColumn const* ECDbSqlTable::GetFilteredColumnFirst(uint32_t userFlag) const
+    {
+    for (ECDbSqlColumn const* column : m_orderedColumns)
+        {
+        if (column->GetUserFlags() == userFlag)
+            return column;
+        }
+
+    return nullptr;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -248,6 +264,9 @@ BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& tabl
     return ERROR;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
     {
     std::vector<const ECDbSqlTrigger*> triggers;
@@ -258,6 +277,14 @@ std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
     return triggers;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+size_t ECDbSqlTable::IndexOf(ECDbSqlColumn const& column) const
+    {
+    BeAssert(&(column.GetTable()) == this);
+    return std::distance(m_orderedColumns.begin(), std::find(m_orderedColumns.begin(), m_orderedColumns.end(), &column));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -1165,9 +1192,6 @@ BentleyStatus ECDbSqlForeignKeyConstraint::Remove (size_t index)
 //ECDbSqlIndex
 //****************************************************************************************
 
-
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -1193,7 +1217,7 @@ BentleyStatus ECDbSqlIndex::Add (Utf8CP column)
     if (Contains (column))
         return BentleyStatus::ERROR;
 
-    auto col = GetTable ().FindColumnCP (column);
+    ECDbSqlColumn const* col = GetTable ().FindColumnCP (column);
     if (col == nullptr)
         {
         BeAssert (false && "Failed to find column");

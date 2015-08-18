@@ -1227,7 +1227,7 @@ TEST_F(SchemaImportTestFixture, UserDefinedIndexTest)
         ECClassId sub4ClassId = db.Schemas().GetECClassId("ts2", "Sub4", ResolveSchema::BySchemaNamespacePrefix);
         AssertIndex(db, "ix_base_code", false, "ts_Base", {"Code"});
         AssertIndex(db, "ix_sub3_prop", false, "ts_Base", {"Sub3_Prop"}, {sub3ClassId, sub4ClassId});
-        }       
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -1390,7 +1390,7 @@ TEST_F(SchemaImportTestFixture, NotNullablePropertyTest)
         AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
         ASSERT_FALSE(asserted);
 
-        AssertIndex(db, "idx_ECRel_Target_ts_Rel", false, "ts_B", {"AId"}, "[AId] IS NOT NULL");
+        AssertIndex(db, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"AId"}, "[AId] IS NOT NULL");
         }
 
         {
@@ -1435,7 +1435,7 @@ TEST_F(SchemaImportTestFixture, NotNullablePropertyTest)
         AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
         ASSERT_FALSE(asserted);
 
-        AssertIndex(db, "idx_ECRel_Target_ts_Rel", false, "ts_B", {"AId"});
+        AssertIndex(db, "ix_ts_B_fk_ts_Rel_target", false, "ts_B", {"AId"});
         }
     }
 //=======================================================================================    
