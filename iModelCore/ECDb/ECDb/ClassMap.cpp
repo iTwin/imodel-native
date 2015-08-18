@@ -567,7 +567,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
 
         Utf8String whereExpression;
         bool error = false;
-
         for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties())
             {
             Utf8String resolvePropertyName;
@@ -713,12 +712,21 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
                     switch (indexInfo->GetWhere())
                         {
                             case EC::ClassIndexInfo::WhereConstraint::NotNull:
+                                {
+                                //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
+                                if (column->GetConstraint().IsNotNull())
+                                    break;
+
                                 if (!whereExpression.empty())
                                     whereExpression.append(" AND ");
+
                                 whereExpression.append("[");
                                 whereExpression.append(column->GetName().c_str());
                                 whereExpression.append("]");
                                 whereExpression.append(" IS NOT NULL");
+
+                                break;
+                                }
 
                             default:
                                 break;

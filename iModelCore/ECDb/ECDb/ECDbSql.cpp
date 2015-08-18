@@ -1580,7 +1580,7 @@ Utf8String DDLGenerator::GetColumnList (std::vector<ECDbSqlColumn const*> const&
         columnList.append ("[").append ((*itor)->GetName ()).append ("]");
         if (*itor != columns.back ())
             {
-            columnList.append (", ");
+            columnList.append (",");
             }
         }
 
