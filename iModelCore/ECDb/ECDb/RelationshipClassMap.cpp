@@ -663,8 +663,8 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         name.append ("Unique_");
     name.append (m_ecClass.GetSchema().GetNamespacePrefix() + "_" + m_ecClass.GetName());
     
-    auto existingIndex = persistenceEndTable.GetDbDef ().FindIndex (name.c_str ());
-    if (existingIndex)
+    ECDbSqlIndex const* existingIndex = persistenceEndTable.GetDbDef ().FindIndex (name.c_str ());
+    if (existingIndex != nullptr)
         {
         if (&existingIndex->GetTable () == &GetTable ())
             return;
@@ -681,9 +681,15 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         }
 
     BeAssert (GetOtherEndECInstanceIdPropMap() != nullptr && GetOtherEndECInstanceIdPropMap()->GetFirstColumn() != nullptr);
-    index->Add (GetOtherEndECInstanceIdPropMap()->GetFirstColumn()->GetName().c_str());
-    Utf8String whereExpr = "[" + GetOtherEndECInstanceIdPropMap ()->GetFirstColumn ()->GetName () + "] IS NOT NULL";
-    index->SetAdditionalWhereExpression (whereExpr.c_str ());
+    ECDbSqlColumn const* otherEndIdColumn = GetOtherEndECInstanceIdPropMap()->GetFirstColumn();
+    index->Add(otherEndIdColumn->GetName().c_str());
+    if (!otherEndIdColumn->GetConstraint().IsNotNull())
+        {
+        NativeSqlBuilder whereClause;
+        whereClause.AppendEscaped(otherEndIdColumn->GetName().c_str()).AppendSpace ();
+        whereClause.Append(BooleanSqlOperator::IsNot).Append("NULL");
+        index->SetAdditionalWhereExpression(whereClause.ToString ());
+        }
     }
 
    

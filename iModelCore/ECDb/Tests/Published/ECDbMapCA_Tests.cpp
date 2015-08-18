@@ -1364,6 +1364,45 @@ TEST_F(SchemaImportTestFixture, NotNullablePropertyTest)
             "        <ECProperty propertyName='Id' typeName='long' />"
             "    </ECClass>"
             "    <ECClass typeName='B' isDomainClass='True'>"
+            "        <ECProperty propertyName='AId' typeName='long'/>"
+            "        <ECProperty propertyName='Name' typeName='string' />"
+            "    </ECClass>"
+            "  <ECRelationshipClass typeName='Rel' isDomainClass='True' strength='embedding'>"
+            "    <Source cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class='A'>"
+            "         <Key>"
+            "           <Property name='Id'/>"
+            "         </Key>"
+            "       </Class>"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class='B'>"
+            "         <Key>"
+            "           <Property name='AId'/>"
+            "         </Key>"
+            "       </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", true, "");
+
+        ECDb db;
+        bool asserted = false;
+        AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
+        ASSERT_FALSE(asserted);
+
+        AssertIndex(db, "idx_ECRel_Target_ts_Rel", false, "ts_B", {"AId"}, "[AId] IS NOT NULL");
+        }
+
+        {
+        TestItem testItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "    <ECClass typeName='A' isDomainClass='True'>"
+            "        <ECProperty propertyName='Code' typeName='string' />"
+            "        <ECProperty propertyName='Id' typeName='long' />"
+            "    </ECClass>"
+            "    <ECClass typeName='B' isDomainClass='True'>"
             "        <ECProperty propertyName='AId' typeName='long'>"
             "           <ECCustomAttributes>"
             "            <PropertyMap xmlns='ECDbMap.01.00'>"
@@ -1396,7 +1435,7 @@ TEST_F(SchemaImportTestFixture, NotNullablePropertyTest)
         AssertSchemaImport(db, asserted, testItem, "notnullableproptest.ecdb");
         ASSERT_FALSE(asserted);
 
-        AssertIndex(db, "idx_ECRel_Target_ts_Rel", false, "ts_B", {"AId"}, "[AId] IS NOT NULL");
+        AssertIndex(db, "idx_ECRel_Target_ts_Rel", false, "ts_B", {"AId"});
         }
     }
 //=======================================================================================    
