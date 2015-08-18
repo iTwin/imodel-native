@@ -380,7 +380,7 @@ void ECDbMapPersistenceTests::GetSchemaObjectById (ECDbR db, rapidjson::Document
 void ECDbMapPersistenceTests::GetColumnsPerTable (ECDbR db, rapidjson::Document & doc, rapidjson::Value& columnArray, int TableId)
     {
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT ec_Column.[Id], ec_Column.[Name], ec_Column.[Type], ec_Column.UserData FROM ec_Column WHERE ec_Column.TableId = ? ");
+    auto status = sqlStatement.Prepare (db, "SELECT ec_Column.[Id], ec_Column.[Name], ec_Column.[Type], ec_Column.KnownColumn FROM ec_Column WHERE ec_Column.TableId = ? ");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlStatement.BindInt (1, TableId);
 

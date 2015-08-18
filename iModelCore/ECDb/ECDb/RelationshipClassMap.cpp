@@ -502,13 +502,10 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& 
     if (keyPropertyCol != nullptr)
         {
         otherEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(keyPropertyCol);
-        if (otherEndECInstanceIdColumn->GetKnownColumnId () != ECDbKnownColumns::Unknown && otherEndECInstanceIdColumn->GetKnownColumnId () != ECDbKnownColumns::DataColumn)
+        if (otherEndECInstanceIdColumn->GetKnownColumnId () == ECDbKnownColumns::Unknown || otherEndECInstanceIdColumn->GetKnownColumnId () == ECDbKnownColumns::DataColumn)
             {
-            BeAssert (false && "This need to be a data column at this point");
-            return MapStatus::Error;
+            otherEndECInstanceIdColumn->SetKnownColumnId (columnId);
             }
-
-        otherEndECInstanceIdColumn->SetKnownColumnId (columnId);
         }
     else
         {
