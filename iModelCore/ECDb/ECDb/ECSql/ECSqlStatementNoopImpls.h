@@ -92,11 +92,6 @@ private:
         return m_errorStatus;
         }
 
-    virtual ECSqlStatus _BindId(ECInstanceId value) override
-        {
-        return m_errorStatus;
-        }
-
     // IECSqlStructBinder
     virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) override
         {

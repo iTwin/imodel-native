@@ -134,14 +134,6 @@ ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindId(ECInstanceId value)
-    {
-    return _BindPrimitive()._BindId(value);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
 IECSqlStructBinder& IECSqlBinder::BindStruct()

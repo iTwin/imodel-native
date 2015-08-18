@@ -288,6 +288,9 @@ public:
 
     const std::vector<ECDbSqlIndex const*> GetIndexes () const;
     std::vector<ECDbSqlIndex*> GetIndexesR ();
+
+    BentleyStatus CreateOrUpdateIndices(SchemaImportContext const&) const;
+
     const std::vector<ECDbSqlTable const*> GetTables () const;
     const std::vector<ECDbSqlTable*> GetTablesR ();
 
@@ -320,8 +323,8 @@ public:
         ~PersistenceManager (){}
 
         ECDbSqlIndex const& GetIndex () const { return m_index; }
-        BentleyStatus Create(ECDbR ecdb) const;
-        BentleyStatus Drop (ECDbR ecdb) const;
+        BentleyStatus Create(ECDbR ecdb, SchemaImportContext const&) const;
+        BentleyStatus Drop(ECDbR ecdb, SchemaImportContext const&) const;
         bool Exists (ECDbR ecdb) const;
         };
 
@@ -599,15 +602,15 @@ struct ECDbSqlTable : NonCopyableClass
     private:
         ECDbSqlTable& m_table;
 
-        BentleyStatus CreateIndicesAndTriggers(ECDbR, bool failIfExists) const;
+        BentleyStatus CreateTriggers(ECDbR, SchemaImportContext const&, bool failIfExists) const;
 
     public:
         explicit PersistenceManager (ECDbSqlTable& table) :m_table (table) {}
         ~PersistenceManager (){}
 
-        BentleyStatus Create(ECDbR ecdb) const;
-        BentleyStatus CreateOrUpdate(ECDbR ecdb) const;
-        BentleyStatus Drop (ECDbR ecdb) const;
+        BentleyStatus Create(ECDbR ecdb, SchemaImportContext const&) const;
+        BentleyStatus CreateOrUpdate(ECDbR ecdb, SchemaImportContext const&) const;
+        BentleyStatus Drop(ECDbR ecdb, SchemaImportContext const&) const;
         bool Exist (ECDbR ecdb) const;
         };
 
@@ -731,6 +734,10 @@ struct DDLGenerator
         };
 
 private:
+    private:
+        DDLGenerator();
+        ~DDLGenerator();
+
     static Utf8String GetColumnList (std::vector<ECDbSqlColumn const*> const&);
     static Utf8String GetForeignKeyConstraintDDL (ECDbSqlForeignKeyConstraint const&);
     static Utf8String GetPrimarykeyConstraintDDL (ECDbSqlPrimaryKeyConstraint const&);
@@ -745,8 +752,8 @@ public:
     static Utf8String GetDropTableDDL (ECDbSqlTable const& table) { return "DROP TABLE [" + table.GetName () + "]"; }
     static Utf8String GetDropIndexDDL (ECDbSqlIndex const& index) { return "DROP INDEX [" + index.GetName () + "]"; }
 
-    static BentleyStatus AddColumns (ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns, DbR);
-    static BentleyStatus CopyRows (DbR, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
+    static BentleyStatus AddColumns(ECDbR, SchemaImportContext const&, ECDbSqlTable const&, std::vector<Utf8CP> const& newColumns);
+    static BentleyStatus CopyRows(DbR, SchemaImportContext const&, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
     };
 
 
@@ -755,12 +762,14 @@ public:
 //======================================================================================
 struct ECDbSqlHelper
     {
-    static ECDbSqlColumn::Type PrimitiveTypeToColumnType (ECN::PrimitiveType type);
-    static bool IsCompatiable (ECDbSqlColumn::Type target, ECDbSqlColumn::Type source);
-    //static std::vector<
-    };
+private:
+    ECDbSqlHelper();
+    ~ECDbSqlHelper();
 
-//
+public:
+    static ECDbSqlColumn::Type PrimitiveTypeToColumnType (ECN::PrimitiveType type);
+    static bool IsCompatible (ECDbSqlColumn::Type target, ECDbSqlColumn::Type source);
+    };
 
 
 //======================================================================================
@@ -1014,29 +1023,28 @@ struct ECDbSqlPersistence : NonCopyableClass
 
     private:
 
+        CachedStatementPtr GetStatement (StatementType);
 
-        CachedStatementPtr GetStatement (StatementType type);
-
-        DbResult ReadTables (ECDbSqlDb& o);
-        DbResult ReadTable (Statement& stmt, ECDbSqlDb& o);
-        DbResult ReadColumns (ECDbSqlTable& o);
-        DbResult ReadIndexes (ECDbSqlDb& o);
-        DbResult ReadForignKeys (ECDbSqlDb& o);
-        DbResult ReadColumn (Statement& stmt, ECDbSqlTable& o, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
-        DbResult ReadIndex (Statement& stmt, ECDbSqlDb& o);
-        DbResult ReadForeignKeys (ECDbSqlTable& o);
-        DbResult ReadForeignKey (Statement& stmt, ECDbSqlTable& o);
-        DbResult InsertTable (ECDbSqlTable const& o);
-        DbResult InsertIndex (ECDbSqlIndex const& o);
-        DbResult InsertColumn (ECDbSqlColumn const& o, int primaryKeyOrdianal);
-        DbResult InsertConstraint (ECDbSqlConstraint const& o);
-        DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const& o);
+        DbResult ReadTables (ECDbSqlDb&);
+        DbResult ReadTable (Statement&, ECDbSqlDb&);
+        DbResult ReadColumns (ECDbSqlTable&);
+        DbResult ReadIndexes (ECDbSqlDb&);
+        DbResult ReadForeignKeys (ECDbSqlDb&);
+        DbResult ReadColumn (Statement&, ECDbSqlTable&, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
+        DbResult ReadIndex (Statement&, ECDbSqlDb&);
+        DbResult ReadForeignKeys (ECDbSqlTable&);
+        DbResult ReadForeignKey (Statement&, ECDbSqlTable&);
+        DbResult InsertTable (ECDbSqlTable const&);
+        DbResult InsertIndex (ECDbSqlIndex const&);
+        DbResult InsertColumn (ECDbSqlColumn const&, int primaryKeyOrdianal);
+        DbResult InsertConstraint (ECDbSqlConstraint const&);
+        DbResult InsertForeignKey (ECDbSqlForeignKeyConstraint const&);
 
     public:
         explicit ECDbSqlPersistence (ECDbR ecdb):m_ecdb (ecdb) {}
         ~ECDbSqlPersistence (){};
-        DbResult Read (ECDbSqlDb& o);
-        DbResult Insert (ECDbSqlDb const& db);
+        DbResult Read (ECDbSqlDb&);
+        DbResult Insert (ECDbSqlDb const&);
     };
 
 //======================================================================================

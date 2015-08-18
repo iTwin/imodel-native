@@ -40,13 +40,10 @@ private:
     virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) override;
     virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) override;
     virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
-    virtual ECSqlStatus _BindId(ECInstanceId value) override;
 
 public:
     PrimitiveToSingleColumnECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
-        : ECSqlBinder(ecsqlStatement, typeInfo, 1, false, false), m_sqliteIndex(-1)
-        {
-        }
+        : ECSqlBinder(ecsqlStatement, typeInfo, 1, false, false), m_sqliteIndex(-1) {}
 
     ~PrimitiveToSingleColumnECSqlBinder() {}
     };

@@ -303,14 +303,6 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindText(Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindId(ECInstanceId value)
-    {
-    return m_statusContext.SetError(ECSqlStatus::UserError, "Type mismatch. Cannot bind BeRepositoryBasedId value as primitive array element.");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan          01/2014
-//---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::VerifyType(PrimitiveType type) const
     {
     if (m_arrayTypeInfo.GetPrimitiveType() != type)

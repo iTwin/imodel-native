@@ -1313,7 +1313,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& s
     auto existingColumn = specifications.GetColumnName ().empty () ? nullptr : targetTable.FindColumnP (specifications.GetColumnName ().c_str ());
     if (existingColumn != nullptr && !IsColumnInUse (*existingColumn))
         {
-        if (ECDbSqlHelper::IsCompatiable (existingColumn->GetType (), specifications.GetColumnType ()))
+        if (ECDbSqlHelper::IsCompatible (existingColumn->GetType (), specifications.GetColumnType ()))
             {
             if (GetTable ().GetOwnerType () == OwnerType::ECDb)
                 {

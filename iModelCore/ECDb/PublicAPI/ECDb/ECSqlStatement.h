@@ -164,7 +164,7 @@ public:
     //! @param[in] parameterIndex Parameter index
     //! @param[in] id Value to bind.
     //! @return ECSqlStatus::Success or error codes
-    ECSqlStatus BindId(int parameterIndex, BeInt64Id id) {return id.IsValid() ? BindInt64(parameterIndex, id.GetValue()) : BindNull(parameterIndex);}
+    ECDB_EXPORT ECSqlStatus BindId(int parameterIndex, BeInt64Id id);
 
     //! Gets a binder which is used to bind a struct value to the specified parameter
     //! @param[in] parameterIndex Parameter index
@@ -355,18 +355,18 @@ public:
     //! - @p columnIndex is out of bounds
     ECDB_EXPORT Utf8CP GetValueText(int columnIndex) const;
 
-    //! Gets the value as a BeRepositoryBasedId
-    //! @remarks As @ref ECInstanceId "ECInstanceIds" are repository-based ids, you can use
+    //! Gets the value as a subclass of BeInt64Id
+    //! @remarks As @ref ECInstanceId "ECInstanceIds" are BeInt64Ids, you can use
     //! this method to get ECInstanceId values.
     //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
-    //! @return BeRepositoryBasedId value
+    //! @return BeInt64Id value
     //! @note See @ref ECSqlStatementErrorReporting for how to detect errors when calling this method.
     //! @note Possible errors:
-    //! - column data does not hold a repository-based id
-    template <class TBeRepositoryBasedId>
-    TBeRepositoryBasedId GetValueId(int columnIndex) const
+    //! - column data does not hold a BeInt64Id
+    template <class TBeInt64Id>
+    TBeInt64Id GetValueId(int columnIndex) const
         {
-        return TBeRepositoryBasedId(GetValueInt64(columnIndex));
+        return TBeInt64Id(GetValueInt64(columnIndex));
         }
 
     //! Gets the array value of the specified column.
