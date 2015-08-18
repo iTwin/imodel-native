@@ -41,34 +41,42 @@ Crawler::~Crawler()
 //+---------------+---------------+---------------+---------------+---------------+------
 StatusInt Crawler::Crawl(UrlPtr const& seed)
     {
+    BeAssert(m_pDownloaders.size() == m_NumberOfDownloaders);
+
     m_pQueue->AddUrl(seed);
 
     vector<future<PageContentPtr>> asyncDownloadThreads(m_NumberOfDownloaders);
     size_t i = 0;
     while(!IsStopped() && (m_pQueue->NumberOfUrls() > 0 || !AllDownloadsFinished(asyncDownloadThreads)))
         {
+        // If pause, wait for unpaused.
         std::unique_lock<std::mutex> lock(m_PauseFlagMutex);
         m_PauseFlagConditionVariable.wait(lock, [this]{return m_PauseFlag == false;});
 
         future<PageContentPtr>& currentDownloadThread = asyncDownloadThreads[i];
         IPageDownloader* currentDownloader = m_pDownloaders[i];
 
+        // Thread available and something in queue.
         if(CanStartDownload(currentDownloadThread))
             StartNextDownload(currentDownloadThread, currentDownloader);
 
         if(IsDownloadResultReady(currentDownloadThread))
             {
-            PageContentPtr pageContent = currentDownloadThread.get();
+            PageContentPtr pageContent = currentDownloadThread.get(); // currentDownloadThread.valid() will be false afterward.
             for (auto link : pageContent->GetLinks())
+                {
+                // This call might take some time if robots.txt needs to be downloaded. That will occurs once per domain.
                 m_pQueue->AddUrl(link);
+                }   
 
+            // Start something new now, in case the observer takes a long time to process.
             if(CanStartDownload(currentDownloadThread))
                 StartNextDownload(currentDownloadThread, currentDownloader);
 
             if(m_pObserver != NULL)
-                m_pObserver->OnPageCrawled(pageContent);
+                m_pObserver->OnPageCrawled(*pageContent);
             }
-        i = (i + 1) % m_NumberOfDownloaders; //Cycle throught the downlaod
+        i = (i + 1) % m_NumberOfDownloaders; //Cycle through the download
         }
 
     DiscardRemainingDownloads(asyncDownloadThreads);

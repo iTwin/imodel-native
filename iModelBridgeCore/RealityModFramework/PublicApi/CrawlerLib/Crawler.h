@@ -26,13 +26,19 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class ICrawlerObserver
     {
     public:
-    CRAWLERLIB_EXPORT virtual ~ICrawlerObserver() {}
-    CRAWLERLIB_EXPORT virtual void OnPageCrawled(PageContentPtr page) = 0;
+    virtual ~ICrawlerObserver() {}
+    virtual void OnPageCrawled(PageContentCR page) = 0;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class Crawler
     {
     public:
@@ -112,7 +118,7 @@ class Crawler
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    CRAWLERLIB_EXPORT void SetUserAgent(WString const& agent);
+    CRAWLERLIB_EXPORT void SetUserAgent(WStringCR agent);
 
     //---------------------------------------------------------------------------------------
     // The request timeout is the time allowed for a complete request to finish. This includes
@@ -228,7 +234,7 @@ class Crawler
     //
     // @bsimethod                                                 Alexandre.Gariepy   08/15
     //+---------------+---------------+---------------+---------------+---------------+------
-    CRAWLERLIB_EXPORT void SetRobotsTxtUserAgent(WString const& userAgent);
+    CRAWLERLIB_EXPORT void SetRobotsTxtUserAgent(WStringCR userAgent);
 
     //---------------------------------------------------------------------------------------
     // The crawler uses to the Crawl-delay fields of robots.txt. By default, there is
@@ -266,13 +272,13 @@ class Crawler
 
     bool IsStopped() const;
 
-    UrlQueue* m_pQueue;
-    std::vector<IPageDownloader*> m_pDownloaders;
+    UrlQueue* m_pQueue;         // List of urls to explore.
+
+    std::vector<IPageDownloader*> m_pDownloaders; 
 
     ICrawlerObserver* m_pObserver;
 
     const size_t m_NumberOfDownloaders;
-    static const std::chrono::milliseconds s_AsyncWaitTime;
 
     std::atomic<bool>       m_StopFlag;
     bool                    m_PauseFlag;

@@ -25,7 +25,9 @@ UrlQueue::UrlQueue(IPoliteness* politeness)
     m_pPoliteness = politeness;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Alexandre.Gariepy   08/15
+//+---------------+---------------+---------------+---------------+---------------+------
 UrlQueue::~UrlQueue() 
     {
     delete m_pPoliteness;

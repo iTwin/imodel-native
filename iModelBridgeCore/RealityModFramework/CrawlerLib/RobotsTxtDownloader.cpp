@@ -17,7 +17,7 @@ using namespace std;
 RobotsTxtDownloader::RobotsTxtDownloader()
     {
     m_CurlHandle = curl_easy_init();
-    curl_easy_setopt(m_CurlHandle, CURLOPT_CONNECTTIMEOUT, 2);
+    curl_easy_setopt(m_CurlHandle, CURLOPT_CONNECTTIMEOUT, 1/*in seconds*/);
     }
 
 //---------------------------------------------------------------------------------------
