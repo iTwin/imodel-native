@@ -1234,7 +1234,7 @@ TEST_F(SchemaImportTestFixture, UserDefinedIndexTest)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "    <ECClass typeName='Base' isDomainClass='False' isStruct='False' isCustomAttribute='False'>"
+            "    <ECClass typeName='Base' isDomainClass='True' isStruct='False' isCustomAttribute='False'>"
             "        <ECCustomAttributes>"
             "            <ClassMap xmlns='ECDbMap.01.00'>"
             "                <MapStrategy>"
@@ -1263,8 +1263,12 @@ TEST_F(SchemaImportTestFixture, UserDefinedIndexTest)
             "        <ECProperty propertyName='AId' typeName='long' />"
             "    </ECClass>"
             "    <ECClass typeName='Sub2' isDomainClass='True'>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='Name' typeName='string' />"
+            "    </ECClass>"
+            "    <ECClass typeName='Sub1_1' isDomainClass='True'>"
             "        <BaseClass>Sub1</BaseClass>"
-            "        <ECProperty propertyName='Sub2_Prop' typeName='double' />"
+            "        <ECProperty propertyName='Cost' typeName='double' />"
             "    </ECClass>"
             "    <ECClass typeName='A' isDomainClass='True'>"
             "        <ECProperty propertyName='Id' typeName='long' />"
@@ -1277,7 +1281,7 @@ TEST_F(SchemaImportTestFixture, UserDefinedIndexTest)
             "         </Key>"
             "       </Class>"
             "    </Source>"
-            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "    <Target cardinality='(0,1)' polymorphic='True'>"
             "      <Class class='Sub1'>"
             "         <Key>"
             "           <Property name='AId'/>"
@@ -1292,8 +1296,69 @@ TEST_F(SchemaImportTestFixture, UserDefinedIndexTest)
         AssertSchemaImport(db, asserted, testItem, "userdefinedindextest.ecdb");
         ASSERT_FALSE(asserted);
 
-        ECClassId baseClassId = db.Schemas().GetECClassId("ts", "Base", ResolveSchema::BySchemaNamespacePrefix);
-        AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"x01"}, {baseClassId}, true);
+        ECClassId sub1ClassId = db.Schemas().GetECClassId("ts", "Sub1", ResolveSchema::BySchemaNamespacePrefix);
+        ECClassId sub11ClassId = db.Schemas().GetECClassId("ts", "Sub1_1", ResolveSchema::BySchemaNamespacePrefix);
+        AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"x01"}, {sub1ClassId, sub11ClassId});
+
+        //now assert that the automatically generated index on the relationship foreign key column is correct
+        AssertIndex(db, "uix_ts_Base_fk_ts_Rel_target", true, "ts_Base", {"x01"}, "[x01] IS NOT NULL");
+
+        //insert a few objects to make sure the unique index' where clause is set up correctly
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.A (Id) VALUES(?)"));
+        for (int id = 100; id <= 1000; id += 100)
+            {
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, id));
+            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+            stmt.Reset();
+            stmt.ClearBindings();
+            }
+
+        stmt.Finalize();
+
+        Utf8CP ecsql = "INSERT INTO ts.Base (Code) VALUES(?)";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "base:1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "base:2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Finalize();
+
+        ecsql = "INSERT INTO ts.Sub1 (Code,AId) VALUES(?,?)";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1:1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 100));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1:2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 200));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Finalize();
+
+        ecsql = "INSERT INTO ts.Sub1_1 (Code,AId,Cost) VALUES(?,?,9.99)";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1_1:1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 300));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub1_1:2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 400));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Finalize();
+
+        //use same name for all Sub2 instances to test that the partial unique index on this column is excluding Sub2 rows.
+        ecsql = "INSERT INTO ts.Sub2 (Code,Name) VALUES(?,'A sub2 instance')";
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, ecsql));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub2:1", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "First execution of " << ecsql << " Error: " << db.GetLastError();
+        stmt.Reset();
+        stmt.ClearBindings();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub2:2", IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStepStatus::Error, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
         }
     }
 
