@@ -532,7 +532,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         if (Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             primaryKeyColumnName = ECDB_COL_ECInstanceId;
 
-        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Long, ECDbSystemColumnECInstanceId, PersistenceType::Persisted);
+        auto column = table->CreateColumn (primaryKeyColumnName, ECDbSqlColumn::Type::Long, ECDbKnownColumns::ECInstanceId, PersistenceType::Persisted);
         if (table->GetPersistenceType () == PersistenceType::Persisted)
             {
             column->GetConstraintR ().SetIsNotNull (true);
@@ -541,9 +541,9 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
 
         if (mapToSecondaryTable)
             {            
-            column = table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ECDbSystemColumnParentECInstanceId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ECDbSystemColumnECPropertyPathId, PersistenceType::Persisted);
-            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECDbSystemColumnECArraryIndex, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ParentECInstanceId, ECDbSqlColumn::Type::Long, ECDbKnownColumns::ParentECInstanceId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECPropertyPathId, ECDbSqlColumn::Type::Long, ECDbKnownColumns::ECPropertyPathId, PersistenceType::Persisted);
+            column = table->CreateColumn (ECDB_COL_ECArrayIndex, ECDbSqlColumn::Type::Long, ECDbKnownColumns::ECArrayIndex, PersistenceType::Persisted);
             if (table->GetPersistenceType () == PersistenceType::Persisted)
                 {
                 ECDbSqlIndex* index = table->CreateIndex ((table->GetName() + "_StructArrayIndex").c_str(), true);
@@ -577,7 +577,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
                 return nullptr;
                 }
 
-            systemColumn->SetUserFlags (ECDbSystemColumnECInstanceId);
+            systemColumn->SetKnownColumnId (ECDbKnownColumns::ECInstanceId);
             if (!editMode)
                 table->GetEditHandleR ().EndEdit ();
             }
@@ -861,7 +861,7 @@ void ECDbMap::LightWeightMapCache::LoadClassTableClasses () const
     Utf8CP sql0 =
         "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName "
         "     FROM ec_PropertyMap  "
-        "         JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2 "
+        "         JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.KnownColumn != 2 "
         "         JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "         JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "         JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
@@ -1059,7 +1059,7 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         "   AS ( "
         "   SELECT  ec_Class.Id ClassId, ec_Table.Name TableName "
         "   FROM ec_PropertyMap  "
-        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2 "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.KnownColumn != 2 "
         "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
@@ -1262,7 +1262,7 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //        "   AS ("
 //        "   SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
 //        "   FROM ec_PropertyMap "
-//        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+//        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.KnownColumn != 2"
 //        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
 //        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
 //        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
@@ -1276,7 +1276,7 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //    Utf8CP const findAllClassesMappedToTableSql =
 //        "SELECT DISTINCT ec_Class.Id "
 //        "FROM ec_PropertyMap "
-//        "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+//        "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.KnownColumn != 2"
 //        "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
 //        "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
 //        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "

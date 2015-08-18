@@ -742,7 +742,7 @@ Db& db
         "DefaultConstraint TEXT,"
         "CollationConstraint INTEGER,"
         "OrdinalInPrimaryKey INTEGER,"
-        "UserData INTEGER"
+        "KnownColumn INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)

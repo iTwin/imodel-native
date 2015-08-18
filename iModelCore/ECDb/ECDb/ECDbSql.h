@@ -30,21 +30,43 @@ typedef int64_t ECDbPropertyPathId;
 typedef int64_t ECDbClassMapId;
 
 //!TODO This should replace int in UserData in column
-enum class SystemColumnType 
+enum class ECDbKnownColumns
     {
-    DataColumn = 0x0U,
-    ECInstanceId = 0x1U,
-    ECClassId = 0x2U,
-    ParentECInstanceId = 0x4U,
-    ECPropertyPathId = 0x8U,
-    ECArraryIndex = 0x10U,
+    Unknown = 0x0U, //! Not know to ECDb or user define columns
+    ECInstanceId = 0x1U, //! ECInstanceId system column also primary key of the table
+    ECClassId = 0x2U, //! ECClassId system column. Use if more then on classes is mapped to this table
+    ParentECInstanceId = 0x4U, //! ParentECInstanceId column used in struct array
+    ECPropertyPathId = 0x8U, //! ECPropertyPathId column used in struct array
+    ECArrayIndex = 0x10U, //! ECArrayIndex column used in struct array
     SourceECInstanceId = 0x20U,
-    TargetECInstanceId = 0x40U,
-    SourceECClassId = 0x80U,
+    SourceECClassId = 0x40U,
+    TargetECInstanceId = 0x80U,
     TargetECClassId = 0x100U,
+    DataColumn = 0x200U, //! Data column defined by none key column in ECClass
+    //Following is helper group for search operation. There cannot be a column with OR'ed flags
+    GroupSourceECInstanceKey = SourceECInstanceId | SourceECClassId,
+    GroupTargetECInstanceKey = TargetECInstanceId | TargetECClassId,
+    GroupForeignKeys = GroupSourceECInstanceKey | GroupTargetECInstanceKey,
+    GroupECInstanceKey = ECInstanceId | ECClassId, //! Group key to identify ECInstance
+    GroupECStructKey = GroupECInstanceKey | ParentECInstanceId | ECPropertyPathId | ECArrayIndex, //! Group key to identify ECStruct instance
+    GroupSystemColumns = GroupECStructKey
     };
 
 
+struct Enum
+    {
+    public:
+        template<typename T>
+        static int ToInt (T t){ return static_cast<uint32_t>(t);}
+        template<typename T>
+        static T ToEnum (uint32_t v){ return static_cast<T>(v);}
+        template<typename T>
+        static T Or (T a, T b){ return  ToEnum (ToInt (a) | ToInt (b)); }
+        template<typename T>
+        static T And (T a, T b){ return  ToEnum (ToInt (a) & ToInt (b)); }
+        template<typename T>
+        static bool In (T value, T inList){ return  (ToInt (value) & ToInt (inList)) == ToInt (value); }
+    };
 enum class TriggerType
     {
     Create,
@@ -384,7 +406,6 @@ struct ECDbSqlColumn : NonCopyableClass
         {
         Integer, Long, Double, DateTime, Binary, Boolean, String, Any
         };
-    const uint32_t NullUserFlags = 0;
     struct Constraint : NonCopyableClass
         {
 
@@ -426,11 +447,11 @@ struct ECDbSqlColumn : NonCopyableClass
         Utf8String m_name;
         DependentPropertyCollection m_references;
         PersistenceType m_persistenceType;
-        uint32_t m_userFlags;
+        ECDbKnownColumns m_knowColumnId;
         ECDbColumnId m_id;        
     public:
         ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
-            : m_name (name), m_ownerTable (owner), m_type (type), m_references (*this), m_persistenceType (persistenceType), m_userFlags (NullUserFlags), m_id (id){}
+            : m_name (name), m_ownerTable (owner), m_type (type), m_references (*this), m_persistenceType (persistenceType), m_knowColumnId (ECDbKnownColumns::DataColumn), m_id (id){}
 
         ECDbColumnId GetId () const { return m_id; }
         void SetId (ECDbColumnId id) { m_id = id; }
@@ -446,8 +467,8 @@ struct ECDbSqlColumn : NonCopyableClass
         virtual ~ECDbSqlColumn () {}
         static Type StringToType (Utf8CP typeName);
         static Utf8CP TypeToString (Type type);
-        BentleyStatus SetUserFlags (uint32_t userFlags);
-        uint32_t GetUserFlags () const;
+        BentleyStatus SetKnownColumnId (ECDbKnownColumns knownColumnId);
+        ECDbKnownColumns GetKnownColumnId () const;
         DependentPropertyCollection const& GetDependentProperties () const{ return m_references; }
         DependentPropertyCollection & GetDependentPropertiesR (){ return m_references; }
         const Utf8String GetFullName () const;
@@ -624,8 +645,8 @@ struct ECDbSqlTable : NonCopyableClass
         ECDbSqlDb const& GetDbDef () const{ return m_dbDef; }
         ECDbSqlDb & GetDbDefR () { return m_dbDef; }
         //! Any type will be mark as reusable column
-        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, uint32_t userFlag = 0, PersistenceType persistenceType = PersistenceType::Persisted);
-        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, uint32_t userFlag = 0, PersistenceType persistenceType = PersistenceType::Persisted);
+        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ECDbKnownColumns knownColumnId = ECDbKnownColumns::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
+        ECDbSqlColumn* CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ECDbKnownColumns knownColumnId = ECDbKnownColumns::DataColumn, PersistenceType persistenceType = PersistenceType::Persisted);
 
         BentleyStatus CreateTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType,TriggerSubType triggerSubType);
         std::vector<const ECDbSqlTrigger*> GetTriggers()const;
@@ -642,12 +663,12 @@ struct ECDbSqlTable : NonCopyableClass
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
         BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, PersistenceType persistenceType) const;
-        BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, uint32_t userFlag) const;
-        ECDbSqlColumn const* GetFilteredColumnFirst (uint32_t userFlag) const
+        BentleyStatus GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, ECDbKnownColumns knowColumnIds) const;
+        ECDbSqlColumn const* GetFilteredColumnFirst (ECDbKnownColumns knowColumnIds) const
             {
             for (auto column : m_orderedColumns)
                 {
-                if (column->GetUserFlags () == userFlag)
+                if (column->GetKnownColumnId () == knowColumnIds)
                     return column;
                 }
 
@@ -959,13 +980,13 @@ struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
         const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, IsOwnedByECDb, IsVirtual) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, UserData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, KnownColumn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndex = "INSERT OR REPLACE INTO ec_Index (Id, TableId, Name, IsUnique, ClassId, AdditionalWhereExpression) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndexColumn = "INSERT OR REPLACE INTO ec_IndexColumn (IndexId, ColumnId, Ordinal) VALUES (?, ?, ?)";
         const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_SelectTable = "SELECT Id, Name, IsOwnedByECDb, IsVirtual FROM ec_Table";
-        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, UserData FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
+        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, KnownColumn FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectIndex = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.ClassId, I.AdditionalWhereExpression FROM ec_Index I INNER JOIN ec_Table T ON T.Id = I.TableId";
         const Utf8CP Sql_SelectIndexColumn = "SELECT C.Name FROM ec_IndexColumn I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal";
         const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferencedTableId WHERE F.TableId = ?";

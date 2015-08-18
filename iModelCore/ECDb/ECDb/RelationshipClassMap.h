@@ -61,8 +61,7 @@ protected:
     ConstraintMap m_targetConstraintMap;
 
     RelationshipClassMap (ECN::ECRelationshipClassCR ecRelClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
-
-    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, bool addToTable = false);
+    ECDbSqlColumn* CreateConstraintColumn (Utf8CP columnName, ECDbKnownColumns columnId, bool addToTable = false );
     std::unique_ptr<ClassDbView> CreateClassDbView ();
 
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;

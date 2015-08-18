@@ -748,7 +748,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
 
     auto const& classMap = classNameExp->GetInfo ().GetMap ();
     auto classIdColumn = (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0) 
-        ? classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId) : nullptr;
+        ? classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId) : nullptr;
 
     if (classIdColumn != nullptr)
         {

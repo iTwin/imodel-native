@@ -170,11 +170,11 @@ BentleyStatus ECDbSqlTable::GetFilteredColumnList (std::vector<ECDbSqlColumn con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, uint32_t userFlag) const
+BentleyStatus ECDbSqlTable::GetFilteredColumnList (std::vector<ECDbSqlColumn const*>& columns, ECDbKnownColumns knownColumnId) const
     {
     for (auto column : m_orderedColumns)
         {
-        if ((column->GetUserFlags () & userFlag) != 0)
+        if (Enum::In (column->GetKnownColumnId (), knownColumnId))
             columns.push_back (column);
         }
 
@@ -230,9 +230,9 @@ std::vector<ECDbSqlConstraint const*> ECDbSqlTable::GetConstraints () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, uint32_t userFlag, PersistenceType persistenceType)
+ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, ECDbKnownColumns knownColumnId, PersistenceType persistenceType)
     {
-    return CreateColumn (name, type, m_orderedColumns.size (), userFlag, persistenceType);
+    return CreateColumn (name, type, m_orderedColumns.size (), knownColumnId, persistenceType);
     }
 
 //---------------------------------------------------------------------------------------
@@ -247,7 +247,9 @@ BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& tabl
         }
     return ERROR;
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
 std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
     {
     std::vector<const ECDbSqlTrigger*> triggers;
@@ -262,7 +264,7 @@ std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, uint32_t userFlag, PersistenceType persistenceType)
+ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type, size_t position, ECDbKnownColumns knownColumnId, PersistenceType persistenceType)
     {
     if (GetEditHandleR ().AssertNotInEditMode ())
         return nullptr;
@@ -296,7 +298,7 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type
             newColumn = std::make_shared<ECDbSqlColumn> (generatedName.c_str (), type, *this, resolvePersistenceType, GetDbDefR ().GetManagerR ().GetIdGenerator ().NextColumnId ());
         }
 
-    newColumn->SetUserFlags (userFlag);
+    newColumn->SetKnownColumnId (knownColumnId);
     m_orderedColumns.insert (m_orderedColumns.begin() + position, newColumn.get());
     m_columns[newColumn->GetName ().c_str ()] = newColumn;
 
@@ -380,7 +382,7 @@ bool ECDbSqlTable::TryGetECClassIdColumn (ECDbSqlColumn const*& classIdCol) cons
     {
     if (!m_isClassIdColumnCached)
         {
-        m_classIdColumn = GetFilteredColumnFirst(ECDbSystemColumnECClassId);
+        m_classIdColumn = GetFilteredColumnFirst(ECDbKnownColumns::ECClassId);
         m_isClassIdColumnCached = true;
         }
 
@@ -1827,21 +1829,21 @@ bool ECDbSqlColumn::Constraint::TryParseCollationString(Collation& collation, Ut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlColumn::SetUserFlags (uint32_t userFlags)
+BentleyStatus ECDbSqlColumn::SetKnownColumnId (ECDbKnownColumns knownColumnId)
     {
     if (GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
         return BentleyStatus::ERROR;
 
-    m_userFlags = userFlags;
+    m_knowColumnId = knownColumnId;
     return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-uint32_t ECDbSqlColumn::GetUserFlags () const
+ECDbKnownColumns ECDbSqlColumn::GetKnownColumnId () const
     {
-    return m_userFlags;
+    return m_knowColumnId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2448,9 +2450,9 @@ DbResult ECDbSqlPersistence::ReadColumn (Statement& stmt, ECDbSqlTable& o , std:
     auto constraintDefault = !stmt.IsColumnNull (7) ? stmt.GetValueText (7) : nullptr;
     auto constraintCollate = static_cast<ECDbSqlColumn::Constraint::Collation>(stmt.GetValueInt (8));
     auto primaryKey_Ordianal = stmt.IsColumnNull (9)? -1 : stmt.GetValueInt (9);
-    auto userData = stmt.GetValueInt (10);
+    auto knownColumnId = Enum::ToEnum<ECDbKnownColumns>(stmt.GetValueInt (10));
 
-    ECDbSqlColumn* n = o.CreateColumn (name, type, userData, persistenceType);
+    ECDbSqlColumn* n = o.CreateColumn (name, type, knownColumnId, persistenceType);
     if (!n)
         {
         BeAssert (false && "Failed to create table definition");
@@ -2750,7 +2752,7 @@ DbResult ECDbSqlPersistence::InsertColumn (ECDbSqlColumn const& o, int primaryKe
     if (primaryKeyOrdianal > -1)
         stmt->BindInt (12, primaryKeyOrdianal);
 
-    stmt->BindInt (13, o.GetUserFlags ());
+    stmt->BindInt (13, Enum::ToInt(o.GetKnownColumnId ()));
     return stmt->Step ();
     }
 
@@ -3391,7 +3393,7 @@ ECDbPropertyMapInfo const* ECDbClassMapInfo::FindPropertyMap (ECN::ECPropertyId 
 //---------------------------------------------------------------------------------------
 ECDbPropertyMapInfo* ECDbClassMapInfo::CreatePropertyMap (ECDbPropertyPath const& propertyPath, ECDbSqlColumn const& column)
     {
-    //if (column.GetUserFlags () ==  ECdbDataColumn)
+    //if (column.GetKnownColumnId () ==  ECDbKnownColumns::DataColumn)
     //    {
     //    if (auto existingPropertyMap = FindPropertyMap (column.GetName ().c_str ()))
     //        {

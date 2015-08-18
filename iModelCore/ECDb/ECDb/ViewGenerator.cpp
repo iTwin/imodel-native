@@ -256,7 +256,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
-        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
+        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId))
             {
             if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
@@ -267,7 +267,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             return BentleyStatus::ERROR;
             }
 
-        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId))
+        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
             {
             if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), "ECClassId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
@@ -288,19 +288,19 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 return BentleyStatus::ERROR;
                 }
 
-            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnParentECInstanceId))
+            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ParentECInstanceId))
                 {
                 if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                     return BentleyStatus::ERROR;
                 }
 
-            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECPropertyPathId))
+            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECPropertyPathId))
                 {
                 if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                     return BentleyStatus::ERROR;
                 }
 
-            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECArraryIndex))
+            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECArrayIndex))
                 {
 
                 if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
@@ -417,7 +417,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
              sqlBuilder.Append (" ON ");
              sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
              sqlBuilder.AppendDot ();
-             auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+             auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
              if (targetECInstanceIdColumn == nullptr)
                  {
                  BeAssert (false && "Failed to find ECInstanceId column in target table");
@@ -614,7 +614,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                         return BentleyStatus::ERROR;
                     }
 
-                if (auto classIdcolumn = part.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId))
+                if (auto classIdcolumn = part.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
                     {
                     if (part.NeedsClassIdFilter ())
                         {
@@ -806,7 +806,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             Utf8String primaryECClassId;
             if (primaryTarget == DMLPolicy::Target::Table)
                 {
-                auto classId = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+                auto classId = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
                 if (classId == nullptr)
                     primaryECClassId.Sprintf ("%lld", primaryClassMap.GetClass ().GetId ());
                 else
@@ -831,7 +831,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 auto refSCPM = GetClassPersistenceMethod (*refClassMap);
                 auto refDeleteTarget = refClassMap->GetDMLPolicy ().Get (DMLPolicy::Operation::Delete);
                 auto refTargetId = refSCPM->GetAffectedTargetId (DMLPolicy::Operation::Delete);
-                auto parentECInstanceIdColumn = refClassMap->GetTable ().GetFilteredColumnFirst (ECDbSystemColumnParentECInstanceId);
+                auto parentECInstanceIdColumn = refClassMap->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ParentECInstanceId);
                 BeAssert (parentECInstanceIdColumn != nullptr);
                 auto refParentECInstanceId = refDeleteTarget == DMLPolicy::Target::Table ? parentECInstanceIdColumn->GetName ().c_str () : "ParentECInstanceId";
                 deleteTriggerBody
@@ -939,7 +939,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 {
                 if (primaryTarget == DMLPolicy::Target::Table)
                     {
-                    auto classIdColumn = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+                    auto classIdColumn = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
                     if (classIdColumn != nullptr)
                         {
                         deleteTrigger.GetWhenBuilder ().AppendFormatted ("OLD.%s ", classIdColumn->GetName ().c_str ()).Append (filterClause.c_str ());
@@ -956,7 +956,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             Utf8String primaryECClassId;
             if (primaryTarget == DMLPolicy::Target::Table)
                 {
-                auto classId = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+                auto classId = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
                 if (classId == nullptr)
                     primaryECClassId.Sprintf ("%lld", primaryClassMap.GetClass ().GetId ());
                 else
@@ -1132,7 +1132,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 }
 
             updateStatement.Append (" WHERE ");
-            if (auto column = endTableMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
+            if (auto column = endTableMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId))
                 {
                 updateStatement.AppendEscaped (column->GetName ().c_str ());
                 }
@@ -1300,7 +1300,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 body.AppendEscaped (scpm.GetClassMap ().GetTable ().GetName ().c_str ());
                 body.Append (" WHERE ");
 
-                if (auto column = scpm.GetClassMap ().GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
+                if (auto column = scpm.GetClassMap ().GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId))
                     {
                     body.AppendEscaped (column->GetName ().c_str ());
                     }
@@ -1365,7 +1365,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         deleteTrigger.GetNameBuilder ().Append (BuildSchemaQualifiedClassName (primaryClassMap.GetClass()).c_str()).Append ("_Delete_Relationships");
         if (primaryTarget == DMLPolicy::Target::Table)
             {
-            auto classIdColumn = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+            auto classIdColumn = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
             if (classIdColumn != nullptr)
                 {
                 deleteTrigger.GetWhenBuilder ().AppendFormatted ("OLD.%s = ", classIdColumn->GetName ().c_str ()).Append (primaryClassMap.GetClass ().GetId ());
@@ -1382,7 +1382,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         Utf8String primaryECClassId;
         if (primaryTarget == DMLPolicy::Target::Table)
             {
-            auto classId = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+            auto classId = primaryClassMap.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
             if (classId == nullptr)
                 primaryECClassId.Sprintf ("%lld", primaryClassMap.GetClass ().GetId ());
             else
@@ -1931,7 +1931,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
     //Append secondary table JOIN
     auto const secondaryTables = relationMap.GetSecondaryTables ();
     auto primaryTable = &relationMap.GetTable ();
-    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
     if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
@@ -1955,7 +1955,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     //Append secondary table JOIN
     auto const secondaryTables = relationMap.GetSecondaryTables ();
     auto primaryTable = &relationMap.GetTable ();
-    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
 
     if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source) != BentleyStatus::SUCCESS)
@@ -1987,7 +1987,7 @@ BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBu
         sqlBuilder.Append (" ON ");
         sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
         sqlBuilder.AppendDot ();
-        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
         if (targetECInstanceIdColumn == nullptr)
             {
             BeAssert (false && "Failed to find ECInstanceId column in target table");
@@ -2077,7 +2077,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                  if (status != BentleyStatus::SUCCESS)
                      return status;
 
-                 auto column = relationMap.GetTable().GetFilteredColumnFirst(ECDbSystemColumnECClassId);
+                 auto column = relationMap.GetTable().GetFilteredColumnFirst(ECDbKnownColumns::ECClassId);
                  if (column != nullptr)
                      {
 
@@ -2130,7 +2130,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
             if (status != SUCCESS)
                 return status;
 
-            auto column = table->GetFilteredColumnFirst (ECDbSystemColumnECClassId);
+            auto column = table->GetFilteredColumnFirst (ECDbKnownColumns::ECClassId);
             if (column != nullptr)
                 {
 

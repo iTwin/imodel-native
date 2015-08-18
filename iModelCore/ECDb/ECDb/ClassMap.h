@@ -318,7 +318,7 @@ struct ColumnFactory : NonCopyableClass
             Utf8String m_accessString;
             Utf8String m_requestedColumnName;
             Strategy m_strategy;
-            uint32_t m_columnUserData;
+            ECDbKnownColumns m_knownColumnId;
             bool m_isNotNull;
             bool m_isUnique;
 
@@ -329,7 +329,7 @@ struct ColumnFactory : NonCopyableClass
                 GenerateColumnNameOptions generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence,
                 Utf8CP columnName = nullptr,
                 ECDbSqlColumn::Type columnType = ECDbSqlColumn::Type::Any,
-                uint32_t columnUserData = ECDbDataColumn,
+                ECDbKnownColumns columnUserData = ECDbKnownColumns::DataColumn,
                 PersistenceType persistenceType = PersistenceType::Persisted,
                 Utf8CP accessStringPrefix = nullptr,
                 bool isNotNull = false,
@@ -344,7 +344,7 @@ struct ColumnFactory : NonCopyableClass
             bool IsUnique () const { return m_isUnique; }
             GenerateColumnNameOptions GetGenerateColumnNameOptions () const { return m_generateColumnNameOptions; }
             Strategy GetStrategy () const { return m_strategy; }
-            uint32_t GetColumnUserDate () const { return m_columnUserData; }
+            ECDbKnownColumns GetKnownColumnId () const { return m_knownColumnId; }
             PersistenceType GetColumnPersistenceType () const { return m_persistenceType; }
             ECDbSqlColumn::Constraint::Collation GetCollation () const { return m_collation; }
         };

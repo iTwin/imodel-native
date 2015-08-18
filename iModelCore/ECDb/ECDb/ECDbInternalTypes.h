@@ -167,14 +167,14 @@ struct CompareIUtf8
         }
     };
 
-#define ECDbDataColumn  0x0U
-#define ECDbSystemColumnECInstanceId  0x1U
-#define ECDbSystemColumnECClassId  0x2U
-#define ECDbSystemColumnParentECInstanceId  0x4U
-#define ECDbSystemColumnECPropertyPathId  0x8U
-#define ECDbSystemColumnECArraryIndex  0x10U
-
-#define ECDbSystemColumns  (ECDbSystemColumnECInstanceId | ECDbSystemColumnECClassId | ECDbSystemColumnParentECInstanceId | ECDbSystemColumnECPropertyPathId | ECDbSystemColumnECArraryIndex)
-
+//#define ECDbKnownColumns::DataColumn  0x0U
+//#define ECDbKnownColumns::ECInstanceId  0x1U
+//#define ECDbKnownColumns::ECClassId  0x2U
+//#define ECDbKnownColumns::ParentECInstanceId  0x4U
+//#define ECDbKnownColumns::ECPropertyPathId  0x8U
+//#define ECArraryIndex  0x10U
+//
+//#define ECDbSystemColumns  (ECDbKnownColumns::ECInstanceId | ECDbKnownColumns::ECClassId | ECDbKnownColumns::ParentECInstanceId | ECDbKnownColumns::ECPropertyPathId | ECArraryIndex)
+//
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

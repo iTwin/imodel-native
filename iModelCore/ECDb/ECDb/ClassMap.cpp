@@ -762,7 +762,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,Clas
         generateColumnNameOpts, 
         requestedColumnName, 
         requestedColumnType, 
-        ECDbDataColumn, 
+        ECDbKnownColumns::DataColumn, 
         PersistenceType::Persisted, 
         accessStringPrefix, 
         !nullable, 
@@ -974,7 +974,7 @@ BentleyStatus MappedTable::FinishTableDefinition ()
                 if (ecClassIdColumn == nullptr)
                     {
                     const size_t insertPosition = 1;
-                    ecClassIdColumn = m_table.CreateColumn (ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbSystemColumnECClassId, PersistenceType::Persisted);
+                    ecClassIdColumn = m_table.CreateColumn (ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbKnownColumns::ECClassId, PersistenceType::Persisted);
                     if (ecClassIdColumn == nullptr)
                         return ERROR;
                     }
@@ -1020,7 +1020,7 @@ ColumnFactory::Specification::Specification (
     Specification::GenerateColumnNameOptions generateColumnNameOptions,
     Utf8CP columnName,
     ECDbSqlColumn::Type columnType,
-    uint32_t columnUserData,
+    ECDbKnownColumns knownColumnId,
     PersistenceType persistenceType,
     Utf8CP accessStringPrefix,
     bool isNotNull,
@@ -1028,7 +1028,7 @@ ColumnFactory::Specification::Specification (
     ECDbSqlColumn::Constraint::Collation collation)
     : m_propertyMap (propertyMap), m_requestedColumnName (columnName), m_columnType (columnType), m_isNotNull (isNotNull),
     m_isUnique(isUnique), m_collation(collation), m_generateColumnNameOptions(generateColumnNameOptions),
-    m_columnUserData (columnUserData), m_persistenceType (persistenceType), m_strategy (strategy)
+    m_knownColumnId (knownColumnId), m_persistenceType (persistenceType), m_strategy (strategy)
     {
     m_accessString = propertyMap.GetPropertyAccessString ();
     if (!Utf8String::IsNullOrEmpty (accessStringPrefix))
@@ -1049,7 +1049,7 @@ ColumnFactory::Specification::Specification (
         // Shared column does not support NOT NULL constraint
         BeAssert (isNotNull == false && "Shared column cannot enforce NOT NULL constraint.");
         BeAssert (persistenceType == PersistenceType::Persisted);
-        BeAssert (columnUserData == ECDbDataColumn);
+        BeAssert (knownColumnId == ECDbKnownColumns::DataColumn);
         m_generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnPropertyNameAndPropertyId;
         m_requestedColumnName.clear ();
         m_columnType = ECDbSqlColumn::Type::Any;
@@ -1168,7 +1168,7 @@ bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn con
     {
     for (auto column : table.GetColumns ())
         {
-        if (column->GetUserFlags() == ECDbDataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
+        if (column->GetKnownColumnId() == ECDbKnownColumns::DataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
             {
             if (IsColumnInUse (*column) == false)
                 columns.push_back (column);
@@ -1287,7 +1287,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification 
     if (!canEdit)
         targetTable.GetEditHandleR ().BeginEdit ();
 
-    auto newColumn = targetTable.CreateColumn (resolvedColumnName.c_str (), specifications.GetColumnType (), specifications.GetColumnUserDate (), specifications.GetColumnPersistenceType ());
+    auto newColumn = targetTable.CreateColumn (resolvedColumnName.c_str (), specifications.GetColumnType (), specifications.GetKnownColumnId (), specifications.GetColumnPersistenceType ());
     if (newColumn == nullptr)
         {
         BeAssert (false && "Failed to create column");
@@ -1350,7 +1350,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy (Specificat
         return sharedColumn;
         }
 
-    auto newColumn = targetTable.CreateColumn (nullptr, ECDbSqlColumn::Type::Any, specifications.GetColumnUserDate (), specifications.GetColumnPersistenceType ());
+    auto newColumn = targetTable.CreateColumn (nullptr, ECDbSqlColumn::Type::Any, specifications.GetKnownColumnId (), specifications.GetColumnPersistenceType ());
     if (newColumn == nullptr)
         {
         BeAssert (false && "Failed to create column");
