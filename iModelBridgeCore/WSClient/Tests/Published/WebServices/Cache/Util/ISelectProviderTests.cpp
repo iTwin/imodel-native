@@ -107,7 +107,7 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_DuplicateProperties_Do
     select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(1));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("TestProperty"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("TestProperty"));
     }
 
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWithPropertiesInExpression_AddsAdditionalProperties)
@@ -130,11 +130,11 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWith
 
     ISelectProvider::SelectProperties select;
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestCalculatedProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(3));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("TestCalculatedProperty"));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("PropertyA"));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("PropertyB"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("PropertyA"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("PropertyB"));
     }
 
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWithInvalidPropertyInExpression_AddsOnlyValidProperties)
@@ -157,10 +157,10 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWith
 
     ISelectProvider::SelectProperties select;
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestCalculatedProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(2));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("TestCalculatedProperty"));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("PropertyA"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("PropertyA"));
     }
 
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWithNoPropertiesInExpression_DoesNotAddAdditionalProperties)
@@ -182,9 +182,9 @@ TEST_F(ISelectProviderTests, SelectProperties_AddProperty_CaluclatedPropertyWith
 
     ISelectProvider::SelectProperties select;
 
-    select.AddProperty(schema->GetClassCP(L"TestClass")->GetPropertyP("TestCalculatedProperty"));
+    select.AddProperty(schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
     EXPECT_THAT(select.GetProperties(), SizeIs(1));
-    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP(L"TestClass")->GetPropertyP("TestCalculatedProperty"));
+    EXPECT_CONTAINS(select.GetProperties(), schema->GetClassCP("TestClass")->GetPropertyP("TestCalculatedProperty"));
     }
 
 TEST_F(ISelectProviderTests, SelectProperties_AddProperty_Null_SelectAllFalse)

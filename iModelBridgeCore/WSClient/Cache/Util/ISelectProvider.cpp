@@ -62,7 +62,7 @@ void ISelectProvider::SelectProperties::AddProperty(ECPropertyCP ecProperty)
 
     // Add properties that are required for calculating this property value
     // Required for caching property into ECDb as it re-calculates such value
-    Utf8String ecExpression = ECCustomAttributeHelper::GetString(ecProperty, L"CalculatedECPropertySpecification", L"ECExpression");
+    Utf8String ecExpression = ECCustomAttributeHelper::GetString(ecProperty, "CalculatedECPropertySpecification", "ECExpression");
     if (!ecExpression.empty())
         {
         for (auto requiredProperty : ECExpressionHelper::GetRequiredProperties(ecExpression, ecProperty->GetClass()))

@@ -294,8 +294,8 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
         m_findRelationshipClassesWithSourceStatement->ClearBindings();
         }
 
-    m_findRelationshipClassesWithSourceStatement->BindText(1, schemaName, Statement::MAKE_COPY_Yes);
-    m_findRelationshipClassesWithSourceStatement->BindText(2, schemaName, Statement::MAKE_COPY_Yes);
+    m_findRelationshipClassesWithSourceStatement->BindText(1, schemaName, Statement::MakeCopy::Yes);
+    m_findRelationshipClassesWithSourceStatement->BindText(2, schemaName, Statement::MakeCopy::Yes);
     m_findRelationshipClassesWithSourceStatement->BindInt64(3, sourceClassId);
     m_findRelationshipClassesWithSourceStatement->BindInt64(4, sourceClassId);
 
