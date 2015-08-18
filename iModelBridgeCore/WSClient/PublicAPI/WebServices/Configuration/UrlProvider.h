@@ -30,6 +30,24 @@ struct UrlProvider
             Release
             };
 
+        struct UrlDescriptor
+            {
+            private:
+                Utf8String m_name;
+                Utf8String m_defaultUrls[3];
+                bset<UrlDescriptor*>* m_registry;
+
+            public:
+                // Constructur for internal use
+                UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, bset<UrlDescriptor*>* registry);
+                ~UrlDescriptor();
+
+                Utf8StringCR GetName() const;
+
+                //! Retrieve cached or server configured URL depending on UrlProvider configuration
+                WSCLIENT_EXPORT Utf8String Get() const;
+            };
+
     private:
         static bool s_isInitialized;
 
@@ -50,17 +68,20 @@ struct UrlProvider
         //! Will setup certificate validation appropriately.
         WSCLIENT_EXPORT static IHttpHandlerPtr GetSecurityConfigurator(IHttpHandlerPtr customHandler = nullptr);
 
-        WSCLIENT_EXPORT static Utf8String GetPunchlistWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectGlobalWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectSharedContentWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectPersonalPublishingWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectProjectContentWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectEulaUrl();
-        WSCLIENT_EXPORT static Utf8String GetImsStsAuthUrl();
-        WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl();
-        WSCLIENT_EXPORT static Utf8String GetPassportUrl();
-
         WSCLIENT_EXPORT static void CleanUpUrlCache();
+
+        struct Urls
+            {
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectEula;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgGlobal;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPersonalPublishing;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectContent;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPunchList;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
+            WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
+            WSCLIENT_EXPORT static const UrlDescriptor Passport;
+            WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
+            };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
