@@ -5,9 +5,8 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-# Allow third-party code to have warnings.
-NO_DEFAULT_CLANG_WARNINGS = 1
-NOSTRICT = 1
+# Ignore warnings in third-party code.
+IS_THIRD_PARTY_LIBRARY = 1
 
 PolicyFile = $(SrcRoot)util/gtest/GTestPolicy.mki
 %include mdl.mki
