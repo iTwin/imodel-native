@@ -10,7 +10,7 @@
 
 #include "../WebServicesTestsHelper.h"
 
-class ServerQueryHelperTests : public ::testing::Test
+class ServerQueryHelperTests : public WSClientBaseTest
     {
     public:
         static ECSchemaPtr GetTestSchema();

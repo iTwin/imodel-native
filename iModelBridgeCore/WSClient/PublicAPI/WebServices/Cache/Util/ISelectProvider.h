@@ -61,9 +61,11 @@ struct ISelectProvider::SelectProperties
         // Default constructor to select all properties and instance id
         WSCACHE_EXPORT SelectProperties();
 
+        //! Add property to select. Will add required properties if this is ECCalculatedProperty
         WSCACHE_EXPORT void AddProperty(ECPropertyCP ecProperty);
         WSCACHE_EXPORT const bvector<ECPropertyCP>& GetProperties() const;
 
+        //! Add property that is not part of class but is specific to data source
         WSCACHE_EXPORT void AddExtendedProperty(Utf8StringCR extendedProperty);
         WSCACHE_EXPORT const bvector<Utf8String>& GetExtendedProperties() const;
 

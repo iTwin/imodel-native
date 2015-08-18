@@ -265,23 +265,19 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
     if (nullptr == m_findRelationshipClassesWithSourceStatement)
         {
         Utf8CP sql = R"(WITH RECURSIVE
-           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel, SchemaName) AS
+           RelationshipConstraintClasses (ECClassId, RelationECClassId) AS
            (
-           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0, ES.Name
-               FROM ec_RelationshipConstraint RC
-                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
+           SELECT  RCC.ECClassId, RCC.RelationECClassId
+               FROM ec_RelationshipConstraintClass RCC JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId WHERE ES.Name = ?
            UNION
-           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1, ES.Name
+           SELECT RCC.ECClassId, BC.ECClassId
                FROM RelationshipConstraintClasses RCC
-                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-               WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC
+                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId WHERE ES.Name = ?
            )
-        SELECT SRC.ECClassId
+                SELECT DISTINCT SRC.ECClassId
            FROM RelationshipConstraintClasses SRC
            INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
-                WHERE SRC.ECRelationshipEnd = 0 AND SRC.RelationECClassId = ? OR TRG.RelationECClassId = ?
-                      AND TRG.ECRelationshipEnd = 1 AND SRC.SchemaName = ?)";
+                WHERE SRC.RelationECClassId = ? OR TRG.RelationECClassId = ?)";
 
         m_findRelationshipClassesWithSourceStatement = std::make_shared<Statement>();
 
@@ -298,9 +294,10 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
         m_findRelationshipClassesWithSourceStatement->ClearBindings();
         }
 
-    m_findRelationshipClassesWithSourceStatement->BindInt64(1, sourceClassId);
-    m_findRelationshipClassesWithSourceStatement->BindInt64(2, sourceClassId);
-    m_findRelationshipClassesWithSourceStatement->BindText(3, schemaName, Statement::MakeCopy::Yes);
+    m_findRelationshipClassesWithSourceStatement->BindText(1, schemaName, Statement::MAKE_COPY_Yes);
+    m_findRelationshipClassesWithSourceStatement->BindText(2, schemaName, Statement::MAKE_COPY_Yes);
+    m_findRelationshipClassesWithSourceStatement->BindInt64(3, sourceClassId);
+    m_findRelationshipClassesWithSourceStatement->BindInt64(4, sourceClassId);
 
     BeSQLite::DbResult status;
     while (BeSQLite::DbResult::BE_SQLITE_ROW == (status = m_findRelationshipClassesWithSourceStatement->Step()))
@@ -311,6 +308,9 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(EC
     return classes;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Mark.Uvari      04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECClassId sourceClassId, ECClassId targetClassId, Utf8String schemaName)
     {
     bvector<ECRelationshipClassCP> classes;

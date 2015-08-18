@@ -21,7 +21,7 @@ bset<ECPropertyCP> ECExpressionHelper::GetRequiredProperties(Utf8StringCR ecExpr
 
     // REGEXP approach taken from .NET implementation of EC.
     // Matches .PropertyName
-    Utf8String propertyAccessorSubExpression = R"(\s*\.\s*\w+\s*(?!\())";
+    Utf8String propertyAccessorSubExpression = R"(\.\w+(?!\())";
     // Matches 'this' plus propertyAccessorSubExpression
     Utf8String propertyAccessorExpression = R"(\bthis)" + propertyAccessorSubExpression;
 
@@ -31,7 +31,7 @@ bset<ECPropertyCP> ECExpressionHelper::GetRequiredProperties(Utf8StringCR ecExpr
     std::string str(ecExpression.c_str());
     while (std::regex_search(str, match, e))
         {
-        Utf8String propertyName = match.str(0).substr(5).c_str();
+        std::string propertyName = match.str(0).substr(5);
         ECPropertyCP ecProperty = ecClass.GetPropertyP(propertyName.c_str());
         if (nullptr != ecProperty)
             {
