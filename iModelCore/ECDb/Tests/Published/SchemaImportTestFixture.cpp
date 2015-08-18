@@ -60,7 +60,7 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     Utf8String whereClause;
     if (!classIdFilter.empty())
         {
-        whereClause.append("WHERE ECClassId ");
+        whereClause.append("ECClassId ");
 
         if (negateClassIdFilter)
             whereClause.append("NOT ");
@@ -107,7 +107,7 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
 
     expectedDdl.append(")");
     if (!Utf8String::IsNullOrEmpty (whereClause))
-        expectedDdl.append(" ").append(whereClause);
+        expectedDdl.append(" WHERE ").append(whereClause);
 
     Statement stmt;
     ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=?"));

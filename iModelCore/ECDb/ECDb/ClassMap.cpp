@@ -713,9 +713,9 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
                     switch (indexInfo->GetWhere())
                         {
                             case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                                if (whereExpression.length() != 0)
-                                    whereExpression.append(" AND");
-                                whereExpression.append(" [");
+                                if (!whereExpression.empty())
+                                    whereExpression.append(" AND ");
+                                whereExpression.append("[");
                                 whereExpression.append(column->GetName().c_str());
                                 whereExpression.append("]");
                                 whereExpression.append(" IS NOT NULL");
