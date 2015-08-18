@@ -36,16 +36,6 @@ struct UrlProvider
         static ILocalState* s_localState;
         static IBuddiClientPtr s_buddi;
 
-        static uint32_t s_regionsId[3];
-        static const Utf8CP s_urlNames[6];
-
-        static const Utf8String s_punchListWsgUrl[3];
-        static const Utf8String s_connectWsgUrl[3];
-        static const Utf8String s_connectEulaUrl[3];
-        static const Utf8String s_imsStsAuthUrl[3];
-        static const Utf8String s_usageTrackingUrl[3];
-        static const Utf8String s_passportUrl[3];
-
     private:
         static Utf8String GetBuddiUrl(Utf8StringCR urlName);
         static Utf8String GetUrl(Utf8CP urlName, const Utf8String* defaultUrls);
@@ -61,7 +51,10 @@ struct UrlProvider
         WSCLIENT_EXPORT static IHttpHandlerPtr GetSecurityConfigurator(IHttpHandlerPtr customHandler = nullptr);
 
         WSCLIENT_EXPORT static Utf8String GetPunchlistWsgUrl();
-        WSCLIENT_EXPORT static Utf8String GetConnectWsgUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectGlobalWsgUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectSharedContentWsgUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectPersonalPublishingWsgUrl();
+        WSCLIENT_EXPORT static Utf8String GetConnectProjectContentWsgUrl();
         WSCLIENT_EXPORT static Utf8String GetConnectEulaUrl();
         WSCLIENT_EXPORT static Utf8String GetImsStsAuthUrl();
         WSCLIENT_EXPORT static Utf8String GetUsageTrackingUrl();

@@ -155,7 +155,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        appliesToUrlString = UrlProvider::GetConnectWsgUrl(); // TODO: applies to URL should be mandatory
+        appliesToUrlString = UrlProvider::GetConnectGlobalWsgUrl(); // TODO: applies to URL should be mandatory
         }
 
     Utf8String stsUrlString;

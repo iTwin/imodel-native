@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
-#include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
 #include <WebServices/Configuration/UrlProvider.h>
+#include <MobileDgn/Utils/Http/HttpConfigurationHandler.h>
 
 #define LOCAL_STATE_NAMESPACE   "UrlCache"
 #define LOCAL_STATE_ENVIRONMENT "Environment"
@@ -21,62 +21,86 @@ ILocalState* UrlProvider::s_localState = nullptr;
 
 // URL configuration
 
-#define URLNAME_PunchListWsg    "Mobile.PunchListWsg"
-#define URLNAME_ConnectWsg      "Mobile.ConnectWsg"
-#define URLNAME_ConnectEula     "Mobile.ConnectEula"
-#define URLNAME_ImsStsAuth      "Mobile.ImsStsAuth"
-#define URLNAME_UsageTracking   "Mobile.UsageTracking"
-#define URLNAME_Passport        "Mobile.Passport"
+#define URLNAME_ConnectEula                     "Mobile.ConnectEula"
+#define URLNAME_ConnectGlobalWsg                "Mobile.ConnectGlobalWsg"
+#define URLNAME_ConnectPersonalPublishingWsg    "Mobile.ConnectPersonalPublishingWsg"
+#define URLNAME_ConnectProjectContentWsg        "Mobile.ConnectProjectContentWsg"
+#define URLNAME_ConnectSharedContentWsg         "Mobile.ConnectSharedContentWsg"
+#define URLNAME_ImsStsAuth                      "Mobile.ImsStsAuth"
+#define URLNAME_Passport                        "Mobile.Passport"
+#define URLNAME_PunchListWsg                    "Mobile.PunchListWsg"
+#define URLNAME_UsageTracking                   "Mobile.UsageTracking"
 
-const Utf8CP UrlProvider::s_urlNames[6] = {
-    URLNAME_PunchListWsg,
-    URLNAME_ConnectWsg,
+const std::vector<Utf8String> s_urlNames = {
     URLNAME_ConnectEula,
+    URLNAME_ConnectGlobalWsg,
+    URLNAME_ConnectPersonalPublishingWsg,
+    URLNAME_ConnectProjectContentWsg,
+    URLNAME_ConnectSharedContentWsg,
     URLNAME_ImsStsAuth,
-    URLNAME_UsageTracking,
-    URLNAME_Passport
+    URLNAME_Passport,
+    URLNAME_PunchListWsg,
+    URLNAME_UsageTracking
     };
 
 // Region IDs from the buddi.bentley.com
-uint32_t UrlProvider::s_regionsId[3] = {
-    103,    // "Bentley Corporate Network - DEV"
-    102,    // "Bentley Corporate Network - QA"
+uint32_t s_regionsId[3] = {
+    103,    // Region "Bentley Corporate Network - DEV"
+    102,    // Region "Bentley Corporate Network - QA"
     0       // No region - use BUDDI non-regional URLs
     };
 
 // Default URLs
 
-const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
+const Utf8String s_punchListWsgUrl[3] = {
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com"
     };
 
-const Utf8String UrlProvider::s_connectWsgUrl[3] = {
+const Utf8String s_connectGlobalWsgUrl[3] = {
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com"
     };
 
-const Utf8String UrlProvider::s_connectEulaUrl[3] = {
+const Utf8String s_connectSharedContentWsgUrl[3] = {
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
+    };
+
+const Utf8String s_connectPersonalPublishingWsgUrl[3] = {
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
+    };
+
+const Utf8String s_connectProjectContentWsgUrl[3] = {
+    "https://dev-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
+    };
+
+const Utf8String s_connectEulaUrl[3] = {
     "https://dev-agreement-eus.cloudapp.net/rest",
     "https://dev-agreement-eus.cloudapp.net/rest",
     "https://connect-agreement.bentley.com/rest"
     };
 
-const Utf8String UrlProvider::s_imsStsAuthUrl[3] = {
+const Utf8String s_imsStsAuthUrl[3] = {
     "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
     };
 
-const Utf8String UrlProvider::s_usageTrackingUrl[3] = {
+const Utf8String s_usageTrackingUrl[3] = {
     "https://licenseXM.bentley.com/bss/ws/mobile",
     "https://licenseXM.bentley.com/bss/ws/mobile",
     "https://SELECTserver.bentley.com/bss/ws/mobile"
     };
 
-const Utf8String UrlProvider::s_passportUrl[3] = {
+const Utf8String s_passportUrl[3] = {
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport"
@@ -104,7 +128,7 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Brad.Hadden   11/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetPunchlistWsgUrl()
     {
@@ -112,15 +136,39 @@ Utf8String UrlProvider::GetPunchlistWsgUrl()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Brad.Hadden   11/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetConnectWsgUrl()
+Utf8String UrlProvider::GetConnectPersonalPublishingWsgUrl()
     {
-    return GetUrl(URLNAME_ConnectWsg, s_connectWsgUrl);
+    return GetUrl(URLNAME_ConnectPersonalPublishingWsg, s_connectPersonalPublishingWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Brad.Hadden   11/2014
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::GetConnectProjectContentWsgUrl()
+    {
+    return GetUrl(URLNAME_ConnectProjectContentWsg, s_connectProjectContentWsgUrl);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::GetConnectGlobalWsgUrl()
+    {
+    return GetUrl(URLNAME_ConnectGlobalWsg, s_connectGlobalWsgUrl);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::GetConnectSharedContentWsgUrl()
+    {
+    return GetUrl(URLNAME_ConnectSharedContentWsg, s_connectSharedContentWsgUrl);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectEulaUrl()
     {
@@ -128,7 +176,7 @@ Utf8String UrlProvider::GetConnectEulaUrl()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Brad.Hadden   11/2014
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetImsStsAuthUrl()
     {
@@ -136,7 +184,7 @@ Utf8String UrlProvider::GetImsStsAuthUrl()
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    George.Rodier   2/2015
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetUsageTrackingUrl()
     {
@@ -198,9 +246,9 @@ Utf8String UrlProvider::GetBuddiUrl(Utf8StringCR urlName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UrlProvider::CleanUpUrlCache()
     {
-    for (int i = 0; i < sizeof(s_urlNames) / sizeof(Utf8CP); i++)
+    for (auto& ulrName : s_urlNames)
         {
-        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, s_urlNames[i], Json::Value::null);
+        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, ulrName.c_str(), Json::Value::null);
         }
     }
 
