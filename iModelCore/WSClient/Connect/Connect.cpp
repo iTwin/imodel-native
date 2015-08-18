@@ -155,7 +155,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        appliesToUrlString = UrlProvider::GetConnectGlobalWsgUrl(); // TODO: applies to URL should be mandatory
+        appliesToUrlString = UrlProvider::Urls::ConnectWsgGlobal.Get(); // TODO: applies to URL should be mandatory
         }
 
     Utf8String stsUrlString;
@@ -165,7 +165,7 @@ StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP applie
         }
     else
         {
-        stsUrlString = UrlProvider::GetImsStsAuthUrl();
+        stsUrlString = UrlProvider::Urls::ImsStsAuth.Get();
         }
 
     return GetStsToken(creds, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());

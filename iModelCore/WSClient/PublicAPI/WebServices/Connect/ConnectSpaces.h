@@ -90,7 +90,7 @@ struct ConnectSpaces
         void AcceptEula(bool getNewToken = false);
         bool DownloadEula(Utf8StringR eulaString, bool getNewToken = false);
 
-        BentleyStatus GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
+        BentleyStatus GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl = nullptr);
         HttpRequest CreateGetRequest(Utf8StringCR url, bool acceptJson = true, bool includeToken = true);
 
         void SendStatusToUIThread(StatusAction action, StatusCode statusCode, JsonValueCR data = Json::Value());
