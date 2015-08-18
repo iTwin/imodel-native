@@ -23,7 +23,7 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_EmptyString_ReturnsEmpty)
             </ECClass>
         </ECSchema>)xml");
 
-    auto ecClass = schema->GetClassCP(L"TestClass");
+    auto ecClass = schema->GetClassCP("TestClass");
     auto properties = ECExpressionHelper::GetRequiredProperties("", *ecClass);
     EXPECT_EQ(0, properties.size());
     }
@@ -37,7 +37,7 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithPropertyAndVario
             </ECClass>
         </ECSchema>)xml");
 
-    auto ecClass = schema->GetClassCP(L"TestClass");
+    auto ecClass = schema->GetClassCP("TestClass");
     auto ecProperty = ecClass->GetPropertyP("TestProperty");
 
     auto properties = ECExpressionHelper::GetRequiredProperties("this.TestProperty", *ecClass);
@@ -67,12 +67,12 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithMultipleProperti
             </ECClass>
         </ECSchema>)xml");
 
-    auto ecClass = schema->GetClassCP(L"TestClass");
+    auto ecClass = schema->GetClassCP("TestClass");
     auto properties = ECExpressionHelper::GetRequiredProperties("this.A this.B this.C", *ecClass);
     EXPECT_EQ(3, properties.size());
-    EXPECT_CONTAINS(properties, schema->GetClassCP(L"TestClass")->GetPropertyP("A"));
-    EXPECT_CONTAINS(properties, schema->GetClassCP(L"TestClass")->GetPropertyP("B"));
-    EXPECT_CONTAINS(properties, schema->GetClassCP(L"TestClass")->GetPropertyP("C"));
+    EXPECT_CONTAINS(properties, schema->GetClassCP("TestClass")->GetPropertyP("A"));
+    EXPECT_CONTAINS(properties, schema->GetClassCP("TestClass")->GetPropertyP("B"));
+    EXPECT_CONTAINS(properties, schema->GetClassCP("TestClass")->GetPropertyP("C"));
     }
 
 
@@ -86,9 +86,9 @@ TEST_F(ECExpressionHelperTests, GetRequiredProperties_StringWithFakeProperties_R
             </ECClass>
         </ECSchema>)xml");
 
-    auto ecClass = schema->GetClassCP(L"TestClass");
+    auto ecClass = schema->GetClassCP("TestClass");
     auto properties = ECExpressionHelper::GetRequiredProperties("this.A this.Foo this.B", *ecClass);
     EXPECT_EQ(2, properties.size());
-    EXPECT_CONTAINS(properties, schema->GetClassCP(L"TestClass")->GetPropertyP("A"));
-    EXPECT_CONTAINS(properties, schema->GetClassCP(L"TestClass")->GetPropertyP("B"));
+    EXPECT_CONTAINS(properties, schema->GetClassCP("TestClass")->GetPropertyP("A"));
+    EXPECT_CONTAINS(properties, schema->GetClassCP("TestClass")->GetPropertyP("B"));
     }
