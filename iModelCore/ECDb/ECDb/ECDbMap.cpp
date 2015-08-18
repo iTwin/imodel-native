@@ -1088,14 +1088,14 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
 //--------------------------------------------------------------------------------------
 ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
     {
-    if (m_anyClass == ECClass::UNSET_ECCLASSID)
+    if (m_anyClassId == ECClass::UNSET_ECCLASSID)
         {
         auto stmt = m_map.GetECDbR ().GetCachedStatement ("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
         if (stmt->Step () == BE_SQLITE_ROW)
-            m_anyClass = stmt->GetValueInt64 (0);
+            m_anyClassId = stmt->GetValueInt64 (0);
         }
 
-    return m_anyClass;
+    return m_anyClassId;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1118,7 +1118,7 @@ ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetClassesMapToTable (ECDbSqlTable const& table) const
+ECDbMap::LightWeightMapCache::ClassIdList const& ECDbMap::LightWeightMapCache::GetClassesForTable (ECDbSqlTable const& table) const
     {
     LoadClassTableClasses ();
     return m_classIdsByTable[&table];
@@ -1127,7 +1127,7 @@ ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetAnyClassReplacements () const
+ECDbMap::LightWeightMapCache::ClassIdList const& ECDbMap::LightWeightMapCache::GetAnyClassReplacements () const
     {
     LoadAnyClassReplacements ();
     return m_anyClassReplacements;
@@ -1136,7 +1136,7 @@ ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetA
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::TableClasses const& ECDbMap::LightWeightMapCache::GetTablesMapToClass (ECN::ECClassId classId) const
+ECDbMap::LightWeightMapCache::TableClassesMap const& ECDbMap::LightWeightMapCache::GetTablesForClass (ECN::ECClassId classId) const
     {
     LoadDerivedClasses ();
     return m_tablesByClassId[classId];
@@ -1168,7 +1168,7 @@ void ECDbMap::LightWeightMapCache::Reset ()
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_tablesByClassIdIsLoaded = false;
 
-    m_anyClass = ECClass::UNSET_ECCLASSID;
+    m_anyClassId = ECClass::UNSET_ECCLASSID;
     m_relationshipEndsByClassId.clear ();
     m_tablesByClassId.clear ();
     m_classIdsByTable.clear ();
@@ -1340,10 +1340,13 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //    return std::move(storageDescription);
 //    }
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan    05 / 2015
+//------------------------------------------------------------------------------------------
 std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc)
     {
     auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-    for (auto& kp : lwmc.GetTablesMapToClass(classId))
+    for (auto& kp : lwmc.GetTablesForClass(classId))
         {
         auto table = kp.first;
 
@@ -1358,7 +1361,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId cl
             hp->AddClassId(ecClassId);
             }
 
-        hp->GenerateClassIdFilter(lwmc.GetClassesMapToTable(*table));
+        hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
         }
 
     return std::move(storageDescription);

@@ -33,51 +33,49 @@ public:
             };
 
 
-        typedef  std::vector < ECN::ECClassId > ClassIds;
+        typedef std::vector<ECN::ECClassId> ClassIdList;
         typedef bmap<ECN::ECClassId, RelationshipEnd> ClassRelationshipEnds;
-        typedef bmap <ECDbSqlTable const*, ClassIds> TableClasses;
+        typedef bmap<ECDbSqlTable const*, ClassIdList> TableClassesMap;
 
-        private:
-            mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassId;
-            mutable bmap<ECN::ECClassId, TableClasses> m_tablesByClassId;
-            mutable ClassRelationshipEnds m_anyClassRelationships;
-            mutable TableClasses m_classIdsByTable;
-            mutable ClassIds m_anyClassReplacements;
-            mutable ECN::ECClassId m_anyClass;
-            mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
-            mutable struct
-                {
-                bool m_relationshipEndsByClassIdIsLoaded : 1;
-                bool m_tablesByClassIdIsLoaded : 2;
-                bool m_anyClassRelationshipsIsLoaded : 3;
-                bool m_classIdsByTableIsLoaded : 4;
-                bool m_anyClassReplacementsLoaded : 5;
-                } m_loadedFlags;
+    private:
+        mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassId;
+        mutable bmap<ECN::ECClassId, TableClassesMap> m_tablesByClassId;
+        mutable ClassRelationshipEnds m_anyClassRelationships;
+        mutable TableClassesMap m_classIdsByTable;
+        mutable ClassIdList m_anyClassReplacements;
+        mutable ECN::ECClassId m_anyClassId;
+        mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
+        mutable struct
+            {
+            bool m_relationshipEndsByClassIdIsLoaded : 1;
+            bool m_tablesByClassIdIsLoaded : 2;
+            bool m_anyClassRelationshipsIsLoaded : 3;
+            bool m_classIdsByTableIsLoaded : 4;
+            bool m_anyClassReplacementsLoaded : 5;
+            } m_loadedFlags;
 
-            ECDbMapCR m_map;
-        private:
+        ECDbMapCR m_map;
 
-            void LoadDerivedClasses () const;
-            void LoadClassTableClasses () const;
-            void LoadAnyClassRelationships () const;
-            void LoadClassRelationships (bool addAnyClassRelationships) const;
-            void LoadAnyClassReplacements () const;
+        void LoadDerivedClasses () const;
+        void LoadClassTableClasses () const;
+        void LoadAnyClassRelationships () const;
+        void LoadClassRelationships (bool addAnyClassRelationships) const;
+        void LoadAnyClassReplacements () const;
 
-        public:
-            LightWeightMapCache (ECDbMapCR map);
+    public:
+        explicit LightWeightMapCache (ECDbMapCR map);
 
-            ~LightWeightMapCache (){}
-            ClassRelationshipEnds const& GetClassRelationships (ECN::ECClassId classId) const;
-            ClassRelationshipEnds const& GetAnyClassRelationships () const;
-            ClassIds const& GetClassesMapToTable (ECDbSqlTable const& table) const;
-            TableClasses const& GetTablesMapToClass (ECN::ECClassId classId) const;
-            ECN::ECClassId GetAnyClassId () const;
-            ClassIds const& GetAnyClassReplacements () const;
-            StorageDescription const& GetStorageDescription (ECN::ECClassId id)  const;
-            void Load (bool forceReload);
-            void Reset ();
+        ~LightWeightMapCache (){}
+        ClassRelationshipEnds const& GetClassRelationships (ECN::ECClassId classId) const;
+        ClassRelationshipEnds const& GetAnyClassRelationships () const;
+        ClassIdList const& GetClassesForTable (ECDbSqlTable const& table) const;
+        TableClassesMap const& GetTablesForClass (ECN::ECClassId classId) const;
+        ECN::ECClassId GetAnyClassId () const;
+        ClassIdList const& GetAnyClassReplacements () const;
+        StorageDescription const& GetStorageDescription (ECN::ECClassId id)  const;
+        void Load (bool forceReload);
+        void Reset ();
         };
-
 
 
 private:
