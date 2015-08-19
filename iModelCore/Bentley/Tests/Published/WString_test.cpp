@@ -496,14 +496,14 @@ TEST(Utf8String_Test, Utils)
     VERIFY (trimmed2.length() == 6);
     }
 
-TEST(Utf8String_Test, EndsWith_EmptyStrings_True)
+TEST(Utf8String_Test, EndsWith_EmptyStrings_False)
     {
-    EXPECT_TRUE(Utf8String("").EndsWith(""));
+    EXPECT_FALSE(Utf8String("").EndsWith(""));
     }
 
-TEST(Utf8String_Test, EndsWith_StringWithEmptyEnding_True)
+TEST(Utf8String_Test, EndsWith_StringWithEmptyEnding_False)
     {
-    EXPECT_TRUE(Utf8String("ABC").EndsWith(""));
+    EXPECT_FALSE(Utf8String("ABC").EndsWith(""));
     }
 
 TEST(Utf8String_Test, EndsWith_StringWithEnding_True)
