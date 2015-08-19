@@ -77,6 +77,9 @@ struct ECDbMap :NonCopyableClass
                 RelationshipClassIds const& GetAnyClassRelationships() const;
                 ECN::ECClassId GetAnyClassId() const;
                 std::vector<ECN::ECClassId> const& GetAnyClassReplacements() const;
+
+                //For a end table relationship class map, the storage description provides horizontal partitions
+                //For the end table's constraint classes - not for the relationship itself.
                 StorageDescription const& GetStorageDescription(IClassMap const&)  const;
 
                 void Load(bool forceReload);
