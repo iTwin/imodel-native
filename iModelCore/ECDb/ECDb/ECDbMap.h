@@ -141,8 +141,6 @@ public:
 
     ECDbSqlTable*               FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable) ;
     MappedTableP                GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
-    //! The values returned by GetPrimitiveTypeName are intended only for logging and debugging purposes
-    static Utf8CP              GetPrimitiveTypeName (ECN::PrimitiveType primitiveType);
 
     //!Loads the class maps if they were not loaded yet
     void                        GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;

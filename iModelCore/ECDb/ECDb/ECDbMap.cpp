@@ -604,27 +604,6 @@ MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTabl
     #pragma warning (disable:4063)
 #endif // defined (_MSC_VER)
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-Utf8CP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
-    {
-    switch (primitiveType)
-        {
-        // the values are intended only for logging and debugging purposes
-        case PRIMITIVETYPE_String  : return "String";
-        case PRIMITIVETYPE_Integer : return "Integer(32)";
-        case PRIMITIVETYPE_Long    : return "Long(64)";
-        case PRIMITIVETYPE_Double  : return "Double";
-        case PRIMITIVETYPE_DateTime: return "DateTime";
-        case PRIMITIVETYPE_Binary  : return "Binary";
-        case PRIMITIVETYPE_Boolean : return "Boolean";
-        case PRIMITIVETYPE_Point2D : return "Point2D";
-        case PRIMITIVETYPE_Point3D : return "Point3D";
-        default:                     return "<unknown>";
-        }
-    }
 
 #if defined (_MSC_VER)
     #pragma warning (pop)
@@ -1354,9 +1333,9 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId cl
         if (deriveClassList.empty())
             continue;
 
-        auto id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
-        auto hp = storageDescription->GetHorizontalPartitionP(id);
-        for (auto ecClassId : deriveClassList)
+        size_t id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
+        HorizontalPartition* hp = storageDescription->GetHorizontalPartitionP(id);
+        for (ECClassId ecClassId : deriveClassList)
             {
             hp->AddClassId(ecClassId);
             }
