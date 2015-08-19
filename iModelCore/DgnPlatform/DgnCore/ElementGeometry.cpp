@@ -1241,7 +1241,7 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
         }
 
 #define LINESTYLES_ENABLED 0
-#if defined(LINESTYLES_ENABLED)
+#if LINESTYLES_ENABLED
     if (elParams.GetLineStyle() != nullptr)
         {
         LineStyleInfoCP lsInfo = elParams.GetLineStyle();
