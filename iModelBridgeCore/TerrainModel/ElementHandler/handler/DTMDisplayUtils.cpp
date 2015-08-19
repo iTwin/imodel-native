@@ -704,7 +704,7 @@ DgnModelRefP GetModelRef (ElementHandleCR element)
 
     modelRef = element.GetDgnModelP();
     if (modelRef) return modelRef;
-    if (IViewManager::GetActiveViewSet().GetSelectedViewport())
+    if (nullptr != &DgnViewLib::GetHost () && IViewManager::GetActiveViewSet ().GetSelectedViewport ())
         modelRef = IViewManager::GetActiveViewSet().GetSelectedViewport()->GetTargetModel();
     BeAssert (modelRef);
     return modelRef;
@@ -737,9 +737,12 @@ DgnModelRefP GetActivatedModel (ElementHandleCR element, ViewContextCP context)
 
 void RedrawElement (ElementHandleR element)
     {
-    RedrawElems redraw (nullptr, DRAW_MODE_Erase, DrawPurpose::ChangedPre, true);
-    redraw.SetViews (IViewManager::GetActiveViewSet(), 0xffff);
-    redraw.DoRedraw (element);
+    if (nullptr != &DgnViewLib::GetHost ())
+        {
+        RedrawElems redraw (nullptr, DRAW_MODE_Erase, DrawPurpose::ChangedPre, true);
+        redraw.SetViews (IViewManager::GetActiveViewSet (), 0xffff);
+        redraw.DoRedraw (element);
+        }
     }
 
 /*=================================================================================**//**
