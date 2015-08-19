@@ -166,10 +166,16 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
     ElemDisplayParams   savedParams(*context.GetCurrentDisplayParams());
+    ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
+
+    context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
+
+    //  Use the current symbology, activating it here.  We may also activate symbology when drawing 
+    //  symbols. 
 
     //  Compute size of one iteration and stroke a line for that size.
     LsComponentCP    topComponent = m_lsDef.GetComponentCP (nullptr);
-    double length = topComponent->_GetLength();
+    double length = topComponent->_GetLength() * m_lineStyleSymb.GetScale();
     if (length <  mgds_fc_epsilon)
         length = 1.0;   //  Apparently nothing is length dependent.
 
@@ -177,6 +183,7 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     topComponent->_StrokeLineString(&context, &m_lineStyleSymb, points, 2, false);
 
     *context.GetCurrentDisplayParams() = savedParams;
+    *context.GetElemMatSymb() = savedMatSymb;
     }
 
 //---------------------------------------------------------------------------------------
@@ -229,9 +236,6 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
         BeAssert(0 == m_rasterTexture);
         return m_rasterTexture;
         }
-
-    if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
-        forceRaster =  true;
 
     if (!m_rasterInitialized)
         {

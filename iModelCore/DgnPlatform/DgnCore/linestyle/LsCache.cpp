@@ -139,7 +139,7 @@ BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (V10LineCode const*
         LsStroke*   pStroke = m_strokes;
         for (;pData < pEnd; pData++, pStroke++)
             {
-            pStroke->Init (pData->m_length, pData->m_width, (pData->m_widthMode & LCWIDTH_TAPEREND) ? pData->m_endWidth : pData->m_width,
+            pStroke->Init (pData->m_length, pData->m_width, pData->m_endWidth,
                                 (LsStroke::WidthMode)pData->m_widthMode, (LsStroke::CapMode)pData->m_capMode);
             pStroke->SetIsDash (pData->m_strokeMode & LCSTROKE_DASH);
             pStroke->SetIsRigid (TO_BOOL (pData->m_strokeMode & LCSTROKE_RAY));
