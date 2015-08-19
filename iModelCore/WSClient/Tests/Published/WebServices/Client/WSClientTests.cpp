@@ -170,6 +170,51 @@ TEST_F (WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_Previ
     EXPECT_TRUE (info.IsSuccess ());
     }
 
+TEST_F(WSClientTests, GetServerInfo_FirstResponseIsUnauthorized_StopsAndReturnsLoginError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::Unauthorized));
+
+    auto result = client->GetServerInfo()->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
+    EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
+    }
+
+TEST_F(WSClientTests, GetServerInfo_SecondResponseIsUnauthorized_StopsAndReturnsLoginError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::Unauthorized));
+
+    auto result = client->GetServerInfo()->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
+    EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
+    }
+
+TEST_F(WSClientTests, GetServerInfo_ThirdResponseIsUnauthorized_StopsAndReturnsLoginError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ExpectRequests(3);
+    GetHandler().ForRequest(1, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::NotFound));
+    GetHandler().ForRequest(3, StubHttpResponse(HttpStatus::Unauthorized));
+
+    auto result = client->GetServerInfo()->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ReceivedError, result.GetError().GetStatus());
+    EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
+    }
+
 #ifdef USE_GTEST
 TEST_F (WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedWithReceivedInfo)
     {
