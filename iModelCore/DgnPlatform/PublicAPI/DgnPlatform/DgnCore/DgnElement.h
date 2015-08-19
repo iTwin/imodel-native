@@ -164,19 +164,33 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
 
+    //! A unique "identification string" for a DgnElement. Within a DgnDb, all values of Code must be unique.
+    //! A Code is a two-part identifier: [DgnAuthorityId authority, Utf8String value]. Sometimes the Code for a DgnElement is assigned by some external authority,
+    //! in which case its format, meaning, and uniqueness is established externally (see DgnDb::DgnAuthorities.)
+    //! DgnElements that have no stable external identity (i.e. have no external meaning) may use the value DgnAuthorities::Local(), which means the Code::Value is locally generated
+    //! and only guaranteed to be unique within the DgnDb of the DgnElement.
+    //! DgnElements must always have a valid DgnElement::Code (a valid DgnAuthorityId and a non-NULL value) to be inserted in a DgnDb.
     struct Code
     {
     private:
         DgnAuthorityId  m_authority;
         Utf8String      m_value;
     public:
+        //! construct a Code from a Value and DgnAuthorityId.
+        //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
+        //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
         explicit Code(Utf8CP value=nullptr, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
+        //! construct a Code from a Value and DgnAuthorityId.
+        //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
+        //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
         explicit Code(Utf8String const& value, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
         bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
+        //! Determine whether this Code is valid
         bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
+        //! Get the value for this Code
         Utf8CP GetValue() const {return m_value.c_str();}
+        //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
         DgnAuthorityId GetAuthority() {return m_authority;}
-        
     };
 
     //! Parameters for creating new DgnElements
@@ -250,7 +264,7 @@ public:
 
     //! Holds changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
     //! All aspects are actually subclasses of either dgn.ElementUniqueAspect or dgn.ElementMultiAspect. dgn.ElementItem is a special case of dgn.ElementUniqueAspect.
-    //! A domain that defines a subclass of one of these ECClasses in the schema should normally also define a subclass of one of the 
+    //! A domain that defines a subclass of one of these ECClasses in the schema should normally also define a subclass of one of the
     //! subclasses of DgnElement::Aspect in order to manage transactions.
     //! A domain will normally subclass one of the following more specific subclasses:
     //!     * DgnElement::UniqueAspect when the domain defines a subclass of dgn.ElementUniqueAspect for aspects that must be 1:1 with the host element.
@@ -381,7 +395,7 @@ public:
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
-        
+
     public:
         //! Get the ID of this aspect. The aspect's ID is always the same as the host element's ID. This is a convenience function that converts from DgnElementId to ECInstanceId.
         BeSQLite::EC::ECInstanceId GetAspectInstanceId(DgnElementCR el) const {return el.GetElementId();}
@@ -419,7 +433,7 @@ public:
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
     //! ElementItems instances are always stored in the dgn.ElementItem table (TablePerHierarchy).
     //! <p>
-    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry. 
+    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry.
     //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
     //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
     //! <p>
@@ -430,7 +444,7 @@ public:
     //!     * _LoadProperties
     //!     * _GenerateElementGeometry
     //! @note It will be common for a single ElementAspectHandler to be registered for a single ECClass and then used for \em multiple ECClasses, all of which are subclasses of the registered ECClass.
-    //! Therefore, the Item subclass should not assume that it knows the ECClass of the item at compile time; it must query the DgnDb or the ECInstance (if it holds one) in order to 
+    //! Therefore, the Item subclass should not assume that it knows the ECClass of the item at compile time; it must query the DgnDb or the ECInstance (if it holds one) in order to
     //! determine the actual class of the item.
     struct EXPORT_VTABLE_ATTRIBUTE Item : UniqueAspect
     {
@@ -441,7 +455,7 @@ public:
 
         static Item* Find(DgnElementCR);
         static Item* Load(DgnElementCR);
-        
+
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final; // *** WIP_ECSQL Polymorphic delete
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
@@ -510,7 +524,7 @@ public:
         //! Invoke the _GenerateElementGeometry method on the item
         //! @param el   The host element
         DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
-        
+
         //! Execute the EGA that is specified for this Item.
         //! @param el   The element to be updated
         //! @param origin   The placement origin
@@ -680,7 +694,7 @@ protected:
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source);
 
-    //! Make a (near) duplicate of yourself in memory, in preparation for copying from another element that <em>may be</em> in a different DgnDb. 
+    //! Make a (near) duplicate of yourself in memory, in preparation for copying from another element that <em>may be</em> in a different DgnDb.
     //! This base class implementation calls _CopyFrom and then _RemapIds and _AdjustPlacementForImport
     //! @note Do not do any of the following:
     //!     * Do not call Insert and do not attempt to remap your own ElementId. The caller will do those things.
@@ -696,7 +710,7 @@ protected:
     //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer);
 
-    //! Apply X,Y offset and Yaw angle adjustment when importing from one DgnDb to another, in the case where source and destination GCSs are compatible but have the Cartesian coordinate system 
+    //! Apply X,Y offset and Yaw angle adjustment when importing from one DgnDb to another, in the case where source and destination GCSs are compatible but have the Cartesian coordinate system
     //! located at different geo locations and/or have different Azimuth angles.
     //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
     virtual void _AdjustPlacementForImport(DgnImportContext const& importer) {;}
@@ -1164,7 +1178,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d) 
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d)
 
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
@@ -1227,7 +1241,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d) 
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d)
 
 protected:
     DrawingElementCP _ToDrawingElement() const override {return this;}
@@ -1251,7 +1265,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement) 
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement)
 
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
@@ -1337,9 +1351,9 @@ struct DgnElements : DgnDbTable
     struct Totals
     {
         uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
-        uint32_t m_entries;        //! total number of persistent elements 
-        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements 
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements 
+        uint32_t m_entries;        //! total number of persistent elements
+        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements
+        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements
     };
 
     //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
