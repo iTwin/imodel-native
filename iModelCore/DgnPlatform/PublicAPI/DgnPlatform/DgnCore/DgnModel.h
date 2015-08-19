@@ -905,13 +905,13 @@ public:
     */
     DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
 
-    //! Compute the code that would be used by a row in ComponentModelSolutions to refer to the current solution of this model.
+    //! Compute the code that would be used by a row in the ComponentSolution table to refer to the current solution of this model.
     //! @return a generated name for the current solution
     //! @see ComponentModel::GetSolver::GetParametersValues
     DGNPLATFORM_EXPORT Utf8String ComputeSolutionName();
 
     //! Import the specified ECSchema into the target DgnDb.
-    //! This must be done \em once before any ComponentModelSolutions are created for ComponentModels that are defined in the schema.
+    //! This must be done \em once before any ComponentSolutions are created for ComponentModels that are defined in the schema.
     //! @param[in] targetDb     The DgnDb that is to hold the new schema
     //! @param[in] schemaFile   The full filename of the ECSchema.xml file to import
     //! @return non-zero error status if the ECSchema could not be imported; DgnDbStatus::DuplicateName if an ECSchema by the same name already exists.
