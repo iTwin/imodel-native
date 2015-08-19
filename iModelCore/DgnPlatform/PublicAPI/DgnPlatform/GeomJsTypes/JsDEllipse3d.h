@@ -16,26 +16,25 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDEllipse3d : RefCountedBase
+struct JsDEllipse3d : JsGeomWrapperBase<DEllipse3d>
 {
-    friend struct JsCurvePrimitive;
-    private:
-    DEllipse3d m_ellipse;
 
-    JsDEllipse3d (DEllipse3dCR ellipse) : m_ellipse (ellipse)
+    JsDEllipse3d (DEllipse3dCR ellipse)
         {
+        m_data = ellipse;
         }
     public:
     JsDEllipse3d() {}
     JsDEllipse3d (JsDPoint3dP center, JsDVector3dP vector0, JsDVector3dP vector90,
                 JsAngleP startAngle, JsAngleP sweepAngle)
-        : m_ellipse(DEllipse3d::FromVectors (
-                    center->m_point, vector0->m_vector, vector90->m_vector,
-                    startAngle->m_angle.Radians (),
-                    sweepAngle->m_angle.Radians ()
-                    ))
-         {}
-       
+        {
+        m_data = DEllipse3d::FromVectors (
+                    center->Get (), vector0->Get (), vector90->Get (),
+                    startAngle->GetRadians (),
+                    sweepAngle->GetRadians ()
+                    );
+         }
+    
     static JsDEllipse3dP FromCoordinates (
             double cx, double cy, double cz,
             double v0x, double v0y, double v0z,
@@ -48,27 +47,27 @@ struct JsDEllipse3d : RefCountedBase
                     cx, cy, cz,
                     v0x, v0y, v0z,
                     v90x, v90y, v90z,
-                    startAngle->m_angle.Radians (),
-                    sweepAngle->m_angle.Radians ()
+                    startAngle->GetRadians (),
+                    sweepAngle->GetRadians ()
                 ));            
             }
 
-    JsDPoint3d * GetCenter() {return new JsDPoint3d (m_ellipse.center);}
-    JsDVector3d * GetVector0() {return new JsDVector3d (m_ellipse.vector0);}
-    JsDVector3d * GetVector90() {return new JsDVector3d (m_ellipse.vector90);}
-    JsAngle * GetStartAngle () {return new JsAngle (AngleInDegrees::FromRadians (m_ellipse.start));}
-    JsAngle * GetSweepAngle () {return new JsAngle (AngleInDegrees::FromRadians (m_ellipse.sweep));}
+    JsDPoint3d * GetCenter() {return new JsDPoint3d (m_data.center);}
+    JsDVector3d * GetVector0() {return new JsDVector3d (m_data.vector0);}
+    JsDVector3d * GetVector90() {return new JsDVector3d (m_data.vector90);}
+    JsAngle * GetStartAngle () {return new JsAngle (AngleInDegrees::FromRadians (m_data.start));}
+    JsAngle * GetSweepAngle () {return new JsAngle (AngleInDegrees::FromRadians (m_data.sweep));}
 
-    void SetCenter     (JsDPoint3dP center) {m_ellipse.center = center->m_point;}
-    void SetVector0    (JsDVector3dP vector0) {m_ellipse.vector0 = vector0->m_vector;}
-    void SetVector90   (JsDVector3dP vector90) {m_ellipse.vector90 = vector90->m_vector;}
-    void SetStartAngle (JsAngleP angle) {m_ellipse.start = angle->m_angle.Radians ();}
-    void SetSweepAngle (JsAngleP angle) {m_ellipse.sweep = angle->m_angle.Radians ();}
+    void SetCenter     (JsDPoint3dP center) {m_data.center = center->Get ();}
+    void SetVector0    (JsDVector3dP vector0) {m_data.vector0 = vector0->Get ();}
+    void SetVector90   (JsDVector3dP vector90) {m_data.vector90 = vector90->Get ();}
+    void SetStartAngle (JsAngleP angle) {m_data.start = angle->GetRadians ();}
+    void SetSweepAngle (JsAngleP angle) {m_data.sweep = angle->GetRadians ();}
     
     JsDPoint3dP PointAtFraction (double f)
         {
         DPoint3d xyz;
-        m_ellipse.FractionParameterToPoint (xyz, f);
+        m_data.FractionParameterToPoint (xyz, f);
         return new JsDPoint3d (xyz);
         }
     JsDRay3dP PointAndDerivativeAtFraction (double f)
@@ -76,7 +75,7 @@ struct JsDEllipse3d : RefCountedBase
         DPoint3d xyz;
         DVec3d derivative1;
         DVec3d derivative2;
-        m_ellipse.FractionParameterToDerivatives (xyz, derivative1, derivative2, f);
+        m_data.FractionParameterToDerivatives (xyz, derivative1, derivative2, f);
         return new JsDRay3d (xyz, derivative1);
         }
     

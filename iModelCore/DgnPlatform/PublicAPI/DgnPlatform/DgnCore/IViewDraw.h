@@ -924,14 +924,6 @@ struct IStrokeForCache
     //! wireframe geometry cache and output it when their _Draw method is called for the purpose of picking.
     virtual bool _WantLocateByQvElem() const {return !_WantLocateByStroker();}
 
-    //! (2D ONLY) The stroker is required to supply the "net" display priority for the QvElem when it is initially created.
-    //! A QvElem has a single display priority for all it's geometry. It is expected that this method returns the same value that will be supplied to 
-    //! every 2d ICachedDraw call used in creating the QvElem. Even though the priority value supplied to the 2d ICachedDraw methods is not what is 
-    //! used for display, it is still important to callers of _StrokeForCache that it's set consistently.
-    //! @note The net display priority is a combination of the geometry and sub-category display priority.
-    //! @see ViewContext::ResolveNetDisplayPriority
-    virtual double _GetDisplayPriority(ViewContextR context) const {return 0.0;}
-
     //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
@@ -1233,7 +1225,7 @@ protected:
     virtual void _ClearZ () = 0;
 
     virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
-    virtual void _DefineQVGeometryMap(MaterialCR material, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
+    virtual void _DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 
     virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
@@ -1305,7 +1297,7 @@ public:
 
     DGNPLATFORM_EXPORT void ClearZ ();
     DGNPLATFORM_EXPORT uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile);
-    DGNPLATFORM_EXPORT void DefineQVGeometryMap(MaterialCR material, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
+    DGNPLATFORM_EXPORT void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
     DGNPLATFORM_EXPORT bool IsOutputQuickVision() const;
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 }; // IViewDraw
@@ -1321,12 +1313,12 @@ private:
     virtual void    _SetCacheElement(QvElem*) = 0;
 
 protected:
-    virtual void    _BeginCacheElement(QvCache*, bool is3d, double zDepth, uintptr_t elementId) = 0;
+    virtual void    _BeginCacheElement(QvCache*) = 0;
     virtual QvElem* _EndCacheElement() = 0;
     virtual void    _AssignElementToView(QvView*, QvElem*, int viewMode) = 0;
 
 public:
-    DGNPLATFORM_EXPORT void    BeginCacheElement(QvCache*, bool is3d = true, double zDepth = 0.0, uintptr_t elementId = 0);
+    DGNPLATFORM_EXPORT void    BeginCacheElement(QvCache*);
     DGNPLATFORM_EXPORT QvElem* EndCacheElement();
     DGNPLATFORM_EXPORT void    AssignElementToView(QvView*, QvElem*, int viewMode = 0);
 

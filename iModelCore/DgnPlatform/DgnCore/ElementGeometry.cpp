@@ -1240,7 +1240,8 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
         Append (Operation (OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
-#if defined(LINESTYLES_DISABLED)
+#define LINESTYLES_ENABLED 0
+#if LINESTYLES_ENABLED
     if (elParams.GetLineStyle() != nullptr)
         {
         LineStyleInfoCP lsInfo = elParams.GetLineStyle();
@@ -2713,41 +2714,6 @@ virtual int32_t _GetQvIndex () const override
     return (DgnRenderMode::Wireframe != m_flags.GetRenderMode() ? 1 : (m_flags.fill ? 2 : 3));
     }
 
-virtual double _GetDisplayPriority (ViewContextR context) const override
-    {
-    if (context.Is3dView())
-        return 0.0;
-
-    // Yuck...dig out display priority, needed up front to create QvElem2d...NEEDSWORK: Allow display priority sub-category?
-    ElementGeomIO::Collection collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize());
-    DgnSubCategoryId subCategoryId;
-    int32_t displayPriority = 0;
-
-    for (auto const& egOp : collection)
-        {
-        switch (egOp.m_opCode)
-            {
-            case ElementGeomIO::OpCode::BeginSubCategory:
-                {
-                auto ppfb = flatbuffers::GetRoot<FB::BeginSubCategory>(egOp.m_data);
-
-                subCategoryId = DgnSubCategoryId (ppfb->subCategoryId());
-                break;
-                }
-
-            case ElementGeomIO::OpCode::BasicSymbology:
-                {
-                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
-
-                displayPriority = ppfb->displayPriority();
-                break;
-                }
-            }
-        }
-
-    return context.ResolveNetDisplayPriority(displayPriority, subCategoryId);
-    }
-
 virtual void _StrokeForCache (ViewContextR context, double pixelSize) override
     {
     ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), m_flags);
@@ -3368,7 +3334,7 @@ void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomT
 
     Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
 
-    // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...priority/class?)
+    // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...geometry class?)
     if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))
         {
         m_writer.Append(m_elParams.GetSubCategoryId(), geomToElem);

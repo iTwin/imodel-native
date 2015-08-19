@@ -39,15 +39,18 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(geomJsApiTsDir)GeomJsApiCallbacksTemplate.cpp\
                  $(geomJsApiTsDir)GeomJsApiProjectionTemplate.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDpoint3d.h\
-                 $(DgnPlatformAPISrc)GeomJsTypes/JSDVector3d.h\
-                 $(DgnPlatformAPISrc)GeomJsTypes/JSYawPitchRollAngles.h\
-                 $(DgnPlatformAPISrc)GeomJsTypes/JSDRay3d.h\
-                 $(DgnPlatformAPISrc)GeomJsTypes/JSDPoint3dDVector3dDVector3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDVector3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsYawPitchRollAngles.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDRay3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dDVector3dDVector3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsAngle.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDSegment3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDEllipse3d.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsCurvePrimitive.h\
-                 $(DgnPlatformAPISrc)GeomJsTypes/JSDRange3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDRange3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsRotMatrix.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsTransform.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dArray.h\
                  $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \

@@ -18,33 +18,35 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
-struct JsDSegment3d : RefCountedBase
+struct JsDSegment3d : JsGeomWrapperBase<DSegment3d>
 {
-    DSegment3d m_segment;
-
-    JsDSegment3d() {m_segment.InitZero ();}
-    JsDSegment3d (DPoint3dCR point0, DPoint3dCR point1) {m_segment.Init (point0, point1);}
-    JsDSegment3d (JsDPoint3dP point0, JsDPoint3dP point1) {m_segment.Init (point0->m_point, point1->m_point);}
+private:
+    DSegment3d m_data;
+public:
+    JsDSegment3d() {m_data.InitZero ();}
+    JsDSegment3d (DPoint3dCR point0, DPoint3dCR point1) {m_data.Init (point0, point1);}
+    JsDSegment3d (JsDPoint3dP point0, JsDPoint3dP point1) {m_data.Init (point0->Get (), point1->Get ());}
 
     JsDSegment3d (double x0, double y0, double z0, double x1, double y1, double z1)
-        {m_segment.Init (x0, y0, z0, x1, y1, z1);}
+        {m_data.Init (x0, y0, z0, x1, y1, z1);}
 
-    JsDPoint3dP GetStartPoint() {return new JsDPoint3d (m_segment.point[0]);}
-    JsDPoint3dP GetEndPoint() {return new JsDPoint3d (m_segment.point[1]);}
-    void SetStartPoint (JsDPoint3dP point) {m_segment.point[0] = point->m_point;}
-    void SetEndPoint (JsDPoint3dP point) {m_segment.point[1] = point->m_point;}
+    JsDPoint3dP GetStartPoint() {return new JsDPoint3d (m_data.point[0]);}
+    JsDPoint3dP GetEndPoint() {return new JsDPoint3d (m_data.point[1]);}
+    void SetStartPoint (JsDPoint3dP point) {m_data.point[0] = point->Get ();}
+    void SetEndPoint (JsDPoint3dP point) {m_data.point[1] = point->Get ();}
+
 
     JsDPoint3dP PointAtFraction (double f)
         {
         DPoint3d xyz;
-        m_segment.FractionParameterToPoint (xyz, f);
+        m_data.FractionParameterToPoint (xyz, f);
         return new JsDPoint3d (xyz);
         }
     JsDRay3dP PointAndDerivativeAtFraction (double f)
         {
         DPoint3d xyz;
         DVec3d tangent;
-        m_segment.FractionParameterToTangent (xyz, tangent, f);
+        m_data.FractionParameterToTangent (xyz, tangent, f);
         return new JsDRay3d (xyz, tangent);
         }
 };

@@ -379,6 +379,16 @@ LsComponentP    other
     return  stroke ? stroke->_ContainsComponent(other) : false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+bool LsPointComponent::_SupportsConvertToRaster() const
+    {
+    //  Vertex symbols are ignored when converted to raster so maybe this should ignore
+    //  anything that has vertex symbols.
+    return HasStrokeSymbol();
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
