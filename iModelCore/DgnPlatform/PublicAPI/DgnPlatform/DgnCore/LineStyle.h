@@ -1181,9 +1181,10 @@ typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 //!  @ingroup LineStyleManagerModule
 enum class LsUnit
 {
-    Master      = 0,        //!< Master Units
+    //  Master      = 0,    //!< Master Units -- not supported in DgnDb
     Uor         = 1,        //!< Internal Units (UORS)
-    Device      = 2         //!< Pixel units
+    Device      = 2,        //!< Pixel units
+    Meters      = 3,        //!< Meters
 };
 
 //=======================================================================================
@@ -1274,11 +1275,11 @@ public:
     DGNPLATFORM_EXPORT void SetUnitsDefinition (double newValue);
     DGNPLATFORM_EXPORT void SetUnitsType (LsUnit unitsType);
     DGNPLATFORM_EXPORT LsUnit GetUnitsType () const;
-    //!  This is equivalent to "LSATTR_UNITUOR == GetUnits()"
+    //!  This is equivalent to "LsUnit::Uor == GetUnits()"
     DGNPLATFORM_EXPORT bool IsUnitsUOR () const;
-    //!  This is equivalent to "LSATTR_UNITMASTER == GetUnits()"
-    DGNPLATFORM_EXPORT bool IsUnitsMaster () const;
-    //!  This is equivalent to "LSATTR_UNITDEV == GetUnits()"
+    //!  This is equivalent to "LsUnit::Meters == GetUnits()"
+    DGNPLATFORM_EXPORT bool IsUnitsMeters () const;
+    //!  This is equivalent to "LsUnit::Device == GetUnits()"
     DGNPLATFORM_EXPORT bool IsUnitsDevice () const;
     //! Returns true if line styles are physical and should be scaled as such.  This only applies to styles in
     //! dgnlibs, not resources.

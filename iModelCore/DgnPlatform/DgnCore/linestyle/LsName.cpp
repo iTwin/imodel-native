@@ -165,6 +165,8 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
+    ElemDisplayParams   savedParams(*context.GetCurrentDisplayParams());
+
     //  Compute size of one iteration and stroke a line for that size.
     LsComponentCP    topComponent = m_lsDef.GetComponentCP (nullptr);
     double length = topComponent->_GetLength();
@@ -173,6 +175,8 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
 
     DPoint3d points[2] = { 0,0,0, length, 0,0 };
     topComponent->_StrokeLineString(&context, &m_lineStyleSymb, points, 2, false);
+
+    *context.GetCurrentDisplayParams() = savedParams;
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,8 +242,7 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
             Point2d     imageSize;
             uint32_t      flags = 0;
 
-            if (m_lsComp.IsValid() && 
-                SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
+            if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
                 {
                 if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
                     {
@@ -258,11 +261,11 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
                     DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
                     }
                 }
-            else
-                {
-                //  Convert this type to raster on the fly.
-                m_rasterTexture = GenerateRasterTexture(viewContext, lineStyleSymb);
-                }
+            }
+        else if (forceRaster)
+            {
+            //  Convert this type to raster on the fly if possible
+            m_rasterTexture = GenerateRasterTexture(viewContext, lineStyleSymb);
             }
         }
     
