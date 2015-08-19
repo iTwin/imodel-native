@@ -43,7 +43,9 @@ static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
 //----------------------------------------------------------------------------------------
 RasterFileProperties::RasterFileProperties()
     {
+#if 0
     m_fileMonikerPtr = FileMoniker::Create("", "");
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -69,7 +71,9 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
+#if 0
     m_fileMonikerPtr->ToJson(v["fileMoniker"]);
+#endif
     DRange2dToJson(v["bbox"], m_boundingBox);
     }
 
@@ -78,7 +82,9 @@ void RasterFileProperties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
+#if 0
     m_fileMonikerPtr->FromJson(v["fileMoniker"]);
+#endif
     DRange2dFromJson(m_boundingBox, v["bbox"]);
     }
 
@@ -98,7 +104,9 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerP
     BeFileName basePath(db.GetDbFileName());
     Utf8String basePathUtf8(basePath);
     Utf8String resolvedName;
+#if 0
     fileMoniker->ResolveFileName(resolvedName, basePathUtf8);
+#endif
 
     // Create model name (just use the file name without extension)
     BeFileName fileName(resolvedName);
@@ -251,7 +259,9 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     BeFileName basePath(GetDgnDb().GetDbFileName());
     Utf8String basePathUtf8(basePath);
     Utf8String resolvedName;
+#if 0
     m_fileProperties.m_fileMonikerPtr->ResolveFileName(resolvedName, basePathUtf8);
+#endif
 
     // Create RasterQuadTree
     RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
