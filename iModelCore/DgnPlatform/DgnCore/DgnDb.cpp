@@ -8,8 +8,6 @@
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/DgnGeoCoord.h>
 
-#define WSTR(astr) WString(astr,BentleyCharEncoding::Utf8).c_str()
-
 static WCharCP s_dgndbExt   = L".dgndb";
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,7 +270,7 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
     Statement stmt;
     stmt.Prepare(m_dgndb, SqlPrintfString(
         "INSERT %s INTO be_Prop (Namespace,  Name, Id, SubId, TxnMode, StrData) " 
-                       "VALUES('dgn_Script', ?,    ?,  ?,      0,       ?)", updateExisting? "OR REPLACE": ""));
+                       "VALUES('dgn_Script',?,?,?,0,?)", updateExisting ? "OR REPLACE" : ""));
     stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
     stmt.BindInt(2, 0);
     stmt.BindInt(3, (int)stype);
@@ -347,8 +345,7 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) 
-    : m_sourceDb(source), m_destDb(dest) 
+DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) 
     {
     DgnGCS* sourceGcs = m_sourceDb.Units().GetDgnGCS();
     DgnGCS* destGcs = m_destDb.Units().GetDgnGCS();

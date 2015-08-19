@@ -25,18 +25,18 @@
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
-#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
+#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Link                  "Link"
 #define DGN_CLASSNAME_Model                 "Model"
+#define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
-#define DGN_CLASSNAME_Model2d               "Model2d"
-#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
@@ -58,11 +58,11 @@
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_CategoryOwnsSubCategories   "CategoryOwnsSubCategories"
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
-#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
+#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
@@ -70,7 +70,7 @@
 #include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
-#include "DgnElement.h"
+//#include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -105,7 +105,7 @@ public:
 };
 
 /** @addtogroup DgnCategoryGroup Categories and SubCategories
-@ref PAGE_CategoryOverview 
+@ref PAGE_CategoryOverview
 */
 
 //=======================================================================================
@@ -486,9 +486,8 @@ public:
     //! @return the Id of the SubCategory.
     static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
 
-    DgnCategoryId Import(DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
+    DgnCategoryId Import(struct DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
     DgnSubCategoryId Import(DgnRemapTables& remap, DgnCategoryId destCategoryId, DgnDbR sourceDb, DgnSubCategoryId sourceSubCategoryId);
-
 };
 
 //=======================================================================================
@@ -690,7 +689,7 @@ public:
         enum class CoordinateSpace
         {
             Local   = 0,    // the model has a local coordinate system
-            World   = 1,    // the model is in the physical (world) coordinate system. 
+            World   = 1,    // the model is in the physical (world) coordinate system.
         };
 
         friend struct DgnModels;
@@ -833,160 +832,6 @@ public:
     static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
 };
 
-//=======================================================================================
-//! The DgnElements for a DgnDb.
-//! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
-//! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
-//! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
-//! their reference count goes to 0 and the cache is subsequently purged.
-//! @see DgnDb::Elements
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct DgnElements : DgnDbTable
-{
-    friend struct DgnDb;
-    friend struct DgnElement;
-    friend struct DgnModel;
-    friend struct DgnModels;
-    friend struct ElementHandler;
-    friend struct TxnManager;
-    friend struct ProgressiveViewFilter;
-    friend struct dgn_TxnTable::Element;
-
-    //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
-    struct Totals
-    {
-        uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
-        uint32_t m_entries;        //! total number of persistent elements 
-        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements 
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements 
-    };
-
-    //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
-    //! (note: the same element may become garbage and then be reclaimed, each such occurrence is reflected here.)
-    struct Statistics
-    {
-        uint32_t m_newElements;    //! number of newly created or loaded elements
-        uint32_t m_unReferenced;   //! number of elements that became garbage since last reset
-        uint32_t m_reReferenced;   //! number of garbage elements that were referenced
-        uint32_t m_purged;         //! number of garbage elements that were purged
-    };
-
-private:
-    DgnElementId                m_highestElementId;
-    struct ElemIdTree*          m_tree;
-    HeapZone                    m_heapZone;
-    BeSQLite::StatementCache    m_stmts;
-    BeSQLite::SnappyFromBlob    m_snappyFrom;
-    BeSQLite::SnappyToBlob      m_snappyTo;
-    DgnElementIdSet             m_selectionSet;
-    mutable BeSQLite::BeDbMutex m_mutex;
-
-    void OnReclaimed(DgnElementCR);
-    void OnUnreferenced(DgnElementCR);
-    void Destroy();
-    void AddToPool(DgnElementCR) const;
-    void DropFromPool(DgnElementCR) const;
-    void SendOnLoadedEvent(DgnElementR elRef) const;
-    void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
-    DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    bool IsElementIdUsed(DgnElementId id) const;
-    DgnElementId MakeNewElementId();
-    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
-    DgnDbStatus PerformDelete(DgnElementCR);
-    explicit DgnElements(DgnDbR db);
-    ~DgnElements();
-
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
-
-public:
-    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
-
-    //! Look up an element in the pool of loaded elements for this DgnDb.
-    //! @return A pointer to the element, or nullptr if the is not in the pool.
-    //! @private
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
-
-    //! Query the DgnModelId of the specified DgnElementId.
-    //! @private
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
-
-    //! Query for the DgnElementId of the element that has the specified code
-    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP code) const;
-
-    //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
-    //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
-    //! unreferenced elements are freed until the the pool uses no more than targetMem bytes. Least recently used elements are freed first.
-    //! If memTarget <= 0, all unreferenced elements are freed.
-    //! @note: There is no guarantee that the pool will not actually consume more than memTarget bytes after this call, since elements with
-    //! reference counts greater than 0 cannot be purged.
-    DGNPLATFORM_EXPORT void Purge(int64_t memTarget);
-
-    //! Get the total counts for the current state of the pool.
-    DGNPLATFORM_EXPORT Totals GetTotals() const;
-
-    //! Shortcut to get the Totals.m_allocatedBytes member
-    int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
-
-    //! Get the statistics for the current state of the element pool.
-    DGNPLATFORM_EXPORT Statistics GetStatistics() const;
-
-    //! Reset the statistics for the element pool.
-    DGNPLATFORM_EXPORT void ResetStatistics();
-
-    //! Get a DgnElement from this DgnDb by its DgnElementId.
-    //! @remarks The element is loaded from the database if necessary.
-    //! @return Invalid if the element does not exist.
-    DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
-
-    //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
-    //! This is merely a templated shortcut to dynamic_cast the return of #GetElement to a subclass of DgnElement.
-    template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
-
-    //! Get an editable copy of an element by DgnElementId.
-    //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
-
-    //! Insert a copy of the supplied DgnElement into this DgnDb.
-    //! @param[in] element The DgnElement to insert.
-    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
-    //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
-
-    //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
-    //! @param[in] element The modified copy of element to update.
-    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the update was successful, error status otherwise.
-    //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
-    template<class T> RefCountedCPtr<T> Update(T& element, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
-
-    //! Delete a DgnElement from this DgnDb.
-    //! @param[in] element The element to delete.
-    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
-
-    //! Delete a DgnElement from this DgnDb by DgnElementId.
-    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
-    //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
-
-    //! Get the Heapzone for this DgnDb.
-    HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
-    //! @return Invalid key if the element does not exist.
-    //! @remarks This queries the database for the DgnClassId for the given DgnElementId. It does not check if the element is loaded, nor does it load the element into memory.
-    //! If you have a DgnElement, call GetElementKey on it rather than using this method.
-    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
-
-    DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
-    DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
-};
 
 //=======================================================================================
 //! Each GeomPart has a row in the DgnGeomParts table
@@ -1263,34 +1108,37 @@ struct DgnMaterials : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) { }
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
 
 public:
-    struct Row
+    struct Material
     {
     private:
         friend struct DgnMaterials;
 
-        DgnMaterialId       m_materialId;
-        Utf8String          m_name;
-        Utf8String          m_palette;
+        DgnMaterialId m_materialId;
+        Utf8String    m_name;
+        Utf8String    m_palette;
+        Utf8String    m_value;
 
     public:
-        Row() { }
-        Row(Utf8CP name, Utf8CP palette, DgnMaterialId id = DgnMaterialId()) : m_materialId(id), m_name(name), m_palette(palette) { }
+        Material() {}
+        Material(Utf8CP name, Utf8CP palette, Utf8CP value, DgnMaterialId id=DgnMaterialId()) : m_materialId(id), m_name(name), m_palette(palette), m_value(value) {}
 
-        DgnMaterialId GetId() const { return m_materialId; }
-        Utf8CP GetName() const { return m_name.c_str(); }
-        Utf8CP GetPalette() const { return m_palette.c_str(); }
-        void SetName(Utf8CP val) { m_name = val; }
-        void SetPalette(Utf8CP val) { m_palette = val; }
-        bool IsValid() const { return m_materialId.IsValid(); }
+        DgnMaterialId GetId() const {return m_materialId;}
+        Utf8CP GetName() const {return m_name.c_str();}
+        Utf8CP GetPalette() const {return m_palette.c_str();}
+        Utf8CP GetValue() const {return m_value.c_str();}
+        void SetName(Utf8CP val) {m_name = val;}
+        void SetPalette(Utf8CP val) {m_palette = val;}
+        void SetValue(Utf8CP val) {m_value = val;}
+        bool IsValid() const {return m_materialId.IsValid();}
     };
 
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
 
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
@@ -1301,6 +1149,7 @@ public:
             DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
+            DGNPLATFORM_EXPORT Utf8CP GetValue() const;
             Entry const& operator*() const {return *this;}
         };
 
@@ -1313,10 +1162,26 @@ public:
 
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertMaterial(Row& row);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertMaterial(Material& row);
     DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteMaterial(DgnMaterialId materialId);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Row const& row);
-    DGNPLATFORM_EXPORT Row QueryMaterialById(DgnMaterialId id) const;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Material const& row);
+    DGNPLATFORM_EXPORT Material QueryMaterialById(DgnMaterialId id) const;
+};
+
+//=======================================================================================
+//! @private
+//=======================================================================================
+struct DgnAuthorities : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+    explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
+
+public:
+    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
+    struct Authority
+    {
+    };
 };
 
 //=======================================================================================
@@ -1325,8 +1190,8 @@ public:
 struct DgnScriptLibrary : DgnDbTable
 {
 public:
-    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
-    
+    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) {}
+
     //! Register the specified script in the DgnDb's script library.
     //! @param sName    The name to assign to the script in the library
     //! @param sText    The content of the script program
@@ -1334,7 +1199,7 @@ public:
     //! @see QueryScript
     DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, bool updateExisting);
 
-    //! Look up an imported script program by the specified name. 
+    //! Look up an imported script program by the specified name.
     //! @param[out] sText           The text of the script that was found in the library
     //! @param[out] stypeFound      The type of script actually found in the library
     //! @param[in] sName            Identifies the script in the library
@@ -1342,7 +1207,7 @@ public:
     //! @see RegisterScript
     DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred);
 
-    //! Utility function to read the text of the specified file 
+    //! Utility function to read the text of the specified file
     //! @param contents[out]    The content of the file
     //! @param fileName[in]     The name of the file to read
     //! @return non-zero error status if the file could not be found
@@ -1631,7 +1496,7 @@ public:
 
     //! Harvest geometry from the component model and store in the solutions table.
     //! @param[in] componentModel The ComponentModel that is to be harvested
-    //! @return The ID of the captured solution 
+    //! @return The ID of the captured solution
     //! @see ComponentModel::Solve
     DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId CaptureSolution(ComponentModelR componentModel);
     //@}
@@ -1658,9 +1523,6 @@ public:
     //! @param componentSchemaName  The name of the schema (in the element's DgnDb) that defines the component model item ECClass definition
     //! @return non-zero error status if the item could not be created
     DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId);
-
-    //! @private
-    static DgnDbStatus ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
     //@}
     };
 

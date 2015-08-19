@@ -249,10 +249,6 @@ $(coreObjs)DgnShxFont$(oext): $(DgnCoreDir)DgnShxFont.cpp $(DgnCoreAPISrc)DgnFon
 
 $(coreObjs)DgnShxFontData$(oext): $(DgnCoreDir)DgnShxFontData.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
 
-$(coreObjs)MaterialSettings$(oext): $(DgnCoreDir)MaterialSettings.cpp $(DgnCoreAPISrc)Material.h $(DgnCoreAPISrc)MaterialSettings.h ${MultiCompileDepends}
-
-$(coreObjs)MaterialTokens$(oext): $(DgnCoreDir)MaterialTokens.cpp $(DgnPlatformInternalApiSrc)DgnCore/MaterialTokens.h ${MultiCompileDepends}
-
 $(coreObjs)Sprites$(oext): $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
 $(coreObjs)ImageUtilities$(oext): $(DgnCoreDir)ImageUtilities.cpp $(DgnCoreAPISrc)ImageUtilities.h ${MultiCompileDepends}
@@ -305,7 +301,6 @@ $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAP
 
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
-$(coreObjs)FileMoniker$(oext): $(DgnCoreDir)FileMoniker.cpp $(DgnCoreAPISrc)FileMoniker.h ${MultiCompileDepends} 
 
 $(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
 

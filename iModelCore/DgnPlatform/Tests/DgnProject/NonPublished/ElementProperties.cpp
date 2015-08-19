@@ -58,7 +58,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
     gradient->SetKeys(2, keyColors, keyValues);
     ep.SetGradient(gradient.get());
 
-    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(DgnElement::Code("E3"), ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
@@ -139,7 +139,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetTransparency(0.5);
 
-    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(DgnElement::Code("E3"), ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
@@ -171,7 +171,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
 
-    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(DgnElement::Code("E3"), ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
@@ -208,7 +208,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     ep.SetWeight(21);
     ep.SetDisplayPriority(2);
 
-    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(DgnElement::Code("E3"), ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
@@ -245,7 +245,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
     ep.SetFillColor(ColorDef::Red());
     ep.SetFillTransparency(0.8);
 
-    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    DgnElementCPtr pE1 = InsertElement(DgnElement::Code("E3"), ep, m3id);
     EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());

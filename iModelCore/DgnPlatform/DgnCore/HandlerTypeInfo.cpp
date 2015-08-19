@@ -31,7 +31,7 @@ enum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Trefz   01/04
  +---------------+---------------+---------------+---------------+---------------+------*/
-static bool     isBlankString(Utf8CP testStr)
+static bool isBlankString(Utf8CP testStr)
     {
     if (!testStr || strlen(testStr) < 1)
         return true;
@@ -146,7 +146,7 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString(HitDetailCP hit, Utf8St
         return;
         }
 
-    pathDescr = element->GetCode();
+    pathDescr = element->GetCode().GetValue();
 
     Utf8String categoryStr, modelStr;
 

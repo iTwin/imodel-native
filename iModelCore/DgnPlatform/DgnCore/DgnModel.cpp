@@ -890,7 +890,7 @@ void DgnModel::_FillModel()
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
             stmt.GetValueText(Column::Label), 
-            stmt.GetValueText(Column::Code), 
+            DgnElement::Code(stmt.GetValueText(Column::Code)), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
         }
@@ -1239,7 +1239,7 @@ DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentSolution::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item)
+DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item)
     {
     DgnDbR db = el.GetDgnDb();
 
@@ -1257,7 +1257,7 @@ DgnDbStatus ComponentSolution::ExecuteEGA(DgnElementR el, DPoint3dCR origin, Yaw
     parms.SetValuesFromECProperties(itemInstance); // Set the parameter values to what I have saved
     ComponentSolution solutions(db);
     BeSQLite::EC::ECInstanceId sid = solutions.QuerySolutionId(cm->GetModelId(), parms.ComputeSolutionName());
-    Solution sln;
+    ComponentSolution::Solution sln;
     if (DgnDbStatus::Success != solutions.Query(sln, BeSQLite::EC::ECInstanceId(sid)))
         return DgnDbStatus::NotFound;
 
