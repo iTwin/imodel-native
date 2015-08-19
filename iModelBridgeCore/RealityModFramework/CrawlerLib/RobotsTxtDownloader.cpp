@@ -5,8 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <CrawlerLib/RobotsTxtDownloader.h>
-#include <CrawlerLib/RobotsTxtParser.h>
+#include "RobotsTxtDownloader.h"
+#include "RobotsTxtParser.h"
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/PageParser.h $
+|     $Source: CrawlerLib/PageParser.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,8 +9,8 @@
 #pragma once
 
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/Url.h>
 #include <CrawlerLib/PageContent.h>
+#include <CrawlerLib/Url.h>
 
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
@@ -19,6 +19,9 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class PageParser
     {
     public:

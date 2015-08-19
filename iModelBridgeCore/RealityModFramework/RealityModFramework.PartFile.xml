@@ -6,7 +6,6 @@
         <Bindings>
             <PublicAPI Domain="RealityPlatform" />
             <PublicAPI Domain="RealityPackage" />
-            <PublicAPI Domain="CrawlerLib" />
         </Bindings>
     </Part>
     
@@ -44,20 +43,20 @@
     </Part>
 
     <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
-        <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <Bindings>
+            <PublicAPI Domain="CrawlerLib" />
             <Libs>Delivery/$(stlibprefix)CrawlerLib$(stlibext)</Libs>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)CrawlerLib$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="CrawlerLibClient" BMakeFile="CrawlerLibClient/CrawlerLibClient.mke">
+    <Part Name="CrawlerLibExample" BMakeFile="CrawlerLib/Example/CrawlerLibExample.mke">
         <SubPart PartName="CrawlerLib" />
         <Bindings>
-            <Files ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibClient.exe</Files>
+            <Files ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibExample.exe</Files>
         </Bindings>
     </Part>
 
@@ -83,8 +82,8 @@
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityPlatformUnitTests"/>
         <SubPart PartName="RealityPackageUnitTests"/>
-        <!--<SubPart PartName="CrawlerLibUnitTests"/>-->
-        <!--<SubPart PartName="CrawlerLibClient"/>-->
+        <SubPart PartName="CrawlerLibUnitTests"/>
+        <SubPart PartName="CrawlerLibExample"/>
         <!--<SubPart PartName="RealityCrawler"/>-->
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
     </Part>

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <CrawlerLib/Url.h>
-#include <CrawlerLib/RobotsTxtParser.h>
+#include "../../CrawlerLib/RobotsTxtParser.h"
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;

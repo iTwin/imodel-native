@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/PageDownloader.h $
+|     $Source: CrawlerLib/PageDownloader.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,10 +9,11 @@
 #pragma once
 
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/PageParser.h>
-#include <CrawlerLib/DownloadJob.h>
-#include <CrawlerLib/CrawlDelaySleeper.h>
 #include <CrawlerLib/Url.h>
+
+#include "PageParser.h"
+#include "DownloadJob.h"
+#include "CrawlDelaySleeper.h"
 
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
@@ -23,6 +24,10 @@
 #include <atomic>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class IPageDownloader
     {
     public:
@@ -41,6 +46,9 @@ class IPageDownloader
     virtual void AbortDownload() = 0;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class PageDownloader : public IPageDownloader
     {
     public:

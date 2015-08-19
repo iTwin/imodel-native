@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/DownloadJob.h $
+|     $Source: CrawlerLib/DownloadJob.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,6 +10,10 @@
 #include <CrawlerLib/Url.h>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct DownloadJob : public RefCountedBase
     {
     public:
@@ -30,4 +34,5 @@ struct DownloadJob : public RefCountedBase
     uint32_t m_CrawlDelay;
     UrlPtr m_pUrlToDownload;
     };
+
 END_BENTLEY_CRAWLERLIB_NAMESPACE

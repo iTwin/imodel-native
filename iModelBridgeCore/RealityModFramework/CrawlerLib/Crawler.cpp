@@ -6,12 +6,16 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/Crawler.h>
+#include <CrawlerLib/Url.h>
+#include "UrlQueue.h"
+#include "PageDownloader.h"
+
 #include <curl/curl.h>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;
 
-const chrono::milliseconds Crawler::s_AsyncWaitTime = chrono::milliseconds(75);
+const chrono::milliseconds s_AsyncWaitTime = chrono::milliseconds(75);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Alexandre.Gariepy   08/15
@@ -67,7 +71,7 @@ StatusInt Crawler::Crawl(UrlPtr const& seed)
                 {
                 // This call might take some time if robots.txt needs to be downloaded. That will occurs once per domain.
                 m_pQueue->AddUrl(link);
-                }   
+                }
 
             // Start something new now, in case the observer takes a long time to process.
             if(CanStartDownload(currentDownloadThread))

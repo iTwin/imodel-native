@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/RobotsTxtDownloader.h $
+|     $Source: CrawlerLib/RobotsTxtDownloader.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,15 +9,21 @@
 #pragma once
 
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/RobotsTxtParser.h>
+#include <CrawlerLib/Url.h>
+#include "RobotsTxtParser.h"
+
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 #include <Bentley/bvector.h>
-#include <CrawlerLib/Url.h>
 #include <curl/curl.h>
+
 #include <regex>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class IRobotsTxtDownloader
     {
     public:
@@ -25,6 +31,9 @@ class IRobotsTxtDownloader
     virtual RobotsTxtContentPtr DownloadRobotsTxt(UrlPtr const& pi_Url) = 0;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class RobotsTxtDownloader : public IRobotsTxtDownloader
     {
     public:

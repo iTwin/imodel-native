@@ -21,6 +21,9 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct DomainName
     {
     friend struct Url;
@@ -39,6 +42,9 @@ struct DomainName
     WString m_DomainName;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct Url : public RefCountedBase
     {
     public:
@@ -72,12 +78,18 @@ struct Url : public RefCountedBase
     static const std::wregex s_RelativeUrlWithDotRegex;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct Seed : public Url
     {
     public:
     CRAWLERLIB_EXPORT Seed(WString const& url);
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class InvalidUrlException : public std::exception
     {
     public:
@@ -95,10 +107,14 @@ class InvalidUrlException : public std::exception
     WString m_Url;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct UrlPtrCompare
     {
     bool operator() (UrlPtr const& lhs, UrlPtr const& rhs) const {return *lhs < *rhs;}
     };
 
 typedef std::set<UrlPtr, UrlPtrCompare> UrlPtrSet;
+
 END_BENTLEY_CRAWLERLIB_NAMESPACE

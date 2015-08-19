@@ -6,13 +6,13 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <CrawlerLib/CrawlerFactory.h>
-
 #include <CrawlerLib/Url.h>
-#include <CrawlerLib/PageDownloader.h>
-#include <CrawlerLib/UrlQueue.h>
-#include <CrawlerLib/RobotsTxtParser.h>
-#include <CrawlerLib/RobotsTxtDownloader.h>
-#include <CrawlerLib/Politeness.h>
+
+#include "PageDownloader.h"
+#include "UrlQueue.h"
+#include "RobotsTxtParser.h"
+#include "RobotsTxtDownloader.h"
+#include "Politeness.h"
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 

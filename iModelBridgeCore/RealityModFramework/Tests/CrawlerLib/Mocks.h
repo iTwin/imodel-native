@@ -9,9 +9,7 @@
 
 #include <Bentley/BeTest.h>
 #include <CrawlerLib/Url.h>
-#include <CrawlerLib/PageParser.h>
-#include <CrawlerLib/PageDownloader.h>
-#include <CrawlerLib/UrlQueue.h>
+#include "../../CrawlerLib/Politeness.h"
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 

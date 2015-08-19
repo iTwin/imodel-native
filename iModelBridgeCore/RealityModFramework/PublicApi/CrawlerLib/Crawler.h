@@ -8,14 +8,11 @@
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
-
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/PageDownloader.h>
-#include <CrawlerLib/UrlQueue.h>
 #include <CrawlerLib/PageContent.h>
-#include <CrawlerLib/Politeness.h>
 
 #include <Bentley/Bentley.h>
+#include <Bentley/bvector.h>
 
 #include <vector>
 #include <chrono>
@@ -24,7 +21,11 @@
 #include <mutex>
 #include <condition_variable>
 
+
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+class IPageDownloader;
+class UrlQueue;
 
 //=======================================================================================
 //! @bsiclass
@@ -274,7 +275,7 @@ class Crawler
 
     UrlQueue* m_pQueue;         // List of urls to explore.
 
-    std::vector<IPageDownloader*> m_pDownloaders; 
+    std::vector<IPageDownloader*> m_pDownloaders;
 
     ICrawlerObserver* m_pObserver;
 

@@ -16,6 +16,7 @@ baseDir	= $(_MakeFilePath)
 %include mdl.mki
 
 PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/CrawlerLib/
+@CreateSymLinks.py -d"$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -36,23 +37,23 @@ nameToDefine=__CRAWLERLIB_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)PageParser$(oext) : $(baseDir)PageParser.cpp $(PublicApiDir)PageParser.h ${MultiCompileDepends}
+$(o)PageParser$(oext) : $(baseDir)PageParser.cpp $(baseDir)PageParser.h ${MultiCompileDepends}
 
-$(o)RobotsTxtParser$(oext) : $(baseDir)RobotsTxtParser.cpp $(PublicApiDir)RobotsTxtParser.h ${MultiCompileDepends}
+$(o)RobotsTxtParser$(oext) : $(baseDir)RobotsTxtParser.cpp $(baseDir)RobotsTxtParser.h ${MultiCompileDepends}
 
 $(o)Url$(oext) : $(baseDir)Url.cpp $(PublicApiDir)Url.h ${MultiCompileDepends}
 
-$(o)Politeness$(oext) : $(baseDir)Politeness.cpp $(PublicApiDir)Politeness.h ${MultiCompileDepends}
+$(o)Politeness$(oext) : $(baseDir)Politeness.cpp $(baseDir)Politeness.h ${MultiCompileDepends}
 
-$(o)PageDownloader$(oext) : $(baseDir)PageDownloader.cpp $(PublicApiDir)PageDownloader.h ${MultiCompileDepends}
+$(o)PageDownloader$(oext) : $(baseDir)PageDownloader.cpp $(baseDir)PageDownloader.h ${MultiCompileDepends}
 
-$(o)RobotsTxtDownloader$(oext) : $(baseDir)RobotsTxtDownloader.cpp $(PublicApiDir)RobotsTxtDownloader.h ${MultiCompileDepends}
+$(o)RobotsTxtDownloader$(oext) : $(baseDir)RobotsTxtDownloader.cpp $(baseDir)RobotsTxtDownloader.h ${MultiCompileDepends}
 
-$(o)UrlQueue$(oext) : $(baseDir)UrlQueue.cpp $(PublicApiDir)UrlQueue.h ${MultiCompileDepends}
+$(o)UrlQueue$(oext) : $(baseDir)UrlQueue.cpp $(baseDir)UrlQueue.h ${MultiCompileDepends}
 
 $(o)Crawler$(oext) : $(baseDir)Crawler.cpp $(PublicApiDir)Crawler.h ${MultiCompileDepends}
 
-$(o)CrawlDelaySleeper$(oext) : $(baseDir)CrawlDelaySleeper.cpp $(PublicApiDir)CrawlDelaySleeper.h ${MultiCompileDepends}
+$(o)CrawlDelaySleeper$(oext) : $(baseDir)CrawlDelaySleeper.cpp $(baseDir)CrawlDelaySleeper.h ${MultiCompileDepends}
 
 $(o)CrawlerFactory$(oext) : $(baseDir)CrawlerFactory.cpp $(PublicApiDir)CrawlerFactory.h ${MultiCompileDepends}
 

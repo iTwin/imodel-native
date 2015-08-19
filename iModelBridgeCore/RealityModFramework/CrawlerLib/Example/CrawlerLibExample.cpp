@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: CrawlerLibClient/CrawlerLibClient.cpp $
+|     $Source: CrawlerLib/Example/CrawlerLibExample.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -29,9 +29,9 @@ class CrawlerLibClient : ICrawlerObserver
         }
 
     //Callback method provided by the ICrawlerObserver interface
-    virtual void OnPageCrawled(PageContentPtr page)
+    virtual void OnPageCrawled(PageContentCR page)
         {
-        printf("%ls\n", page->GetUrl().GetUrlWString());
+        printf("%ls\n", page.GetUrl().GetUrlWString());
         }
 
     void Run()
@@ -39,7 +39,7 @@ class CrawlerLibClient : ICrawlerObserver
         UrlPtr seed = new Seed(L"http://usgs.gov");
 
         //Set the crawler options
-        crawler->SetMaxNumberOfLinkToCrawl(200);
+        crawler->SetMaxNumberOfLinkToCrawl(2000);
         crawler->SetAcceptExternalLinks(true);
         crawler->SetAcceptLinksInExternalLinks(false);
         crawler->SetMaximumCrawlDepth(10000);
@@ -57,10 +57,10 @@ class CrawlerLibClient : ICrawlerObserver
         validTypes.push_back(L"text/plain");
         crawler->SetListOfValidContentType(validTypes);
 
-        crawler->SetAcceptExternalLinks(false);
-        crawler->SetAcceptLinksInExternalLinks(false);
+        crawler->SetAcceptExternalLinks(true);
+        crawler->SetAcceptLinksInExternalLinks(true);
 
-        crawler->SetRespectRobotTxt(true);
+        crawler->SetRespectRobotTxt(false);
         crawler->SetRespectRobotTxtIfDisallowRoot(false);
         crawler->SetRobotsTxtUserAgent(L"botname");
         crawler->SetMaxRobotTxtCrawlDelay(5);

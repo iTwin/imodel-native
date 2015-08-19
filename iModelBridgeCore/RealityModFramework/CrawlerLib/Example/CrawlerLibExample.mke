@@ -1,15 +1,15 @@
 #----------------------------------------------------------------------
 #
-#     $Source: CrawlerLibClient/CrawlerLibClient.mke $
+#     $Source: CrawlerLib/Example/CrawlerLibExample.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #  
 #----------------------------------------------------------------------
 
 
-policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
+policyFile = $(_MakeFilePath)../../mki/AssertRealityModFrameworkPolicy.mki
 
-appName = CrawlerLibClient
+appName = CrawlerLibExample
 consoleAppUnicode   = 1      			# use wmain  
 
 %include mdl.mki
@@ -34,14 +34,14 @@ nameToDefine = _UNICODE
 #----------------------------------------------------------------------
 #   Build source files
 #----------------------------------------------------------------------
-$(o)CrawlerLibClient$(oext) : $(baseDir)CrawlerLibClient.cpp
+$(o)CrawlerLibExample$(oext) : $(baseDir)CrawlerLibExample.cpp
 
 #----------------------------------------------------------------------
 #   DLL/LIB creation
 #----------------------------------------------------------------------
 EXE_DEST     = $(o)
 EXE_NAME     = $(appName)
-EXE_OBJS     = $(o)CrawlerLibClient$(oext)
+EXE_OBJS     = $(o)CrawlerLibExample$(oext)
 
 LINKER_LIBRARIES = $(ContextSubpartsLibs)CrawlerLib.lib \
                    $(ContextSubpartsLibs)Bentley.lib \

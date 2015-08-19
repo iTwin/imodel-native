@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <CrawlerLib/UrlQueue.h>
+#include "UrlQueue.h"
 #include <limits>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
@@ -77,8 +77,7 @@ void UrlQueue::AddUrl(UrlPtr const& url)
         auto currentQueueIterator = m_QueuesPerDomain.find(url->GetDomainName());
         if(currentQueueIterator == m_QueuesPerDomain.end())
             {
-            m_QueuesPerDomain.emplace(url->GetDomainName(), queue<UrlPtr>());
-            currentQueueIterator = m_QueuesPerDomain.find(url->GetDomainName());
+            currentQueueIterator = m_QueuesPerDomain.emplace(url->GetDomainName(), queue<UrlPtr>()).first;
             }
         currentQueueIterator->second.push(url);
         m_VisitedUrls.insert(url);

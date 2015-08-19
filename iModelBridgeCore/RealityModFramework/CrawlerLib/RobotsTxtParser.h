@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/RobotsTxtParser.h $
+|     $Source: CrawlerLib/RobotsTxtParser.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -20,6 +20,10 @@
 #include <vector>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct UserAgent : public RefCountedBase
     {
     public:
@@ -33,6 +37,9 @@ struct UserAgent : public RefCountedBase
     WString m_AgentName;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct RobotsTxtContent : public RefCountedBase
     {
     public:
@@ -69,6 +76,9 @@ struct RobotsTxtContent : public RefCountedBase
     std::map<UserAgent, uint32_t> m_CrawlDelays;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class RobotsTxtParser 
     {
     public:
@@ -81,4 +91,5 @@ class RobotsTxtParser
     static const std::wregex s_AllowRegex; 
     static const std::wregex s_CrawlDelayRegex; 
     };
+
 END_BENTLEY_CRAWLERLIB_NAMESPACE

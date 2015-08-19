@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <CrawlerLib/PageDownloader.h>
+#include "PageDownloader.h"
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB
 using namespace std;

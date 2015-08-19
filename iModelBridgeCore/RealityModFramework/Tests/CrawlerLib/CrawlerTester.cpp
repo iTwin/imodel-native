@@ -9,6 +9,8 @@
 #include <CrawlerLib/Crawler.h>
 #include <CrawlerLib/PageContent.h>
 #include "./Mocks.h"
+#include "../../CrawlerLib/UrlQueue.h"
+#include "../../CrawlerLib/PageDownloader.h"
 
 using ::testing::Expectation;
 using ::testing::Return;
@@ -45,7 +47,7 @@ class UrlQueueMock : public UrlQueue
 class CrawlerObserverMock : public ICrawlerObserver
     {
     public:
-    MOCK_METHOD1(OnPageCrawled, void(PageContentPtr page));
+    MOCK_METHOD1(OnPageCrawled, void(PageContentCR page));
     };
 
 class PageDownloaderMock : public IPageDownloader

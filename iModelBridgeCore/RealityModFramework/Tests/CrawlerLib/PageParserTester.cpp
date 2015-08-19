@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
-#include <CrawlerLib/PageParser.h>
+#include "../../CrawlerLib/PageParser.h"
 #include "./Mocks.h"
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB

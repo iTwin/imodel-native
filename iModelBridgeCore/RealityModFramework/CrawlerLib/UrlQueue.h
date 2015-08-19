@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/UrlQueue.h $
+|     $Source: CrawlerLib/UrlQueue.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,8 +10,8 @@
 
 #include <Bentley/Bentley.h>
 #include <CrawlerLib/CrawlerLib.h>
-#include <CrawlerLib/DownloadJob.h>
-#include <CrawlerLib/Politeness.h>
+#include "DownloadJob.h"
+#include "Politeness.h"
 
 #include <queue>
 #include <map>
@@ -19,6 +19,9 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class UrlQueue
     {
     public:

@@ -18,6 +18,9 @@
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct PageContent : public RefCountedBase
     {
     public:
@@ -42,4 +45,5 @@ struct PageContent : public RefCountedBase
     bvector<UrlPtr> m_Links;
     WString m_Text;
     };
+
 END_BENTLEY_CRAWLERLIB_NAMESPACE

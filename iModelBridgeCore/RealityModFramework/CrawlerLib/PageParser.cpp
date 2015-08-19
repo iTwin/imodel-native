@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <CrawlerLib/PageParser.h>
+#include "PageParser.h"
 #include <regex>
 
 USING_NAMESPACE_BENTLEY_CRAWLERLIB

@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <CrawlerLib/CrawlDelaySleeper.h>
+#include "CrawlDelaySleeper.h"
 #include <chrono>
 #include <thread>
 #include <utility>
@@ -29,15 +29,16 @@ void CrawlDelaySleeper::Sleep(uint32_t domainCrawlDelayInSeconds, DomainName con
         {
         // No iterators or references are invalidated by emplace.
         domainIterator = m_MutexPerDomain.emplace(piecewise_construct, forward_as_tuple(domain), forward_as_tuple()).first; //std::mutex is non copyable class,
-                                                                                                                            //therefore the picewise_construct
+        domainIterator->second.second = 0;
         }
     m_AddDomainToMapMutex.unlock();
 
-    // We do not remember the last download time so we sleep the domain crawl delay every time.  That might add delays
-    // but it is simple enough for now. It might be improved by remembering the last domain crawl time and make sure that we waited enough time.
-    std::mutex& mutex = domainIterator->second;
-    mutex.lock();
-    this_thread::sleep_for(chrono::seconds(domainCrawlDelayInSeconds));
-    mutex.unlock();
+    std::mutex& mutex = domainIterator->second.first;
+    std::lock_guard<std::mutex> lock(mutex);
+
+    if(difftime(time(NULL), domainIterator->second.second) < domainCrawlDelayInSeconds)
+        this_thread::sleep_for(chrono::seconds(domainCrawlDelayInSeconds));
+
+    domainIterator->second.second = time(NULL);
     }
 

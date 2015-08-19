@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <CrawlerLib/RobotsTxtParser.h>
+#include "RobotsTxtParser.h"
 #include <Bentley/bvector.h>
 #include <Bentley/BeStringUtilities.h>
 

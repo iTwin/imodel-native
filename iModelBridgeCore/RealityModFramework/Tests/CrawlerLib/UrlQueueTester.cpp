@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "./Mocks.h"
 #include <Bentley/BeTest.h>
-#include <CrawlerLib/UrlQueue.h>
 #include <CrawlerLib/Url.h>
+#include "../../CrawlerLib/UrlQueue.h"
 
 using ::testing::Return;
 using ::testing::Pointee;

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/CrawlerLib/CrawlDelaySleeper.h $
+|     $Source: CrawlerLib/CrawlDelaySleeper.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -17,16 +17,20 @@
 #include <vector>
 #include <map>
 #include <mutex>
+#include <ctime>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 struct CrawlDelaySleeper : RefCountedBase
     {
     public:
     void Sleep(uint32_t seconds, DomainName const& domain);
 
     private:
-    std::map<DomainName, std::mutex> m_MutexPerDomain;
+    std::map<DomainName, std::pair<std::mutex, std::time_t>> m_MutexPerDomain;
     std::mutex m_AddDomainToMapMutex;
     };
 

@@ -1,17 +1,18 @@
-//[>--------------------------------------------------------------------------------------+
-//|
-//|     $Source: PublicApi/CrawlerLib/Politeness.h $
-//|
-//|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//|
-//+--------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: CrawlerLib/Politeness.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
 #include <CrawlerLib/CrawlerLib.h>
 #include <CrawlerLib/Url.h>
-#include <CrawlerLib/RobotsTxtParser.h>
-#include <CrawlerLib/RobotsTxtDownloader.h>
+
+#include "RobotsTxtParser.h"
+#include "RobotsTxtDownloader.h"
 
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
@@ -19,6 +20,10 @@
 #include <map>
 
 BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class IPoliteness
     {
     public:
@@ -33,6 +38,9 @@ class IPoliteness
     virtual bool CanDownloadUrl(UrlPtr const& url) = 0;
     };
 
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
 class Politeness : public IPoliteness
     {
     public:
@@ -61,4 +69,5 @@ class Politeness : public IPoliteness
 
     std::map<DomainName, RobotsTxtContentPtr> m_RobotsTxtFilesPerDomain;
     };
+
 END_BENTLEY_CRAWLERLIB_NAMESPACE
