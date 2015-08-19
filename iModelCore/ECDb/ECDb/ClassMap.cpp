@@ -88,7 +88,7 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 StorageDescription const& IClassMap::GetStorageDescription () const
     {
-    return GetECDbMap ().GetLightWeightMapCache ().GetStorageDescription (GetClass ().GetId ());
+    return GetECDbMap ().GetLightweightCache ().GetStorageDescription (GetClass ().GetId ());
     }
 
 //---------------------------------------------------------------------------------------

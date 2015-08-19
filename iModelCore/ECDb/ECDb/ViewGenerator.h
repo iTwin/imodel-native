@@ -334,7 +334,7 @@ struct SqlGenerator
          SqlClassPersistenceMethod* GetClassPersistenceMethod (ClassMapCR classMap);
          BentleyStatus BuildHoldingView (NativeSqlBuilder& sql);
 
-         BentleyStatus FindRelationshipReferences (bmap<RelationshipClassMapCP, ECDbMap::LightWeightMapCache::RelationshipEnd>& relationships, ClassMapCR classMap);
+         BentleyStatus FindRelationshipReferences (bmap<RelationshipClassMapCP, ECDbMap::LightweightCache::RelationshipEnd>& relationships, ClassMapCR classMap);
          void CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap);
         
          BentleyStatus BuildDerivedFilterClause (Utf8StringR filter, ECDb& db, ECN::ECClassId baseClassId);

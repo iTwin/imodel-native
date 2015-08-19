@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap (ECDbR ecdb) 
-: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_schemaImportContext (nullptr), m_lightWeightMapCache (*this)
+: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_schemaImportContext (nullptr), m_lightweightCache (*this)
     {}
 
 //----------------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    m_lightWeightMapCache.Reset();
+    m_lightweightCache.Reset();
 
     if (SUCCESS != m_ecdbSqlManager.GetDbSchema().CreateOrUpdateIndices(schemaImportContext))
         {
@@ -747,34 +747,32 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                      06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassMaps, ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const
+void ECDbMap::GetClassMapsFromRelationshipEnd(bset<IClassMap const*>& endClassMaps, ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const
     {
     std::vector<ECClassCP> endClasses = GetClassesFromRelationshipEnd(relationshipEnd);
     for (auto endClass : endClasses)
         {
-        if (ClassMap::IsAnyClass (*endClass))
-            {
+        if (ClassMap::IsAnyClass(*endClass))
             return;
-            }
 
-        auto endClassMap = GetClassMap (*endClass, loadIfNotFound);
+        auto endClassMap = GetClassMap(*endClass, loadIfNotFound);
         if (endClassMap->GetMapStrategy().IsNotMapped())
             continue;
 
-        endClassMaps.insert (endClassMap);
+        endClassMaps.insert(endClassMap);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbMap::ClearCache ()
+void ECDbMap::ClearCache()
     {
-    BeMutexHolder lock (m_criticalSection);
+    BeMutexHolder lock(m_criticalSection);
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
-    GetSQLManagerR ().Reset ();
-    m_lightWeightMapCache.Reset ();
+    GetSQLManagerR().Reset();
+    m_lightweightCache.Reset();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -820,9 +818,9 @@ BentleyStatus ECDbMap::Save(SchemaImportContext const& context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::LoadClassTableClasses () const
+void ECDbMap::LightweightCache::LoadClassIdsPerTable () const
     {
-    if (m_loadedFlags.m_classIdsByTableIsLoaded)
+    if (m_loadedFlags.m_classIdsPerTableIsLoaded)
         return;
 
     Utf8CP sql0 =
@@ -851,16 +849,16 @@ void ECDbMap::LightWeightMapCache::LoadClassTableClasses () const
             BeAssert (currentTable != nullptr);
             }
 
-        m_classIdsByTable[currentTable].push_back (id);
+        m_classIdsPerTable[currentTable].push_back (id);
         }
 
-    m_loadedFlags.m_classIdsByTableIsLoaded = true;
+    m_loadedFlags.m_classIdsPerTableIsLoaded = true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::LoadAnyClassRelationships () const
+void ECDbMap::LightweightCache::LoadAnyClassRelationships () const
     {
     if (m_loadedFlags.m_anyClassRelationshipsIsLoaded)
         return;
@@ -893,7 +891,7 @@ void ECDbMap::LightWeightMapCache::LoadAnyClassRelationships () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::LoadAnyClassReplacements () const
+void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
     {
     if (m_loadedFlags.m_anyClassReplacementsLoaded)
         return;
@@ -922,9 +920,9 @@ void ECDbMap::LightWeightMapCache::LoadAnyClassReplacements () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelationships) const
+void ECDbMap::LightweightCache::LoadRelationshipsPerConstraintClass (bool addAnyClassRelationships) const
     {
-    if (m_loadedFlags.m_relationshipEndsByClassIdIsLoaded)
+    if (m_loadedFlags.m_relationshipClassIdsPerConstraintClassIdIsLoaded)
         return;
 
     Utf8CP sql0 =
@@ -955,13 +953,13 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
     auto stmt0 = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt0->Step () == BE_SQLITE_ROW)
         {
-        ECClassId id = stmt0->GetValueInt64 (0);
+        ECClassId constraintClassId = stmt0->GetValueInt64 (0);
         ECClassId relationshipId = stmt0->GetValueInt64 (1);
         RelationshipEnd filter = stmt0->GetValueInt (2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;;
-        auto itor = m_relationshipEndsByClassId.find (id);
-        if (itor == m_relationshipEndsByClassId.end ())
+        auto itor = m_relationshipClassIdsPerConstraintClassId.find(constraintClassId);
+        if (itor == m_relationshipClassIdsPerConstraintClassId.end())
             {
-            m_relationshipEndsByClassId[id][relationshipId] = filter;
+            m_relationshipClassIdsPerConstraintClassId[constraintClassId][relationshipId] = filter;
             }
         else
             {
@@ -984,7 +982,7 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
         LoadAnyClassReplacements ();
         for (auto classId : m_anyClassReplacements)
             {
-            auto& rels = m_relationshipEndsByClassId[classId];
+            auto& rels = m_relationshipClassIdsPerConstraintClassId[classId];
             for (auto& pair1 : m_anyClassRelationships)
                 {
                 ECClassId id = pair1.first;
@@ -1001,14 +999,14 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
             }
         }
 
-    m_loadedFlags.m_relationshipEndsByClassIdIsLoaded = true;
+    m_loadedFlags.m_relationshipClassIdsPerConstraintClassIdIsLoaded = true;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
+void ECDbMap::LightweightCache::LoadDerivedClasses ()  const
     {
-    if (m_loadedFlags.m_tablesByClassIdIsLoaded)
+    if (m_loadedFlags.m_tablesPerClassIdIsLoaded)
         return;
 
     auto anyClassId = GetAnyClassId ();
@@ -1037,10 +1035,7 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "
         "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId, TMI.TableName,DCL.DerivedClassId";
 
-    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
-    // auto currentTableId = -1;
-    //ECDbSqlTable const* currentTable;
-;
+    CachedStatementPtr stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)
         {
         auto rootClassId = stmt->GetValueInt64 (0);
@@ -1051,7 +1046,7 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         Utf8CP tableName = stmt->GetValueText (2);
         auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
         BeAssert (table != nullptr);
-        auto& ids = m_tablesByClassId[rootClassId][table];
+        auto& ids = m_tablesPerClassId[rootClassId][table];
         if (derivedClassId == rootClassId)
             {
             ids.insert (ids.begin (), derivedClassId);
@@ -1060,12 +1055,12 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
             ids.push_back (derivedClassId);
         }
 
-    m_loadedFlags.m_tablesByClassIdIsLoaded = true;
+    m_loadedFlags.m_tablesPerClassIdIsLoaded = true;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //--------------------------------------------------------------------------------------
-ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
+ECN::ECClassId ECDbMap::LightweightCache::GetAnyClassId () const
     {
     if (m_anyClassId == ECClass::UNSET_ECCLASSID)
         {
@@ -1079,16 +1074,16 @@ ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightMapCache::GetClassRelationships (ECN::ECClassId classId) const
+ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetRelationshipsForConstraintClass(ECN::ECClassId constraintClassId) const
     {
-    LoadClassRelationships (true);
-    return m_relationshipEndsByClassId[classId];
+    LoadRelationshipsPerConstraintClass (true);
+    return m_relationshipClassIdsPerConstraintClassId[constraintClassId];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightMapCache::GetAnyClassRelationships () const
+ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetAnyClassRelationships() const
     {
     LoadAnyClassRelationships ();
     return m_anyClassRelationships;
@@ -1097,16 +1092,16 @@ ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassIdList const& ECDbMap::LightWeightMapCache::GetClassesForTable (ECDbSqlTable const& table) const
+std::vector<ECClassId> const& ECDbMap::LightweightCache::GetClassesForTable (ECDbSqlTable const& table) const
     {
-    LoadClassTableClasses ();
-    return m_classIdsByTable[&table];
+    LoadClassIdsPerTable ();
+    return m_classIdsPerTable[&table];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::ClassIdList const& ECDbMap::LightWeightMapCache::GetAnyClassReplacements () const
+std::vector<ECClassId> const& ECDbMap::LightweightCache::GetAnyClassReplacements() const
     {
     LoadAnyClassReplacements ();
     return m_anyClassReplacements;
@@ -1115,23 +1110,23 @@ ECDbMap::LightWeightMapCache::ClassIdList const& ECDbMap::LightWeightMapCache::G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::TableClassesMap const& ECDbMap::LightWeightMapCache::GetTablesForClass (ECN::ECClassId classId) const
+ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache::GetTablesForClass (ECN::ECClassId classId) const
     {
     LoadDerivedClasses ();
-    return m_tablesByClassId[classId];
+    return m_tablesPerClassId[classId];
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::Load (bool forceReload)
+void ECDbMap::LightweightCache::Load (bool forceReload)
     {
     if (forceReload)
         Reset ();
     
     LoadAnyClassRelationships ();
-    LoadClassRelationships (true);
-    LoadClassTableClasses ();
+    LoadRelationshipsPerConstraintClass (true);
+    LoadClassIdsPerTable ();
     LoadDerivedClasses ();
     LoadAnyClassReplacements ();
     }
@@ -1139,18 +1134,18 @@ void ECDbMap::LightWeightMapCache::Load (bool forceReload)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightWeightMapCache::Reset ()
+void ECDbMap::LightweightCache::Reset ()
     {
-    m_loadedFlags.m_anyClassRelationshipsIsLoaded = 
-        m_loadedFlags.m_classIdsByTableIsLoaded =
-        m_loadedFlags.m_relationshipEndsByClassIdIsLoaded =
+    m_loadedFlags.m_classIdsPerTableIsLoaded = 
+        m_loadedFlags.m_tablesPerClassIdIsLoaded =
+        m_loadedFlags.m_relationshipClassIdsPerConstraintClassIdIsLoaded =
         m_loadedFlags.m_anyClassReplacementsLoaded = 
-        m_loadedFlags.m_tablesByClassIdIsLoaded = false;
+        m_loadedFlags.m_anyClassRelationshipsIsLoaded = false;
 
     m_anyClassId = ECClass::UNSET_ECCLASSID;
-    m_relationshipEndsByClassId.clear ();
-    m_tablesByClassId.clear ();
-    m_classIdsByTable.clear ();
+    m_relationshipClassIdsPerConstraintClassId.clear ();
+    m_tablesPerClassId.clear ();
+    m_classIdsPerTable.clear ();
     m_anyClassRelationships.clear ();
     m_anyClassReplacements.clear ();
     m_storageDescriptions.clear ();
@@ -1158,8 +1153,8 @@ void ECDbMap::LightWeightMapCache::Reset ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-ECDbMap::LightWeightMapCache::LightWeightMapCache (ECDbMapCR map)
-: m_map (map)
+ECDbMap::LightweightCache::LightweightCache (ECDbMapCR map)
+    : m_map(map)
     {
     Reset ();
     }
@@ -1167,7 +1162,7 @@ ECDbMap::LightWeightMapCache::LightWeightMapCache (ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-StorageDescription const& ECDbMap::LightWeightMapCache::GetStorageDescription (ECN::ECClassId id)  const
+StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (ECN::ECClassId id)  const
     {
     auto itor = m_storageDescriptions.find (id);
     if (itor == m_storageDescriptions.end ())
@@ -1322,7 +1317,7 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
-std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc)
+std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId classId, ECDbMap::LightweightCache const& lwmc)
     {
     auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
     for (auto& kp : lwmc.GetTablesForClass(classId))
