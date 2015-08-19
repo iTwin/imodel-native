@@ -184,12 +184,13 @@ ECClassCP DgnElement::GetElementClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnElement::_GenerateDefaultCode()
+DgnElement::Code DgnElement::_GenerateDefaultCode()
     {
     if (!m_elementId.IsValid())
-        return "";
+        return Code();
 
-    return Utf8PrintfString("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xFFFF & m_elementId.GetValue()));
+    Utf8PrintfString val("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xFFFF & m_elementId.GetValue()));
+    return Code(val.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -221,7 +222,7 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
 DgnDbStatus DgnElement::_OnInsert()
     {
     UpdateLastModTime();
-    if (m_code.empty())
+    if (!m_code.IsValid())
         m_code = _GenerateDefaultCode();
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
@@ -370,11 +371,11 @@ DgnDbStatus DgnElement::_InsertInDb()
     stmt->BindId(Column::ModelId, m_modelId);
     stmt->BindId(Column::CategoryId, m_categoryId);
 
-    if (!Utf8String::IsNullOrEmpty(m_label.c_str()))
+    if (!m_label.empty())
         stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
 
-    if (!Utf8String::IsNullOrEmpty(m_code.c_str()))
-        stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    if (m_code.IsValid()) // needs work - should not allow null
+        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
 
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
@@ -393,11 +394,11 @@ DgnDbStatus DgnElement::_UpdateInDb()
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
 
-    if (!Utf8String::IsNullOrEmpty(m_label.c_str()))
+    if (!m_label.empty())
         stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
     
-    if (!Utf8String::IsNullOrEmpty(m_code.c_str()))
-        stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    if (m_code.IsValid())
+        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
     
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
@@ -761,7 +762,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
             return nullptr;
             }
             
-        if (nullptr != params->m_code && 0 == strcmp(params->m_code, GetCode()))
+        if (params->m_code == GetCode())
             {
             if (nullptr != stat)
                 *stat = DgnDbStatus::InvalidName;
@@ -770,8 +771,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, nullptr, DgnElementId()));
-
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, Code(), DgnElementId()));
     if (!cloneElem.IsValid())
         {
         if (nullptr != stat)

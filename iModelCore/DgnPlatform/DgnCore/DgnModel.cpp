@@ -914,7 +914,7 @@ void DgnModel::_FillModel()
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
             stmt.GetValueText(Column::Label), 
-            stmt.GetValueText(Column::Code), 
+            DgnElement::Code(stmt.GetValueText(Column::Code)), 
             id,
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
         }

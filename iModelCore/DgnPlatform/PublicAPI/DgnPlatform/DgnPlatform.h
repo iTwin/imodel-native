@@ -292,7 +292,7 @@ BESERVER_ISSUED_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a Su
 BESERVER_ISSUED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a material. See DgnDb#Materials.
 BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 BESERVER_ISSUED_ID_CLASS(DgnAuthorityId)
-BESERVER_ISSUED_ID_CLASS(DgnFontId);
+BESERVER_ISSUED_ID_CLASS(DgnFontId)
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};

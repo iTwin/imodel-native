@@ -123,13 +123,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
-        <!-- adds the follow properties to Props: 
-        propertyName="RangeLow" typeName="point3d" displayLabel="RangeLow" description="The low point of the range of the external data"
-        propertyName="RangeHigh" typeName="point3d" displayLabel="RangeHigh" description="The hight point of the range of the external data"
-        propertyName="MapService" displayLabel="Map Service" typeName="string"
-        propertyName="MapType" displayLabel="Map Type" typeName="string"
-        propertyName="finerResolution" displayLabel="Finer Resolution" typeName="boolean"
-        -->
     </ECClass>
 
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
@@ -149,7 +142,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
              <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -182,7 +174,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
@@ -699,7 +690,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <Key>
                     <Property name="ModelId" />
                 </Key>
-            </Class>
+          </Class>
         </Target>
     </ECRelationshipClass>
 

@@ -32,7 +32,7 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     PhysicalElementPtr el = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
 
     if (nullptr != code)
-        el->SetCode(code);
+        el->SetCode(DgnElement::Code(code));
 
     return el;
     }

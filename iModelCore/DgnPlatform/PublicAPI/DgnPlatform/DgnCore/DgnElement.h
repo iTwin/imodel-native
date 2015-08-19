@@ -164,6 +164,21 @@ public:
     friend struct dgn_TxnTable::Element;
     friend struct MultiAspect;
 
+    struct Code
+    {
+    private:
+        DgnAuthorityId  m_authority;
+        Utf8String      m_value;
+    public:
+        explicit Code(Utf8CP value=nullptr, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
+        explicit Code(Utf8String const& value, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
+        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
+        bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
+        Utf8CP GetValue() const {return m_value.c_str();}
+        DgnAuthorityId GetAuthority() {return m_authority;}
+        
+    };
+
     //! Parameters for creating new DgnElements
     struct CreateParams
     {
@@ -171,18 +186,18 @@ public:
         DgnModelId      m_modelId;
         DgnClassId      m_classId;
         DgnCategoryId   m_categoryId;
-        Utf8CP          m_code;
+        Code            m_code;
         Utf8CP          m_label;
         DgnElementId    m_id;
         DgnElementId    m_parentId;
         double          m_lastModTime;
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code code=Code(), DgnElementId id=DgnElementId(),
                      DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
                      m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
         void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
-        void SetCode(Utf8CP code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
+        void SetCode(Code code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
         void SetParentId(DgnElementId parent) {m_parentId=parent;} //!< Set the ParentId for DgnElements created with this CreateParams
     };
 
@@ -532,7 +547,7 @@ protected:
     DgnModelId      m_modelId;
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
-    Utf8String      m_code;
+    Code            m_code;
     Utf8String      m_label;
     double          m_lastModTime;
     mutable Flags   m_flags;
@@ -689,7 +704,7 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode();}
+    virtual Utf8String _GetDisplayLabel() const {return GetLabel() ? GetLabel() : GetCode().GetValue();}
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
@@ -707,10 +722,10 @@ protected:
     //! The default implementation sets the code without doing any checking.
     //! Override to validate the code.
     //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
-    virtual DgnDbStatus _SetCode(Utf8CP code) {m_code.AssignOrClear(code); return DgnDbStatus::Success;}
+    virtual DgnDbStatus _SetCode(Code code) {m_code=code; return DgnDbStatus::Success;}
 
     //! Override to customize how the DgnElement subclass generates its code.
-    DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
+    DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
 
     virtual GeometricElementCP _ToGeometricElement() const {return nullptr;}
     virtual DgnElement3dCP _ToElement3d() const {return nullptr;}
@@ -890,13 +905,13 @@ public:
     DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
     //! Get the code (business key) of this DgnElement.
-    Utf8CP GetCode() const {return m_code.c_str();}
+    Code GetCode() const {return m_code;}
 
     //! Set the code (business key) of this DgnElement.
     //! @see GetCode, _SetCode
     //! @return DgnDbStatus::Success if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
-    DgnDbStatus SetCode(Utf8CP code) {return _SetCode(code);}
+    DgnDbStatus SetCode(Code code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
     Utf8CP GetLabel() const {return m_label.c_str();}
@@ -1120,7 +1135,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
@@ -1184,7 +1199,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement2dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
@@ -1298,4 +1313,158 @@ public:
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
 };
 
+//=======================================================================================
+//! The DgnElements for a DgnDb.
+//! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
+//! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
+//! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
+//! their reference count goes to 0 and the cache is subsequently purged.
+//! @see DgnDb::Elements
+//! @ingroup DgnElementGroup
+//=======================================================================================
+struct DgnElements : DgnDbTable
+{
+    friend struct DgnDb;
+    friend struct DgnElement;
+    friend struct DgnModel;
+    friend struct DgnModels;
+    friend struct ElementHandler;
+    friend struct TxnManager;
+    friend struct ProgressiveViewFilter;
+    friend struct dgn_TxnTable::Element;
+
+    //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
+    struct Totals
+    {
+        uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
+        uint32_t m_entries;        //! total number of persistent elements 
+        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements 
+        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements 
+    };
+
+    //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
+    //! (note: the same element may become garbage and then be reclaimed, each such occurrence is reflected here.)
+    struct Statistics
+    {
+        uint32_t m_newElements;    //! number of newly created or loaded elements
+        uint32_t m_unReferenced;   //! number of elements that became garbage since last reset
+        uint32_t m_reReferenced;   //! number of garbage elements that were referenced
+        uint32_t m_purged;         //! number of garbage elements that were purged
+    };
+
+private:
+    DgnElementId                m_highestElementId;
+    struct ElemIdTree*          m_tree;
+    HeapZone                    m_heapZone;
+    BeSQLite::StatementCache    m_stmts;
+    BeSQLite::SnappyFromBlob    m_snappyFrom;
+    BeSQLite::SnappyToBlob      m_snappyTo;
+    DgnElementIdSet             m_selectionSet;
+    mutable BeSQLite::BeDbMutex m_mutex;
+
+    void OnReclaimed(DgnElementCR);
+    void OnUnreferenced(DgnElementCR);
+    void Destroy();
+    void AddToPool(DgnElementCR) const;
+    void DropFromPool(DgnElementCR) const;
+    void SendOnLoadedEvent(DgnElementR elRef) const;
+    void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
+    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
+    DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
+    bool IsElementIdUsed(DgnElementId id) const;
+    DgnElementId MakeNewElementId();
+    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
+    DgnDbStatus PerformDelete(DgnElementCR);
+    explicit DgnElements(DgnDbR db);
+    ~DgnElements();
+
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
+
+public:
+    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
+    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
+    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
+
+    //! Look up an element in the pool of loaded elements for this DgnDb.
+    //! @return A pointer to the element, or nullptr if the is not in the pool.
+    //! @private
+    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
+
+    //! Query the DgnModelId of the specified DgnElementId.
+    //! @private
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code code) const;
+
+    //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
+    //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
+    //! unreferenced elements are freed until the the pool uses no more than targetMem bytes. Least recently used elements are freed first.
+    //! If memTarget <= 0, all unreferenced elements are freed.
+    //! @note: There is no guarantee that the pool will not actually consume more than memTarget bytes after this call, since elements with
+    //! reference counts greater than 0 cannot be purged.
+    DGNPLATFORM_EXPORT void Purge(int64_t memTarget);
+
+    //! Get the total counts for the current state of the pool.
+    DGNPLATFORM_EXPORT Totals GetTotals() const;
+
+    //! Shortcut to get the Totals.m_allocatedBytes member
+    int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
+
+    //! Get the statistics for the current state of the element pool.
+    DGNPLATFORM_EXPORT Statistics GetStatistics() const;
+
+    //! Reset the statistics for the element pool.
+    DGNPLATFORM_EXPORT void ResetStatistics();
+
+    //! Get a DgnElement from this DgnDb by its DgnElementId.
+    //! @remarks The element is loaded from the database if necessary.
+    //! @return Invalid if the element does not exist.
+    DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
+
+    //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
+    //! This is merely a templated shortcut to dynamic_cast the return of #GetElement to a subclass of DgnElement.
+    template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
+
+    //! Get an editable copy of an element by DgnElementId.
+    //! @return Invalid if the element does not exist, or if it cannot be edited.
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
+
+    //! Insert a copy of the supplied DgnElement into this DgnDb.
+    //! @param[in] element The DgnElement to insert.
+    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
+    //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
+
+    //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
+    //! @param[in] element The modified copy of element to update.
+    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the update was successful, error status otherwise.
+    //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
+    template<class T> RefCountedCPtr<T> Update(T& element, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
+
+    //! Delete a DgnElement from this DgnDb.
+    //! @param[in] element The element to delete.
+    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
+
+    //! Delete a DgnElement from this DgnDb by DgnElementId.
+    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
+    //! @note This method is merely a shortcut to #GetElement and then #Delete
+    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
+
+    //! Get the Heapzone for this DgnDb.
+    HeapZone& GetHeapZone() {return m_heapZone;}
+
+    //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
+    //! @return Invalid key if the element does not exist.
+    //! @remarks This queries the database for the DgnClassId for the given DgnElementId. It does not check if the element is loaded, nor does it load the element into memory.
+    //! If you have a DgnElement, call GetElementKey on it rather than using this method.
+    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
+
+    DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
+    DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
+};
 END_BENTLEY_DGNPLATFORM_NAMESPACE
