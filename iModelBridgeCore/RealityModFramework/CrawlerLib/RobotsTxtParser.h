@@ -49,7 +49,7 @@ struct RobotsTxtContent : public RefCountedBase
     CRAWLERLIB_EXPORT WString const& GetRobotsTxtFile() const;
     CRAWLERLIB_EXPORT UrlPtr const& GetBaseUrl() const;
 
-    
+
     CRAWLERLIB_EXPORT bool IsUrlDisallowed(UrlPtr url, UserAgent const& agent) const;
 
     CRAWLERLIB_EXPORT void GetUserAgents(std::vector<UserAgent>& agentVector) const;
@@ -79,17 +79,18 @@ struct RobotsTxtContent : public RefCountedBase
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-class RobotsTxtParser 
+class RobotsTxtParser
     {
     public:
     CRAWLERLIB_EXPORT RobotsTxtContentPtr ParseRobotsTxt(WString const& robotTxtFileContent, UrlPtr const& baseUrl) const;
     CRAWLERLIB_EXPORT RobotsTxtContentPtr GetEmptyRobotTxt(UrlPtr const& baseUrl) const;
-    
+
     private:
-    static const std::wregex s_UserAgentRegex; 
-    static const std::wregex s_DisallowRegex; 
-    static const std::wregex s_AllowRegex; 
-    static const std::wregex s_CrawlDelayRegex; 
+    static const std::wregex s_UserAgentRegex;
+    static const std::wregex s_DisallowRegex;
+    static const std::wregex s_AllowRegex;
+    static const std::wregex s_CrawlDelayRegex;
+    static const std::wregex s_DisallowNothingRegex;
     };
 
 END_BENTLEY_CRAWLERLIB_NAMESPACE

@@ -74,13 +74,16 @@ TEST_F(RobotsTxtParserTester, CommentAreIgnoredWhenParsingAllowsAndDisallows)
     ASSERT_TRUE(content->IsUrlDisallowed(expectedDisallowedUrl, UserAgent(L"*")));
     }
 
-TEST_F(RobotsTxtParserTester, DisallowFollowByBlankIsIgnored)
+TEST_F(RobotsTxtParserTester, DisallowFollowByBlankIsTreatedAsAnAllowRoot)
     {
-    WString rules = L"User-agent: *\n"
-                    L"Disallow: \n";
+    WString rules = L"User-agent: coolbot\n"
+                    L"Disallow: #Allow everything for coolbot\n"
+                    L"User-agent: *\n"
+                    L"Disallow: /\n";
     RobotsTxtContentPtr content = parser.ParseRobotsTxt(rules, siteBaseUrl);
 
-    ASSERT_FALSE(content->IsUrlDisallowed(siteBaseUrl, UserAgent(L"*")));
+    ASSERT_FALSE(content->IsUrlDisallowed(siteBaseUrl, UserAgent(L"coolbot")));
+    ASSERT_TRUE(content->IsUrlDisallowed(siteBaseUrl, UserAgent(L"*")));
     }
 
 TEST_F(RobotsTxtParserTester, CanDisallowTheRoot)

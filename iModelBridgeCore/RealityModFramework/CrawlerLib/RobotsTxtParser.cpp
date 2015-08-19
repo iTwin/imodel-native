@@ -15,6 +15,7 @@ using namespace std;
 
 const std::wregex RobotsTxtParser::s_UserAgentRegex = wregex(L"^[Uu]ser-[Aa]gent\\s*:\\s*(\\S+)\\s*#?.*");
 const std::wregex RobotsTxtParser::s_DisallowRegex = wregex(L"^[Dd]isallow\\s*:\\s*(\\S+)\\s*#?.*");
+const std::wregex RobotsTxtParser::s_DisallowNothingRegex = wregex(L"^[Dd]isallow\\s*:\\s*(#.*)?");
 const std::wregex RobotsTxtParser::s_AllowRegex = wregex(L"^[Aa]llow\\s*:\\s*(\\S+)\\s*#?.*");
 const std::wregex RobotsTxtParser::s_CrawlDelayRegex = wregex(L"^[Cc]rawl-[Dd]elay\\s*:\\s*(\\d+)\\s*#?.*");
 
@@ -239,19 +240,6 @@ RobotsTxtContentPtr RobotsTxtParser::ParseRobotsTxt(WString const& robotTxtFileC
             agentsConcernedByCurrentRule.push_back(agent);
             lastLineWasUserAgent = true;
             }
-        else if(regex_match(line.c_str(), match, s_DisallowRegex))
-            {
-            for(auto agent : agentsConcernedByCurrentRule)
-                {
-                try
-                    {
-                    UrlPtr disallowedUrl = new Url(match[1].str().c_str(), baseUrl);
-                    content->AddDisallowedUrl(agent, disallowedUrl);
-                    }
-                catch(InvalidUrlException&) {}
-                }
-            lastLineWasUserAgent = false;
-            }
         else if(regex_match(line.c_str(), match, s_AllowRegex))
             {
             for(auto agent : agentsConcernedByCurrentRule)
@@ -260,6 +248,28 @@ RobotsTxtContentPtr RobotsTxtParser::ParseRobotsTxt(WString const& robotTxtFileC
                     {
                     UrlPtr allowedUrl = new Url(match[1].str().c_str(), baseUrl);
                     content->AddAllowedUrl(agent, allowedUrl);
+                    }
+                catch(InvalidUrlException&) {}
+                }
+            lastLineWasUserAgent = false;
+            }
+        else if(regex_match(line.c_str(), match, s_DisallowNothingRegex))
+            {
+            for(auto agent : agentsConcernedByCurrentRule)
+                {
+                UrlPtr allowedUrl = new Url(L"/", baseUrl);
+                content->AddAllowedUrl(agent, allowedUrl);
+                }
+            lastLineWasUserAgent = false;
+            }
+        else if(regex_match(line.c_str(), match, s_DisallowRegex))
+            {
+            for(auto agent : agentsConcernedByCurrentRule)
+                {
+                try
+                    {
+                    UrlPtr disallowedUrl = new Url(match[1].str().c_str(), baseUrl);
+                    content->AddDisallowedUrl(agent, disallowedUrl);
                     }
                 catch(InvalidUrlException&) {}
                 }
