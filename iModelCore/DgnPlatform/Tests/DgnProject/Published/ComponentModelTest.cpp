@@ -461,7 +461,7 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
         ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
         ASSERT_NE( nullptr , sparam );
         ECN::ECValue ecv;
-        ECUtils::ToECFromJson(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
+        ECUtils::ConvertJsonToECValue(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
         sparam->SetValue(ecv);
         }
 

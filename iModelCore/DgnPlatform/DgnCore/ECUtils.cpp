@@ -28,7 +28,7 @@ static std::pair<ECN::PrimitiveType, BentleyStatus> jsonTypeToEcPrimitiveType(Js
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ECUtils::ECPrimitiveValueToJson(Json::Value& json, ECN::ECValueCR ecv)
+DgnDbStatus ECUtils::StoreECValueAsJson(Json::Value& json, ECN::ECValueCR ecv)
     {
     if (ECN::VALUEKIND_Primitive != ecv.GetKind())
         return DgnDbStatus::BadArg;
@@ -40,7 +40,7 @@ DgnDbStatus ECUtils::ECPrimitiveValueToJson(Json::Value& json, ECN::ECValueCR ec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ECUtils::ECPrimitiveValueFromJson(ECN::ECValueR ecv, Json::Value const& json)
+DgnDbStatus ECUtils::LoadECValueFromJson(ECN::ECValueR ecv, Json::Value const& json)
     {
     ecv = ECValue(json["Value"].asCString());
     return ecv.ConvertToPrimitiveType(ECUtils::ECPrimtiveTypeFromString(json["Type"].asCString()))? DgnDbStatus::Success: DgnDbStatus::BadArg;
@@ -121,7 +121,7 @@ ECN::PrimitiveType ECUtils::ECPrimtiveTypeFromString(Utf8CP str)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECUtils::ToJsonFromEC(Json::Value& jv, ECN::ECValue const& v)
+BentleyStatus ECUtils::ConvertECValueToJson(Json::Value& jv, ECN::ECValue const& v)
     {
     if (!v.IsPrimitive())
         return BSIERROR;
@@ -158,7 +158,7 @@ BentleyStatus ECUtils::ToJsonFromEC(Json::Value& jv, ECN::ECValue const& v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECUtils::ToECFromJson(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
+BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& jsonValue, ECN::PrimitiveType typeRequired)
     {
     if (jsonValue.isBool())
         v = ECN::ECValue(jsonValue.asBool());
@@ -189,7 +189,7 @@ BentleyStatus ECUtils::ToJsonPropertiesFromECProperties(Json::Value& json, ECN::
         parm.Trim();
         ECN::ECValue ecv;
         ec.GetValue(ecv, parm.c_str());
-        if (ToJsonFromEC(json[parm.c_str()], ecv) != BSISUCCESS)
+        if (ConvertECValueToJson(json[parm.c_str()], ecv) != BSISUCCESS)
             return BSIERROR;
         }
     return BSISUCCESS;

@@ -15,7 +15,7 @@ BentleyStatus ModelSolverDef::ParameterSet::ConvertValuesToJson(Json::Value& jso
     {
     for (auto const& parm : *this)
         {
-        if (BSISUCCESS != ECUtils::ToJsonFromEC(json[parm.GetName().c_str()], parm.GetValue()))
+        if (BSISUCCESS != ECUtils::ConvertECValueToJson(json[parm.GetName().c_str()], parm.GetValue()))
             return BSIERROR;
         }
     return BSISUCCESS;
@@ -123,7 +123,7 @@ Json::Value ModelSolverDef::Parameter::ToJson() const
     Json::Value v;
     v["Scope"] = (Scope::Class == m_scope)? PARARMETER_SCOPE_CLASS: (Scope::Type == m_scope)? PARARMETER_SCOPE_TYPE: PARARMETER_SCOPE_INSTANCE;
     v["Name"] = m_name.c_str();
-    ECUtils::ECPrimitiveValueToJson(v["Value"], m_value);
+    ECUtils::StoreECValueAsJson(v["Value"], m_value);
     return v;
     }
 
@@ -135,7 +135,7 @@ ModelSolverDef::Parameter::Parameter(Json::Value const& json)
     auto s = json["Scope"].asInt();
     m_scope = (PARARMETER_SCOPE_CLASS == s)? Scope::Class: (PARARMETER_SCOPE_TYPE == s)? Scope::Type: Scope::Instance;
     m_name = json["Name"].asCString();
-    ECUtils::ECPrimitiveValueFromJson(m_value, json["Value"]);
+    ECUtils::LoadECValueFromJson(m_value, json["Value"]);
     }
 
 // *** Persistent values *** Do not change ***
