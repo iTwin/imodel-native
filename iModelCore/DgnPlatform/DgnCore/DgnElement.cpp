@@ -189,8 +189,7 @@ Utf8String DgnElement::_GenerateDefaultCode()
     if (!m_elementId.IsValid())
         return "";
 
-    Utf8String className(GetElementClass()->GetName());
-    return Utf8PrintfString("%s%lld", className.c_str(), m_elementId.GetValue());
+    return Utf8PrintfString("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xFFFF & m_elementId.GetValue()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,15 +362,20 @@ void DgnElement::_OnReversedAdd() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_InsertInDb()
     {
-    enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7,LastMod=8};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
+    enum Column : int { ElementId = 1, ECClassId = 2, ModelId = 3, CategoryId = 4, Label = 5, Code = 6, ParentId = 7, LastMod = 8 };
+    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
     stmt->BindId(Column::ModelId, m_modelId);
     stmt->BindId(Column::CategoryId, m_categoryId);
-    stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
-    stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
+
+    if (!Utf8String::IsNullOrEmpty(m_label.c_str()))
+        stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
+
+    if (!Utf8String::IsNullOrEmpty(m_code.c_str()))
+        stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
 
@@ -388,8 +392,13 @@ DgnDbStatus DgnElement::_UpdateInDb()
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
-    stmt->BindText(Column::Label, GetLabel(),       Statement::MakeCopy::No);
-    stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
+
+    if (!Utf8String::IsNullOrEmpty(m_label.c_str()))
+        stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
+    
+    if (!Utf8String::IsNullOrEmpty(m_code.c_str()))
+        stmt->BindText(Column::Code, m_code.c_str(), Statement::MakeCopy::No);
+    
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
     stmt->BindId(Column::ElementId, m_elementId);
@@ -411,7 +420,6 @@ DgnElementIdSet DgnElement::QueryChildren() const
 
     return elementIdSet;
     }
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/10
@@ -1549,7 +1557,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 
     if (nullptr != dynamic_cast<Item*>(aspect.get()))
         {
-        BeAssert(false && "You must use the DgnElement::Item class to load Items");
+        BeAssert(false); // You must use the DgnElement::Item class to load Items
         return nullptr;
         }
 

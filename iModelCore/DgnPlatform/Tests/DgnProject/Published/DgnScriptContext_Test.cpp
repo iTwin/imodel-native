@@ -198,10 +198,10 @@ TEST(DgnScriptTest, RunScripts)
     BeFileName jsFileName;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
     jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
-
+    printf ("Hello world\n");
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
-
+    //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
     }
 

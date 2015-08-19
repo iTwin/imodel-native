@@ -35,7 +35,23 @@ geomJsApiTsDir = $(dgnScriptDir)GeomJsApi/ts/
 # Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
 # *** When you define new wrapper clases, add the source file to this list
 # ---------------------------------------------------------------------------------------------------------------
-$(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts $(geomJsApiTsDir)GeomJsApiCallbacksTemplate.cpp $(geomJsApiTsDir)GeomJsApiProjectionTemplate.h $(DgnPlatformAPISrc)GeomJsApi.h
+$(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
+                 $(geomJsApiTsDir)GeomJsApiCallbacksTemplate.cpp\
+                 $(geomJsApiTsDir)GeomJsApiProjectionTemplate.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDpoint3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDVector3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsYawPitchRollAngles.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDRay3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dDVector3dDVector3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsAngle.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDSegment3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDEllipse3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsCurvePrimitive.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDRange3d.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsRotMatrix.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsTransform.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dArray.h\
+                 $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \
         --declarationPath "$(geomJsApiTsDir)GeomJsApi.d.ts" \

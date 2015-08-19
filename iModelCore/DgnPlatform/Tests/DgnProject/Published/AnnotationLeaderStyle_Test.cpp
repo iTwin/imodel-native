@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/AnnotationLeaderStyle_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/DgnProject/Published/AnnotationLeaderStyle_Test.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnCore/Annotations/Annotations.h>
 

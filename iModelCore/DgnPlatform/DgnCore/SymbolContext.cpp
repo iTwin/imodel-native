@@ -51,7 +51,7 @@ void            SymbolContext::_Detach ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 QvElemP         SymbolContext::DrawSymbolForCache (IDisplaySymbol* symbol, QvCacheR symbolCache)
     {
-    m_ICachedDraw->BeginCacheElement (&symbolCache, Is3dView (), 0.0); // zDepth gets baked into placement transform I believe... -BB 04/15
+    m_ICachedDraw->BeginCacheElement (&symbolCache);
 
     m_creatingCacheElem = true;
     symbol->_Draw (*this);

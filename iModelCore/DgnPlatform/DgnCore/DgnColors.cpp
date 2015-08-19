@@ -12,14 +12,79 @@
 #define DEGREEFACTOR                    60.0
 #define MINIMUM_SATURATION_FIXEDHUE     40.0
 
+const double VISIBILITY_GOAL       = 40.0;
+const int    HSV_SATURATION_WEIGHT = 4;
+const int    HSV_VALUE_WEIGHT      = 2;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertRgbToHsv(HsvColorDef* hsv, ColorDef const* rgb)
+RgbFactor ColorUtil::ToRgbFactor(ColorDef color)
     {
-    double      min, max, r = rgb->GetRed(), g = rgb->GetGreen(), b = rgb->GetBlue();
+    double      scale = 1.0 / (double) UCHAR_MAX;
+    RgbFactor   rgbFactor;
+
+    rgbFactor.red   = (double) (color.GetRed() * scale);
+    rgbFactor.green = (double) (color.GetGreen() * scale);
+    rgbFactor.blue  = (double) (color.GetBlue() * scale);
+
+    return rgbFactor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BSI             07/91
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef ColorUtil::FromRgbFactor(RgbFactor rgbFactor)
+    {
+    double      scale = (double) UCHAR_MAX;
+    ColorDef    color;
+
+    color.SetRed((unsigned char) (rgbFactor.red * scale + 0.5));
+    color.SetGreen((unsigned char) (rgbFactor.green * scale + 0.5));
+    color.SetBlue((unsigned char) (rgbFactor.blue * scale + 0.5));
+
+    return color;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BSI             07/91
++---------------+---------------+---------------+---------------+---------------+------*/
+FPoint3d ColorUtil::ToFloatRgb(ColorDef color)
+    {
+    double      scale = 1.0 / (double) UCHAR_MAX;
+    FPoint3d    floatRgb;
+
+    floatRgb.x = (float) (color.GetRed() * scale);
+    floatRgb.y = (float) (color.GetGreen() * scale);
+    floatRgb.z = (float) (color.GetBlue() * scale);
+
+    return floatRgb;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BSI             07/91
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef ColorUtil::FromFloatRgb(FPoint3d floatRgb)
+    {
+    float       scale = (float) UCHAR_MAX;
+    ColorDef    color;
+
+    color.SetRed((unsigned char) (floatRgb.x * scale + 0.5));
+    color.SetGreen((unsigned char) (floatRgb.y * scale + 0.5));
+    color.SetBlue((unsigned char) (floatRgb.z * scale + 0.5));
+
+    return color;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BSI             07/91
++---------------+---------------+---------------+---------------+---------------+------*/
+HsvColorDef ColorUtil::ToHSV(ColorDef color)
+    {
+    double      min, max, r = color.GetRed(), g = color.GetGreen(), b = color.GetBlue();
     double      delta_rgb, inthue;
     double      red_distance, green_distance, blue_distance;
+    HsvColorDef hsv;
 
     min = (r < g) ? r : g;
 
@@ -32,15 +97,15 @@ void ColorUtil::ConvertRgbToHsv(HsvColorDef* hsv, ColorDef const* rgb)
         max = b;
 
     /* amount of "blackness" present */
-    hsv->value = (int)((max/255.0 * MAXFACTOR) + 0.5);
+    hsv.value = (int)((max/255.0 * MAXFACTOR) + 0.5);
     delta_rgb  = max - min;
 
     if (max != 0.0)
-        hsv->saturation = (int)((delta_rgb / max * MAXFACTOR) + 0.5);
+        hsv.saturation = (int)((delta_rgb / max * MAXFACTOR) + 0.5);
     else
-        hsv->saturation = 0;
+        hsv.saturation = 0;
 
-    if (hsv->saturation)
+    if (hsv.saturation)
         {
         red_distance   = (max - r) / delta_rgb;
         green_distance = (max - g) / delta_rgb;
@@ -59,127 +124,49 @@ void ColorUtil::ConvertRgbToHsv(HsvColorDef* hsv, ColorDef const* rgb)
         if (inthue < 0.0)
             inthue += MAXDEGREES;
 
-        hsv->hue = (int)(inthue + 0.5);
+        hsv.hue = (int)(inthue + 0.5);
 
-        if (hsv->hue >= 360)
-            hsv->hue = 0;
+        if (hsv.hue >= 360)
+            hsv.hue = 0;
         }
     else
         {
-        hsv->hue = 0;
+        hsv.hue = 0;
         }
-    }
 
-/*---------------------------------------------------------------------------------**//**
-    Extract bytes from int color, return as (doubles) RgbFactor.
-* @bsimethod                                                    BSI             07/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertIntToRGBFactor(RgbFactor& rgbFactor, ColorDef intColor)
-    {
-    double              scale = 1.0 / (double) UCHAR_MAX;
-    const unsigned char *pByte = (const unsigned char *) (&intColor);
-
-    rgbFactor.red   = (double) pByte[0] * scale;
-    rgbFactor.green = (double) pByte[1] * scale;
-    rgbFactor.blue  = (double) pByte[2] * scale;
-    }
- 
-/*---------------------------------------------------------------------------------**//**
-    Scale 0..1 doubles to 0..255, pack as bytes.
-* @bsimethod                                                    BSI             07/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertRGBFactorToInt(ColorDef& intColor, RgbFactor &rgbFactor)
-    {
-    double          scale = (double) UCHAR_MAX;
-    unsigned char *pByte = (unsigned char *) (&intColor);
-    intColor = ColorDef::Black();
-    pByte[0] = (unsigned char) (rgbFactor.red   * scale + 0.5);
-    pByte[1] = (unsigned char) (rgbFactor.green * scale + 0.5);
-    pByte[2] = (unsigned char) (rgbFactor.blue  * scale + 0.5);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- Extract bytes from int color, return as (float) FloatRgb.
-* @bsimethod                                                    BSI             07/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertIntToFloatRgb(FPoint3dR rgb, ColorDef intColor)
-    {
-    double              scale = 1.0 / (double) UCHAR_MAX;
-    const unsigned char *pByte = (const unsigned char *) (&intColor);
-
-    rgb.x   = (float) (pByte[0] * scale);
-    rgb.y   = (float) (pByte[1] * scale);
-    rgb.z   = (float) (pByte[2] * scale);
-    }
-
-/*---------------------------------------------------------------------------------**//**
- Scale 0..1 float to 0..255, pack as bytes.
-* @bsimethod                                                    BSI             07/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertFloatRgbToInt(ColorDef &intColor, FPoint3dR rgb)
-    {
-    float    scale = (float) UCHAR_MAX;
-    unsigned char *pByte = (unsigned char *) (&intColor);
-    intColor = ColorDef::Black();
-    pByte[0] = (unsigned char) (rgb.x * scale + 0.5);
-    pByte[1] = (unsigned char) (rgb.y * scale + 0.5);
-    pByte[2] = (unsigned char) (rgb.z * scale + 0.5);
+    return hsv;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertRgbFactorToColorDef(ColorDef &colorDef, RgbFactor const& rgbFactor)
+ColorDef ColorUtil::FromHSV(HsvColorDef hsv)
     {
-    static double  s_scale  = (double) UCHAR_MAX;
+    ColorDef    color;
 
-    colorDef.SetRed((unsigned char) (rgbFactor.red   * s_scale + 0.5));
-    colorDef.SetGreen((unsigned char) (rgbFactor.green * s_scale + 0.5));
-    colorDef.SetBlue((unsigned char) (rgbFactor.blue  * s_scale + 0.5));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BSI             07/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertColorDefToRgbFactor(RgbFactorR rgbFactor, ColorDef colorDef)
-    {
-    static double  s_scale  = 1.0 / (double) UCHAR_MAX;
-
-    rgbFactor.red   = (double) colorDef.GetRed()   * s_scale;
-    rgbFactor.green = (double) colorDef.GetGreen() * s_scale;
-    rgbFactor.blue  = (double) colorDef.GetBlue()  * s_scale;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BSI             07/91
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertHsvToRgb(ColorDef* rgb, HsvColorDef const* hsv)
-    {
-    double      dhue, dsaturation, dvalue = hsv->value;
-    double      hue_fractpart;
-    int         white_level, hue_intpart;
-    int         p, q, t, v;
-
-    /* Check for simple case first. */
-    if ((!hsv->saturation) || (hsv->hue == -1))
+    // Check for simple case first.
+    if ((!hsv.saturation) || (hsv.hue == -1))
         {
-        /* hue must be undefined, have no color only white */
-        white_level = (int)((255.0 * dvalue / MAXFACTOR) + 0.5);
-        rgb->SetAllColors(white_level & 0xff);
-        return;
+        // hue must be undefined, have no color only white
+        int white_level = (int)((255.0 * hsv.value / MAXFACTOR) + 0.5);
+        color.SetAllColors(white_level & 0xff);
+
+        return color;
         }
 
-    dhue        = hsv->hue;
-    dsaturation = hsv->saturation;
+    double      dhue = hsv.hue, dsaturation = hsv.saturation, dvalue = hsv.value;
+    double      hue_fractpart;
+    int         hue_intpart;
+    int         p, q, t, v;
 
     if (dhue == MAXDEGREES)
         dhue = 0.0;
 
-    dhue         /= DEGREEFACTOR;                 /* hue is now [0..6] */
-    hue_intpart   = (int)dhue;                    /* convert double -> int */
+    dhue /= DEGREEFACTOR; // hue is now [0..6]
+    hue_intpart = (int)dhue; // convert double -> int
     hue_fractpart = dhue - (double)(hue_intpart);
-    dvalue       /= MAXFACTOR;
-    dsaturation  /= MAXFACTOR;
+    dvalue /= MAXFACTOR;
+    dsaturation /= MAXFACTOR;
 
     p = (int)((dvalue * (1.0 - dsaturation) * 255.0) + 0.5);
     q = (int)((dvalue * (1.0 - (dsaturation * hue_fractpart)) * 255.0) + 0.5);
@@ -188,47 +175,101 @@ void ColorUtil::ConvertHsvToRgb(ColorDef* rgb, HsvColorDef const* hsv)
 
     switch (hue_intpart)
         {
-        case 0:     /* reddish */
+        case 0: // reddish
             {
-            rgb->SetRed(v & 0xff);
-            rgb->SetGreen(t & 0xff);
-            rgb->SetBlue(p & 0xff);
+            color.SetRed(v & 0xff);
+            color.SetGreen(t & 0xff);
+            color.SetBlue(p & 0xff);
             break;
             }
-        case 1:     /* yellowish */
+        case 1: // yellowish
             {
-            rgb->SetRed(q & 0xff);
-            rgb->SetGreen(v & 0xff);
-            rgb->SetBlue(p & 0xff);
+            color.SetRed(q & 0xff);
+            color.SetGreen(v & 0xff);
+            color.SetBlue(p & 0xff);
             break;
             }
-        case 2:     /* greenish */
+        case 2: // greenish
             {
-            rgb->SetRed(p & 0xff);
-            rgb->SetGreen(v & 0xff);
-            rgb->SetBlue(t & 0xff);
+            color.SetRed(p & 0xff);
+            color.SetGreen(v & 0xff);
+            color.SetBlue(t & 0xff);
             break;
             }
-        case 3:     /* cyanish */
+        case 3: // cyanish
             {
-            rgb->SetRed(p & 0xff);
-            rgb->SetGreen(q & 0xff);
-            rgb->SetBlue(v & 0xff);
+            color.SetRed(p & 0xff);
+            color.SetGreen(q & 0xff);
+            color.SetBlue(v & 0xff);
             break;
             }
-        case 4:     /* bluish */
+        case 4: // bluish
             {
-            rgb->SetRed(t & 0xff);
-            rgb->SetGreen(p & 0xff);
-            rgb->SetBlue(v & 0xff);
+            color.SetRed(t & 0xff);
+            color.SetGreen(p & 0xff);
+            color.SetBlue(v & 0xff);
             break;
             }
-        case 5:     /* magenta-ish */
+        case 5: // magenta-ish
             {
-            rgb->SetRed(v & 0xff);
-            rgb->SetGreen(p & 0xff);
-            rgb->SetBlue(q & 0xff);
+            color.SetRed(v & 0xff);
+            color.SetGreen(p & 0xff);
+            color.SetBlue(q & 0xff);
             break;
+            }
+        }
+
+    return color;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/01
++---------------+---------------+---------------+---------------+---------------+------*/
+static double colorVisibilityCheck(ColorDef fg, ColorDef bg)
+    {
+    // Compute luminosity...
+    double red   = abs(fg.GetRed()   - bg.GetRed());
+    double green = abs(fg.GetGreen() - bg.GetGreen());
+    double blue  = abs(fg.GetBlue()  - bg.GetBlue());
+
+    return (0.30 * red) + (0.59 * green) + (0.11 * blue);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   08/01
++---------------+---------------+---------------+---------------+---------------+------*/
+static void adjustHSVColor(HsvColorDef& fgHsv, bool darkenColor, int delta)
+    {
+    if (darkenColor)
+        {
+        int     weightedDelta = delta*HSV_VALUE_WEIGHT;
+
+        if (fgHsv.value >= weightedDelta)
+            {
+            fgHsv.value -= weightedDelta;
+            }
+        else
+            {
+            weightedDelta -= fgHsv.value;
+
+            fgHsv.value = 0;
+            fgHsv.saturation = fgHsv.saturation + weightedDelta < 100 ? fgHsv.saturation + weightedDelta : 100;
+            }
+        }
+    else
+        {
+        int weightedDelta = delta*HSV_SATURATION_WEIGHT;
+
+        if (fgHsv.saturation >= weightedDelta)
+            {
+            fgHsv.saturation -= weightedDelta;
+            }
+        else
+            {
+            weightedDelta -= fgHsv.saturation;
+
+            fgHsv.saturation = 0;
+            fgHsv.value = fgHsv.value + weightedDelta < 100 ? fgHsv.value + weightedDelta : 100;
             }
         }
     }
@@ -236,32 +277,61 @@ void ColorUtil::ConvertHsvToRgb(ColorDef* rgb, HsvColorDef const* hsv)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::AdjustValueAndSaturation(ColorDef* colorArray, uint32_t numColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed)
+ColorDef ColorUtil::AdjustForContrast(ColorDef fg, ColorDef bg, ColorDef vw)
+    {
+    double visibility = colorVisibilityCheck(fg, bg);
+
+    if (VISIBILITY_GOAL <= visibility)
+        return fg;
+
+    int         adjPercent = (int) (((VISIBILITY_GOAL - visibility) / 255.0) * 100.0);
+    Byte        alpha = fg.GetAlpha();
+    HsvColorDef fgHSV = ToHSV(fg);
+    HsvColorDef darkerHSV = fgHSV;
+    HsvColorDef brightHSV = fgHSV;
+
+    adjustHSVColor(darkerHSV, true,  adjPercent);
+    adjustHSVColor(brightHSV, false, adjPercent);
+
+    ColorDef darker = FromHSV(darkerHSV); darker.SetAlpha(alpha); // Preserve original color's transparency...
+    ColorDef bright = FromHSV(brightHSV); bright.SetAlpha(alpha);
+
+    if (bright.GetValueNoAlpha() == bg.GetValueNoAlpha()) // Couldn't adjust brighter...
+        return darker;
+
+    if (darker.GetValueNoAlpha() == bg.GetValueNoAlpha()) // Couldn't adjust darker...
+        return bright;
+
+    // NOTE: Best choice is the one most visible against the background color...
+    return (colorVisibilityCheck(bright, vw) >= colorVisibilityCheck(darker, vw)) ? bright : darker;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  05/09
++---------------+---------------+---------------+---------------+---------------+------*/
+void ColorUtil::AdjustValueAndSaturation(ColorDefP colorArray, size_t numColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed)
     {
     if (hueFixed && valueAndSaturationFixed)
         {
-        ColorDef     oneColor;
-        HsvColorDef     hsv;
+        HsvColorDef hsv;
 
         hsv.hue         = (int)(hueValue);
         hsv.value       = (int)(valueAdjustment * 100.0 + 0.5);
         hsv.saturation  = (int)(saturationAdjustment * 100.0 + 0.5);
 
-        ColorUtil::ConvertHsvToRgb(&oneColor, &hsv);
+        ColorDef oneColor = FromHSV(hsv);
 
-        for (uint32_t iColor=0; iColor < numColors; iColor++)
+        for (size_t iColor=0; iColor < numColors; iColor++)
             colorArray[iColor] = oneColor;
 
         return;
         }
 
-    for (uint32_t iColor=0; iColor < numColors; iColor++)
+    for (size_t iColor=0; iColor < numColors; iColor++)
         {
-        HsvColorDef hsv;
         double      newValue;
         double      newSaturation;
-
-        ColorUtil::ConvertRgbToHsv(&hsv, &colorArray[iColor]);
+        HsvColorDef hsv = ToHSV(colorArray[iColor]);
 
         if (valueAndSaturationFixed)
             {
@@ -299,14 +369,14 @@ void ColorUtil::AdjustValueAndSaturation(ColorDef* colorArray, uint32_t numColor
         hsv.value       = (int)(newValue + 0.5);
         hsv.saturation  = (int)(newSaturation + 0.5);
 
-        ColorUtil::ConvertHsvToRgb(&colorArray[iColor], &hsv);
+        colorArray[iColor] = FromHSV(hsv);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor)
+void ColorUtil::Interpolate (ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor)
     {
     if (nInterpolatedColors < 2)
         return;
@@ -314,12 +384,13 @@ void ColorUtil::InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInte
     interpolatedColors[0] = startColor;
     interpolatedColors[nInterpolatedColors-1] = endColor;
                                                                                                                
-    RgbFactor       startFactor, endFactor, interpolatedFactor;
+    RgbFactor startFactor, endFactor, interpolatedFactor;
 
-    ConvertColorDefToRgbFactor(startFactor, startColor);
-    ConvertColorDefToRgbFactor(endFactor, endColor);
+    startFactor = ToRgbFactor(startColor);
+    endFactor   = ToRgbFactor(endColor);
 
-    double      step = 1.0 / (double) (nInterpolatedColors - 1.0), endRatio = step, startRatio;
+    double step = 1.0 / (double) (nInterpolatedColors - 1.0), endRatio = step, startRatio;
+
     for (size_t i=1; i<nInterpolatedColors-1; i++, endRatio += step)
         {
         startRatio = 1.0 - endRatio;
@@ -328,7 +399,7 @@ void ColorUtil::InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInte
         interpolatedFactor.green = startRatio * startFactor.green + endRatio * endFactor.green;
         interpolatedFactor.blue  = startRatio * startFactor.blue  + endRatio * endFactor.blue;
 
-        ConvertRgbFactorToColorDef(interpolatedColors[i], interpolatedFactor);
+        interpolatedColors[i] = FromRgbFactor(interpolatedFactor);
         }
     }
 
@@ -340,7 +411,7 @@ DgnTrueColorId DgnColors::FindMatchingColor(ColorDef color) const
     Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Value=?");
     stmt.BindInt(1, color.GetValue());
 
-    return  (BE_SQLITE_ROW == stmt.Step()) ? stmt.GetValueId<DgnTrueColorId>(0) : DgnTrueColorId();
+    return (BE_SQLITE_ROW == stmt.Step()) ? stmt.GetValueId<DgnTrueColorId>(0) : DgnTrueColorId();
     }
 
 /*---------------------------------------------------------------------------------**//**

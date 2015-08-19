@@ -360,8 +360,6 @@ BentleyStatus DgnLinks::Update(DgnLinkCR link)
 BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkR link)
     {
     // Don't assert to ensure an invalid ID.
-    // Consider the case of cloning a link object, modifying, and then inserting it as a new link. The Clone keeps the ID, and I don't think it's worth having an overload of Clone to expose this detail.
-
     Utf8String data = Json::FastWriter::ToString(link.m_data);
 
     DgnLinkId nextId;

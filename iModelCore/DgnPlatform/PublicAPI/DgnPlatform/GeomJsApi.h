@@ -14,52 +14,61 @@
 #include <BeJavaScript/BeJavaScript.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <Geom/DPoint3d.h>
-#include <Geom/Angle.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      06/15
-//=======================================================================================
-struct JsDPoint3d : RefCountedBase
+#define JSSTRUCT(_JsStructName_) \
+struct _JsStructName_;  \
+typedef struct _JsStructName_ * _JsStructName_##P;
+
+template<typename NativeType>
+struct JsGeomWrapperBase : RefCountedBase   
 {
-    DPoint3d m_pt;
-
-    JsDPoint3d() {m_pt.Init(0,0,0);}
-    JsDPoint3d(DPoint3dCR pt) : m_pt(pt) {;}
-    JsDPoint3d(double x, double y, double z) {m_pt.x=x; m_pt.y=y; m_pt.z=z;}
-
-    double GetX() {return m_pt.x;}
-    double GetY() {return m_pt.y;}
-    double GetZ() {return m_pt.z;}
-    void SetX(double v) {m_pt.x = v;}
-    void SetY(double v) {m_pt.y = v;}
-    void SetZ(double v) {m_pt.z = v;}
+protected:
+NativeType m_data;
+public:
+NativeType Get () const {return m_data;}
 };
 
-typedef JsDPoint3d* JsDPoint3dP;
+JSSTRUCT(JsDPoint3d);
+JSSTRUCT(JsDVector3d);
+JSSTRUCT(JsDEllipse3d);
+JSSTRUCT(JsDSegment3d);
+JSSTRUCT(JsDRay3d);
+JSSTRUCT(JsDPoint3dDVector3dDVector3d);
+JSSTRUCT(JsCurvePrimitive);
+JSSTRUCT(JsCurveVector);
+JSSTRUCT(JsSolidPrimitive);
+JSSTRUCT(JsPolyface);
+JSSTRUCT(JsBsplineCurve);
+JSSTRUCT(JsBsplineSurface);
+JSSTRUCT(JsAngle);
+JSSTRUCT(JsBsplineSurface);
+JSSTRUCT(JsYawPitchRollAngles);
+JSSTRUCT(JsRotMatrix);
+JSSTRUCT(JsTransform);
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      06/15
-//=======================================================================================
-struct JsYawPitchRollAngles : RefCountedBase
-{
-    YawPitchRollAngles m_angles;
+JSSTRUCT(JsDPoint3dArray)
+JSSTRUCT(JsDoubleArray)
 
-    JsYawPitchRollAngles() {m_angles.FromDegrees(0,0,0);}
-    JsYawPitchRollAngles(YawPitchRollAnglesCR angles) : m_angles(angles) {;}
-    JsYawPitchRollAngles(double yaw, double pitch, double roll) : m_angles(YawPitchRollAngles::FromDegrees(yaw,pitch,roll)) {;}
+END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-    double GetYaw  () {return m_angles.GetYaw().Degrees();}
-    double GetPitch() {return m_angles.GetPitch().Degrees();}
-    double GetRoll () {return m_angles.GetRoll().Degrees();}
-    void SetYaw  (double v) {m_angles.FromDegrees(v, GetPitch(), GetRoll());}
-    void SetPitch(double v) {m_angles.FromDegrees(GetYaw(), v, GetRoll());}
-    void SetRoll (double v) {m_angles.FromDegrees(GetYaw(), GetPitch(), v);}
-};
+#include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
+#include <DgnPlatform/GeomJsTypes/JSDVector3d.h>
+#include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
+#include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
+#include <DgnPlatform/GeomJsTypes/JSDPoint3dDVector3dDVector3d.h>
+#include <DgnPlatform/GeomJsTypes/JsAngle.h>
+#include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
+#include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
+#include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
+#include <DgnPlatform/GeomJsTypes/JSRotMatrix.h>
+#include <DgnPlatform/GeomJsTypes/JSTransform.h>
+#include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
+#include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
 
-typedef JsYawPitchRollAngles* JsYawPitchRollAnglesP;
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
