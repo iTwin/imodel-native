@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/printf_test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/BeTest.h>
@@ -94,7 +94,11 @@ static int
 strisnan (const char *string, size_t start_index, size_t end_index, int uppercase)
 {
 #if defined (_WIN32)
-  return strstr (string, "#IND") != NULL;
+#if _MSC_VER >= 1900
+	return strstr(string, "nan(ind)") != NULL;
+#else
+	return strstr (string, "#IND") != NULL;
+#endif
 #else
   return strstr (string, "NAN") != NULL || strstr (string, "nan") != NULL || strstr (string, "NaN") != NULL;
 #endif
@@ -107,7 +111,11 @@ size_t xn = strlen (endswith);
 if (strcmp (string+(n-xn), endswith) != 0)
  return false;
 #if defined (_WIN32)
+#if _MSC_VER >= 1900
+  return strstr(string, "inf") != NULL;
+#else
   return strstr (string, "#INF") != NULL;
+#endif
 #else
   return strstr (string, "inf") != NULL || strstr (string, "INF") != NULL || strstr (string, "Inf") != NULL;
 #endif
