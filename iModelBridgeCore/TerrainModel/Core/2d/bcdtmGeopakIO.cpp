@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmGeopakIO.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -54,20 +54,20 @@ BENTLEYDTM_EXPORT int bcdtmRead_dataFileToDataObject(DTM_DAT_OBJ *Data,WCharCP D
  if( Data->numPts == 0 )
    {
     if( Data->featureCodeP != NULL ) 
-	{
-		free(Data->featureCodeP) ;
-		Data->featureCodeP = NULL;
-	}
+    {
+        free(Data->featureCodeP) ;
+        Data->featureCodeP = NULL;
+    }
     if( Data->userTagP != NULL ) 
-	{
-		free(Data->userTagP) ;
-		Data->userTagP = NULL;
-	}
+    {
+        free(Data->userTagP) ;
+        Data->userTagP = NULL;
+    }
     if( Data->pointsP != NULL )
-	{
-		free(Data->pointsP) ;
-		Data->pointsP = NULL;
-	}
+    {
+        free(Data->pointsP) ;
+        Data->pointsP = NULL;
+    }
     bcdtmWrite_message(1,0,0,"No Data In %s",DataFileName) ;
     return(1) ; 
    }
@@ -136,9 +136,9 @@ BENTLEYDTM_Public int bcdtmRead_dataFileASCIIToDataObject(DTM_DAT_OBJ *Data,WCha
        *bp = 0 ;
        if( ! bcdtmUtl_decodeDataRecord(InputBuffer,&Fc,&x,&y,&z) )
          {
-	      if( bcdtmObject_storePointInDataObject(Data,Fc,DTM_NULL_USER_TAG,nullGuid,x,y,z) )
-	        { fclose(fpDATA) ; return(1) ; }
-	     }
+          if( bcdtmObject_storePointInDataObject(Data,Fc,DTM_NULL_USER_TAG,nullGuid,x,y,z) )
+            { fclose(fpDATA) ; return(1) ; }
+         }
        bp = InputBuffer ; *bp = 0 ;
       }
     if( bp > bt ) bp = bt ;
@@ -809,9 +809,9 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400DataObject(DTM_DAT_OBJ
       }
     for ( fcP = dataP->pointsP , pod = DataOd ; fcP < dataP->pointsP + dataP->memPts ; ++fcP , ++pod )
       {
-	   fcP->x         = pod->x ;
-	   fcP->y         = pod->y ;
-	   fcP->z         = pod->z ;
+       fcP->x         = pod->x ;
+       fcP->y         = pod->y ;
+       fcP->z         = pod->z ;
       }
 */
 /*
@@ -859,15 +859,15 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400DataObject(DTM_DAT_OBJ
        for( utP = dataP->userTagP ; utP < dataP->userTagP + fndp ; ++utP )
          { 
           if( bcdtmStream_fread(&oldUserTag,sizeof(long),1,dtmStreamP) != 1 ) 
-	        { 
-		     bcdtmWrite_message(1,0,0,"Error Reading Data Object") ; 
-		     goto errexit ; 
-		    }
+            { 
+             bcdtmWrite_message(1,0,0,"Error Reading Data Object") ; 
+             goto errexit ; 
+            }
           else
             {
              if( oldUserTag == oldNullTag ) userTag = DTM_NULL_USER_TAG ;
              else                           userTag = ( DTMUserTag ) oldUserTag ;
-		     memcpy(utP,&userTag,sizeof(DTMUserTag));
+             memcpy(utP,&userTag,sizeof(DTMUserTag));
             }
          }
       }
@@ -1023,9 +1023,9 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer500DataObject(DTM_DAT_OBJ
       }
     for ( fcP = dataP->pointsP , pod = DataOd ; fcP < dataP->pointsP + dataP->memPts ; ++fcP , ++pod )
       {
-	   fcP->x         = pod->x ;
-	   fcP->y         = pod->y ;
-	   fcP->z         = pod->z ;
+       fcP->x         = pod->x ;
+       fcP->y         = pod->y ;
+       fcP->z         = pod->z ;
       }
 */
 /*
@@ -1361,7 +1361,6 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
  buffer[2] = 0 ;
  buffer[3] = 0 ;
 
- #ifndef _M_IX86
 /*
 ** Read Header Except Pointers
 */
@@ -1382,20 +1381,8 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Set Pointer Values
 */
- dataP->featureCodeP = ( DTM_FEATURE_CODE *) buffer[0] ;
- dataP->userTagP     = ( DTMUserTag * ) buffer[1] ;
- dataP->pointsP      = ( DTM_DATA_POINT * ) buffer[2] ;
- dataP->guidP        = ( DTM_GUID *) buffer[3] ;
- #else
-/*
-** Read Header Except Pointers
-*/
- if( bcdtmStream_fread(dataP,headerSize,1,dtmStreamP) != 1 ) 
-   { 
-    bcdtmWrite_message(1,0,0,"Error Reading Data Object") ;
-    goto errexit  ;
-   }
- #endif
+ bool HasUserTagP     = buffer[1] != 0;
+ bool HasGuidP        = buffer[3] != 0;
 /*
 ** Write Header Pointer Arrays
 */
@@ -1465,7 +1452,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Read User Tag Array
 */
-   if( dataP->userTagP != NULL )
+   if( HasUserTagP )
      { 
       if( dbg ) bcdtmWrite_message(0,0,0,"Reading User Tag Array") ;
       dataP->userTagP = (DTMUserTag *) malloc( fndp * sizeof(DTMUserTag)) ;
@@ -1483,7 +1470,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Read Guid Array
 */
-   if( dataP->guidP != NULL )
+   if( HasGuidP )
      { 
       if( dbg ) bcdtmWrite_message(0,0,0,"Reading Guid Array") ;
       dataP->guidP = (DTM_GUID *) malloc( fndp * sizeof(DTM_GUID)) ;
@@ -2204,7 +2191,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer400TinObject
  if( Tinobj.dtmFileVersion != 400) 
    { 
     bcdtmWrite_message(1,0,0,"Not Version 400 Tin Object - Update GEOPAK") ;
-	goto errexit ;  
+    goto errexit ;  
    }
 /*
 ** Copy Ver 400 Header Items To Latest Version
@@ -2464,7 +2451,7 @@ DTM_GUID nullGuid=DTM_NULL_GUID ;
  if( tinObj.dtmFileType != DTM_TIN_TYPE )
    { 
     bcdtmWrite_message(1,0,0,"Not A Bentley Civil Dtm Tin Object") ; 
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 ** Check File Type Version
@@ -2472,7 +2459,7 @@ DTM_GUID nullGuid=DTM_NULL_GUID ;
  if( tinObj.dtmFileVersion != 500 )
    { 
     bcdtmWrite_message(1,0,0,"Not A Bentley Civil Version 500 Tin Object") ; 
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 ** Set Tin Header Variables
@@ -2750,7 +2737,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer501TinObject
  if( tinP->dtmFileVersion != 501 ) 
    { 
     bcdtmWrite_message(1,0,0,"Not Version 501 Tin Object") ;
-	goto errexit ;  
+    goto errexit ;  
    }
 /*
 ** Read Tin Object Data If Tin Object Populated
@@ -2989,10 +2976,10 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureListTinObject(DTM_TIN_OBJ *Tin)
     for( cl1 = cl2 = 0 ; cl2 < Tin->numFeatureList ; ++cl2 )
       {
        if( ! *(Ist+cl2) )
-	     {
-	      if( cl1 != cl2 )  *(Tin->fListP+cl1) = *(Tin->fListP+cl2)  ;
-	      ++cl1 ;
-	     }
+         {
+          if( cl1 != cl2 )  *(Tin->fListP+cl1) = *(Tin->fListP+cl2)  ;
+          ++cl1 ;
+         }
       }
 /*
 ** Adjust Pointers
