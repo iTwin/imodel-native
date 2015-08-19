@@ -1347,32 +1347,6 @@ public:
     //! @param fileName[in]     The name of the file to read
     //! @return non-zero error status if the file could not be found
     DGNPLATFORM_EXPORT static DgnDbStatus ReadText(Utf8StringR contents, BeFileNameCR fileName);
-
-    //! Utility function to convert ECProperty values to JSON properties
-    //! @param json     The JSON object to be populated
-    //! @param ec       an ECObject that contains values
-    //! @param props    comma-separated list of property names
-    //! @return non-zero if even one ECProperty value could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToJsonPropertiesFromECProperties(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props);
-
-    //! Utility function to convert an ECValue to a JSON value
-    //! @param json     The JSON object to be set
-    //! @param ec       an ECValue to convert
-    //! @return non-zero if the property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::ECValue const& ec);
-
-    //! Utility function to convert a JSON value to an ECValue
-    //! @param ecvalue  The ECValue to set
-    //! @param json     The JSON value
-    //! @param typeRequired The ECType required, if known
-    //! @return non-zero if the property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToECFromJson(ECN::ECValue& ec, Json::Value const& json, ECN::PrimitiveType typeRequired);
-
-    //! @private
-    static Utf8CP ECPrimtiveTypeToString(ECN::PrimitiveType pt);
-    //! @private
-    static ECN::PrimitiveType ECPrimtiveTypeFromString(Utf8CP);
-
 };
 
 //=======================================================================================

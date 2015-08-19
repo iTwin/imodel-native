@@ -307,6 +307,10 @@ $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp
 
 $(coreObjs)FileMoniker$(oext): $(DgnCoreDir)FileMoniker.cpp $(DgnCoreAPISrc)FileMoniker.h ${MultiCompileDepends} 
 
+$(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
+
+$(o)ModelSolverDef$(oext) : $(DgnCoreDir)ModelSolverDef.cpp $(DgnCoreAPISrc)ModelSolverDef.h ${MultiCompileDepends}
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------

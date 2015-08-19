@@ -10,6 +10,7 @@
 
 #include "DgnDomain.h"
 #include "DgnElement.h"
+#include "ModelSolverDef.h"
 #include <Bentley/ValueFormat.h>
 #include <DgnPlatform/DgnProperties.h>
 
@@ -59,116 +60,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct dgn_TxnTable::Model;
 
     struct CreateParams;
-
-    //========================================================================================
-    //! Specifies the solver to invoke when changes to a model or its contents are validated.
-    //! @see DgnScript::ExecuteModelSolver for information on script type model solvers.
-    //=======================================================================================
-    struct Solver
-        {
-        friend struct DgnModel;
-        friend struct CreateParams;
-
-        //! Identifies the type of solver used by a model
-        enum class Type 
-            {
-            None=0,     //!< This model has no solver
-            Script,     //!< Execute a named script function. See DgnScript::ExecuteModelSolver
-            // *** TBD: Add built-in constraint solvers 
-            };
-
-        //! A solver parameter
-        struct Parameter
-            {
-            //! The variability scope of the parameter
-            enum class Scope
-                {
-                Class=0,        //!< fixed for all types and instances
-                Type=1,         //!< fixed for all instances of a given type
-                Instance=2      //!< can vary per instance
-                };
-          private:
-            Scope   m_scope;
-            Utf8String m_name;
-            ECN::ECValue m_value;
-            friend struct Solver;
-            //! Serialize this Parameter in JSON format
-            Json::Value ToJson() const;
-            //! Deserialize a Parameter from a stored JSON object
-            explicit Parameter(Json::Value const&);
-          public:
-            //! Construct a new Parameter
-            DGNPLATFORM_EXPORT Parameter(Utf8CP n, Scope s, ECN::ECValueCR v);
-            //! Get the scope of this parameter
-            Scope GetScope() const {return m_scope;}
-            //! Get the name of this parameter
-            Utf8StringCR GetName() const {return m_name;}
-            //! Get the value of this parameter
-            DGNPLATFORM_EXPORT ECN::ECValueCR GetValue() const;
-            //! Set the value of this parameter
-            DGNPLATFORM_EXPORT DgnDbStatus SetValue(ECN::ECValueCR newValue);
-            };
-
-        //! A parameter set
-        struct ParameterSet
-            {
-          private:
-            bvector<Parameter> m_parameters;
-          public:
-            ParameterSet() {;}
-            explicit ParameterSet(Json::Value const&);
-            explicit ParameterSet(bvector<Parameter> const& p) : m_parameters(p) {;}
-
-            Json::Value ToJson() const;
-
-            //! Get a parameter by name
-            DGNPLATFORM_EXPORT Parameter const* GetParameter(Utf8StringCR pname) const;
-
-            //! Get a parameter by name
-            DGNPLATFORM_EXPORT Parameter* GetParameterP(Utf8StringCR pname);
-
-            //! Convert this parameter set to a string that can be used as a key in the ComponentModelSolution table.
-            Utf8String ComputeSolutionName() const;
-
-            bvector<Parameter>::const_iterator begin() const {return m_parameters.begin();}
-            bvector<Parameter>::const_iterator end() const {return m_parameters.end();}
-
-            bvector<Parameter>::iterator begin() {return m_parameters.begin();}
-            bvector<Parameter>::iterator end() {return m_parameters.end();}
-            };
-
-      private:
-        Type        m_type;
-        Utf8String  m_name;
-        ParameterSet m_parameters;
-
-        void FromJson(Utf8CP);
-        Utf8String ToJson() const;
-
-        void Solve(DgnModelR);
-
-      public:
-        //! @private
-        DGNPLATFORM_EXPORT Solver();
-
-        //! Construct a Solver specification, in preparation for creating a new DgnModel. 
-        //! @see DgnScriptLibrary
-        //! @param type         The solver type
-        //! @param identifier   Identifies the solver. The meaning of this identifier varies, depending on the type of the solver.
-        //! @param parameters   The parameters to be passed to the solver
-        DGNPLATFORM_EXPORT Solver(Type type, Utf8CP identifier, bvector<Parameter> const& parameters);
-
-        //! Test if this object specifies a solver
-        bool IsValid() const {return Type::None != GetType();}
-        //! Get the type of the solver
-        Type GetType() const {return m_type;}
-        //! Get the identifier of the solver
-        Utf8StringCR GetName() const {return m_name;}
-        //! Get the parameters of the solver
-        DGNPLATFORM_EXPORT ParameterSet const& GetParameters() const;
-        //! Set the values of the parameters of the solver. Only matching parameters are updated.
-        DGNPLATFORM_EXPORT DgnDbStatus SetParameterValues(ParameterSet const& values);
-        };
 
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
@@ -319,7 +210,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnClassId  m_classId;
         Utf8String  m_name;
         Properties  m_props;
-        Solver      m_solver;
+        ModelSolverDef m_solver;
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
@@ -327,13 +218,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @param[in] props The properties for the new DgnModel.
         //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), Solver solver=Solver(), DgnModelId id=DgnModelId()) :
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), ModelSolverDef solver=ModelSolverDef(), DgnModelId id=DgnModelId()) :
             m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props), m_solver(solver) {}
 
         //! Get the model solver
-        Solver const& GetSolver() const {return m_solver;}
+        ModelSolverDef const& GetSolver() const {return m_solver;}
         //! Set the model solver
-        void SetSolver(Solver const& s) {m_solver=s;}
+        void SetSolver(ModelSolverDef const& s) {m_solver=s;}
 
         DGNPLATFORM_EXPORT void RelocateToDestinationDb(DgnImportContext&);
     };
@@ -355,7 +246,7 @@ protected:
     DgnClassId      m_classId;
     Utf8String      m_name;
     Properties      m_properties;
-    Solver          m_solver;
+    ModelSolverDef     m_solver;
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable DgnRangeTreeP m_rangeIndex;
@@ -641,10 +532,10 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
 
-    /** @name Solver The Model Solver */
+    /** @name ModelSolverDef The Model Solver */
     /** @{ */
     //! Get the solver that is used to validate this model.
-    Solver const& GetSolver() const {return m_solver;}
+    ModelSolverDef const& GetSolver() const {return m_solver;}
 
     //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
     //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
@@ -794,11 +685,11 @@ public:
 * 
 * A ComponentModel \em generates the geometry and properties of a particular kind of "component" 
 * using an algorithm of some kind, given a set of input parameters. 
-* <p>The generation algorithm is encapsulated in the model's Solver.
-* The inputs to the Solver of a ComponentModel are called "parameters". See DgnModel::Solver::GetParameters. 
+* <p>The generation algorithm is encapsulated in the model's ModelSolverDef.
+* The inputs to the ModelSolverDef of a ComponentModel are called "parameters". See ModelSolverDef::GetParameters. 
 * <p>The #Solve method is used to generate a solution. 
-* This ComponentModel's Solver takes a set of parameter values as inputs and updates or inserts elements as its results.
-* The Solver also saves the values of the parameters most recently used. These parameters correspond to the elements currently in the model.
+* This ComponentModel's ModelSolverDef takes a set of parameter values as inputs and updates or inserts elements as its results.
+* The ModelSolverDef also saves the values of the parameters most recently used. These parameters correspond to the elements currently in the model.
 * <p>The content of a ComponentModel may include instances of other ComponentModels.
 * <p>A ComponentModel exists in its own independent coordinate space. The DgnElements in a ComponentModel are not in the persistent range tree.
 * <p>Instances of a solution to a ComponentModel can be placed in the physical coordinate space of other DgnDbs.
@@ -808,9 +699,9 @@ public:
 *   -# Create a ComponentModel in a DgnDb. The name of the ComponentModel is the name of the component. See the ComponentModel constructor for example code. The DgnDb can hold more than one ComponentModel.
 *   -# If you need to create geometry and constraints interactively, then open the DgnDb that contains the ComponentModel and use ordinary element-creation tools as usual. A ComponentModel
 *       is a normal model.
-*   -# Test the ComponentModel and its Solver by writing a unit test that calls #Solve, as shown below.
-*   -# When the Solver and content of the new ComponentModel are finished, generate an ECClass for ComponentModelSolution to use. See #GenerateECClass and #AddAllToECSchema.
-*   -# Deliver your DgnDb and your Solver script program to your clients.
+*   -# Test the ComponentModel and its ModelSolverDef by writing a unit test that calls #Solve, as shown below.
+*   -# When the ModelSolverDef and content of the new ComponentModel are finished, generate an ECClass for ComponentModelSolution to use. See #GenerateECClass and #AddAllToECSchema.
+*   -# Deliver your DgnDb and your ModelSolverDef script program to your clients.
 * <p>
 *
 * Whether you use use a script to create elements or you create elements interactively, be sure to assign the solution geometry to the "Element Category", as explained below.
@@ -880,7 +771,7 @@ public:
         //! @param[in] elementCategory The name of the category that this component model should use for all instance geometry. This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category in this DgnDb. ComponentModelSolution will use this category when creating an instance.
         //! @param[in] id Internal only, must be DgnModelId() to create a new ComponentModel.
         //! @see ComponentModel::GenerateECClass
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8StringCR name, Solver const& solver=Solver(), Utf8StringCR itemECClassName="", 
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8StringCR name, ModelSolverDef const& solver=ModelSolverDef(), Utf8StringCR itemECClassName="", 
                     Utf8StringCR elementItemECBaseClassName="", Utf8StringCR elementECClassName="", Utf8StringCR elementCategory="", 
                     Properties props=Properties(), DgnModelId id=DgnModelId()) :
             T_Super(dgndb, classId, name.c_str(), props, solver, id), 
@@ -932,37 +823,6 @@ private:
 public:
     /**
      *The constructor for ComponentModel.
-    *@verbatim
-    // An example of creating a ComponentModel that generates "Widgets". It uses a script-type solver (which is not shown).
-    static BentleyStatus createWidgetComponentModel(DgnDbR componentDb)
-        {
-        // Define the Element Category (in the ComponentModel's DgnDb). The normal approach is to use the same name as the component model. 
-        DgnCategories::Category category("Widget", DgnCategories::Scope::Any);
-        DgnCategories::SubCategory::Appearance appearance;
-        appearance.SetColor(ColorDef(0xff,0x00,0x00));
-        // Set other properties on the default subcategory appearance ...
-        if (!componentDb.Categories().Insert(category, appearance).IsValid())
-            return BSIERROR;
-
-        // Define the Solver parameters for use by this component. The script solver references these parameters by name, so this definition and the script must agree.
-        bmap<Utf8String, ECN::ECValue> parameters;
-        parameters["X"] = ECValue(1.0);
-        parameters["Y"] = ECValue(1);
-        parameters["Z"] = ECValue(1);
-        parameters["Other"] = ECValue("Something else");
-        // Identify the script solver that should be invoked. In this example, we assume that a script program 
-        // called "Test" is registered in the script library. We assume that it defines and registers a model solver called "Widget".
-        DgnModel::Solver wsolver(DgnModel::Solver::Type::Script, "Test.Widget", parameters); 
-
-        // Create the component model. The model's own ECClass is always dgn.ComponentModel
-        // Pass it the solver and the name of the element category
-        DgnClassId mclassId = DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel));
-        ComponentModelPtr cm = new ComponentModel(ComponentModel::CreateParams(componentDb, mclassId, "Widget", "Widget", solver));
-        if (DgnDbStatus::Success != cm->Insert())
-            return BSIERROR;
-        return BSISUCCESS;
-        }
-    @endverbatim
     * @see DgnScript
     */
     DGNPLATFORM_EXPORT explicit ComponentModel(CreateParams const& params);
@@ -1041,16 +901,14 @@ public:
      @endverbatim
      * @return DgnDbStatus::Success if the solution was created and written to the component model; DgnDbStatus::ValidationFailed if the solver failed; 
      * or DgnDbStatus::SQLiteError if some other error prevented the transaction from being saved to the DgnDb.
-     * @see ComputeSolutionName, GetSolver, Solver::GetParameters
+     * @see ComputeSolutionName, GetSolver, ModelSolverDef::GetParameters
     */
-    DGNPLATFORM_EXPORT DgnDbStatus Solve(Solver::ParameterSet const& parameters);
+    DGNPLATFORM_EXPORT DgnDbStatus Solve(ModelSolverDef::ParameterSet const& parameters);
 
     //! Compute the code that would be used by a row in ComponentModelSolutions to refer to the current solution of this model.
     //! @return a generated name for the current solution
     //! @see ComponentModel::GetSolver::GetParametersValues
     DGNPLATFORM_EXPORT Utf8String ComputeSolutionName();
-
-    DGNPLATFORM_EXPORT static DgnDbStatus GetSolutionParametersFromECProperties(Solver::ParameterSet& parameters, ECN::IECInstanceCR instance);
 
     //! Import the specified ECSchema into the target DgnDb.
     //! This must be done \em once before any ComponentModelSolutions are created for ComponentModels that are defined in the schema.
@@ -1150,7 +1008,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
         //! @param[in] props the Properties of the new SheetModel
         //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, name, props, Solver(), id), m_size(size) {}
+            T_Super(dgndb, classId, name, props, ModelSolverDef(), id), m_size(size) {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
     };

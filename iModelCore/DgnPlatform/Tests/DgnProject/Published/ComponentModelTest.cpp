@@ -8,6 +8,7 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeNumerical.h>
@@ -211,20 +212,20 @@ void ComponentModelTest::Developer_CreateCMs()
     ASSERT_TRUE( Developer_CreateCategory("Gadget", ColorDef(0x00,0xff,0x00)).IsValid() );
 
     // Define the Solver wparameters for use by this model.
-    DgnModel::Solver::Parameter::Scope ip = DgnModel::Solver::Parameter::Scope::Instance;
-    DgnModel::Solver::Parameter::Scope tp = DgnModel::Solver::Parameter::Scope::Type;
-    bvector<DgnModel::Solver::Parameter> wparameters;
-    wparameters.push_back(DgnModel::Solver::Parameter("X", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(DgnModel::Solver::Parameter("Y", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(DgnModel::Solver::Parameter("Z", tp, ECN::ECValue(1.0))); 
-    wparameters.push_back(DgnModel::Solver::Parameter("Other", ip, ECN::ECValue("Something else")));
-    DgnModel::Solver wsolver(DgnModel::Solver::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
-    bvector<DgnModel::Solver::Parameter> gparameters; 
-    gparameters.push_back(DgnModel::Solver::Parameter("Q", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(DgnModel::Solver::Parameter("W", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(DgnModel::Solver::Parameter("R", tp, ECN::ECValue(1.0))); 
-    gparameters.push_back(DgnModel::Solver::Parameter("T", ip, ECN::ECValue("Some other parm")));
-    DgnModel::Solver gsolver(DgnModel::Solver::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
+    ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
+    ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
+    bvector<ModelSolverDef::Parameter> wparameters;
+    wparameters.push_back(ModelSolverDef::Parameter("X", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("Y", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("Z", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
+    ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
+    bvector<ModelSolverDef::Parameter> gparameters; 
+    gparameters.push_back(ModelSolverDef::Parameter("Q", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(ModelSolverDef::Parameter("R", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
+    ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
     // Create the models
     DgnClassId mclassId = DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel));
@@ -308,7 +309,7 @@ void ComponentModelTest::Developer_TestWidgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
-    DgnModel::Solver::ParameterSet params = cm->GetSolver().GetParameters();
+    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
 
     for (int i=0; i<10; ++i)
         {
@@ -341,7 +342,7 @@ void ComponentModelTest::Developer_TestGadgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
-    DgnModel::Solver::ParameterSet params = cm->GetSolver().GetParameters();
+    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
 
     for (int i=0; i<10; ++i)
         {
@@ -454,13 +455,13 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
-    DgnModel::Solver::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
+    ModelSolverDef::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
     for (auto pname : parmsToChange.getMemberNames())
         {
-        DgnModel::Solver::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
+        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
         ASSERT_NE( nullptr , sparam );
         ECN::ECValue ecv;
-        DgnScriptLibrary::ToECFromJson(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
+        ECUtils::ToECFromJson(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
         sparam->SetValue(ecv);
         }
 

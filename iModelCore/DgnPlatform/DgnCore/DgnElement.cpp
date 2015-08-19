@@ -1814,7 +1814,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
         //  JavaScript EGA
         //  ----------------------------------------------------------------------------------
         Json::Value json(Json::objectValue);
-        if (BSISUCCESS != DgnScriptLibrary::ToJsonPropertiesFromECProperties(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
+        if (BSISUCCESS != ECUtils::ToJsonPropertiesFromECProperties(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
             return DgnDbStatus::BadArg;
 
         int retval;
