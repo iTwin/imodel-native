@@ -25,13 +25,14 @@ struct ECUtils
     DGNPLATFORM_EXPORT static DgnDbStatus LoadECValueFromJson(ECN::ECValueR ecvalue, Json::Value const& json);
 
     //! Serialize a primtive ECValue to JSON
-    //! @note Only the following EC primitive types are supported: Boolean, Double, Integer, Long, String, Point2d, Point3d
+    //! @note Only the following EC primitive types are supported: Boolean, Double, Integer, Long, String, Point2d, Point3d, DateTime, IGeometry, and Binary
     //! @param[out] json The resulting JSON object 
     //! @param ecvalue  an ECValue to convert
     DGNPLATFORM_EXPORT static DgnDbStatus StoreECValueAsJson(Json::Value& json, ECN::ECValueCR ecvalue);
 
     //! Utility function to convert an ECValue to a JSON value
     //! @note Only the following EC primitive types are supported: Boolean, Double, Integer, Long, String, Point2d, Point3d
+    //! @note DateTime is converted to a string. IGeometry and Binary are not supported at all.
     //! @param[out] json     The JSON object to be set
     //! @param ecvalue  an ECValue to convert
     //! @return non-zero if the property could not be converted.

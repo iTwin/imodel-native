@@ -143,9 +143,10 @@ BentleyStatus ECUtils::ConvertECValueToJson(Json::Value& jv, ECN::ECValue const&
         case ECN::PRIMITIVETYPE_Point2D:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2D()); break;
         case ECN::PRIMITIVETYPE_Point3D:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3D()); break;
 
+        case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime().ToUtf8String().c_str(); break;
+
         /* WIP_EGA 
         case ECN::PRIMITIVETYPE_IGeometry:  jv = ...
-        case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime(); break;
         */
 
         default:
@@ -166,7 +167,7 @@ BentleyStatus ECUtils::ConvertJsonToECValue(ECN::ECValue& v, Json::Value const& 
         v = ECN::ECValue(jsonValue.asInt64());
     else if (jsonValue.isDouble())
         v = ECN::ECValue(jsonValue.asDouble());
-    else if (jsonValue.isString())
+    else if (jsonValue.isString())          // *** WIP_DATE_TIME -- detect if string is a serialized DateTime?
         v = ECN::ECValue(jsonValue.asString().c_str());
     else
         v.SetIsNull(true);
