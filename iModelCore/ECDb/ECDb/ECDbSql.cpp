@@ -1303,7 +1303,7 @@ Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
     NativeSqlBuilder whereClauseBuilder;
 
     if (!m_additionalWhereExpression.empty())
-        whereClauseBuilder.AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight().Append(BooleanSqlOperator::And);
+        whereClauseBuilder.AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight().AppendSpace().Append(BooleanSqlOperator::And);
 
     whereClauseBuilder.Append(classIdCol->GetName().c_str(), true);
     horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);

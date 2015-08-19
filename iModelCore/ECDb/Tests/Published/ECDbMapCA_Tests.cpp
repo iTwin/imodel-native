@@ -1639,7 +1639,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"x01"}, {sub1ClassId, sub11ClassId});
 
         //now assert that the automatically generated index on the relationship foreign key column is correct
-        AssertIndex(db, "uix_ts_Base_fk_ts_Rel_target", true, "ts_Base", {"x01"}, "[x01] IS NOT NULL");
+        AssertIndex(db, "uix_ts_Base_fk_ts_Rel_target", true, "ts_Base", {"x01"}, "[x01] IS NOT NULL", {sub1ClassId, sub11ClassId});
 
         //insert a few objects to make sure the unique index' where clause is set up correctly
         ECSqlStatement stmt;
@@ -1696,7 +1696,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         stmt.Reset();
         stmt.ClearBindings();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub2:2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStepStatus::Error, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
         }
     }
 

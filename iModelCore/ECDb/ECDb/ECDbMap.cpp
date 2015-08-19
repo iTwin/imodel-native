@@ -905,7 +905,7 @@ void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
 		"WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
-        "GROUP BY  ec_Class.Id ";
+        "GROUP BY ec_Class.Id ";
 
 
     auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
@@ -920,9 +920,9 @@ void ECDbMap::LightweightCache::LoadAnyClassReplacements () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::LoadRelationshipsPerConstraintClass (bool addAnyClassRelationships) const
+void ECDbMap::LightweightCache::LoadRelationshipCache() const
     {
-    if (m_loadedFlags.m_relationshipClassIdsPerConstraintClassIdIsLoaded)
+    if (m_loadedFlags.m_relationshipCacheIsLoaded)
         return;
 
     Utf8CP sql0 =
@@ -955,52 +955,46 @@ void ECDbMap::LightweightCache::LoadRelationshipsPerConstraintClass (bool addAny
         {
         ECClassId constraintClassId = stmt0->GetValueInt64 (0);
         ECClassId relationshipId = stmt0->GetValueInt64 (1);
-        RelationshipEnd filter = stmt0->GetValueInt (2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;;
-        auto itor = m_relationshipClassIdsPerConstraintClassId.find(constraintClassId);
-        if (itor == m_relationshipClassIdsPerConstraintClassId.end())
-            {
-            m_relationshipClassIdsPerConstraintClassId[constraintClassId][relationshipId] = filter;
-            }
+        BeAssert(!stmt0->IsColumnNull(2));
+        RelationshipEnd end = stmt0->GetValueInt(2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+
+        RelationshipClassIds& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
+        auto relIt = relClassIds.find(relationshipId);
+        if (relIt == relClassIds.end())
+            relClassIds[relationshipId] = end;
         else
-            {
-            auto& rels = itor->second;
-            auto itor1 = rels.find (relationshipId);
-            if (itor1 == rels.end ())
-                {
-                rels[relationshipId] = filter;
-                }
-            else
-                {
-                rels[relationshipId] = static_cast<RelationshipEnd>((int)(itor1->second) & (int)(filter));
-                }
-            }
+            relClassIds[relationshipId] = static_cast<RelationshipEnd>((int) (relIt->second) | (int) (end));
+
+
+        ConstraintClassIds& constraintClassIds = m_nonAnyClassConstraintClassIdsPerRelClassIds[relationshipId];
+        auto constraintIt = constraintClassIds.find(constraintClassId);
+        if (constraintIt == constraintClassIds.end())
+            constraintClassIds[constraintClassId] = end;
+        else
+            constraintClassIds[constraintClassId] = static_cast<RelationshipEnd>((int) (constraintIt->second) | (int) (end));
         }
 
-    if (addAnyClassRelationships)
+    LoadAnyClassRelationships ();
+    LoadAnyClassReplacements ();
+    for (ECClassId constraintClassId : m_anyClassReplacements)
         {
-        LoadAnyClassRelationships ();
-        LoadAnyClassReplacements ();
-        for (auto classId : m_anyClassReplacements)
+        RelationshipClassIds& rels = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
+        for (bpair<ECClassId,RelationshipEnd> const& pair : m_anyClassRelationships)
             {
-            auto& rels = m_relationshipClassIdsPerConstraintClassId[classId];
-            for (auto& pair1 : m_anyClassRelationships)
-                {
-                ECClassId id = pair1.first;
-                auto itor1 = rels.find (id);
-                if (itor1 == rels.end ())
-                    {
-                    rels[id] = pair1.second;
-                    }
-                else
-                    {
-                    rels[id] = static_cast<RelationshipEnd>((int)(itor1->second) & (int)(pair1.second));
-                    }
-                }
+            ECClassId relId = pair.first;
+            RelationshipEnd end = pair.second;
+            auto relsIt = rels.find(relId);
+            if (relsIt == rels.end())
+                rels[relId] = end;
+            else
+                rels[relId] = static_cast<RelationshipEnd>((int) (relsIt->second) | (int) (end));
             }
         }
+       
 
-    m_loadedFlags.m_relationshipClassIdsPerConstraintClassIdIsLoaded = true;
+    m_loadedFlags.m_relationshipCacheIsLoaded = true;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
@@ -1076,9 +1070,18 @@ ECN::ECClassId ECDbMap::LightweightCache::GetAnyClassId () const
 //---------------------------------------------------------------------------------------
 ECDbMap::LightweightCache::RelationshipClassIds const& ECDbMap::LightweightCache::GetRelationshipsForConstraintClass(ECN::ECClassId constraintClassId) const
     {
-    LoadRelationshipsPerConstraintClass (true);
-    return m_relationshipClassIdsPerConstraintClassId[constraintClassId];
+    LoadRelationshipCache ();
+    return m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 08/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightweightCache::ConstraintClassIds const& ECDbMap::LightweightCache::GetConstraintClassesForRelationship(ECN::ECClassId relClassId) const
+    {
+    LoadRelationshipCache();
+    return m_nonAnyClassConstraintClassIdsPerRelClassIds[relClassId];
+   }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1119,16 +1122,16 @@ ECDbMap::LightweightCache::ClassIdsPerTableMap const& ECDbMap::LightweightCache:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-void ECDbMap::LightweightCache::Load (bool forceReload)
+void ECDbMap::LightweightCache::Load(bool forceReload)
     {
     if (forceReload)
-        Reset ();
-    
-    LoadAnyClassRelationships ();
-    LoadRelationshipsPerConstraintClass (true);
-    LoadClassIdsPerTable ();
-    LoadDerivedClasses ();
-    LoadAnyClassReplacements ();
+        Reset();
+
+    LoadAnyClassRelationships();
+    LoadRelationshipCache();
+    LoadClassIdsPerTable();
+    LoadDerivedClasses();
+    LoadAnyClassReplacements();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1138,43 +1141,43 @@ void ECDbMap::LightweightCache::Reset ()
     {
     m_loadedFlags.m_classIdsPerTableIsLoaded = 
         m_loadedFlags.m_tablesPerClassIdIsLoaded =
-        m_loadedFlags.m_relationshipClassIdsPerConstraintClassIdIsLoaded =
+        m_loadedFlags.m_relationshipCacheIsLoaded =
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_anyClassRelationshipsIsLoaded = false;
 
     m_anyClassId = ECClass::UNSET_ECCLASSID;
-    m_relationshipClassIdsPerConstraintClassId.clear ();
-    m_tablesPerClassId.clear ();
-    m_classIdsPerTable.clear ();
+    m_tablesPerClassId.clear();
+    m_classIdsPerTable.clear();
+    m_relationshipClassIdsPerConstraintClassIds.clear();
+    m_nonAnyClassConstraintClassIdsPerRelClassIds.clear();
     m_anyClassRelationships.clear ();
     m_anyClassReplacements.clear ();
     m_storageDescriptions.clear ();
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      07/2015
-//---------------------------------------------------------------------------------------
-ECDbMap::LightweightCache::LightweightCache (ECDbMapCR map)
-    : m_map(map)
-    {
-    Reset ();
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
-StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (ECN::ECClassId id)  const
+ECDbMap::LightweightCache::LightweightCache (ECDbMapCR map) : m_map(map) { Reset (); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+StorageDescription const& ECDbMap::LightweightCache::GetStorageDescription (IClassMap const& classMap)  const
     {
-    auto itor = m_storageDescriptions.find (id);
-    if (itor == m_storageDescriptions.end ())
+    const ECClassId classId = classMap.GetClass().GetId();
+    auto it = m_storageDescriptions.find(classId);
+    if (it == m_storageDescriptions.end())
         {
-        auto des = StorageDescription::Create (id, *this);
+        auto des = StorageDescription::Create(classMap, *this);
         auto desP = des.get ();
-        m_storageDescriptions[id] = std::move (des);
+        m_storageDescriptions[classId] = std::move(des);
         return *desP;
         }
 
-    return *(itor->second.get ());
+    return *(it->second.get());
     }
+
 
 //****************************************************************************************
 // StorageDescription
@@ -1317,25 +1320,49 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan    05 / 2015
 //------------------------------------------------------------------------------------------
-std::unique_ptr<StorageDescription> StorageDescription::Create(ECN::ECClassId classId, ECDbMap::LightweightCache const& lwmc)
+//static
+std::unique_ptr<StorageDescription> StorageDescription::Create(IClassMap const& classMap, ECDbMap::LightweightCache const& lwmc)
     {
-    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-    for (auto& kp : lwmc.GetTablesForClass(classId))
+    const ECClassId classId = classMap.GetClass().GetId();
+    std::unique_ptr<StorageDescription> storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
+
+    if (classMap.GetClassMapType() == IClassMap::Type::RelationshipEndTable)
         {
-        auto table = kp.first;
+        RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (classMap);
+        ECDbSqlTable const& endTable = relClassMap.GetTable();
+        const ECDbMap::LightweightCache::RelationshipEnd thisEnd = relClassMap.GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? ECDbMap::LightweightCache::RelationshipEnd::Source : ECDbMap::LightweightCache::RelationshipEnd::Target;
 
-        auto& deriveClassList = kp.second;
-        if (deriveClassList.empty())
-            continue;
+        HorizontalPartition* hp = storageDescription->AddHorizontalPartition(endTable, true);
 
-        size_t id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
-        HorizontalPartition* hp = storageDescription->GetHorizontalPartitionP(id);
-        for (ECClassId ecClassId : deriveClassList)
+        for (bpair<ECClassId, ECDbMap::LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationship(classId))
             {
-            hp->AddClassId(ecClassId);
+            ECClassId constraintClassId = kvpair.first;
+            ECDbMap::LightweightCache::RelationshipEnd end = kvpair.second;
+
+            if (end == ECDbMap::LightweightCache::RelationshipEnd::Both || end == thisEnd)
+                hp->AddClassId(constraintClassId);
             }
 
-        hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
+        hp->GenerateClassIdFilter(lwmc.GetClassesForTable(endTable));
+        }
+    else
+        {
+        for (auto& kp : lwmc.GetTablesForClass(classId))
+            {
+            auto table = kp.first;
+
+            auto& deriveClassList = kp.second;
+            if (deriveClassList.empty())
+                continue;
+
+            HorizontalPartition* hp = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
+            for (ECClassId ecClassId : deriveClassList)
+                {
+                hp->AddClassId(ecClassId);
+                }
+
+            hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*table));
+            }
         }
 
     return std::move(storageDescription);
@@ -1358,21 +1385,7 @@ HorizontalPartition const* StorageDescription::GetHorizontalPartition(size_t ind
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
-HorizontalPartition* StorageDescription::GetHorizontalPartitionP(size_t index)
-    {
-    if (index >= m_horizontalPartitions.size())
-        {
-        BeAssert(false && "Index out of range");
-        return nullptr;
-        }
-
-    return &m_horizontalPartitions[index];
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-size_t StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition)
+HorizontalPartition* StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition)
     {
     const bool isVirtual = table.GetPersistenceType() == PersistenceType::Virtual;
     m_horizontalPartitions.push_back(HorizontalPartition(table));
@@ -1384,7 +1397,7 @@ size_t StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, boo
     if (isRootPartition)
         m_rootHorizontalPartitionIndex = indexOfAddedPartition;
 
-    return indexOfAddedPartition;
+    return &m_horizontalPartitions[indexOfAddedPartition];
     }
 
 

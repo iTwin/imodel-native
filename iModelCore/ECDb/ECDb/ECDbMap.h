@@ -34,13 +34,15 @@ struct ECDbMap :NonCopyableClass
 
 
                 typedef bmap<ECN::ECClassId, RelationshipEnd> RelationshipClassIds;
+                typedef bmap<ECN::ECClassId, RelationshipEnd> ConstraintClassIds;
                 typedef bmap<ECDbSqlTable const*, std::vector<ECN::ECClassId>> ClassIdsPerTableMap;
 
             private:
                 mutable ClassIdsPerTableMap m_classIdsPerTable;
                 mutable bmap<ECN::ECClassId, ClassIdsPerTableMap> m_tablesPerClassId;
                 mutable RelationshipClassIds m_anyClassRelationships;
-                mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipClassIdsPerConstraintClassId;
+                mutable bmap<ECN::ECClassId, RelationshipClassIds> m_relationshipClassIdsPerConstraintClassIds;
+                mutable bmap<ECN::ECClassId, ConstraintClassIds> m_nonAnyClassConstraintClassIdsPerRelClassIds;
                 mutable std::vector<ECN::ECClassId> m_anyClassReplacements;
                 mutable ECN::ECClassId m_anyClassId;
                 mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
@@ -49,7 +51,7 @@ struct ECDbMap :NonCopyableClass
                     {
                     bool m_tablesPerClassIdIsLoaded : 1;
                     bool m_classIdsPerTableIsLoaded : 2;
-                    bool m_relationshipClassIdsPerConstraintClassIdIsLoaded : 3;
+                    bool m_relationshipCacheIsLoaded : 3;
                     bool m_anyClassRelationshipsIsLoaded : 4;
                     bool m_anyClassReplacementsLoaded : 5;
                     } m_loadedFlags;
@@ -59,7 +61,7 @@ struct ECDbMap :NonCopyableClass
                 void LoadDerivedClasses() const;
                 void LoadClassIdsPerTable() const;
                 void LoadAnyClassRelationships() const;
-                void LoadRelationshipsPerConstraintClass(bool addAnyClassRelationships) const;
+                void LoadRelationshipCache() const;
                 void LoadAnyClassReplacements() const;
 
             public:
@@ -69,10 +71,14 @@ struct ECDbMap :NonCopyableClass
                 std::vector<ECN::ECClassId> const& GetClassesForTable(ECDbSqlTable const&) const;
                 ClassIdsPerTableMap const& GetTablesForClass(ECN::ECClassId) const;
                 RelationshipClassIds const& GetRelationshipsForConstraintClass(ECN::ECClassId constraintClassId) const;
+                //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
+                //@remarks: AnyClass constraints are ignored.
+                ConstraintClassIds const& GetConstraintClassesForRelationship(ECN::ECClassId relClassId) const;
                 RelationshipClassIds const& GetAnyClassRelationships() const;
                 ECN::ECClassId GetAnyClassId() const;
                 std::vector<ECN::ECClassId> const& GetAnyClassReplacements() const;
-                StorageDescription const& GetStorageDescription(ECN::ECClassId)  const;
+                StorageDescription const& GetStorageDescription(IClassMap const&)  const;
+
                 void Load(bool forceReload);
                 void Reset();
             };
@@ -193,19 +199,18 @@ public:
 
         explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
 
-        size_t AddHorizontalPartition (ECDbSqlTable const& table, bool isRootPartition);
+        HorizontalPartition* AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
     public:
         ~StorageDescription (){}
         StorageDescription (StorageDescription&&);
         StorageDescription& operator=(StorageDescription&&);
 
         HorizontalPartition const* GetHorizontalPartition (size_t index) const;
-        HorizontalPartition* GetHorizontalPartitionP (size_t index);
         std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }
         HorizontalPartition const& GetRootHorizontalPartition () const { return *GetHorizontalPartition (m_rootHorizontalPartitionIndex); }
         std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices () const { return m_nonVirtualHorizontalPartitionIndices; }
         ECN::ECClassId GetClassId () const { return m_classId; }
 
-        static std::unique_ptr<StorageDescription> Create (ECN::ECClassId classId, ECDbMap::LightweightCache const& lwmc);
+        static std::unique_ptr<StorageDescription> Create(IClassMap const&, ECDbMap::LightweightCache const& lwmc);
         };
 END_BENTLEY_SQLITE_EC_NAMESPACE

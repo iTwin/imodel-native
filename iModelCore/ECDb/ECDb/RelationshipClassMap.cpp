@@ -680,14 +680,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         return;
         }
 
-    /*ECRelationshipConstraintClassList const& thisEndConstraintClasses = GetConstraintMap(GetThisEnd()).GetRelationshipConstraint ().GetConstraintClasses ();
-    for (ECRelationshipConstraintClass const* constraintClass : thisEndConstraintClasses)
-        {
-        //StorageDescription const& descr = GetECDbMap().GetLightWeightMapCache().GetStorageDescription(constraintClass->GetClass().GetId());
-        //descr.
-        }*/
-
-    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex /*, GetClass ().GetId ()*/);
+    ECDbSqlIndex* index = persistenceEndTable.CreateIndex (name.c_str (), isUniqueIndex, GetClass ().GetId ());
     if (index == nullptr)
         {
         BeAssert (false && "Failed to create index");
