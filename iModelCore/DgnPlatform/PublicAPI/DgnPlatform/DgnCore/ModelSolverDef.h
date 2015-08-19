@@ -83,7 +83,7 @@ struct ModelSolverDef
         //! Get a parameter by name
         DGNPLATFORM_EXPORT Parameter* GetParameterP(Utf8StringCR pname);
 
-        //! Convert this parameter set to a string that can be used as a key in the ComponentModelSolution table.
+        //! Convert this parameter set to a string that can be used as a key in the ComponentSolution table.
         Utf8String ComputeSolutionName() const;
 
         //! Set parameter values

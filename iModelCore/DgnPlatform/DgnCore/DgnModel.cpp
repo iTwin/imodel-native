@@ -981,9 +981,9 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceId ComponentModelSolution::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
+EC::ECInstanceId ComponentSolution::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
     {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE ComponentModelId=? AND Parameters=?");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelId=? AND Parameters=?");
     stmt->BindId(1, cmid);
     stmt->BindText(2, solutionName, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
@@ -995,9 +995,9 @@ EC::ECInstanceId ComponentModelSolution::QuerySolutionId(DgnModelId cmid, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModelSolution::Query(Solution& sln, EC::ECInstanceId sid)
+DgnDbStatus ComponentSolution::Query(Solution& sln, EC::ECInstanceId sid)
     {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE Id=?");
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE Id=?");
     stmt->BindId(1, sid);
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::NotFound;
@@ -1011,9 +1011,9 @@ DgnDbStatus ComponentModelSolution::Query(Solution& sln, EC::ECInstanceId sid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModelSolution::Solution::QueryGeomStream(GeomStreamR geom, DgnDbR db) const
+DgnDbStatus ComponentSolution::Solution::QueryGeomStream(GeomStreamR geom, DgnDbR db) const
     {
-    return geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution), "Geom", m_id.GetValue());
+    return geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ComponentSolution), "Geom", m_id.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1027,7 +1027,7 @@ Utf8String ComponentModel::ComputeSolutionName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceId ComponentModelSolution::CaptureSolution(ComponentModelR componentModel)
+EC::ECInstanceId ComponentSolution::CaptureSolution(ComponentModelR componentModel)
     {
     if (&componentModel.GetDgnDb() != &GetDgnDb())
         {
@@ -1129,7 +1129,7 @@ EC::ECInstanceId ComponentModelSolution::CaptureSolution(ComponentModelR compone
 
     ElementAlignedBox3d box = placement.GetElementBox();
         
-    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " (ComponentModelId,Parameters,Range) VALUES(?,?,?)");
+    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelId,Parameters,Range) VALUES(?,?,?)");
     istmt->BindId(1, componentModel.GetModelId());
     istmt->BindText(2, solutionCode, Statement::MakeCopy::No);
     istmt->BindBlob(3, &box, sizeof(box), Statement::MakeCopy::No);
@@ -1139,9 +1139,9 @@ EC::ECInstanceId ComponentModelSolution::CaptureSolution(ComponentModelR compone
 
     EC::ECInstanceId sid = EC::ECInstanceId(GetDgnDb().GetLastInsertRowId());
 
-    CachedStatementPtr gstmt = GetDgnDb().GetCachedStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " SET Geom=? WHERE Id=?");
+    CachedStatementPtr gstmt = GetDgnDb().GetCachedStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " SET Geom=? WHERE Id=?");
     gstmt->BindId(2, sid);
-    geom.WriteGeomStreamAndStep(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution), "Geom", sid.GetValue(), *gstmt, 1);
+    geom.WriteGeomStreamAndStep(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ComponentSolution), "Geom", sid.GetValue(), *gstmt, 1);
     return sid;
     }
 
@@ -1159,7 +1159,7 @@ static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr ComponentModelSolution::CreateSolutionInstanceElement(DgnModelR destinationModel, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destinationModel, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
     Solution sln;
     if (DgnDbStatus::Success != Query(sln, solutionId))
@@ -1185,12 +1185,12 @@ DgnElementPtr ComponentModelSolution::CreateSolutionInstanceElement(DgnModelR de
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModelSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId)
+DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId)
     {
     DgnDbR db = instanceElement.GetDgnDb();
 
     //  The the details of the solution and the class of the Item that should be created
-    ComponentModelSolution solutions(db);
+    ComponentSolution solutions(db);
     Solution sln;
     DgnDbStatus status = solutions.Query(sln, solutionId);
     if (DgnDbStatus::Success != status)
@@ -1239,7 +1239,7 @@ DgnDbStatus ComponentModelSolution::CreateSolutionInstanceItem(DgnElementR insta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentModelSolution::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item)
+DgnDbStatus ComponentSolution::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item)
     {
     DgnDbR db = el.GetDgnDb();
 
@@ -1255,7 +1255,7 @@ DgnDbStatus ComponentModelSolution::ExecuteEGA(DgnElementR el, DPoint3dCR origin
     //  Look up the captured solution that itemInstance is based on
     ModelSolverDef::ParameterSet parms = cm->GetSolver().GetParameters();
     parms.SetValuesFromECProperties(itemInstance); // Set the parameter values to what I have saved
-    ComponentModelSolution solutions(db);
+    ComponentSolution solutions(db);
     BeSQLite::EC::ECInstanceId sid = solutions.QuerySolutionId(cm->GetModelId(), parms.ComputeSolutionName());
     Solution sln;
     if (DgnDbStatus::Success != solutions.Query(sln, BeSQLite::EC::ECInstanceId(sid)))

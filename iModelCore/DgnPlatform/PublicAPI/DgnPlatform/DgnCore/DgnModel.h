@@ -681,7 +681,7 @@ public:
 
 /*=======================================================================================*//**
 * A DgnModel3d that captures the definition of a parametric component and its current solution.
-* Collaborates with ComponentModelSolution.
+* Collaborates with ComponentSolution.
 * 
 * A ComponentModel \em generates the geometry and properties of a particular kind of "component" 
 * using an algorithm of some kind, given a set of input parameters. 
@@ -700,7 +700,7 @@ public:
 *   -# If you need to create geometry and constraints interactively, then open the DgnDb that contains the ComponentModel and use ordinary element-creation tools as usual. A ComponentModel
 *       is a normal model.
 *   -# Test the ComponentModel and its ModelSolverDef by writing a unit test that calls #Solve, as shown below.
-*   -# When the ModelSolverDef and content of the new ComponentModel are finished, generate an ECClass for ComponentModelSolution to use. See #GenerateECClass and #AddAllToECSchema.
+*   -# When the ModelSolverDef and content of the new ComponentModel are finished, generate an ECClass for ComponentSolution to use. See #GenerateECClass and #AddAllToECSchema.
 *   -# Deliver your DgnDb and your ModelSolverDef script program to your clients.
 * <p>
 *
@@ -716,7 +716,7 @@ public:
 * Therefore, components that depend on each other will have to be defined in separate DgnDbs, and one will have to be developed first, before the other can use it.
 * <p>
 * The caller is responsible for generating an ECSchema that includes the ComponentModel's generate dgn.ElementItem subclass. See #AddAllToECSchema for a utility function. 
-* The caller must generate an ECSchema before ComponentModelSolution can place instances of solutions of the ComponentModel. 
+* The caller must generate an ECSchema before ComponentSolution can place instances of solutions of the ComponentModel. 
 *
 * The ECSchema must not be changed once instances have been placed in client DgnDbs. That means that the developer of a ComponentModel must not try to change the 
 * names, types, or number of parameters once the schema has been delivered.
@@ -737,7 +737,7 @@ public:
 * This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category before creating the ComponentModel.
 * See #GetElementCategoryName for the name of this category.
 * Elements in the ComponentModel that are not assigned to the Element Category are considered to be construction elements and are not harvested.
-* @see DgnScript, ComponentModelSolution
+* @see DgnScript, ComponentSolution
 * @bsiclass                                                    Keith.Bentley   10/11
 **//*=======================================================================================*/
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
@@ -767,8 +767,8 @@ public:
         //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
         //! @param[in] itemECClassName The name of the Item ECClass that ComponentModel::GenerateECClass will create. Must be just the classname, not a full name. Defaults to \a name.
         //! @param[in] elementItemECBaseClassName The generated item's base class name. Must identify a subclass of dgn.ElementItem. Must be a full ECClass name.
-        //! @param[in] elementECClassName The name of the dgn.Element subclass that ComponentModelSolution should use when creating instances. Must be a full ECClass name.
-        //! @param[in] elementCategory The name of the category that this component model should use for all instance geometry. This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category in this DgnDb. ComponentModelSolution will use this category when creating an instance.
+        //! @param[in] elementECClassName The name of the dgn.Element subclass that ComponentSolution should use when creating instances. Must be a full ECClass name.
+        //! @param[in] elementCategory The name of the category that this component model should use for all instance geometry. This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category in this DgnDb. ComponentSolution will use this category when creating an instance.
         //! @param[in] id Internal only, must be DgnModelId() to create a new ComponentModel.
         //! @see ComponentModel::GenerateECClass
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8StringCR name, ModelSolverDef const& solver=ModelSolverDef(), Utf8StringCR itemECClassName="", 
@@ -830,7 +830,7 @@ public:
     //! Query if the ComponentModel is correctly defined.
     DGNPLATFORM_EXPORT bool IsValid() const;
 
-    //! Create an ECClass definition for the dgn.ElementItem subclass that ComponentModelSolution should use when creating an instance of a solution. 
+    //! Create an ECClass definition for the dgn.ElementItem subclass that ComponentSolution should use when creating an instance of a solution. 
     //! The generated class will be:
     //!     * Derived from the class specified by GetItemECBaseClassName.
     //!     * Given a name equal to the name of the ComponentModel. 
@@ -859,7 +859,7 @@ public:
     DGNPLATFORM_EXPORT static DgnDbStatus AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db);
 
     //! Get the name of the dgn.Element subclass that was specified in CreateParams.
-    //! This is the class that ComponentModelSolution will use when creating an instance of a solution.
+    //! This is the class that ComponentSolution will use when creating an instance of a solution.
     //! @see GenerateECClass, GetItemECBaseClassName, GetElementCategoryName
     DGNPLATFORM_EXPORT Utf8String GetElementECClassName() const;
 
@@ -869,7 +869,7 @@ public:
 
     //! Get the name of the dgn.ElementItem subclass that the GenerateECClass method will create.
     //! This name was specified in CreateParams when the ComponentModel was created.
-    //! This is the class that ComponentModelSolution will use when creating an item for an instance of a solution.
+    //! This is the class that ComponentSolution will use when creating an item for an instance of a solution.
     //! @see GenerateECClass, GetElementECClassName
     DGNPLATFORM_EXPORT Utf8String GetItemECBaseClassName() const;
 

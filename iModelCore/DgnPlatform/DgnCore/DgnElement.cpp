@@ -1835,7 +1835,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawP
 
     if (0 == BeStringUtilities::Stricmp("ComponentModel", egaType.GetUtf8CP()))
         {
-        return ComponentModelSolution::ExecuteEGA(el, origin, angles, egaInstance, tsName, Utf8String(egaInputs.GetUtf8CP()), *this);
+        return ComponentSolution::ExecuteEGA(el, origin, angles, egaInstance, tsName, Utf8String(egaInputs.GetUtf8CP()), *this);
         }
 
     BeAssert(false && "TBD - Unrecognized EGA type.");

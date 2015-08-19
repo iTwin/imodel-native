@@ -476,7 +476,7 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
-    ComponentModelSolution solutions(*m_clientDb);
+    ComponentSolution solutions(*m_clientDb);
     EC::ECInstanceId existingSid = solutions.QuerySolutionId(ccId, componentModel->ComputeSolutionName());
     
     solutionId = solutions.CaptureSolution(*componentModel);
@@ -501,7 +501,7 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8
     DPoint3d placementOrigin = DPoint3d::From(1,2,3);
     YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
 
-    ComponentModelSolution solutions(*m_clientDb);
+    ComponentSolution solutions(*m_clientDb);
     PhysicalElementPtr instance = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles)->ToPhysicalElementP();
     ASSERT_TRUE( instance.IsValid() );
     

@@ -20,7 +20,7 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#define DGN_CLASSNAME_ComponentModelSolution "ComponentModelSolution"
+#define DGN_CLASSNAME_ComponentSolution "ComponentSolution"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -1596,7 +1596,7 @@ public:
 //! @see ComponentModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct ComponentModelSolution : DgnDbTable
+struct ComponentSolution : DgnDbTable
 {
     DEFINE_T_SUPER(DgnDbTable)
 
@@ -1610,7 +1610,7 @@ public:
         DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
         };
 
-    ComponentModelSolution(DgnDbR db) : T_Super(db) {;}
+    ComponentSolution(DgnDbR db) : T_Super(db) {;}
 
     //! @name Capturing Solutions
     //@{
