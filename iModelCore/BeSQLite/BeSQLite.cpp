@@ -1261,7 +1261,7 @@ DbResult Db::GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, NamedParams* whereParams)
+DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, Utf8CP json)
     {
     //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
     //!!!  NOTE: THIS IS ALL BOGUS AND NEEDS TO BE REPLACED BY SOMETHING THAT ACTUALLY CONNECTS TO A SERVER !!!!
@@ -1271,16 +1271,9 @@ DbResult Db::GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP
     else
         {
         Utf8String sql(SqlPrintfString("SELECT max(%s) FROM %s", colName, tableName, colName));
-        if (whereParams)
-            {
-            sql.append(" AND ");
-            sql.append(whereParams->GetWhere());
-            }
 
         Statement stmt;
         stmt.Prepare(*this, sql.c_str());
-        if (whereParams)
-            whereParams->Bind(stmt);
 
         DbResult result = stmt.Step();
         BeAssert(result == BE_SQLITE_ROW);
