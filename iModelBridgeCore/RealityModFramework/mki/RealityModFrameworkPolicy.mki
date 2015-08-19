@@ -19,7 +19,6 @@
 #----------------------------------------------------------
 RealityPlatformPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatform/
 RealityPackagePublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPackage/
-CrawlerLibPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/CrawlerLib/
 
 #----------------------------------------------------------
 # outdirs

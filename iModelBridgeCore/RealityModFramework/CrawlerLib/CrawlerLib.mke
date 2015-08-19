@@ -15,8 +15,12 @@ baseDir	= $(_MakeFilePath)
 
 %include mdl.mki
 
-PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/CrawlerLib/
-@CreateSymLinks.py -d"$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
+
+CrawlerLibPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/CrawlerLib/
+always:
+    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
+
+PublicApiDir = $(OutBuildContexts)RealityModFramework/PublicAPI/CrawlerLib/
 
 #----------------------------------------------------------------------
 #       Create output directories
