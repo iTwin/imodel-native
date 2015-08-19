@@ -32,6 +32,7 @@
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
@@ -70,7 +71,6 @@
 #include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
-//#include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -1116,23 +1116,28 @@ public:
     private:
         friend struct DgnMaterials;
 
-        DgnMaterialId m_materialId;
+        DgnMaterialId m_id;
         Utf8String    m_name;
+        Utf8String    m_descr;
         Utf8String    m_palette;
         Utf8String    m_value;
 
     public:
         Material() {}
-        Material(Utf8CP name, Utf8CP palette, Utf8CP value, DgnMaterialId id=DgnMaterialId()) : m_materialId(id), m_name(name), m_palette(palette), m_value(value) {}
+        Material(Utf8CP name, Utf8CP palette, Utf8CP value, Utf8CP descr=nullptr, DgnMaterialId id=DgnMaterialId()) : m_id(id), m_name(name), m_palette(palette), 
+                            m_descr(descr), m_value(value) {}
 
-        DgnMaterialId GetId() const {return m_materialId;}
-        Utf8CP GetName() const {return m_name.c_str();}
-        Utf8CP GetPalette() const {return m_palette.c_str();}
-        Utf8CP GetValue() const {return m_value.c_str();}
+        DgnMaterialId GetId() const {return m_id;}
+        Utf8StringCR GetName() const {return m_name;}
+        Utf8StringCR GetPalette() const {return m_palette;}
+        Utf8StringCR GetValue() const {return m_value;}
+        Utf8StringCR GetDescr() const {return m_value;}
         void SetName(Utf8CP val) {m_name = val;}
         void SetPalette(Utf8CP val) {m_palette = val;}
         void SetValue(Utf8CP val) {m_value = val;}
-        bool IsValid() const {return m_materialId.IsValid();}
+        void SetDescr(Utf8CP val) {m_descr= val;}
+        void SetId(DgnMaterialId id) {m_id=id;}
+        bool IsValid() const {return m_id.IsValid();}
     };
 
     struct Iterator : BeSQLite::DbTableIterator
@@ -1150,6 +1155,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
             DGNPLATFORM_EXPORT Utf8CP GetValue() const;
+            DGNPLATFORM_EXPORT Utf8CP GetDescr() const;
             Entry const& operator*() const {return *this;}
         };
 
@@ -1162,10 +1168,10 @@ public:
 
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertMaterial(Material& row);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteMaterial(DgnMaterialId materialId);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Material const& row);
-    DGNPLATFORM_EXPORT Material QueryMaterialById(DgnMaterialId id) const;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Material&);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Material const&) const;
+    DGNPLATFORM_EXPORT Material Query(DgnMaterialId id) const;
+    DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
 };
 
 //=======================================================================================

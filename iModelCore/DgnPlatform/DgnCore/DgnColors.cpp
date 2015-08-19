@@ -457,8 +457,12 @@ DgnTrueColorId DgnColors::Insert(ColorDef color, Utf8CP name, Utf8CP book)
     {
     DgnTrueColorId newId;
 
-    auto status = m_dgndb.GetNextRepositoryBasedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
-    BeAssert(status == BE_SQLITE_OK);
+    auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
+    if (status != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return DgnTrueColorId();
+        }
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Color) " (Id,Value,Name,Book) VALUES(?,?,?,?)");
 

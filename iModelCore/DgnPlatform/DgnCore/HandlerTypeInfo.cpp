@@ -155,8 +155,4 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString(HitDetailCP hit, Utf8St
 
     pathDescr.append(delimiter).append(modelStr.c_str());
     pathDescr.append(delimiter).append(categoryStr.c_str());
-
-#if defined (NEEDSWORK_ELEMENT_HANDLER)
-    dHandler->GetPathDescription(eh, pathDescr, path, categoryStr.c_str(), modelStr.c_str(), delimiter);
-#endif
     }

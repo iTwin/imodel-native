@@ -269,6 +269,8 @@ $(coreObjs)DgnUnits$(oext) : $(DgnCoreDir)DgnUnits.cpp $(DgnCoreAPISrc)DgnDb.h $
 
 $(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
+$(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
 $(coreObjs)SatelliteChangeSets$(oext) : $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnCoreAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
 $(coreObjs)DgnMarkupProject$(oext): $(DgnCoreDir)DgnMarkupProject.cpp $(DgnCoreAPISrc)DgnMarkupProject.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
