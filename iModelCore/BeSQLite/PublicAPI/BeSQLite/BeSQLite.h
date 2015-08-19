@@ -311,6 +311,14 @@ public:
     void Invalidate() {m_id = -1;}
 };
 
+#define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
+    classname() {Invalidate();}\
+    explicit classname(int64_t v) : superclass(v) {} \
+    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
+    classname(classname const& rhs) : superclass(rhs) {} \
+    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
+    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */
+
 //=======================================================================================
 //! A 8-byte value that is locally unique within a BeRepository. Since BeRepositoryId's are forced to be unique externally, a BeRepositoryBasedId
 //! can be assumed to be globally unique. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
@@ -318,23 +326,11 @@ public:
 //=======================================================================================
 struct BeRepositoryBasedId : BeInt64Id
 {
-    //! Construct an invalid BeRepositoryBasedId
-    BeRepositoryBasedId() {Invalidate();}
+    BEINT64_ID_DECLARE_MEMBERS(BeRepositoryBasedId,BeInt64Id)
 
-    //! Construct a BeRepositoryBasedId from a 64 bit value.
-    explicit BeRepositoryBasedId(int64_t val) : BeInt64Id(val) {}
-
+public:
     //! Construct a BeInt64Id from a RepositoryId value and an id.
     BeRepositoryBasedId(BeRepositoryId repositoryId, uint32_t id) { m_id = ((((int64_t) repositoryId.GetValue()) << 32 | id)); }
-
-    //! Move constructor.
-    BeRepositoryBasedId(BeRepositoryBasedId&& rhs) : BeInt64Id(std::move(rhs)) {}
-
-    //! Constructs a copy.
-    BeRepositoryBasedId(BeRepositoryBasedId const& rhs) : BeInt64Id(rhs) {}
-
-    //! Copies values from another instance.
-    BeRepositoryBasedId& operator=(BeRepositoryBasedId const& rhs) {m_id = rhs.m_id; return *this;}
 
     BeRepositoryId GetRepositoryId() const {return BeRepositoryId(m_id >> 32);}
 
@@ -342,13 +338,10 @@ struct BeRepositoryBasedId : BeInt64Id
     BE_SQLITE_EXPORT void CreateRandom(BeRepositoryId);
 };
 
-#define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass {classname() : superclass() {}  \
-    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
-    classname(classname const& rhs) : superclass(rhs) {} \
-    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
-    explicit classname(int64_t v) : superclass(v) {} \
+
+#define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
     classname(BeRepositoryId repositoryId, uint32_t id) : superclass(repositoryId,id){} \
-    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */ };
+    BEINT64_ID_DECLARE_MEMBERS(classname,superclass) };
 
 #define BEREPOSITORYBASED_ID_CLASS(classname) BEREPOSITORYBASED_ID_SUBCLASS(classname,BeRepositoryBasedId)
 
@@ -358,23 +351,10 @@ struct BeRepositoryBasedId : BeInt64Id
 //=======================================================================================
 struct BeServerIssuedId : BeInt64Id
 {
-    //! Construct an invalid BeServerIssuedId
-    BeServerIssuedId() {Invalidate();}
-
-    //! Construct a BeServerIssuedId from a 64 bit value.
-    explicit BeServerIssuedId(int64_t u) : BeInt64Id(u) {}
-    BeServerIssuedId& operator=(BeServerIssuedId const& rhs) {m_id = rhs.m_id; return *this;}
-    BeServerIssuedId(BeServerIssuedId&& rhs) : BeInt64Id(std::move(rhs)) {} 
-    BeServerIssuedId(BeServerIssuedId const& rhs) : BeInt64Id(rhs) {} 
+    BEINT64_ID_DECLARE_MEMBERS(BeServerIssuedId,BeInt64Id)
 };
 
-#define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {classname() : superclass() {} \
-    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
-    classname(classname const& rhs) : superclass(rhs) {} \
-    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
-    explicit classname(int64_t v) : superclass(v) {} \
-    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */ };
-
+#define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {BEINT64_ID_DECLARE_MEMBERS(classname,superclass)};
 #define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeServerIssuedId)
 
 //=======================================================================================
@@ -954,7 +934,7 @@ public:
 struct DbValue
 {
     SqlValueP m_val;
-    DbValue(SqlValueP val) : m_val(val)  {}
+    DbValue(SqlValueP val) : m_val(val) {}
 
     bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
