@@ -1455,4 +1455,135 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 ECDbSqlTable& ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
 
 
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       08 / 2015
+//------------------------------------------------------------------------------------------
+IClassMap const& PropertyMapSet::GetClassMap () const { return m_classMap; }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       08 / 2015
+//------------------------------------------------------------------------------------------
+const PropertyMapSet::EndPoints  PropertyMapSet::GetEndPoints () const
+    {
+    EndPoints endPoints;
+    for (auto const& endPoint : m_orderedEndPoints)
+        endPoints.push_back (endPoint.get ());
+
+    return endPoints;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       08 / 2015
+//------------------------------------------------------------------------------------------
+const PropertyMapSet::EndPoints PropertyMapSet::FindEndPoints (ECDbKnownColumns filter) const
+    {
+    EndPoints endPoints;
+    for (auto const& endPoint : m_orderedEndPoints)
+        {
+        if (Enum::In (endPoint->GetKnownColumnId (), filter))
+            endPoints.push_back (endPoint.get ());
+        }
+
+    return endPoints;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       08 / 2015
+//------------------------------------------------------------------------------------------
+BentleyStatus PropertyMapSet::AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ECDbKnownColumns knownColumnId, ECValueCR value, ECDbSqlColumn const* column)
+    {
+    auto const& table = classMap.GetTable ();
+    if (column == nullptr)
+        column = table.GetFilteredColumnFirst (knownColumnId);
+
+    auto const accessString = ECDbSqlColumn::ToAccessString (knownColumnId);
+    if (value.IsNull ())
+        {
+        BeAssert (column != nullptr);
+        if (column == nullptr)
+            return BentleyStatus::ERROR;
+        }
+
+    BeAssert (accessString != nullptr);
+    if (accessString == nullptr)
+        return BentleyStatus::ERROR;
+
+    if (column == nullptr)
+        propertySet.m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (accessString, knownColumnId, value)));
+    else
+        propertySet.m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (accessString, *column, value)));
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       08 / 2015
+//------------------------------------------------------------------------------------------
+PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
+    {
+    Ptr propertySet = Ptr (new PropertyMapSet (classMap));
+    ECValue defaultValue;
+    AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECInstanceId, defaultValue);
+    AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECClassId, ECValue (classMap.GetClass ().GetId ()));
+    if (classMap.GetClass ().GetIsStruct ())
+        {
+        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ParentECInstanceId, defaultValue);
+        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECPropertyPathId, defaultValue);
+        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::ECArrayIndex, defaultValue);
+        }
+
+    if (classMap.GetClassMapType () == IClassMap::Type::RelationshipLinkTable ||
+        classMap.GetClassMapType () == IClassMap::Type::RelationshipEndTable)
+        {
+        RelationshipClassMapCR const& relationshipMap = static_cast<RelationshipClassMapCR>(classMap);
+        auto const& sourceConstraints = relationshipMap.GetRelationshipClass ().GetSource ().GetClasses ();
+        auto const& targetConstraints = relationshipMap.GetRelationshipClass ().GetTarget ().GetClasses ();
+        auto sourceECInstanceIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ();
+        auto sourceECClassIdColumn = relationshipMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ();
+        auto targetECInstanceIdColumn = relationshipMap.GetTargetECInstanceIdPropMap ()->GetFirstColumn ();
+        auto targetECClassIdColumn = relationshipMap.GetTargetECClassIdPropMap ()->GetFirstColumn ();
+
+
+        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECInstanceId, defaultValue, sourceECInstanceIdColumn);
+        auto sourceConstraintClass = sourceConstraints.at (0);
+        if (!IClassMap::IsAnyClass (*sourceConstraintClass) && sourceConstraints.size () == 1)
+            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECClassId, ECValue (sourceConstraintClass->GetId ()), sourceECClassIdColumn);
+        else
+            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECClassId, defaultValue, sourceECClassIdColumn);
+
+        AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::TargetECInstanceId, defaultValue, targetECInstanceIdColumn);
+        auto targetConstraintClass = targetConstraints.at (0);
+        if (!IClassMap::IsAnyClass (*targetConstraintClass) && targetConstraints.size () == 1)
+            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::TargetECClassId, ECValue (targetConstraintClass->GetId ()), targetECClassIdColumn);
+        else
+            AddSystemEndPoint (*propertySet, classMap, ECDbKnownColumns::SourceECClassId, defaultValue, targetECClassIdColumn);
+        }
+
+    classMap.GetPropertyMaps ().Traverse ([&propertySet] (TraversalFeedback& feedback, PropertyMapCP propMap)
+        {
+        if (auto pm = dynamic_cast<PropertyMapPoint const*> (propMap))
+            {
+            std::vector<ECDbSqlColumn const*> columns;
+            pm->GetColumns (columns);
+            Utf8String  baseAccessString = pm->GetPropertyAccessString ();
+            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".X").c_str (), *columns[0], ECValue ())));
+            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Y").c_str (), *columns[1], ECValue ())));
+            if (pm->Is3d ())
+                propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint ((baseAccessString + ".Z").c_str (), *columns[2], ECValue ())));
+            }
+        else if (auto pm = dynamic_cast<PropertyMapToTable const*> (propMap))
+            {
+            feedback = TraversalFeedback::NextSibling;
+            }
+        else
+            {
+            propertySet->m_orderedEndPoints.push_back (std::unique_ptr<EndPoint> (new EndPoint (propMap->GetPropertyAccessString (), *propMap->GetFirstColumn (), ECValue ())));
+            }
+        feedback = TraversalFeedback::Next;
+        }, true);
+
+    return propertySet;
+    }
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -172,7 +172,77 @@ struct DMLPolicy
 
             return outString;
             }
+
+
+        bool RequiresView () const
+            {
+            for (auto const& pair : m_ops)
+                if (pair.second == Target::View)
+                    return true;
+
+            return false;
+            }
+        bool IsNOOP () const
+            {
+            for (auto const& pair : m_ops)
+                if (pair.second != Target::None)
+                    return false;
+
+            return true;
+            }
     };
+
+//=======================================================================================
+//! A helper class to help generate view/trigger in standard way
+// @bsiclass                                               Affan.Khan          08/2015
+//+===============+===============+===============+===============+===============+======
+
+struct PropertyMapSet : NonCopyableClass
+    {
+    typedef std::unique_ptr<PropertyMapSet> Ptr;
+    struct EndPoint : NonCopyableClass
+        {
+        private:
+            ECDbSqlColumn const* m_column;
+            Utf8String m_accessString;
+            ECN::ECValue m_value;
+            ECDbKnownColumns m_knownColumn;
+        public:
+            EndPoint (Utf8CP accessString, ECDbKnownColumns knownColumn, ECN::ECValueCR value)
+                : m_accessString (accessString), m_column (nullptr), m_value (value), m_knownColumn (knownColumn)
+                {
+                }
+            EndPoint (Utf8CP accessString, ECDbSqlColumn const& column, ECN::ECValueCR value)
+                : m_accessString (accessString), m_column (&column), m_value (value), m_knownColumn (column.GetKnownColumnId ())
+                {
+                }
+            ECDbSqlColumn const* GetColumn () const { return m_column; }
+            Utf8StringCR GetAccessString () const { return m_accessString; }
+            ECN::ECValueCR GetValue () const { return m_value; }
+            ECDbKnownColumns GetKnownColumnId () const { return m_knownColumn; }
+        };
+
+
+    typedef std::vector<EndPoint const*> EndPoints;
+    private:
+        std::vector<std::unique_ptr<EndPoint>> m_orderedEndPoints;
+        IClassMap const& m_classMap;
+
+        PropertyMapSet (IClassMap const& classMap)
+            :m_classMap (classMap)
+            {
+            }
+    public:
+        IClassMap const& GetClassMap () const;
+        const EndPoints GetEndPoints () const;
+        const EndPoints FindEndPoints (ECDbKnownColumns filter) const;
+
+        static BentleyStatus AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ECDbKnownColumns knownColumnId, ECN::ECValueCR value, ECDbSqlColumn const* column = nullptr);
+        static PropertyMapSet::Ptr Create (IClassMap const& classMap);
+    };
+
+
+
 //=======================================================================================
 //! Maps an ECClass to a DbTable
 //! @remarks This is the base interface for querying information for a class mapping.

@@ -1909,6 +1909,21 @@ std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
+std::map<ECDbKnownColumns, Utf8CP> ECDbSqlColumn::m_knownColumnNames =
+    { 
+        { ECDbKnownColumns::ECInstanceId, "ECInstanceId" },
+        { ECDbKnownColumns::ECClassId, "ECClassId" },
+        { ECDbKnownColumns::ECArrayIndex, "ECArrayIndex" },
+        { ECDbKnownColumns::ECPropertyPathId, "ECPropertyPathId" },
+        { ECDbKnownColumns::ParentECInstanceId, "ParentECInstanceId" },
+        { ECDbKnownColumns::SourceECClassId, "SourceECClassId" },
+        { ECDbKnownColumns::SourceECInstanceId, "SourceECInstanceId" },
+        { ECDbKnownColumns::TargetECClassId, "TargetECClassId" },
+        { ECDbKnownColumns::TargetECInstanceId, "TargetECInstanceId" }
+    };
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        10/2014
+//---------------------------------------------------------------------------------------
 BentleyStatus DependentPropertyCollection::Add (ECClassId ecClassId, Utf8CP accessString)
     {
     //if (GetColumnR ().GetTableR ().GetEditHandleR ().AssertNotInEditMode ())

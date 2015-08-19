@@ -451,7 +451,8 @@ struct ECDbSqlColumn : NonCopyableClass
         DependentPropertyCollection m_references;
         PersistenceType m_persistenceType;
         ECDbKnownColumns m_knowColumnId;
-        ECDbColumnId m_id;        
+        ECDbColumnId m_id;
+        static std::map<ECDbKnownColumns, Utf8CP> m_knownColumnNames;
     public:
         ECDbSqlColumn (Utf8CP name, Type type, ECDbSqlTable& owner, PersistenceType persistenceType, ECDbColumnId id)
             : m_name (name), m_ownerTable (owner), m_type (type), m_references (*this), m_persistenceType (persistenceType), m_knowColumnId (ECDbKnownColumns::DataColumn), m_id (id){}
@@ -477,6 +478,16 @@ struct ECDbSqlColumn : NonCopyableClass
         const Utf8String GetFullName () const;
         std::weak_ptr<ECDbSqlColumn> GetWeakPtr () const;
         static const Utf8String BuildFullName (Utf8CP table, Utf8CP column);
+        static Utf8CP ToAccessString (ECDbKnownColumns columnId)
+            {
+            auto itor = m_knownColumnNames.find (columnId);
+            if (itor != m_knownColumnNames.end ())
+                {
+                return itor->second;
+                }
+
+            return nullptr;
+            }
     };
 
 //======================================================================================
