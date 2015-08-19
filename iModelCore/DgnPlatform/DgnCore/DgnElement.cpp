@@ -1802,7 +1802,7 @@ DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance)
+DgnDbStatus DgnElement::Item::ExecuteEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance)
     {
     ECN::ECClassCR ecclass = egaInstance.GetClass();
     ECN::IECInstancePtr ca = ecclass.GetCustomAttribute("EGASpecifier");
@@ -1816,26 +1816,95 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
 
     Utf8String tsName(egaName.GetUtf8CP());
 
-    if (0 != BeStringUtilities::Stricmp("JavaScript", egaType.GetUtf8CP()))
+    if (0 == BeStringUtilities::Stricmp("JavaScript", egaType.GetUtf8CP()))
         {
-        // *******************************************************************
-        // *** TBD: Support for other kinds of EGAs (e.g., parametric models)
-        // *******************************************************************
-        BeAssert(false && "TBD - Only JavaScript EGA supported for now.");
-        return DgnDbStatus::NotEnabled;
+        //  ----------------------------------------------------------------------------------
+        //  JavaScript EGA
+        //  ----------------------------------------------------------------------------------
+        Json::Value json(Json::objectValue);
+        if (BSISUCCESS != ECUtils::ToJsonPropertiesFromECProperties(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
+            return DgnDbStatus::BadArg;
+
+        int retval;
+        DgnDbStatus xstatus = DgnScript::ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
+        if (xstatus != DgnDbStatus::Success)
+            return xstatus;
+
+        return (0 == retval)? DgnDbStatus::Success: DgnDbStatus::WriteError;
         }
 
-    //  ----------------------------------------------------------------------------------
-    //  JavaScript EGA
-    //  ----------------------------------------------------------------------------------
-    Json::Value json(Json::objectValue);
-    if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
-        return DgnDbStatus::BadArg;
+    if (0 == BeStringUtilities::Stricmp("ComponentModel", egaType.GetUtf8CP()))
+        {
+        return ExecuteComponentSolutionEGA(el, origin, angles, egaInstance, tsName, Utf8String(egaInputs.GetUtf8CP()), *this);
+        }
 
-    int retval;
-    DgnDbStatus xstatus = DgnScript::ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
-    if (xstatus != DgnDbStatus::Success)
-        return xstatus;
-
-    return (0 == retval)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    BeAssert(false && "TBD - Unrecognized EGA type.");
+    return DgnDbStatus::NotEnabled;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InstanceBackedItem::_GenerateElementGeometry(GeometricElementR el)
+    {
+    Placement3d placement;
+    DgnElement3dP e3d = el.ToElement3dP();
+    if (nullptr != e3d)
+        placement = e3d->GetPlacement();
+    else
+        {
+        DgnElement2dP e2d = el.ToElement2dP();
+        Placement2d p2d = e2d->GetPlacement();
+        DPoint3d o3d = DPoint3d::From(p2d.GetOrigin().x, p2d.GetOrigin().y, 0);
+        YawPitchRollAngles a3d = YawPitchRollAngles::FromDegrees(p2d.GetAngle().Degrees(), 0, 0);
+        ElementAlignedBox2d b2d = p2d.GetElementBoxR();
+        ElementAlignedBox3d b3d;
+        b3d.low = DPoint3d::From(b2d.low.x, b2d.low.y, 0);
+        b3d.high = DPoint3d::From(b2d.high.x, b2d.high.y, 0);
+        placement = Placement3d(o3d, a3d, b3d);
+        }
+    return ExecuteEGA(el, placement.GetOrigin(), placement.GetAngles(), *m_instance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceBackedItem::SetInstanceId(BeSQLite::EC::ECInstanceId eid)
+    {
+    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, eid);
+    m_instance->SetInstanceId(idStrBuffer);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InstanceBackedItem::_LoadProperties(DgnElementCR el)
+    {
+    BeSQLite::EC::ECInstanceId eid(el.GetElementId().GetValue());
+
+    EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE (ECInstanceId=?)");
+    stmt->BindId(1, eid);
+    if (ECSqlStepStatus::HasRow != stmt->Step())
+        return DgnDbStatus::ReadError;
+
+    ECInstanceECSqlSelectAdapter reader(*stmt);
+    m_instance = reader.GetInstance();
+    if (!m_instance.IsValid())
+        return DgnDbStatus::ReadError;
+    
+    SetInstanceId(eid);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus InstanceBackedItem::_UpdateProperties(DgnElementCR el)
+    {
+    SetInstanceId(BeSQLite::EC::ECInstanceId(el.GetElementId().GetValue()));
+    ECInstanceUpdater updater(el.GetDgnDb(), *m_instance);
+    return (BSISUCCESS != updater.Update(*m_instance))? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    }
+

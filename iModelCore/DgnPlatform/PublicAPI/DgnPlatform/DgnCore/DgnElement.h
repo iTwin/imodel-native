@@ -1483,4 +1483,29 @@ public:
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
 };
+
+//=======================================================================================
+//! Can be used as the base class for an Item that uses an IECInstance to cache its properties in memory.
+//! @note There is no AspectHandler for InstanceBackedItem. A class that derives from InstanceBackedItem must
+//! register its own handler.
+// @bsiclass                                                BentleySystems
+//=======================================================================================
+struct InstanceBackedItem : DgnElement::Item
+{
+    ECN::IECInstancePtr m_instance;
+
+    Utf8String _GetECSchemaName() const override {return m_instance->GetClass().GetSchema().GetName();}
+    Utf8String _GetECClassName() const override {return m_instance->GetClass().GetName();}
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
+
+    InstanceBackedItem() {;}
+
+    void SetInstanceId(BeSQLite::EC::ECInstanceId eid);
+};
+
+// *** WIP_ELEMENT_ITEM - move this back into ComponentSolution after making ElementItem a top-level class
+DgnDbStatus ExecuteComponentSolutionEGA(DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR itemInstance, Utf8StringCR cmName, Utf8StringCR paramNames, DgnElement::Item& item);
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE

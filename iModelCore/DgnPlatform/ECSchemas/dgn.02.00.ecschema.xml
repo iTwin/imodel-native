@@ -14,20 +14,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
 
-    <ECClass typeName="ComponentModelSolution" isDomainClass="True" >
+    <ECClass typeName="ComponentSolution" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- NEEDS WORK: I want the primary key to be (ComponentModelId,Parameters) -->
+                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="ComponentModelId" typeName="long"/>
-        <ECProperty propertyName="Parameters" typeName="string"/>
+        <ECProperty propertyName="ComponentModelName" typeName="string"/>
+        <ECProperty propertyName="SolutionName" typeName="string"/>
+        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementInstancesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
+    <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -38,12 +40,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ComponentModelSolution" />
+            <Class class="ComponentSolution" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
+    -->
+
+    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
+        <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
+        <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
+    </ECClass>
 
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>

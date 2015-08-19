@@ -265,56 +265,6 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
-    {
-    ECN::ECValue v;
-    if (ec.GetValue(v, prop) != ECN::ECOBJECTS_STATUS_Success || v.IsNull() || !v.IsPrimitive())
-        return BSIERROR;
-
-    auto& jv = json[prop];
-
-    switch(v.GetPrimitiveType())
-        {
-        case ECN::PRIMITIVETYPE_Boolean:    jv = v.GetBoolean(); break;
-        case ECN::PRIMITIVETYPE_Double:     jv = v.GetDouble(); break;
-        case ECN::PRIMITIVETYPE_Integer:    jv = v.GetInteger(); break;
-        case ECN::PRIMITIVETYPE_Long:       jv = v.GetLong(); break;
-        case ECN::PRIMITIVETYPE_String:     jv = v.GetUtf8CP(); break;
-        
-        case ECN::PRIMITIVETYPE_Point2D:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2D()); break;
-        case ECN::PRIMITIVETYPE_Point3D:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3D()); break;
-
-        /* WIP_EGA 
-        case ECN::PRIMITIVETYPE_IGeometry:  jv = ...
-        case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime(); break;
-        */
-
-        default:
-            return BSIERROR;
-        }
-    
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
-    {
-    size_t offset = 0;
-    Utf8String parm;
-    while ((offset = props.GetNextToken (parm, ",", offset)) != Utf8String::npos)
-        {
-        parm.Trim();
-        if (ToJsonFromEC(json, ec, parm.c_str()) != BSISUCCESS)
-            return BSIERROR;
-        }
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
     {
     Statement stmt;
