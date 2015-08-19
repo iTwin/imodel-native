@@ -661,7 +661,7 @@ bool                LsDefinition::IsNoWidth ()            const {return 0 != (m_
 bool                LsDefinition::IsPhysical ()           const {return 0 != (m_attributes & LSATTR_PHYSICAL);}
 bool                LsDefinition::IsInternal ()           const {return m_location.GetComponentType() == LsComponentType::Internal;}
 bool                LsDefinition::IsUnitsUOR()            const {return (LSATTR_UNITUOR == GetUnits());}
-bool                LsDefinition::IsUnitsMaster()         const {return (LSATTR_UNITMASTER == GetUnits());}
+bool                LsDefinition::IsUnitsMeters()         const {return (LSATTR_UNITMETERS == GetUnits());}
 bool                LsDefinition::IsUnitsDevice()         const {return (LSATTR_UNITDEV == GetUnits());}
 bool                LsDefinition::IsHardware()            const {return (m_hardwareLineCode > 0 ? true : false);}
 bool                LsDefinition::IsSCScaleIndependent()  const {return 0 != (m_attributes & LSATTR_SHAREDCELL_SCALE_INDEPENDENT);}
