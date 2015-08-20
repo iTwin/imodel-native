@@ -901,9 +901,9 @@ public:
         ColorDef       m_color;
         Utf8String     m_name;
         Utf8String     m_book;
-        Color(ColorDef color=ColorDef::White(), Utf8CP name=nullptr, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
 
     public:
+        Color(ColorDef color=ColorDef::White(), Utf8CP name=nullptr, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
         bool IsValid() const {return m_id.IsValid();}
         DgnTrueColorId GetId() const {return m_id;}
         ColorDef GetColor() const {return m_color;}

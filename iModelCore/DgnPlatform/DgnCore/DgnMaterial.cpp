@@ -22,7 +22,6 @@ DbResult DgnMaterials::Insert(Material& material)
         }
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Material) " (Id,Value,Name,Palette,Descr,ParentId) VALUES(?,?,?,?,?,?)");
-
     stmt.BindId(1, newId);
     stmt.BindText(2, material.GetValue(), Statement::MakeCopy::No);
     stmt.BindText(3, material.GetName(), Statement::MakeCopy::No);
@@ -31,13 +30,13 @@ DbResult DgnMaterials::Insert(Material& material)
     stmt.BindId(6, material.GetParentId());
 
     status = stmt.Step();
-    if (BE_SQLITE_DONE != status);
+    if (BE_SQLITE_DONE != status)
         {
         BeAssert(false);
         return status;
         }
 
-    material.m_id=newId;
+    material.m_id = newId;
     return BE_SQLITE_OK;
     }
 
@@ -49,9 +48,7 @@ DbResult DgnMaterials::Update(Material const& material) const
     if (!material.IsValid())
         return BE_SQLITE_ERROR;
 
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
-
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
     stmt.BindText(1, material.GetValue(), Statement::MakeCopy::No);
     stmt.BindText(2, material.GetDescr(), Statement::MakeCopy::No);
     stmt.BindId(3, material.GetParentId());
