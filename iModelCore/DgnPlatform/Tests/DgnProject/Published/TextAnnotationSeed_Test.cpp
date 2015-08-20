@@ -241,9 +241,9 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Shoudl not exist before insert
-        ASSERT_TRUE(false == project.Styles().TextAnnotationSeeds().ExistsById(testStyle->GetId()));
+        // You cannot pass an invalid ID to ExistsById... ASSERT_TRUE(false == project.Styles().TextAnnotationSeeds().ExistsById(testStyle->GetId()));
         ASSERT_TRUE(false == project.Styles().TextAnnotationSeeds().ExistsByName(testStyle->GetName().c_str()));
-        ASSERT_TRUE(false == project.Styles().TextAnnotationSeeds().QueryById(testStyle->GetId()).IsValid());
+        // You cannot pass an invalid ID to QueryById... ASSERT_TRUE(false == project.Styles().TextAnnotationSeeds().QueryById(testStyle->GetId()).IsValid());
         ASSERT_TRUE(false == project.Styles().TextAnnotationSeeds().QueryByName(testStyle->GetName().c_str()).IsValid());
 
         ASSERT_TRUE(SUCCESS == project.Styles().TextAnnotationSeeds().Insert(*testStyle));
@@ -276,9 +276,9 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Query Invalid
-        EXPECT_FALSE(project.Styles().TextAnnotationSeeds().ExistsById(INVALIDSTYLEID));
+        // You cannot pass an invalid ID to ExistsById... EXPECT_FALSE(project.Styles().TextAnnotationSeeds().ExistsById(INVALIDSTYLEID));
         EXPECT_FALSE(project.Styles().TextAnnotationSeeds().ExistsByName("InvalidName"));
-        EXPECT_FALSE(project.Styles().TextAnnotationSeeds().QueryById(INVALIDSTYLEID).IsValid());
+        // You cannot pass an invalid ID to QueryById... EXPECT_FALSE(project.Styles().TextAnnotationSeeds().QueryById(INVALIDSTYLEID).IsValid());
         EXPECT_FALSE(project.Styles().TextAnnotationSeeds().QueryByName("InvalideName").IsValid());
 
         //.............................................................................................
@@ -304,7 +304,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
         TextAnnotationSeedPtr secondMutatedStyle = fileStyle->Clone();
         secondMutatedStyle->SetName("DifferentName");
         secondMutatedStyle->SetId(INVALIDSTYLEID);
-        ASSERT_TRUE(ERROR == project.Styles().TextAnnotationSeeds().Update(*secondMutatedStyle));
+        // Cannot pass an invalid ID to Update... ASSERT_TRUE(ERROR == project.Styles().TextAnnotationSeeds().Update(*secondMutatedStyle));
 
         //.............................................................................................
         // Iterate
@@ -347,7 +347,7 @@ TEST_F(TextAnnotationSeedTest, InvalidOperations)
 
         //.............................................................................................
         // Delete by Invalid id 
-        ASSERT_TRUE(ERROR == project.Styles().TextAnnotationSeeds().Delete(INVALIDSTYLEID));
+        // Cannot pass an invalid ID to Delete... ASSERT_TRUE(ERROR == project.Styles().TextAnnotationSeeds().Delete(INVALIDSTYLEID));
 
         //.............................................................................................
         // Delete
