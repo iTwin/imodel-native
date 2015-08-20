@@ -77,7 +77,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -271,7 +271,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -317,7 +317,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
@@ -366,7 +366,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
@@ -388,7 +388,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <!-- WIP: Uncomment when CodeAuthority support has been added
@@ -510,7 +510,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <!-- Each ElementUniqueAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
                     <!-- Each ElementUniqueAspect subclass should determine its own MapStrategy -->
-                    <IsPolymorphic>False</IsPolymorphic>
+                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
@@ -527,7 +527,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <!-- Each ElementMultiAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
                     <!-- Each ElementMultiAspect subclass should determine its own MapStrategy -->
-                    <IsPolymorphic>False</IsPolymorphic>
+                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -551,7 +551,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <!-- All subclasses of ElementItem will share the same table -->
                     <Strategy>SharedTable</Strategy>
                     <Options>SharedColumnsForSubclasses</Options>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>

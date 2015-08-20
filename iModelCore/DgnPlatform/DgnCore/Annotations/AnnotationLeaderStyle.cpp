@@ -455,7 +455,7 @@ bool DgnAnnotationLeaderStyles::ExistsByName(Utf8CP name) const
     query.BindText(1, name, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != query.Step())
-        return nullptr;
+        return false;
 
     return (query.GetValueInt(0) > 0);
     }
