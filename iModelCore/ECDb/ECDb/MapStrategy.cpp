@@ -15,7 +15,7 @@ BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Option option, bool
     {
     m_strategy = strategy;
     m_option = option;
-    m_isPolymorphic = isPolymorphic;
+    m_appliesToSubclasses = isPolymorphic;
 
     return IsValid() ? SUCCESS : ERROR;
     }
@@ -28,21 +28,21 @@ bool UserECDbMapStrategy::IsValid() const
     switch (m_strategy)
         {
             case Strategy::None:
-                return !m_isPolymorphic && (m_option == Option::None || m_option == Option::DisableSharedColumns);
+                return !m_appliesToSubclasses && (m_option == Option::None || m_option == Option::DisableSharedColumns);
 
             case Strategy::SharedTable:
                 {
                 if (m_option == Option::None)
                     return true;
 
-                if (!m_isPolymorphic)
+                if (!m_appliesToSubclasses)
                     return m_option == Option::SharedColumns;
 
                 return m_option == Option::SharedColumns || m_option == Option::SharedColumnsForSubclasses;
                 }
 
             case Strategy::ExistingTable:
-                return !m_isPolymorphic && (m_option == Option::None || m_option == Option::Readonly);
+                return !m_appliesToSubclasses && (m_option == Option::None || m_option == Option::Readonly);
 
             default:
                 //these strategies must not have any options
@@ -74,7 +74,7 @@ BentleyStatus UserECDbMapStrategy::TryParse(UserECDbMapStrategy& mapStrategy, EC
     if (SUCCESS != TryParse(option, mapStrategyCustomAttribute.GetOptions()))
         return ERROR;
 
-    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.IsPolymorphic());
+    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.AppliesToSubclasses());
     }
 
 //---------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ Utf8String UserECDbMapStrategy::ToString() const
                 break;
         }
 
-    if (m_isPolymorphic)
+    if (m_appliesToSubclasses)
         str.append(" (polymorphic)");
 
     switch (m_option)
@@ -213,7 +213,7 @@ Utf8String UserECDbMapStrategy::ToString() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
     {
-    m_isPolymorphic = userStrategy.IsPolymorphic();
+    m_appliesToSubclasses = userStrategy.AppliesToSubclasses();
 
     switch (userStrategy.GetStrategy())
         {
@@ -271,7 +271,7 @@ BentleyStatus ECDbMapStrategy::Assign(Strategy strategy, Option option, bool isP
     {
     m_strategy = strategy;
     m_option = option;
-    m_isPolymorphic = isPolymorphic;
+    m_appliesToSubclasses = isPolymorphic;
     
     if (!IsValid())
         {
@@ -338,7 +338,7 @@ Utf8String ECDbMapStrategy::ToString() const
                 break;
         }
 
-    if (m_isPolymorphic)
+    if (m_appliesToSubclasses)
         str.append(" (polymorphic)");
 
     switch (m_option)

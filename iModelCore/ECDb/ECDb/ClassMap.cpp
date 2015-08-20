@@ -282,7 +282,7 @@ m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIs
 MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy ();
-    IClassMap const* effectiveParentClassMap = mapStrategy.IsPolymorphicSharedTable() ? mapInfo.GetParentClassMap () : nullptr;
+    IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses ()) ? mapInfo.GetParentClassMap () : nullptr;
 
     auto stat = _InitializePart1 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
@@ -963,18 +963,19 @@ BentleyStatus MappedTable::FinishTableDefinition ()
     if (m_table.GetOwnerType () == OwnerType::ECDb)
         {
         int nOwners = 0;
-        bool polymorphicSharedTable = false;
+        bool sharedTableWithAppliesToSubclasses = false;
         for (auto classMap : m_classMaps)
             {
             if (!classMap->GetMapStrategy().IsNotMapped() && classMap->GetClassMapType () != ClassMap::Type::RelationshipEndTable)
                 {
                 nOwners++;
-                if (classMap->GetMapStrategy ().IsPolymorphicSharedTable())
-                    polymorphicSharedTable = true;
+                ECDbMapStrategy const& mapStrategy = classMap->GetMapStrategy();
+                if (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses())
+                    sharedTableWithAppliesToSubclasses = true;
                 }
             }
 
-        if (polymorphicSharedTable || nOwners > 1)
+        if (sharedTableWithAppliesToSubclasses || nOwners > 1)
             {
             if (!m_generatedClassIdColumn)
                 {

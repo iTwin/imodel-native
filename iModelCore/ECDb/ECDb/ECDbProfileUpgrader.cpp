@@ -297,7 +297,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml ()
         "            <ClassMap xmlns='ECDbMap.01.00'> "
         "                <MapStrategy>"
         "                   <Strategy>NotMapped</Strategy>"
-        "                   <IsPolymorphic>True</IsPolymorphic> "
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses> "
         "                </MapStrategy>"
         "            </ClassMap> "
         "        </ECCustomAttributes> "

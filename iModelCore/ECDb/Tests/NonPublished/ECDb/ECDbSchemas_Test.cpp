@@ -2325,7 +2325,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("OwnTable"));
-    ecInctance->SetValue("MapStrategy.IsPolymorphic", ECValue(true));
+    ecInctance->SetValue("MapStrategy.AppliesToSubclasses", ECValue(true));
     MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"OwnTablePolymorphic.ecdb";
     deleteExistingDgnb(fileName);
@@ -2369,7 +2369,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("SharedTable"));
-    ecInctance->SetValue("MapStrategy.IsPolymorphic", ECValue(true));
+    ecInctance->SetValue("MapStrategy.AppliesToSubclasses", ECValue(true));
     MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"SharedTablePolymorphicClassMapping.ecdb";
     deleteExistingDgnb(fileName);
@@ -2398,7 +2398,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ecInctance->SetValue("MapStrategy.Strategy", ECValue("NotMapped"));
-    ecInctance->SetValue("MapStrategy.IsPolymorphic", ECValue(true));
+    ecInctance->SetValue("MapStrategy.AppliesToSubclasses", ECValue(true));
     MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"NotMappedPolymorphicClassMapping.ecdb";
     deleteExistingDgnb(fileName);

@@ -121,9 +121,9 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
 BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy& userStrategy)
     {
     bvector<IClassMap const*> baseClassMaps;
-    bvector<IClassMap const*> polymorphicSharedTableClassMaps; // SharedTable-Polymorphic have the highest priority, but there can be only one
-    bvector<IClassMap const*> polymorphicOwnTableClassMaps; // OwnTable-Polymorphic have second priority
-    bvector<IClassMap const*> polymorphicNotMappedClassMaps; // NotMapped-Polymorphic has priority only over NoHint or NotMapped-NonPolymorphic
+    bvector<IClassMap const*> polymorphicSharedTableClassMaps; // SharedTable (AppliesToSubclasses) have the highest priority, but there can be only one
+    bvector<IClassMap const*> polymorphicOwnTableClassMaps; // OwnTable (AppliesToSubclasses) have second priority
+    bvector<IClassMap const*> polymorphicNotMappedClassMaps; // NotMapped (AppliesToSubclasses) has priority only over NotMapped
 
     baseClassesNotMappedYet = !GatherBaseClassMaps(baseClassMaps, polymorphicSharedTableClassMaps, polymorphicOwnTableClassMaps, polymorphicNotMappedClassMaps, m_ecClass);
     if (baseClassesNotMappedYet)
@@ -178,11 +178,11 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     if (!ValidateChildStrategy(rootUserStrategy, userStrategy))
         return ERROR;
 
-    // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable-Polymorphic, use this
+    // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable (AppliesToSubclasses), use this
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
         m_parentClassMap = parentClassMap;
-        BeAssert(parentClassMap->GetMapStrategy().IsPolymorphicSharedTable());
+        BeAssert(parentClassMap->GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && parentClassMap->GetMapStrategy().AppliesToSubclasses ());
 
         ECDbMapStrategy::Option option = ECDbMapStrategy::Option::None;
         if (userStrategy.GetOption() != UserECDbMapStrategy::Option::DisableSharedColumns && 
@@ -213,9 +213,9 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
     if (rootStrategy.IsUnset())
         return true;
 
-    if (!rootStrategy.IsPolymorphic())
+    if (!rootStrategy.AppliesToSubclasses())
         {
-        BeAssert(rootStrategy.IsPolymorphic() && "In ClassMapInfo::ValidateChildStrategy rootStrategy should always be polymorphic");
+        BeAssert(rootStrategy.AppliesToSubclasses() && "In ClassMapInfo::ValidateChildStrategy rootStrategy should always apply to subclasses");
         return false;
         }
 
@@ -226,12 +226,12 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
             case UserECDbMapStrategy::Strategy::SharedTable:
                 {
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
-                    !childStrategy.IsPolymorphic() &&
+                    !childStrategy.AppliesToSubclasses() &&
                     (childStrategy.GetOption() == UserECDbMapStrategy::Option::None ||
                     childStrategy.GetOption() == UserECDbMapStrategy::Option::DisableSharedColumns);
 
                 if (!isValid)
-                    detailError = "For subclasses of a class with MapStrategy SharedTable (polymorphic), Strategy must be unset and Option must either be unset or 'DisableSharedColumns'.";
+                    detailError = "For subclasses of a class with MapStrategy SharedTable (AppliesToSubclasses), Strategy must be unset and Option must either be unset or 'DisableSharedColumns'.";
 
                 break;
                 }
@@ -240,7 +240,7 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
             default:
                 {
                 isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
-                    !childStrategy.IsPolymorphic() &&
+                    !childStrategy.AppliesToSubclasses() &&
                     childStrategy.GetOption() == UserECDbMapStrategy::Option::None;
 
                 if (!isValid)
@@ -329,11 +329,11 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         return ERROR;
 
     if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
-        (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->IsPolymorphic())))
+        (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->AppliesToSubclasses())))
         {
         if (m_tableName.empty())
             {
-            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (polymorphic)' or if MapStrategy is 'ExistingTable'.",
+            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or if MapStrategy is 'ExistingTable'.",
                        m_ecClass.GetFullName());
             return ERROR;
             }
@@ -342,7 +342,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         {
         if (!m_tableName.empty())
             {
-            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (polymorphic)' or 'ExistingTable'.",
+            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (AppliesToSubclasses)' or 'ExistingTable'.",
                        m_ecClass.GetFullName());
             return ERROR;
             }
@@ -452,7 +452,7 @@ ECClassCR          ecClass
             return false;
 
         ECDbMapStrategy const& baseMapStrategy = baseClassMap->GetMapStrategy();
-        if (!baseMapStrategy.IsPolymorphic())
+        if (!baseMapStrategy.AppliesToSubclasses())
             {
             // ClassMappingRule: non-polymorphic MapStrategies used in base classes have no effect on child classes
             return true;
@@ -686,11 +686,11 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
     const bool userStrategyIsForeignKeyMapping = m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget;
 
-    if (m_resolvedStrategy.IsPolymorphicSharedTable())
+    if (m_resolvedStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && m_resolvedStrategy.AppliesToSubclasses())
         {
         if (userStrategyIsForeignKeyMapping)
             {
-            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with (MapStrategy: SharedTable (polymorphic)), but it has a ForeignKeyRelationshipMap custom attribute.",
+            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with (MapStrategy: SharedTable (AppliesToSubclasses)), but it has a ForeignKeyRelationshipMap custom attribute.",
                        GetECClass().GetFullName());
             return MapStatus::Error;
             }

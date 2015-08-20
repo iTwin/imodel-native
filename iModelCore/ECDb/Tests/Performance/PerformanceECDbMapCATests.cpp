@@ -258,7 +258,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorAppliesToSubclassesphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
@@ -310,7 +310,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));

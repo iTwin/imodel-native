@@ -876,7 +876,7 @@ TEST_F (ECSqlTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (ECOBJECTS_STATUS_Success == baseClass->SetCustomAttribute(*customAttribute));
     nestedStructArraySchema->AddReferencedSchema (*ecdbMapSchema);
 

@@ -3186,7 +3186,7 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
     stmt->BindInt64(3, o.GetClassId ());
     stmt->BindInt(4, (int) o.GetMapStrategy ().GetStrategy ());
     stmt->BindInt(5, (int) o.GetMapStrategy().GetOption());
-    stmt->BindInt(6, o.GetMapStrategy().IsPolymorphic() ? 1 : 0);
+    stmt->BindInt(6, o.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
     stmt->BindInt(7, o.GetDMLPolicy());
 
 
