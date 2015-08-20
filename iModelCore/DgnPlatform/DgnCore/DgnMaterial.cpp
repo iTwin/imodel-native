@@ -18,7 +18,6 @@ DgnMaterialId DgnMaterials::Insert(Material& material, DgnDbStatus* outResult)
     auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Material), "Id");
     if (status != BE_SQLITE_OK)
         {
-        BeAssert(false);
         result = DgnDbStatus::ForeignKeyConstraint;
         return DgnMaterialId();
         }
@@ -34,7 +33,6 @@ DgnMaterialId DgnMaterials::Insert(Material& material, DgnDbStatus* outResult)
     status = stmt.Step();
     if (BE_SQLITE_DONE != status)
         {
-        BeAssert(false);
         result = DgnDbStatus::DuplicateName;
         return DgnMaterialId();
         }
@@ -110,7 +108,7 @@ DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Palette,Descr,Value,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Model));
+        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Palette,Descr,Value,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Material));
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         }

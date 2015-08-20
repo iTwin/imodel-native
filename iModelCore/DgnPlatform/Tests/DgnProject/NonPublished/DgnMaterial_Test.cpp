@@ -10,7 +10,6 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
-* Test fixture for testing DgnColors
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgnMaterialsTest : public ::testing::Test
@@ -28,7 +27,7 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Algirdas.Mikoliunas            03/2013
+* @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnMaterialsTest, TrueColors)
     {
@@ -116,7 +115,7 @@ TEST_F(DgnMaterialsTest, TrueColors)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Algirdas.Mikoliunas            03/2013
+* @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnMaterialsTest, Materials)
     {
@@ -128,26 +127,20 @@ TEST_F(DgnMaterialsTest, Materials)
     EXPECT_TRUE(materialId.IsValid());
     EXPECT_TRUE(materialId == material1.GetId());
 
-#if defined (NEEDS_WORK_MATERIAL)
-    DgnMaterials::Material material2(ColorDef(2,3,33), "Color2");
+    DgnMaterials::Material material2("Material2", "Palette", "some other json string", "descr of mat 2");
     DgnMaterialId materialId2 = materials.Insert(material2);
     EXPECT_TRUE(materialId2.IsValid());
 
-    DgnMaterials::Material material3(ColorDef(2,3,33), "Color3"); // it is legal to have two materials with the same value
+    DgnMaterials::Material material3("Material3", "Palette", "material material 3");
     DgnMaterialId materialId3 = materials.Insert(material3); 
     EXPECT_TRUE(materialId3.IsValid());
 
     DgnMaterialId dup3 = materials.Insert(material3); 
     EXPECT_TRUE(!dup3.IsValid());
 
-    DgnMaterials::Material material4(ColorDef(4,3,33), "Color4");
+    DgnMaterials::Material material4("Material3", "Palette2", "material material 3 for palette2");
     DgnMaterialId materialId4 = materials.Insert(material4); 
     EXPECT_TRUE(materialId4.IsValid());
-
-    DgnMaterials::Material dupColor(ColorDef(5,54,3), "TestName1", "TestBook1");
-    DgnMaterialId dupColorId = materials.Insert(dupColor);
-    EXPECT_TRUE(!dupColorId.IsValid());
-
 
     int i=0;
     for (auto& it : materials.MakeIterator())
@@ -155,30 +148,38 @@ TEST_F(DgnMaterialsTest, Materials)
         if (it.GetId() == material1.GetId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == material1.GetColor());
+            EXPECT_TRUE(it.GetPalette() == material1.GetPalette());
             EXPECT_TRUE(it.GetName() == material1.GetName());
-            EXPECT_TRUE(it.GetBook() == material1.GetBook());
+            EXPECT_TRUE(it.GetValue() == material1.GetValue());
+            EXPECT_TRUE(it.GetDescr() == material1.GetDescr());
+            EXPECT_TRUE(it.GetParentId() == material1.GetParentId());
             }
         else if (it.GetId() == material2.GetId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == material2.GetColor());
-            EXPECT_TRUE(it.GetName() == material2.GetName());
-            EXPECT_TRUE(it.GetBook() == material2.GetBook());
+            EXPECT_TRUE(it.GetPalette()  == material2.GetPalette());
+            EXPECT_TRUE(it.GetName()     == material2.GetName());
+            EXPECT_TRUE(it.GetValue()    == material2.GetValue());
+            EXPECT_TRUE(it.GetDescr()    == material2.GetDescr());
+            EXPECT_TRUE(it.GetParentId() == material2.GetParentId());
             }
         else if (it.GetId() == material3.GetId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == material3.GetColor());
-            EXPECT_TRUE(it.GetName() == material3.GetName());
-            EXPECT_TRUE(it.GetBook() == material3.GetBook());
+            EXPECT_TRUE(it.GetPalette()  == material3.GetPalette());
+            EXPECT_TRUE(it.GetName()     == material3.GetName());
+            EXPECT_TRUE(it.GetValue()    == material3.GetValue());
+            EXPECT_TRUE(it.GetDescr()    == material3.GetDescr());
+            EXPECT_TRUE(it.GetParentId() == material3.GetParentId());
             }
         else if (it.GetId() == material4.GetId())
             {
             ++i;
-            EXPECT_TRUE(it.GetColor() == material4.GetColor());
-            EXPECT_TRUE(it.GetName() == material4.GetName());
-            EXPECT_TRUE(it.GetBook() == material4.GetBook());
+            EXPECT_TRUE(it.GetPalette()  == material4.GetPalette());
+            EXPECT_TRUE(it.GetName()     == material4.GetName());
+            EXPECT_TRUE(it.GetValue()    == material4.GetValue());
+            EXPECT_TRUE(it.GetDescr()    == material4.GetDescr());
+            EXPECT_TRUE(it.GetParentId() == material4.GetParentId());
             }
         else
             EXPECT_TRUE(false); // too many entries in iterator
@@ -186,20 +187,14 @@ TEST_F(DgnMaterialsTest, Materials)
 
     EXPECT_TRUE(4 == i);
 
-    EXPECT_TRUE(materialId == materials.FindMatchingColor(material1.GetColor()));
-
-    DgnMaterials::Material toFind = materials.QueryColor(materialId);
+    DgnMaterials::Material toFind = materials.Query(materialId);
     EXPECT_TRUE(toFind.IsValid());
     EXPECT_TRUE(toFind.GetId() == material1.GetId());
-    EXPECT_TRUE(toFind.GetColor() == material1.GetColor());
+    EXPECT_TRUE(toFind.GetValue() == material1.GetValue());
     EXPECT_TRUE(toFind.GetName() == material1.GetName());
-    EXPECT_TRUE(toFind.GetBook() == material1.GetBook());
+    EXPECT_TRUE(toFind.GetPalette() == material1.GetPalette());
+    EXPECT_TRUE(toFind.GetParentId() == material1.GetParentId());
 
-    toFind = materials.QueryColorByName("TestName1", "TestBook1");
-    EXPECT_TRUE(toFind.IsValid());
-    EXPECT_TRUE(toFind.GetId() == material1.GetId());
-    EXPECT_TRUE(toFind.GetColor() == material1.GetColor());
-    EXPECT_TRUE(toFind.GetName() == material1.GetName());
-    EXPECT_TRUE(toFind.GetBook() == material1.GetBook());
-#endif
+    auto idfound = materials.QueryMaterialId(material2.GetName(), material2.GetPalette());
+    EXPECT_TRUE(idfound == materialId2);
     }
