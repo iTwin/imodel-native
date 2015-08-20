@@ -71,7 +71,7 @@ void DgnStylesTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
 * Test for reading from line style table
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, ReadLineStyles)
+TEST_F(DgnLineStyleTest, ReadLineStyles)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
     
@@ -102,7 +102,7 @@ TEST_F(DgnStylesTest, ReadLineStyles)
 * Read lines styles descending order
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, ReadLineStylesDsc)
+TEST_F(DgnLineStyleTest, ReadLineStylesDsc)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
 
@@ -133,7 +133,7 @@ TEST_F(DgnStylesTest, ReadLineStylesDsc)
 * Test new style insert
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, InsertLineStyle)
+TEST_F(DgnLineStyleTest, InsertLineStyle)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
 
@@ -166,7 +166,7 @@ TEST_F(DgnStylesTest, InsertLineStyle)
 * Test new style insert
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, InsertLineStyleWithId)
+TEST_F(DgnLineStyleTest, InsertLineStyleWithId)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
 
@@ -200,7 +200,7 @@ TEST_F(DgnStylesTest, InsertLineStyleWithId)
 * Test insert line style with already existing name
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, InsertLineStyleWithExistingName)
+TEST_F(DgnLineStyleTest, InsertLineStyleWithExistingName)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
     
@@ -227,7 +227,7 @@ TEST_F(DgnStylesTest, InsertLineStyleWithExistingName)
 * Test update line style
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, UpdateLineStyleTable)
+TEST_F(DgnLineStyleTest, UpdateLineStyleTable)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
 
@@ -250,7 +250,7 @@ TEST_F(DgnStylesTest, UpdateLineStyleTable)
 * Test update line style with existing name
 * @bsimethod                                    Algirdas.Mikoliunas          01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, UpdateLineStyleWithExistingName)
+TEST_F(DgnLineStyleTest, UpdateLineStyleWithExistingName)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
 
@@ -278,7 +278,7 @@ TEST_F(DgnStylesTest, UpdateLineStyleWithExistingName)
 * Test iterator entry get data
 * @bsimethod                                    Algirdas.Mikoliunas          02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnStylesTest, IteratorEntryGetData)
+TEST_F(DgnLineStyleTest, IteratorEntryGetData)
     {
     SetupProject (L"SubStation_NoFence.i.idgndb", Db::OPEN_ReadWrite);
     

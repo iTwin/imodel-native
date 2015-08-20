@@ -992,6 +992,7 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     sln.m_id = sid;
     sln.m_rowId = stmt->GetValueInt64(0);
     sln.m_range = *(ElementAlignedBox3d*)stmt->GetValueBlob(1);
+    sln.m_componentModelId = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
     return DgnDbStatus::Success;
     }
 

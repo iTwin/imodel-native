@@ -417,62 +417,69 @@ DgnTrueColorId DgnColors::FindMatchingColor(ColorDef color) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnColors::QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP book, DgnTrueColorId id) const
+DgnColors::Color DgnColors::QueryColor(DgnTrueColorId id) const
     {
+    DgnColors::Color output;
     Statement stmt(m_dgndb, "SELECT Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Id=?");
     stmt.BindId(1, id);
     if (BE_SQLITE_ROW != stmt.Step())
-        return  ERROR;
+        return output;
 
-    color = ColorDef(stmt.GetValueInt(0));
-
-    if (name)
-        name->AssignOrClear(stmt.GetValueText(1));
-
-    if (book)
-        book->AssignOrClear(stmt.GetValueText(2));
-
-    return SUCCESS;
+    output.m_id = id;
+    output.m_color = ColorDef(stmt.GetValueInt(0));
+    output.m_name.AssignOrClear(stmt.GetValueText(1));
+    output.m_book.AssignOrClear(stmt.GetValueText(2));
+    return output;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnColors::QueryColorByName(ColorDef& color, Utf8StringCR name, Utf8StringCR book) const
+DgnColors::Color DgnColors::QueryColorByName(Utf8CP name, Utf8CP book) const
     {
-    Statement stmt(m_dgndb, "SELECT Value FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Name=? AND Book=?");
+    DgnColors::Color output;
+    Statement stmt(m_dgndb, "SELECT Value,Id FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Name=? AND Book=?");
     stmt.BindText(1, name, Statement::MakeCopy::No);
     stmt.BindText(2, book, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
-        return  ERROR;
+        return output;
 
-    color = ColorDef(stmt.GetValueInt(0));
-    return SUCCESS;
+    output.m_id = stmt.GetValueId<DgnTrueColorId>(1);
+    output.m_color = ColorDef(stmt.GetValueInt(0));
+    output.m_name.AssignOrClear(name);
+    output.m_book.AssignOrClear(book);
+    return output;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnColors::Insert(ColorDef color, Utf8CP name, Utf8CP book)
+DgnTrueColorId DgnColors::Insert(Color& color)
     {
     DgnTrueColorId newId;
 
-    auto status = m_dgndb.GetNextRepositoryBasedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
-    BeAssert(status == BE_SQLITE_OK);
+    auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
+    if (status != BE_SQLITE_OK)
+        {
+        BeAssert(false);
+        return DgnTrueColorId();
+        }
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Color) " (Id,Value,Name,Book) VALUES(?,?,?,?)");
-
     stmt.BindId(1, newId);
-    stmt.BindInt(2, color.GetValue());
-    if (name && *name)
-        stmt.BindText(3, name, Statement::MakeCopy::No);
+    stmt.BindInt(2, color.GetColor().GetValue());
+    if (!color.m_name.empty())
+        stmt.BindText(3, color.m_name, Statement::MakeCopy::No);
 
-    if (book && *book)
-        stmt.BindText(4, book, Statement::MakeCopy::No);
+    if (!color.m_book.empty())
+        stmt.BindText(4, color.m_book, Statement::MakeCopy::No);
 
     status = stmt.Step();
-    BeAssert(BE_SQLITE_DONE==status);
-    return (BE_SQLITE_DONE==status) ? newId : DgnTrueColorId();
+    if (BE_SQLITE_DONE!=status)
+        return DgnTrueColorId();
+
+    color.m_id = newId;
+    return newId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -508,6 +515,6 @@ DgnColors::Iterator::const_iterator DgnColors::Iterator::begin() const
     }
 
 DgnTrueColorId DgnColors::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnTrueColorId>(0);}
-ColorDef DgnColors::Iterator::Entry::GetColorValue() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
+ColorDef DgnColors::Iterator::Entry::GetColor() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
 Utf8CP DgnColors::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(2);}
 Utf8CP DgnColors::Iterator::Entry::GetBookName() const {Verify(); return m_sql->GetValueText(3);}
