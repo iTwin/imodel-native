@@ -11,7 +11,6 @@ DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need thi
 #----------------------------------------------------------------------------------------
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
-AnnotationFrameStyleTest.InvalidOperations              # notified Umar Hayat
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
@@ -19,8 +18,7 @@ AnnotationFrameStyleTest.InvalidOperations              # notified Umar Hayat
 DgnGraphicsTest2d.*                                     # WIP DgnElement
 DgnGraphicsTest3d.*                                     # WIP DgnElement
 DgnMaterialsTest.*                                      # WIP DgnMaterials
-DgnStylesTest.*                                         # WIP DgnLineStyles
-DgnTextStylesTest.*                                     # WIP DgnTextStyles
+DgnLineStyleTest.*                                      # WIP DgnLineStyles
 DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem
