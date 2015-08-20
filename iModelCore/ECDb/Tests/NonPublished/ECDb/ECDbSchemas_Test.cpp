@@ -1304,7 +1304,7 @@ TEST(ECDbSchemas, ImportSchemaAgainstExistingTableWithECInstanceIdColumn)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                       08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemas, DeigoRelationshipTest)
+TEST (ECDbSchemas, DiegoRelationshipTest)
     {
     // Create a sample project
     ECDbTestProject test;
@@ -1360,110 +1360,6 @@ TEST (ECDbSchemas, DeigoRelationshipTest)
     insertStatus = aiCivilModelHasDataSetModel.Insert (*iCivilModelHasDataSetModel2);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                       08/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemas, DeigoRelationshipTest2)
-    {
-    // Create a sample project
-    ECDbTestProject test;
-    auto& ecdb = test.Create ("importecschema.ecdb");
-    const int nSchemas = 10;
-    Utf8Char schemaNames[nSchemas][255] = {
-        "Bentley_Civil_Objects.02.00",
-        "HW_Bentley_Civil__Model_Geometry.03.00",
-        "HW_Bentley_Civil__Model_Geometry_ContentManagement.03.00",
-        "HW_Bentley_Civil__Model_Base.03.00",
-        "HW_Bentley_Civil__Model_ContentManagement.03.00",
-        "HW_Bentley_Civil__Model_DesignStandards.03.00",
-        "HW_Bentley_Civil__Model_DTMFilterGroups.03.00",
-        "HW_Bentley_Civil__Model_FilterGroups.03.00",
-        "HW_Bentley_Civil__Model_MX.03.00",
-        "HW_Bentley_Civil__Model_ProjectSettings.03.00"
-        };
-    ECSchemaPtr loadedSchema;
-    ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
-    ctx->AddSchemaLocater (ecdb. GetSchemaLocater());
-    for (int i= 0; i <nSchemas; i++)
-        {
-        SchemaKey schemaKey;
-        SchemaKey::ParseSchemaFullName (schemaKey, schemaNames[i]);
-        if (ctx->GetCache().GetSchema (schemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact))
-            continue;
-
-        Utf8String schemaFile = schemaNames[i];
-        schemaFile.append(".ecschema.xml");
-        ECDbTestUtility::ReadECSchemaFromDisk (loadedSchema, ctx, WString(schemaFile.c_str(), BentleyCharEncoding::Utf8).c_str(), nullptr);
-        ASSERT_TRUE (loadedSchema.IsValid ());
-        }
-
-    //now import test schema where the table already exists for the ECClass
-    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (ctx->GetCache(),
-        ECDbSchemaManager::ImportOptions (false, false))) << "ImportECSchema is expected to return success for schemas with classes that map to an existing table.";
-
-    auto& schemaManager = ecdb. Schemas ();
-    auto aCivilModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Base", "CivilModel");
-    auto aDataSetModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Base", "DataSetModel");
-    auto aCivilModel__DataSetModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Base", "CivilModel__DataSetModel");
-    auto aGeometricModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_Geometry", "GeometricModel");
-    auto aDesignStandardsModel = schemaManager.GetECClass ("HW_Bentley_Civil__Model_DesignStandards", "DesignStandardsModel");
-
-    ASSERT_TRUE (aCivilModel != nullptr);
-    ASSERT_TRUE (aDataSetModel != nullptr);
-    ASSERT_TRUE (aCivilModel__DataSetModel != nullptr);
-    ASSERT_TRUE (aGeometricModel != nullptr);
-    ASSERT_TRUE (aDesignStandardsModel != nullptr);
-
-    auto  iCivilModel = ECDbTestProject::CreateArbitraryECInstance (*aCivilModel);
-    auto  iGeometricModel = ECDbTestProject::CreateArbitraryECInstance (*aGeometricModel);
-    auto  iDesignStandardsModel = ECDbTestProject::CreateArbitraryECInstance (*aDesignStandardsModel);
-    auto  iDataSetModel = ECDbTestProject::CreateArbitraryECInstance (*aDataSetModel);
-
-    auto relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*(aCivilModel__DataSetModel->GetRelationshipClassCP ()));
-
-    auto iCivilModel__DataSetModel1 = relationshipEnabler->CreateRelationshipInstance ();
-    iCivilModel__DataSetModel1->SetSource (iCivilModel.get ());
-    iCivilModel__DataSetModel1->SetTarget (iGeometricModel.get ());
-
-    auto iCivilModel__DataSetModel2 = relationshipEnabler->CreateRelationshipInstance ();
-    iCivilModel__DataSetModel2->SetSource (iCivilModel.get ());
-    iCivilModel__DataSetModel2->SetTarget (iDesignStandardsModel.get ());
-
-    ECInstanceInserter aiCivilModel (ecdb, *aCivilModel);
-    ASSERT_TRUE (aiCivilModel.IsValid ());
-    auto insertStatus = aiCivilModel.Insert (*iCivilModel);
-    ASSERT_EQ (insertStatus, BentleyStatus::SUCCESS);
-
-    ECInstanceInserter aiGeometricModel (ecdb, *aGeometricModel);
-    ASSERT_TRUE (aiGeometricModel.IsValid ());
-    insertStatus = aiGeometricModel.Insert (*iGeometricModel);
-    ASSERT_EQ (insertStatus, BentleyStatus::SUCCESS);
-
-    ECInstanceInserter aiDesignStandardsModel (ecdb, *aDesignStandardsModel);
-    ASSERT_TRUE (aiDesignStandardsModel.IsValid ());
-    insertStatus = aiDesignStandardsModel.Insert (*iDesignStandardsModel);
-    ASSERT_EQ (insertStatus, BentleyStatus::SUCCESS);
-
-    ECInstanceInserter aiCivilModel__DataSetModel (ecdb, *aCivilModel__DataSetModel);
-    ASSERT_TRUE (aiCivilModel__DataSetModel.IsValid ());
-
-    insertStatus = aiCivilModel__DataSetModel.Insert (*iCivilModel__DataSetModel1);
-    ASSERT_EQ (insertStatus, BentleyStatus::SUCCESS);
-
-    insertStatus = aiCivilModel__DataSetModel.Insert (*iCivilModel__DataSetModel2);
-    ASSERT_EQ (insertStatus, BentleyStatus::SUCCESS);
-
-    ECSqlStatement stmt;
-    auto status = stmt.Prepare(ecdb, "SELECT ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM [HW_Bentley_Civil__Model_Base].[CivilModel__DataSetModel] WHERE SourceECInstanceId = 1");
-    ASSERT_EQ ((int)status, (int)ECSqlStatus::Success);
-
-    int iRows = 0;
-    while (stmt.Step () == ECSqlStepStatus::HasRow)
-        {
-        iRows++;
-        }
-    ASSERT_EQ (iRows, 2);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
@@ -2777,20 +2673,20 @@ TEST(ECDbSchemas, IntegrityCheck)
     }
 TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     {
-    const WCharCP schema =
-        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        L"<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
-        L"<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
-        L"<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
-        L"<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
-        L"<ECCustomAttributes>"
-        L"<ClassHasCurrentTimeStampProperty xmlns=\"Bentley_Standard_CustomAttributes.01.11\">"
-        L"<PropertyName>DateTimeProperty</PropertyName>"
-        L"</ClassHasCurrentTimeStampProperty>"
-        L"</ECCustomAttributes>"
-        L"</ECClass>"
-        L"</ECSchema>";
+    const Utf8CP schema =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
+        "<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
+        "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
+        "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
+        "<ECCustomAttributes>"
+        "<ClassHasCurrentTimeStampProperty xmlns=\"Bentley_Standard_CustomAttributes.01.11\">"
+        "<PropertyName>DateTimeProperty</PropertyName>"
+        "</ClassHasCurrentTimeStampProperty>"
+        "</ECCustomAttributes>"
+        "</ECClass>"
+        "</ECSchema>";
 
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create("checkClassHasCurrentTimeStamp.ecdb");
@@ -2823,7 +2719,7 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
         }
     ASSERT_TRUE(statement.Step() == ECSqlStepStatus::Done);
     ECSqlStatement updateStatment;
-    ecsql = "UPDATE  ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
+    ecsql = "UPDATE ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
     stat = updateStatment.Prepare(db, ecsql.c_str());
     ASSERT_TRUE(updateStatment.Step() == ECSqlStepStatus::Done);
     ecsql = "SELECT DateTimeProperty FROM ";

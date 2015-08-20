@@ -1133,44 +1133,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
     }
 
 //---------------------------------------------------------------------------------------
-// Sandbox for debugging ECSqlStatement
-// @bsiclass                                     Krischan.Eberle                  07/13
-//+---------------+---------------+---------------+---------------+---------------+------
-#ifdef IGNORE_IT
-TEST_F (ECSqlTestFixture, Debug)
-    {
-    // Create and populate a sample project
-    auto& ecdb = SetUp ("test.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
-
-    ECSqlStatement stmt;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES (NULL)"));
-    ECInstanceKey psaId;
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step (psaId));
-
-    stmt.Finalize ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO ecsql.THBase (ECInstanceId) VALUES (NULL)"));
-    ECInstanceKey thbaseId;
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step (thbaseId));
-
-    stmt.Finalize ();
-
-    Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);",
-        psaId.GetECInstanceId ().GetValue (),
-        thbaseId.GetECInstanceId ().GetValue ());
-
-    auto stat = stmt.Prepare (ecdb, ecsqlStr.c_str ());
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-
-    stat = stmt.BindInt64 (1, 135LL);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    stat = stmt.BindInt64 (2, 142LL);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-    }
-#endif
-//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlTestFixture, ECSqlStatement_Prepare)

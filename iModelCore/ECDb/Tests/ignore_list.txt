@@ -1,44 +1,26 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-ECDbBrownBagDemo*       # Sample code for an ECDb BrownBag session which does not need to be run during a build.
 Performance*            # Performance tests are always excluded from being run during a build.
-ECSqlTestFixture.Debug  # This test only serves for debugging the ECSqlStatement API.
+
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
+ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
+
+#Test ECDb needs to be recreated as profile is too old
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
+ECSqlQueryAdapter.VerifyECSqlQueries
 
 # Can be removed from list when DGN schema is stable
 ECDbMapPersistenceTests.DGNSchemaStructureMapPersistence
 ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 
-#----------------------------------------------------------------------------------------
-#   Tests that need attention
-#----------------------------------------------------------------------------------------
-# TFS Defect 140982
-ECDbRelationships.RelationshipProperties 
-ECDbRelationships.JoinTests
-
-# TFS Defect 170652 and 170717
-InstanceCRUDTests.InsertUpdateDeleteTest
-#TFS Defects 186409,186444, 186457, 186461
-ECDbMapPersistenceTests.MappingStrategyTest
-
-#Have notified Krischan and Affan; ignoring so we can get PRG builds through.
-ECDbSchemas.DeigoRelationshipTest2
-ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
-#----------------------------------------------------------------------------------------
-# *** Broken in 06; need to be re-visited ***
-#----------------------------------------------------------------------------------------
-
-# Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
+#ECSchema Update not working in 06 yet.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
-
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties
 ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
-ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
-ECSqlQueryAdapter.VerifyECSqlQueries
 
-#for affan 6:35 PM 7/8/2015
-ECDbInstances.RelationshipStrengthBackwardHoldingForwardEmbedding
