@@ -15,8 +15,6 @@ ECDbInstances.JsonValueStructure                        # Fails after geomlibs/e
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnGraphicsTest2d.*                                     # WIP DgnElement
-DgnGraphicsTest3d.*                                     # WIP DgnElement
 DgnMaterialsTest.*                                      # WIP DgnMaterials
 DgnLineStyleTest.*                                      # WIP DgnLineStyles
 DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
