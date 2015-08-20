@@ -2520,9 +2520,8 @@ public:
     //! @param [in,out] value the new value of the BeServerIssuedId
     //! @param [in] tableName the name of the table holding the BeServerIssuedId
     //! @param [in] columnName the name of the column holding the BeServerIssuedId
-    //! @param [in] whereParam optional additional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
-    //! parameters to bind.
-    BE_SQLITE_EXPORT DbResult GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=nullptr);
+    //! @param [in] json parameters that the server can use to create the new row in the specified table.
+    BE_SQLITE_EXPORT DbResult GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, Utf8CP json=nullptr);
 
     //! Determine whether this Db was opened readonly.
     BE_SQLITE_EXPORT bool IsReadonly() const;
