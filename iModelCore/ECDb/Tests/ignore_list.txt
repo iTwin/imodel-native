@@ -13,11 +13,7 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#TFS Defects 186409,186444, 186457, 186461
-ECDbMapPersistenceTests.MappingStrategyTest
-
 #Have notified Krischan and Affan; ignoring so we can get PRG builds through.
-ECDbSchemas.DeigoRelationshipTest2
 ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
