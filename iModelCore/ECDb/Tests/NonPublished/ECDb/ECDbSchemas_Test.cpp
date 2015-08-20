@@ -2777,20 +2777,20 @@ TEST(ECDbSchemas, IntegrityCheck)
     }
 TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     {
-    const WCharCP schema =
-        L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        L"<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        L"<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
-        L"<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
-        L"<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
-        L"<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
-        L"<ECCustomAttributes>"
-        L"<ClassHasCurrentTimeStampProperty xmlns=\"Bentley_Standard_CustomAttributes.01.11\">"
-        L"<PropertyName>DateTimeProperty</PropertyName>"
-        L"</ClassHasCurrentTimeStampProperty>"
-        L"</ECCustomAttributes>"
-        L"</ECClass>"
-        L"</ECSchema>";
+    const Utf8CP schema =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"SimpleSchema\" nameSpacePrefix=\"adhoc\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.11\" prefix=\"besc\" />"
+        "<ECClass typeName=\"SimpleClass\" isStruct=\"False\" isDomainClass=\"True\">"
+        "<ECProperty propertyName = \"DateTimeProperty\" typeName=\"dateTime\" readOnly=\"True\" />"
+        "<ECProperty propertyName = \"testprop\" typeName=\"int\" />"
+        "<ECCustomAttributes>"
+        "<ClassHasCurrentTimeStampProperty xmlns=\"Bentley_Standard_CustomAttributes.01.11\">"
+        "<PropertyName>DateTimeProperty</PropertyName>"
+        "</ClassHasCurrentTimeStampProperty>"
+        "</ECCustomAttributes>"
+        "</ECClass>"
+        "</ECSchema>";
 
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create("checkClassHasCurrentTimeStamp.ecdb");
@@ -2823,7 +2823,7 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
         }
     ASSERT_TRUE(statement.Step() == ECSqlStepStatus::Done);
     ECSqlStatement updateStatment;
-    ecsql = "UPDATE  ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
+    ecsql = "UPDATE ONLY adhoc.SimpleClass SET testprop = 23 WHERE ECInstanceId = 1";
     stat = updateStatment.Prepare(db, ecsql.c_str());
     ASSERT_TRUE(updateStatment.Step() == ECSqlStepStatus::Done);
     ecsql = "SELECT DateTimeProperty FROM ";

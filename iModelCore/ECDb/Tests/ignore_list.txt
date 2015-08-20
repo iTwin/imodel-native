@@ -13,12 +13,6 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-# TFS Defect 140982
-ECDbRelationships.RelationshipProperties 
-ECDbRelationships.JoinTests
-
-# TFS Defect 170652 and 170717
-InstanceCRUDTests.InsertUpdateDeleteTest
 #TFS Defects 186409,186444, 186457, 186461
 ECDbMapPersistenceTests.MappingStrategyTest
 
