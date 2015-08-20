@@ -21,14 +21,15 @@ DbResult DgnMaterials::Insert(Material& material)
         return status;
         }
 
-    material.SetId(newId);
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Material) " (Id,Value,Name,Palette,Descr) VALUES(?,?,?,?,?)");
+    material.m_id=newId;
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Material) " (Id,Value,Name,Palette,Descr,ParentId) VALUES(?,?,?,?,?,?)");
 
     stmt.BindId(1, newId);
     stmt.BindText(2, material.GetValue(), Statement::MakeCopy::No);
     stmt.BindText(3, material.GetName(), Statement::MakeCopy::No);
     stmt.BindText(4, material.GetPalette(), Statement::MakeCopy::No);
     stmt.BindText(5, material.GetDescr(), Statement::MakeCopy::No);
+    stmt.BindId(6, material.GetParentId());
 
     status = stmt.Step();
     BeAssert(BE_SQLITE_DONE==status);
@@ -44,11 +45,12 @@ DbResult DgnMaterials::Update(Material const& material) const
         return  BE_SQLITE_ERROR;
 
     Statement stmt;
-    stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=? WHERE Id=?");
+    stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
 
     stmt.BindText(1, material.GetValue(), Statement::MakeCopy::No);
     stmt.BindText(2, material.GetDescr(), Statement::MakeCopy::No);
-    stmt.BindId(3, material.GetId());
+    stmt.BindId(3, material.GetParentId());
+    stmt.BindId(4, material.GetId());
 
     DbResult status = stmt.Step();
     BeDataAssert(BE_SQLITE_DONE==status);
@@ -67,7 +69,7 @@ DgnMaterials::Material DgnMaterials::Query(DgnMaterialId id) const
     // on HighPriorityOperationBlock for more information.
     BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT Value,Name,Descr,Palette FROM " DGN_TABLE(DGN_CLASSNAME_Material) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT Value,Name,Descr,Palette,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Material) " WHERE Id=?");
     stmt->BindId(1, id);
 
     Material material;
@@ -78,6 +80,7 @@ DgnMaterials::Material DgnMaterials::Query(DgnMaterialId id) const
         material.m_name.AssignOrClear(stmt->GetValueText(1));
         material.m_descr.AssignOrClear(stmt->GetValueText(2));
         material.m_palette.AssignOrClear(stmt->GetValueText(3));
+        material.m_parentId = stmt->GetValueId<DgnMaterialId>(4);
         }
 
     return material;
