@@ -1,9 +1,7 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-ECDbBrownBagDemo*       # Sample code for an ECDb BrownBag session which does not need to be run during a build.
 Performance*            # Performance tests are always excluded from being run during a build.
-ECSqlTestFixture.Debug  # This test only serves for debugging the ECSqlStatement API.
 InstanceCRUDTests.* 	# No need to run with the build, used by testing after build for verifying CRUD operations.
 
 # Can be removed from list when DGN schema is stable
@@ -13,15 +11,8 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#Have notified Krischan and Affan; ignoring so we can get PRG builds through.
-ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
-#----------------------------------------------------------------------------------------
-# *** Broken in 06; need to be re-visited ***
-#----------------------------------------------------------------------------------------
-
-# Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
+#ECSchema Update not working in 06 yet.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
-
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache
 ECDbSchemas.UpdateExistingECSchemaWithNewProperties

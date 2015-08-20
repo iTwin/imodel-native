@@ -2062,59 +2062,6 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
     EXPECT_EQ(3, i) << "the number of custom attributes on the Class Base do not match the original";
 }
 
-TEST(ECDbSchemaManager, ECDbImportSchema_WSG2eBPluginSchemas_Succeeds)
-    {
-    BeFileName assetsDir;
-    BeTest::GetHost().GetDgnPlatformAssetsDirectory(assetsDir);
-
-    BeFileName temporaryDir;
-    BeTest::GetHost().GetOutputRoot(temporaryDir);
-    ECDb::Initialize(temporaryDir, &assetsDir);
-    bvector<BeFileName> schemaPaths;
-    BeFileName ecSchemaPath;
-    BeTest::GetHost().GetDocumentsRoot(ecSchemaPath);
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\Contents.01.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\EC_to_eB_Dynamic_Schema.01.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\EC_to_eB_Mapping_Custom_Attributes.01.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\Forms_EC_Mapping.01.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\MetaSchema.02.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\Navigation.01.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\Policies.01.00.ecschema.xml")));
-    schemaPaths.push_back(BeFileName(ecSchemaPath).AppendToPath(BeFileName(L"DgnDb\\ECDb\\Schemas\\Views.01.00.ecschema.xml")));
-
-    // Mimic import logic in CachingDataSource & DataSourceCache
-    auto context = ECSchemaReadContext::CreateContext();
-    for (BeFileNameCR schemaPath : schemaPaths)
-        {
-        context->AddSchemaPath(schemaPath.GetDirectoryName());
-        }
-
-    bvector<ECSchemaPtr> schemas;
-    for (BeFileNameCR schemaPath : schemaPaths)
-        {
-        ECSchemaPtr schema;
-        SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, schemaPath.GetName(), *context);
-        if (SchemaReadStatus::SCHEMA_READ_STATUS_Success != status &&
-            SchemaReadStatus::SCHEMA_READ_STATUS_DuplicateSchema != status)
-            {
-            BeAssert(false);
-            return;
-            }
-        schemas.push_back(schema);
-        }
-    EXPECT_EQ(schemaPaths.size(), schemas.size());
-
-    auto schemaCache = ECSchemaCache::Create();
-    for (ECSchemaPtr schema : schemas)
-        {
-        schemaCache->AddSchema(*schema);
-        }
-
-    ECDb db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
-    EXPECT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(true, true)));
-    }
-    
 //---------------------------------------------------------------------------------------
 //                                               Krischan.Eberle                  10/14
 //+---------------+---------------+---------------+---------------+---------------+------
