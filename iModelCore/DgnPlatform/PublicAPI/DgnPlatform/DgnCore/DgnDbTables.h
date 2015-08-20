@@ -1466,13 +1466,48 @@ struct ComponentSolution : DgnDbTable
     DEFINE_T_SUPER(DgnDbTable)
 
 public:
+    //! Identifies a solution the ComponentSolution table
+    struct SolutionId
+        {
+        friend struct ComponentModel;
+        friend struct ComponentSolution;
+      private:
+        Utf8String m_modelName;
+        Utf8String m_solutionName;
+
+        SolutionId(Utf8String m, Utf8String s) : m_modelName(m), m_solutionName(s) {;}
+
+      public:
+        SolutionId() {;}
+
+        bool IsValid() const {return !m_modelName.empty() && !m_solutionName.empty();}
+
+        bool operator==(SolutionId const& rhs) const {return m_modelName==rhs.m_modelName && m_solutionName==rhs.m_solutionName;}
+        };
+
+    //! Access to the geometry of a captured solution
     struct Solution
         {
-        BeSQLite::EC::ECInstanceId m_id;
+        friend struct ComponentSolution;
+      private:
+        uint64_t m_rowId;
+        SolutionId m_id;
         DgnModelId  m_componentModelId;
-        Utf8String m_parameters;
         ElementAlignedBox3d m_range;
-        DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
+
+      public:
+        Solution() : m_rowId(0) {;}
+
+        bool IsValid() {return m_id.IsValid() && m_rowId != 0;}
+
+        //! Get the range of the solution geometry.
+        ElementAlignedBox3d GetRange() const {return m_range;}
+
+        //! Read the captured solution geometry
+        //! @param[out]  geomStream     Where to write the geometry
+        //! @param[in]   db             The DgnDb to query
+        //! @return non-zero if the geometry could not be read
+        DgnDbStatus QueryGeomStream(GeomStreamR geomStream, DgnDbR db) const;
         };
 
     ComponentSolution(DgnDbR db) : T_Super(db) {;}
@@ -1480,25 +1515,18 @@ public:
     //! @name Capturing Solutions
     //@{
 
-    //! Look up a captured solution from a solution name
-    //! @param[in] componentModelId Identifies the local copy of the ComponentModel
-    //! @param[in] solutionName     The solution name to look for
-    //! @return The ID of the captured solution or an invalid ID if no such solution has been captured.
-    //! @see ComputeSolutionName
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId QuerySolutionId(DgnModelId componentModelId, Utf8StringCR solutionName);
-
     //! Look up a captured solution
     //! @param[out] solution  The solution data
     //! @param[in] sid     The solution id
     //! @return non-zero if no such solution exists
     //! @see CaptureSolution
-    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, BeSQLite::EC::ECInstanceId sid);
+    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, SolutionId sid);
 
     //! Harvest geometry from the component model and store in the solutions table.
     //! @param[in] componentModel The ComponentModel that is to be harvested
     //! @return The ID of the captured solution
     //! @see ComponentModel::Solve
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId CaptureSolution(ComponentModelR componentModel);
+    DGNPLATFORM_EXPORT SolutionId CaptureSolution(ComponentModelR componentModel);
     //@}
 
     //! @name Creating a Solution Instance
@@ -1514,7 +1542,7 @@ public:
     //! @param[in] angles The element's placement angles
     //! @return An new element that could be inserted as an instance of a captured solution (but only \em after calling CreateSolutionInstanceItem)
     //! @see CreateSolutionInstanceItem, CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, SolutionId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
 
     //! Create an item that holds the geometry from specified solution and set it on the specified element.
     //! @param instanceElement  The element to update with the new item
@@ -1522,7 +1550,7 @@ public:
     //! @param solutionId       Identifies the solution to use
     //! @param componentSchemaName  The name of the schema (in the element's DgnDb) that defines the component model item ECClass definition
     //! @return non-zero error status if the item could not be created
-    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId);
+    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, SolutionId solutionId);
     //@}
     };
 

@@ -17,17 +17,18 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ComponentSolution" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- NEEDS WORK: I want the primary key to be (ComponentModelId,Parameters) -->
+                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <!-- NEEDS WORK: ComponentModelId should be a FOREIGN KEY -->
-        <ECProperty propertyName="ComponentModelId" typeName="long"/>
-        <ECProperty propertyName="Parameters" typeName="string"/>
+        <ECProperty propertyName="ComponentModelName" typeName="string"/>
+        <ECProperty propertyName="SolutionName" typeName="string"/>
+        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
 
+    <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
     <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
@@ -45,6 +46,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
+    -->
 
     <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
         <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />

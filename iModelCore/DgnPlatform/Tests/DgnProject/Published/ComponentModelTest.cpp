@@ -155,9 +155,9 @@ void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_CreateTargetModel(Utf8CP targetModelName);
-void Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
-void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, EC::ECInstanceId);
+void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, ComponentSolution::SolutionId);
 void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 void GenerateCMSchema();
@@ -445,7 +445,7 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
     {
     //  -------------------------------------------------------
     //  ComponentModel - Solve for the given parameter values
@@ -477,13 +477,14 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
     ComponentSolution solutions(*m_clientDb);
-    EC::ECInstanceId existingSid = solutions.QuerySolutionId(ccId, componentModel->ComputeSolutionName());
-    
+
+    ComponentSolution::SolutionId existingSid = componentModel->ComputeSolutionId(newParameterValues);
+
     solutionId = solutions.CaptureSolution(*componentModel);
     ASSERT_TRUE( solutionId.IsValid() );
 
     if (solutionAlreadyExists)
-        ASSERT_EQ( solutionId.GetValue(), existingSid.GetValue() );
+        ASSERT_EQ( solutionId, existingSid );
 
     // *** WIP_COMPONENT_MODEL -- roll back to mark
     }
@@ -491,7 +492,7 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, EC::ECInstanceId solutionId)
+void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, ComponentSolution::SolutionId solutionId)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -541,7 +542,7 @@ void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    EC::ECInstanceId solutionId;
+    ComponentSolution::SolutionId solutionId;
     Client_SolveAndCapture(solutionId, componentName, parms, solutionAlreadyExists);
     
     if (solutionId.IsValid())

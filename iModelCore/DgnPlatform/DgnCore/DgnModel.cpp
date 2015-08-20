@@ -977,34 +977,21 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
     JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceId ComponentSolution::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
+DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelId=? AND Parameters=?");
-    stmt->BindId(1, cmid);
-    stmt->BindText(2, solutionName, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return EC::ECInstanceId();
+    DgnModelId cmid = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
 
-    return stmt->GetValueId<EC::ECInstanceId>(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentSolution::Query(Solution& sln, EC::ECInstanceId sid)
-    {
-    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE Id=?");
-    stmt->BindId(1, sid);
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=? AND SolutionName=?");
+    stmt->BindText(1, sid.m_modelName, Statement::MakeCopy::No);
+    stmt->BindText(2, sid.m_solutionName, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::NotFound;
     sln.m_id = sid;
-    sln.m_componentModelId = stmt->GetValueId<DgnModelId>(0);
-    sln.m_parameters = stmt->GetValueText(1);
-    sln.m_range = *(ElementAlignedBox3d*)stmt->GetValueBlob(2);
+    sln.m_rowId = stmt->GetValueInt64(0);
+    sln.m_range = *(ElementAlignedBox3d*)stmt->GetValueBlob(1);
     return DgnDbStatus::Success;
     }
 
@@ -1013,39 +1000,43 @@ DgnDbStatus ComponentSolution::Query(Solution& sln, EC::ECInstanceId sid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentSolution::Solution::QueryGeomStream(GeomStreamR geom, DgnDbR db) const
     {
-    return geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ComponentSolution), "Geom", m_id.GetValue());
+    return geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ComponentSolution), "Geom", m_rowId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentModel::ComputeSolutionName()
+ComponentSolution::SolutionId ComponentModel::ComputeSolutionId(ModelSolverDef::ParameterSet const& params)
     {
-    return m_solver.GetParameters().ComputeSolutionName();
+    return ComponentSolution::SolutionId(GetModelName(), params.ComputeSolutionName());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceId ComponentSolution::CaptureSolution(ComponentModelR componentModel)
+ComponentSolution::SolutionId ComponentSolution::CaptureSolution(ComponentModelR componentModel)
     {
     if (&componentModel.GetDgnDb() != &GetDgnDb())
         {
         BeAssert(false && "you must import the component model before you can capture a solution");
-        return EC::ECInstanceId();
+        return SolutionId();
         }
 
-    Utf8String solutionCode = componentModel.ComputeSolutionName();
+    Utf8String solutionName = componentModel.GetSolver().GetParameters().ComputeSolutionName();
 
-    EC::ECInstanceId existingsolution = QuerySolutionId(componentModel.GetModelId(), solutionCode);
-    if (existingsolution.IsValid())
-        return existingsolution;
+    SolutionId sid;
+    sid.m_modelName = componentModel.GetModelName();
+    sid.m_solutionName = solutionName;
+
+    Solution sln;
+    if (DgnDbStatus::Success == Query(sln, sid))
+        return sid;
 
     DgnCategoryId componentCategoryId = GetDgnDb().Categories().QueryCategoryId(componentModel.GetElementCategoryName().c_str());
     if (!componentCategoryId.IsValid())
         {
         BeAssert(false && "component category not found -- you must import the component model before you can capture a solution");
-        return EC::ECInstanceId();
+        return SolutionId();
         }
 
     //  Accumulate geometry by SubCategory
@@ -1087,7 +1078,7 @@ EC::ECInstanceId ComponentSolution::CaptureSolution(ComponentModelR componentMod
     if(builders.empty())
         {
         BeDataAssert(false && "A component model contains no elements in the component's category.");
-        return EC::ECInstanceId();
+        return SolutionId();
         }
 
     //  Create a GeomPart for each SubCategory
@@ -1097,14 +1088,14 @@ EC::ECInstanceId ComponentSolution::CaptureSolution(ComponentModelR componentMod
         DgnSubCategoryId clientsubcatid = entry.first;
         ElementGeometryBuilderPtr builder = entry.second;
 
-        Utf8String geomPartCode (solutionCode);
+        Utf8String geomPartCode (solutionName);
         geomPartCode.append(Utf8PrintfString("_%lld", clientsubcatid.GetValue()));
 
         DgnGeomPartPtr geomPart = DgnGeomPart::Create(geomPartCode.c_str());
         builder->CreateGeomPart(GetDgnDb(), true);
         builder->SetGeomStream(*geomPart);
         if (BSISUCCESS != GetDgnDb().GeomParts().InsertGeomPart(*geomPart))
-            return EC::ECInstanceId();
+            return SolutionId();
 
         subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
         }
@@ -1121,27 +1112,30 @@ EC::ECInstanceId ComponentSolution::CaptureSolution(ComponentModelR componentMod
 
     GeomStream  geom;
     if (builder->GetGeomStream(geom) != BSISUCCESS)
-        return EC::ECInstanceId();
+        return SolutionId();
 
     Placement3d placement;
     if (builder->GetPlacement(placement) != BSISUCCESS)
-        return EC::ECInstanceId();
+        return SolutionId();
 
     ElementAlignedBox3d box = placement.GetElementBox();
         
-    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelId,Parameters,Range) VALUES(?,?,?)");
-    istmt->BindId(1, componentModel.GetModelId());
-    istmt->BindText(2, solutionCode, Statement::MakeCopy::No);
+    CachedStatementPtr istmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " (ComponentModelName,SolutionName,Range) VALUES(?,?,?)");
+    istmt->BindText(1, componentModel.GetModelName(), Statement::MakeCopy::No);
+    istmt->BindText(2, solutionName, Statement::MakeCopy::No);
     istmt->BindBlob(3, &box, sizeof(box), Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != istmt->Step())
-        return EC::ECInstanceId();
+        return SolutionId();
     istmt = nullptr;
 
-    EC::ECInstanceId sid = EC::ECInstanceId(GetDgnDb().GetLastInsertRowId());
+    uint64_t solutionRowId = GetDgnDb().GetLastInsertRowId();
+    
+    sid.m_modelName = componentModel.GetModelName();
+    sid.m_solutionName = solutionName;
 
     CachedStatementPtr gstmt = GetDgnDb().GetCachedStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " SET Geom=? WHERE Id=?");
-    gstmt->BindId(2, sid);
-    geom.WriteGeomStreamAndStep(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ComponentSolution), "Geom", sid.GetValue(), *gstmt, 1);
+    gstmt->BindInt64(2, solutionRowId);
+    geom.WriteGeomStreamAndStep(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ComponentSolution), "Geom", solutionRowId, *gstmt, 1);
     return sid;
     }
 
@@ -1159,7 +1153,7 @@ static std::pair<Utf8String,Utf8String> parseFullECClassName(Utf8CP fullname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destinationModel, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destinationModel, SolutionId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
     Solution sln;
     if (DgnDbStatus::Success != Query(sln, solutionId))
@@ -1185,7 +1179,7 @@ DgnElementPtr ComponentSolution::CreateSolutionInstanceElement(DgnModelR destina
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId)
+DgnDbStatus ComponentSolution::CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, SolutionId solutionId)
     {
     DgnDbR db = instanceElement.GetDgnDb();
 
@@ -1256,9 +1250,8 @@ DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3
     ModelSolverDef::ParameterSet parms = cm->GetSolver().GetParameters();
     parms.SetValuesFromECProperties(itemInstance); // Set the parameter values to what I have saved
     ComponentSolution solutions(db);
-    BeSQLite::EC::ECInstanceId sid = solutions.QuerySolutionId(cm->GetModelId(), parms.ComputeSolutionName());
     ComponentSolution::Solution sln;
-    if (DgnDbStatus::Success != solutions.Query(sln, BeSQLite::EC::ECInstanceId(sid)))
+    if (DgnDbStatus::Success != solutions.Query(sln, cm->ComputeSolutionId(parms)))
         return DgnDbStatus::NotFound;
 
     //  Copy the geometry from the captured solution to the element
@@ -1268,7 +1261,7 @@ DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3
     DgnElement3dP e3d = el.ToElement3dP();
     if (nullptr != e3d)
         {
-        Placement3d placement(origin, angles, sln.m_range);
+        Placement3d placement(origin, angles, sln.GetRange());
         e3d->SetPlacement(placement);
         e3d->GetGeomStreamR().SaveData (geom.GetData(), geom.GetSize());
         return DgnDbStatus::Success;
@@ -1277,7 +1270,7 @@ DgnDbStatus BentleyApi::Dgn::ExecuteComponentSolutionEGA(DgnElementR el, DPoint3
     DgnElement2dP e2d = el.ToElement2dP();
     if (nullptr == e2d)
         {
-        ElementAlignedBox3dCR range3d = sln.m_range;
+        ElementAlignedBox3dCR range3d = sln.GetRange();
         ElementAlignedBox2d range2d(range3d.low.x, range3d.low.y, range3d.high.x, range3d.high.y);
         Placement2d placement(DPoint2d::From(origin.x,origin.y), angles.GetYaw(), range2d);
         e2d->SetPlacement(placement);
