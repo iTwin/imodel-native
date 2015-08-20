@@ -176,6 +176,8 @@ public:
         DgnAuthorityId  m_authority;
         Utf8String      m_value;
     public:
+        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
+
         //! construct a Code from a Value and DgnAuthorityId.
         //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
         //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
@@ -184,11 +186,11 @@ public:
         //! @param[in] value identification string for this Code. If nullptr, this Code will be invalid.
         //! @param[in] authority The DgnAuthoritiyId of the DgnAuthority that issued the value. Use DgnAuthorities::Local() to indicate the value is locally assigned.
         explicit Code(Utf8String const& value, DgnAuthorityId authority=DgnAuthorities::Local()) : m_value(value) {m_authority=authority;}
-        bool operator==(Code const& other) const {return m_authority==other.m_authority && m_value==other.m_value;}
         //! Determine whether this Code is valid
         bool IsValid() const {return m_authority.IsValid() && !m_value.empty();}
         //! Get the value for this Code
-        Utf8CP GetValue() const {return m_value.c_str();}
+        Utf8StringCR GetValue() const {return m_value;}
+        Utf8CP GetValueCP() const {return m_value.c_str();}
         //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
         DgnAuthorityId GetAuthority() {return m_authority;}
     };
@@ -205,7 +207,7 @@ public:
         DgnElementId    m_id;
         DgnElementId    m_parentId;
         double          m_lastModTime;
-        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code code=Code(), DgnElementId id=DgnElementId(),
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(),
                      DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
                      m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
 
@@ -736,7 +738,7 @@ protected:
     //! The default implementation sets the code without doing any checking.
     //! Override to validate the code.
     //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
-    virtual DgnDbStatus _SetCode(Code code) {m_code=code; return DgnDbStatus::Success;}
+    virtual DgnDbStatus _SetCode(Code const& code) {m_code=code; return DgnDbStatus::Success;}
 
     //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Code _GenerateDefaultCode();
@@ -925,7 +927,7 @@ public:
     //! @see GetCode, _SetCode
     //! @return DgnDbStatus::Success if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
-    DgnDbStatus SetCode(Code code) {return _SetCode(code);}
+    DgnDbStatus SetCode(Code const& code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
     Utf8CP GetLabel() const {return m_label.c_str();}
@@ -1149,7 +1151,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
@@ -1213,7 +1215,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement2dCR m_placement;
-    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Code const& code=Code(), DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
         T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
@@ -1412,7 +1414,7 @@ public:
 
     //! Query for the DgnElementId of the element that has the specified code
     //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code code) const;
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(DgnElement::Code const& code) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,

@@ -1374,7 +1374,7 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code code) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
     CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
     statement->BindText(1, code.GetValue(), Statement::MakeCopy::No);
