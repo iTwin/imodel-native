@@ -515,6 +515,6 @@ DgnColors::Iterator::const_iterator DgnColors::Iterator::begin() const
     }
 
 DgnTrueColorId DgnColors::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnTrueColorId>(0);}
-ColorDef DgnColors::Iterator::Entry::GetColorValue() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
+ColorDef DgnColors::Iterator::Entry::GetColor() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
 Utf8CP DgnColors::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(2);}
 Utf8CP DgnColors::Iterator::Entry::GetBookName() const {Verify(); return m_sql->GetValueText(3);}

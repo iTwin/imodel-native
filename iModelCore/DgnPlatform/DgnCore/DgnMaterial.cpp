@@ -21,7 +21,6 @@ DbResult DgnMaterials::Insert(Material& material)
         return status;
         }
 
-    material.m_id=newId;
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Material) " (Id,Value,Name,Palette,Descr,ParentId) VALUES(?,?,?,?,?,?)");
 
     stmt.BindId(1, newId);
@@ -32,8 +31,14 @@ DbResult DgnMaterials::Insert(Material& material)
     stmt.BindId(6, material.GetParentId());
 
     status = stmt.Step();
-    BeAssert(BE_SQLITE_DONE==status);
-    return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
+    if (BE_SQLITE_DONE != status);
+        {
+        BeAssert(false);
+        return status;
+        }
+
+    material.m_id=newId;
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -42,7 +47,7 @@ DbResult DgnMaterials::Insert(Material& material)
 DbResult DgnMaterials::Update(Material const& material) const
     {
     if (!material.IsValid())
-        return  BE_SQLITE_ERROR;
+        return BE_SQLITE_ERROR;
 
     Statement stmt;
     stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
@@ -104,7 +109,7 @@ DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Palette,Descr,Value FROM " DGN_TABLE(DGN_CLASSNAME_Model));
+        Utf8String sqlString = MakeSqlString("SELECT Id,Name,Palette,Descr,Value,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Model));
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         }
@@ -121,3 +126,4 @@ Utf8CP DgnMaterials::Iterator::Entry::GetName() const {Verify(); return m_sql->G
 Utf8CP DgnMaterials::Iterator::Entry::GetPalette() const {Verify(); return m_sql->GetValueText(2);}
 Utf8CP DgnMaterials::Iterator::Entry::GetDescr() const {Verify(); return m_sql->GetValueText(3);}
 Utf8CP DgnMaterials::Iterator::Entry::GetValue() const {Verify(); return m_sql->GetValueText(4);}
+DgnMaterialId DgnMaterials::Iterator::Entry::GetParentId() const {Verify(); return m_sql->GetValueId<DgnMaterialId>(5);}
