@@ -266,12 +266,12 @@ public:
     private:
         Utf8String m_strategy;
         Utf8String m_options;
-        bool m_isPolymorphic;
+        bool m_appliesToSubclasses;
 
-        MapStrategy(Utf8CP strategy, Utf8CP options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
+        MapStrategy(Utf8CP strategy, Utf8CP options, bool appliesToSubclasses) : m_strategy(strategy), m_options(options), m_appliesToSubclasses(appliesToSubclasses) {}
 
     public:
-        MapStrategy() : m_isPolymorphic(false) {}
+        MapStrategy() : m_appliesToSubclasses(false) {}
 
         //! Gets the Strategy.
         //! @return Strategy or nullptr if not set in the custom attribute
@@ -279,9 +279,9 @@ public:
         //! Gets the strategy options as comma separated list
         //! @return strategy options or nullptr if not set in the custom attribute
         Utf8CP GetOptions() const { return m_options.c_str(); }
-        //! Gets a value indicating whether the MapStrategy is applied polymorphically (i.e. to subclasses of the class that
-        //! holds the ClassMap custom attribute) or not
-        bool IsPolymorphic() const { return m_isPolymorphic; }
+        //! Gets a value indicating whether the MapStrategy is also applied to subclasses of the class that
+        //! holds the ClassMap custom attribute or not
+        bool AppliesToSubclasses() const { return m_appliesToSubclasses; }
         };
 
 
