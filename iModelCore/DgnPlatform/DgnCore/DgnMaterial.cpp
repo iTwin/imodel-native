@@ -10,15 +10,17 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnMaterials::Insert(Material& material)
+DgnMaterialId DgnMaterials::Insert(Material& material, DgnDbStatus* outResult)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(result, outResult);
     DgnMaterialId newId;
 
     auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Material), "Id");
     if (status != BE_SQLITE_OK)
         {
         BeAssert(false);
-        return status;
+        result = DgnDbStatus::ForeignKeyConstraint;
+        return DgnMaterialId();
         }
 
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Material) " (Id,Value,Name,Palette,Descr,ParentId) VALUES(?,?,?,?,?,?)");
@@ -33,20 +35,22 @@ DbResult DgnMaterials::Insert(Material& material)
     if (BE_SQLITE_DONE != status)
         {
         BeAssert(false);
-        return status;
+        result = DgnDbStatus::DuplicateName;
+        return DgnMaterialId();
         }
 
+    result = DgnDbStatus::Success;
     material.m_id = newId;
-    return BE_SQLITE_OK;
+    return newId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnMaterials::Update(Material const& material) const
+DgnDbStatus DgnMaterials::Update(Material const& material) const
     {
     if (!material.IsValid())
-        return BE_SQLITE_ERROR;
+        return DgnDbStatus::InvalidId;
 
     Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
     stmt.BindText(1, material.GetValue(), Statement::MakeCopy::No);
@@ -56,7 +60,7 @@ DbResult DgnMaterials::Update(Material const& material) const
 
     DbResult status = stmt.Step();
     BeDataAssert(BE_SQLITE_DONE==status);
-    return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
+    return (BE_SQLITE_DONE==status) ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**

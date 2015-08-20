@@ -468,11 +468,8 @@ DgnTrueColorId DgnColors::Insert(Color& color)
     Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Color) " (Id,Value,Name,Book) VALUES(?,?,?,?)");
     stmt.BindId(1, newId);
     stmt.BindInt(2, color.GetColor().GetValue());
-    if (!color.m_name.empty())
-        stmt.BindText(3, color.m_name, Statement::MakeCopy::No);
-
-    if (!color.m_book.empty())
-        stmt.BindText(4, color.m_book, Statement::MakeCopy::No);
+    stmt.BindText(3, color.m_name, Statement::MakeCopy::No);
+    stmt.BindText(4, color.m_book, Statement::MakeCopy::No);
 
     status = stmt.Step();
     if (BE_SQLITE_DONE!=status)
@@ -488,10 +485,9 @@ DgnTrueColorId DgnColors::Insert(Color& color)
 size_t DgnColors::Iterator::QueryCount() const
     {
     Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Color));
-
     Statement sql(*m_db, sqlString.c_str());
 
-    return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
+    return BE_SQLITE_ROW != sql.Step() ? 0 : sql.GetValueInt(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -517,4 +513,4 @@ DgnColors::Iterator::const_iterator DgnColors::Iterator::begin() const
 DgnTrueColorId DgnColors::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnTrueColorId>(0);}
 ColorDef DgnColors::Iterator::Entry::GetColor() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
 Utf8CP DgnColors::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(2);}
-Utf8CP DgnColors::Iterator::Entry::GetBookName() const {Verify(); return m_sql->GetValueText(3);}
+Utf8CP DgnColors::Iterator::Entry::GetBook() const {Verify(); return m_sql->GetValueText(3);}

@@ -702,6 +702,7 @@ double          patternScale
     scale = patternScale ? patternScale : 1.0;
     }
 
+#if defined (NEEDS_WORK_MATERIAL)
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      05/2007
 +===============+===============+===============+===============+===============+======*/
@@ -718,7 +719,6 @@ MaterialCP GetMaterial () {return m_material.get ();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 static MaterialPtr CreateGeometryMapMaterial (ViewContextR context, PatternSymbol& symbCell, PatternParamsP params, DPoint2dCR spacing)
     {
-#if defined (NEEDSWORK_WIP_MATERIAL)
     MaterialPtr         pMaterial = Material::Create (symbCell.GetElemHandle ().GetDgnModelP ()->GetDgnDb());
     MaterialSettingsR   settings = pMaterial->GetSettingsR ();
     MaterialMapP        map = settings.GetMapsR().AddMap (MaterialMap::MAPTYPE_Geometry);
@@ -736,9 +736,8 @@ static MaterialPtr CreateGeometryMapMaterial (ViewContextR context, PatternSymbo
     context.GetIViewDraw ().DefineQVGeometryMap (*pMaterial, symbCell.GetElemHandle (), &spacing, !symbCell.IsPointCellSymbol (), context, true);
 
     return pMaterial;
-#endif
-    return nullptr;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2013

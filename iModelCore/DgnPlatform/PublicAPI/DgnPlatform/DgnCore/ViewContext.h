@@ -13,7 +13,6 @@
 #include "TransformClipStack.h"
 #include "IViewDraw.h"
 #include "ScanCriteria.h"
-#include "Material.h"
 
 #define FOCAL_LENGTH_RATIO 0.023584905
 

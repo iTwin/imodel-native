@@ -903,7 +903,8 @@ public:
         Utf8String     m_book;
 
     public:
-        Color(ColorDef color=ColorDef::White(), Utf8CP name=nullptr, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
+        Color(ColorDef color, Utf8CP name, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
+        Color() {}
         bool IsValid() const {return m_id.IsValid();}
         DgnTrueColorId GetId() const {return m_id;}
         ColorDef GetColor() const {return m_color;}
@@ -946,7 +947,7 @@ public:
             DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
             DGNPLATFORM_EXPORT ColorDef GetColor() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetBookName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetBook() const;
             Entry const& operator*() const {return *this;}
         };
 
@@ -1143,7 +1144,7 @@ public:
         Utf8StringCR GetName() const {return m_name;}
         Utf8StringCR GetPalette() const {return m_palette;}
         Utf8StringCR GetValue() const {return m_value;}
-        Utf8StringCR GetDescr() const {return m_value;}
+        Utf8StringCR GetDescr() const {return m_descr;}
         void SetName(Utf8CP val) {m_name = val;}
         void SetPalette(Utf8CP val) {m_palette = val;}
         void SetValue(Utf8CP val) {m_value = val;}
@@ -1181,8 +1182,8 @@ public:
 
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Insert(Material&);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult Update(Material const&) const;
+    DGNPLATFORM_EXPORT DgnMaterialId Insert(Material&, DgnDbStatus* result=nullptr);
+    DGNPLATFORM_EXPORT DgnDbStatus Update(Material const&) const;
     DGNPLATFORM_EXPORT Material Query(DgnMaterialId id) const;
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
 };

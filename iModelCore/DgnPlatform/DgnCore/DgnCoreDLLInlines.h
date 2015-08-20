@@ -441,17 +441,6 @@ DG_INLINE int           SnapContext::GetSnapDivisor() {return m_snapDivisor;}
 
 DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*>(g_hostForThread.GetValueAsPointer());}
 
-//DG_INLINE void          IDrawElementAgenda::DrawElementAgenda(ElementAgendaR agenda, DgnDrawMode drawMode, DrawPurpose purpose) {_DrawElementAgenda(agenda, drawMode, purpose);}
-DG_INLINE Utf8StringCR Material::GetName() const { return m_name; }
-DG_INLINE Utf8StringR Material::GetNameR() { return m_name; }
-DG_INLINE Utf8StringCR Material::GetPalette() const { return m_palette; }
-DG_INLINE Utf8StringR Material::GetPaletteR() { return m_palette; }
-DG_INLINE DgnDbR Material::GetDgnProjectR() const { return *m_dgnProject; }
-DG_INLINE MaterialSettingsCR Material::GetSettings() const { return m_settings; }
-DG_INLINE MaterialSettingsR Material::GetSettingsR() { return m_settings; }
-DG_INLINE bool Material::GetSentToQV() const { return m_sentToQV; }
-DG_INLINE void Material::SetSentToQV(bool sentToQV) const { m_sentToQV = sentToQV; }
-
 DG_INLINE WChar AngleFormatter::GetDecimalSeparator() const { return m_decimalSeparator; }
 DG_INLINE AngleMode AngleFormatter::GetAngleMode() const { return m_angleMode; }
 DG_INLINE AnglePrecision AngleFormatter::GetAnglePrecision() const { return m_precision; }
