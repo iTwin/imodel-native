@@ -982,7 +982,7 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ComponentSolution::Query(Solution& sln, SolutionId sid)
     {
-    DgnModelId cmid = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
+    //DgnModelId cmid = GetDgnDb().Models().QueryModelId(sid.m_modelName.c_str());
 
     CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id,Range FROM " DGN_TABLE(DGN_CLASSNAME_ComponentSolution) " WHERE ComponentModelName=? AND SolutionName=?");
     stmt->BindText(1, sid.m_modelName, Statement::MakeCopy::No);
