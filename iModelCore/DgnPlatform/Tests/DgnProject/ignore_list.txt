@@ -28,8 +28,6 @@ TextAnnotationSeedTest.InvalidOperations # Failing after merge from 0504 to 06
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnGraphicsTest2d.*                                     # WIP DgnElement
-DgnGraphicsTest3d.*                                     # WIP DgnElement
 DgnMaterialsTest.*                                      # WIP DgnMaterials
 DgnStylesTest.*                                         # WIP DgnLineStyles
 DgnTextStylesTest.*                                     # WIP DgnTextStyles
