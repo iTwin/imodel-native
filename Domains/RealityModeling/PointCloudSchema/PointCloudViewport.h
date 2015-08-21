@@ -8,6 +8,7 @@
 #pragma once
 
 #include <time.h>
+#include <list>
 #include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
