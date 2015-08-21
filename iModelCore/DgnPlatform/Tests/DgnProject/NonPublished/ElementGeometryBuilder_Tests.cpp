@@ -24,7 +24,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 {
     SetupProject(L"3dMetricGeneral.idgndb", L"ElemGeometryBuilder.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "Test1");
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code("Test1"));
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
@@ -62,7 +62,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
 {
     SetupProject(L"2dMetricGeneral.idgndb", L"ElemGeometryBuilder.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "Test1");
+    DgnElementPtr el = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code("Test1"));
 
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId).get();
     GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
@@ -83,7 +83,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 
-    DgnElementPtr el2 = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "Test2");
+    DgnElementPtr el2 = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, DgnElement::Code("Test2"));
     DgnElement2dP dgnElement2d= el2->ToElement2dP();
     DPoint2d origin = DPoint2d::From(0.0, 0.0);
     ElementGeometryBuilderPtr builder2 = ElementGeometryBuilder::Create(*dgnElement2d, origin);

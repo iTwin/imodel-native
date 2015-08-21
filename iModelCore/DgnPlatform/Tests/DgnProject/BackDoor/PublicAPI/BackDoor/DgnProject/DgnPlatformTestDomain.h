@@ -90,7 +90,7 @@ struct TestElement2d : Dgn::DrawingElement
 
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
-    static RefCountedPtr<TestElement2d> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Utf8CP elementCode, double length);
+    static RefCountedPtr<TestElement2d> Create(Dgn::DgnDbR db, Dgn::DgnModelId mid, Dgn::DgnCategoryId categoryId, Code elementCode, double length);
 };
 
 typedef RefCountedPtr<TestElement2d> TestElement2dPtr;

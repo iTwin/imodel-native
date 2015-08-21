@@ -32,6 +32,7 @@
 #include <math.h>
 #include <DgnPlatform/Tools/BitMask.h>
 #include <DgnPlatform/VecMath.h>
+#include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCore/DgnCoreAPI.h>
 #include <DgnPlatform/DgnCore/rtypes.r.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>

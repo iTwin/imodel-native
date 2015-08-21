@@ -298,7 +298,7 @@ DG_INLINE void IViewDraw::DrawQvElem(QvElem* qvElem, int subElemIndex){_DrawQvEl
 DG_INLINE void IViewDraw::ClearZ() {_ClearZ(); }
 DG_INLINE StatusInt IViewDraw::TestOcclusion(int numVolumes, DPoint3dP verts, int* results){return _TestOcclusion(numVolumes, verts, results);}
 DG_INLINE uintptr_t IViewDraw::DefineQVTexture(WCharCP textureName, DgnDbP dgnFile) {return _DefineQVTexture(textureName, dgnFile);}
-DG_INLINE void IViewDraw::DefineQVGeometryMap(MaterialCR material, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(material, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
+DG_INLINE void IViewDraw::DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache& stroker, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {return _DefineQVGeometryMap(textureId, stroker, spacing, useCellColors, seedContext, forAreaPattern);}
 DG_INLINE void IViewDraw::PushClipStencil(QvElem* qvElem) {_PushClipStencil(qvElem);}
 DG_INLINE void IViewDraw::PopClipStencil() {_PopClipStencil(); }
 

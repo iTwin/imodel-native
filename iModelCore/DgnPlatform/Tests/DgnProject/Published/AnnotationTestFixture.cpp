@@ -21,6 +21,10 @@ AnnotationTextStylePtr AnnotationTestFixture::createAnnotationTextStyle(DgnDbR p
     docStyle->SetName(styleName);
     docStyle->SetFontId(ttFontId);
     docStyle->SetHeight(11.0);
+    
+    EXPECT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Insert(*docStyle));
+    EXPECT_TRUE(docStyle->GetId().IsValid());
+    
     return docStyle;
     }
 //---------------------------------------------------------------------------------------
