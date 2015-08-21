@@ -409,7 +409,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap con
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
-    auto stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
+    MapStatus stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
         return stat;
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
@@ -417,9 +417,9 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != NULL)
             {
-            auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
+            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
             BeAssert(column != nullptr && "TimeStamp column cannot be null");
-            if (column)
+            if (column != nullptr)
                 {
                 //! TODO: Handle this case for shared column strategy;
                 BeAssert(column->GetType() == ECDbSqlColumn::Type::DateTime);

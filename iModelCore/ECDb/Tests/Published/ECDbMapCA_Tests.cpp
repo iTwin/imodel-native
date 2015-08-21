@@ -1044,7 +1044,7 @@ TEST_F(SchemaImportTestFixture, AbstractClassWithPolymorphicAndNonPolymorphicSha
 TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
     {
     ECDb ecdb;
-    EXPECT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, WString ("Test.ecdb", BentleyCharEncoding::Utf8).c_str ()));
+    EXPECT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"Test.ecdb"));
     EXPECT_TRUE (ecdb.IsDbOpen ());
 
     EXPECT_FALSE (ecdb.TableExists ("TestTable"));
@@ -1056,6 +1056,7 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
     ecdb.CreateTable ("TestTable", ddl.c_str ());
     EXPECT_TRUE (ecdb.TableExists ("TestTable"));
 
+    //TODO: Use TEstItem and AssertSchemaImport(bool,ECDbCR,TestItem const&) instead
     Utf8CP testSchemaXML = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
@@ -1114,39 +1115,33 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
 TEST_F (SchemaImportTestFixture, MismatchDataTypesInExistingTable)
     {
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, WString ("Test.ecdb", BentleyCharEncoding::Utf8).c_str ()));
-    EXPECT_TRUE (ecdb.IsDbOpen ());
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"Test.ecdb"));
+    ASSERT_TRUE (ecdb.IsDbOpen ());
 
-    EXPECT_FALSE (ecdb.TableExists ("TestTable"));
+    ASSERT_FALSE (ecdb.TableExists ("TestTable"));
+    ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name STRING, Date INTEGER");
+    ASSERT_TRUE(ecdb.TableExists("TestTable"));
 
-    AString ddl = "ECInstanceId INTEGER PRIMARY KEY";
-    ddl.append (", Name STRING");
-    ddl.append (", Date INTEGER");
+    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                      "<ECClass typeName='Class' isDomainClass='True'>"
+                      "<ECCustomAttributes>"
+                      "<ClassMap xmlns='ECDbMap.01.00'>"
+                      "<MapStrategy>"
+                      "<Strategy>ExistingTable</Strategy>"
+                      "</MapStrategy>"
+                      "<TableName>TestTable</TableName>"
+                      "</ClassMap>"
+                      "</ECCustomAttributes>"
+                      "<ECProperty propertyName='Name' typeName='text'/>"
+                      "<ECProperty propertyName='Date' typeName='double'/>"
+                      "</ECClass>"
+                      "</ECSchema>", false);
 
-    ecdb.CreateTable ("TestTable", ddl.c_str ());
-    EXPECT_TRUE (ecdb.TableExists ("TestTable"));
-
-    Utf8CP testSchemaXML = "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "<ECClass typeName='Class' isDomainClass='True'>"
-        "<ECCustomAttributes>"
-        "<ClassMap xmlns='ECDbMap.01.00'>"
-        "<MapStrategy>"
-        "<Strategy>ExistingTable</Strategy>"
-        "</MapStrategy>"
-        "<TableName>TestTable</TableName>"
-        "</ClassMap>"
-        "</ECCustomAttributes>"
-        "<ECProperty propertyName='Name' typeName='text'/>"
-        "<ECProperty propertyName='Date' typeName='double'/>"
-        "</ECClass>"
-        "</ECSchema>";
-
-    auto schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXML);
-    ASSERT_TRUE (schemaCache != nullptr);
-
-    ASSERT_EQ (ERROR, ecdb.Schemas ().ImportECSchemas (*schemaCache));
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1155,39 +1150,34 @@ TEST_F (SchemaImportTestFixture, MismatchDataTypesInExistingTable)
 TEST_F (SchemaImportTestFixture, InvalidPrimaryKeyInExistingTable)
     {
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, WString ("InvalidPrimaryKeyInExistingTable.ecdb", BentleyCharEncoding::Utf8).c_str ()));
-    EXPECT_TRUE (ecdb.IsDbOpen ());
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"InvalidPrimaryKeyInExistingTable.ecdb"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
-    EXPECT_FALSE (ecdb.TableExists ("TestTable"));
+    ASSERT_FALSE(ecdb.TableExists("TestTable"));
 
-    AString ddl = "Id INTEGER PRIMARY KEY";
-    ddl.append (", Name STRING");
-    ddl.append (", Date INTEGER");
+    ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name STRING, Date INTEGER");
+    ASSERT_TRUE(ecdb.TableExists("TestTable"));
 
-    ecdb.CreateTable ("TestTable", ddl.c_str ());
-    EXPECT_TRUE (ecdb.TableExists ("TestTable"));
+    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                      "<ECClass typeName='TestClass' isDomainClass='True'>"
+                      "<ECCustomAttributes>"
+                      "<ClassMap xmlns='ECDbMap.01.00'>"
+                      "<MapStrategy>"
+                      "<Strategy>ExistingTable</Strategy>"
+                      "</MapStrategy>"
+                      "<TableName>TestTable</TableName>"
+                      "</ClassMap>"
+                      "</ECCustomAttributes>"
+                      "<ECProperty propertyName='Name' typeName='text'/>"
+                      "<ECProperty propertyName='Date' typeName='double'/>"
+                      "</ECClass>"
+                      "</ECSchema>", false);
 
-    Utf8CP testSchemaXML = "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-        "<ECClass typeName='TestClass' isDomainClass='True'>"
-        "<ECCustomAttributes>"
-        "<ClassMap xmlns='ECDbMap.01.00'>"
-        "<MapStrategy>"
-        "<Strategy>ExistingTable</Strategy>"
-        "</MapStrategy>"
-        "<TableName>TestTable</TableName>"
-        "</ClassMap>"
-        "</ECCustomAttributes>"
-        "<ECProperty propertyName='Name' typeName='text'/>"
-        "<ECProperty propertyName='Date' typeName='double'/>"
-        "</ECClass>"
-        "</ECSchema>";
-
-    ECSchemaCachePtr schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXML);
-    ASSERT_TRUE (schemaCache != nullptr);
-
-    ASSERT_EQ (ERROR, ecdb.Schemas ().ImportECSchemas (*schemaCache));
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------

@@ -19,11 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
 //---------------------------------------------------------------------------------------
-EditHandle::EditHandle ()
-    :m_canEdit (true), m_isModified (false)
-    {
-
-    }
+EditHandle::EditHandle () :m_canEdit (true), m_isModified (false)  {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
