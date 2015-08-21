@@ -10,7 +10,6 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeThread.h>
-#include <list>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Geom/GeomApi.h>

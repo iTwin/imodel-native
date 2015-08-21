@@ -94,7 +94,7 @@ struct Monitor
 template <typename T> struct ChannelBufferPool
     {
     private:
-        typedef std::list<T*> Buffers;
+        typedef bvector<T*> Buffers;
         Buffers         m_buffers;
         uint64_t        m_capacity; // Number of points
         ExclusiveKey    m_pointCloudBuffersExclusiveKey;
@@ -148,7 +148,7 @@ template <typename T> struct ChannelBufferPool
 
             Monitor monitor(m_pointCloudBuffersExclusiveKey);
 
-            m_buffers.push_front(buffer);
+            m_buffers.insert(m_buffers.begin(), buffer);
 
             while (m_buffers.size() > m_capacity && !m_buffers.empty())
                 {
@@ -156,7 +156,6 @@ template <typename T> struct ChannelBufferPool
                 m_buffers.pop_back();
                 }
             }
-
     };
 
 
