@@ -876,7 +876,7 @@ TEST_F (ECSqlTestFixture, PolymorphicDelete_PolymorphicSharedTable)
     StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (ECOBJECTS_STATUS_Success == baseClass->SetCustomAttribute(*customAttribute));
     nestedStructArraySchema->AddReferencedSchema (*ecdbMapSchema);
 
@@ -954,6 +954,81 @@ TEST_F (ECSqlTestFixture, PolymorphicDeleteTest)
         readStatement.Finalize ();
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Maha Nasir                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
+    {
+    ECDbTestProject test;
+    ECDbR ecdb = test.Create ("PolymorphicDeleteTest.ecdb");
+
+    ECSchemaPtr nestedStructArraySchema;
+    ECSchemaReadContextPtr schemaReadContext = ECSchemaReadContext::CreateContext ();
+    schemaReadContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
+    ECDbTestUtility::ReadECSchemaFromDisk (nestedStructArraySchema, schemaReadContext, L"NestedStructArrayTest.01.00.ecschema.xml");
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
+    ECSchemaPtr ecdbMapSchema = schemaReadContext->LocateSchema (schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
+    ASSERT_TRUE (ecdbMapSchema != nullptr) << "Reference Schema not found";
+
+    ECClassP baseClass = nestedStructArraySchema->GetClassP ("ClassA");
+    ASSERT_TRUE (baseClass != nullptr);
+
+    ECClassCP ca = ecdbMapSchema->GetClassCP ("ClassMap");
+    EXPECT_TRUE (ca != nullptr);
+    StandaloneECInstancePtr customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    EXPECT_TRUE (customAttribute != nullptr);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == baseClass->SetCustomAttribute (*customAttribute));
+    nestedStructArraySchema->AddReferencedSchema (*ecdbMapSchema);
+
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
+    schemaCache->AddSchema (*nestedStructArraySchema);
+
+    ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false)));
+    PopulateTestDb (ecdb);
+
+    //Updates the instances of ClassA
+    ECSqlStatement stmt;
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
+    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I,T FROM nsat.ClassA"));
+    while (stmt.Step () != ECSqlStepStatus::Done)
+        {
+        EXPECT_EQ (2, stmt.GetValueInt (0)) << "The values don't match.";
+        EXPECT_EQ ("UpdatedValue", (Utf8String)stmt.GetValueText (1)) << "The values don't match.";
+        }
+    stmt.Finalize ();
+    }
+
+//WIP uncomment the test once Affan is done with Polymorphic Update.
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//TEST_F (ECSqlTestFixture, PolymorphicUpdateTest)
+//    {
+//    // Create and populate a sample project
+//    ECDbR ecdb = SetUp ("PolymorphicDeleteTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
+//
+//    PopulateTestDb (ecdb);
+//
+//    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
+//    ECSqlStatement stmt;
+//    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
+//    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+//    stmt.Finalize ();
+//
+//    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I,T FROM nsat.ClassA"));
+//    while (stmt.Step () != ECSqlStepStatus::Done)
+//        {
+//        EXPECT_EQ (2, stmt.GetValueInt (0)) << "The values don't match.";
+//        EXPECT_EQ ("UpdatedValue", (Utf8String)stmt.GetValueText (1)) << "The values don't match.";
+//        }
+//    stmt.Finalize ();
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
@@ -1083,44 +1158,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         }
     }
 
-//---------------------------------------------------------------------------------------
-// Sandbox for debugging ECSqlStatement
-// @bsiclass                                     Krischan.Eberle                  07/13
-//+---------------+---------------+---------------+---------------+---------------+------
-#ifdef IGNORE_IT
-TEST_F (ECSqlTestFixture, Debug)
-    {
-    // Create and populate a sample project
-    auto& ecdb = SetUp ("test.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
-
-    ECSqlStatement stmt;
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO ecsql.PSA (ECInstanceId) VALUES (NULL)"));
-    ECInstanceKey psaId;
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step (psaId));
-
-    stmt.Finalize ();
-    ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "INSERT INTO ecsql.THBase (ECInstanceId) VALUES (NULL)"));
-    ECInstanceKey thbaseId;
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step (thbaseId));
-
-    stmt.Finalize ();
-
-    Utf8String ecsqlStr;
-    ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_0N (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (%lld, ?, %lld, ?);",
-        psaId.GetECInstanceId ().GetValue (),
-        thbaseId.GetECInstanceId ().GetValue ());
-
-    auto stat = stmt.Prepare (ecdb, ecsqlStr.c_str ());
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-
-    stat = stmt.BindInt64 (1, 135LL);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    stat = stmt.BindInt64 (2, 142LL);
-    ASSERT_EQ (static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    
-    ASSERT_EQ ((int) ECSqlStepStatus::Done, (int) stmt.Step ());
-    }
-#endif
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------

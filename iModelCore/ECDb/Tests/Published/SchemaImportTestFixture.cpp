@@ -57,9 +57,25 @@ void SchemaImportTestFixture::AssertSchemaImport(bool& asserted, ECDbCR ecdb, Te
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter)
     {
+    AssertIndex(ecdb, indexName, isUnique, tableName, columns, nullptr, classIdFilter, negateClassIdFilter);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool isUnique, Utf8CP tableName, std::vector<Utf8CP> const& columns, Utf8CP whereExpWithoutClassIdFilter, std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter)
+    {
     Utf8String whereClause;
-    if (!classIdFilter.empty())
+    if (classIdFilter.empty())
         {
+        if (!Utf8String::IsNullOrEmpty(whereExpWithoutClassIdFilter))
+            whereClause.append(whereExpWithoutClassIdFilter);
+        }
+    else
+        {
+        if (!Utf8String::IsNullOrEmpty(whereExpWithoutClassIdFilter))
+            whereClause.append("(").append(whereExpWithoutClassIdFilter).append(") AND ");
+        
         whereClause.append("ECClassId ");
 
         if (negateClassIdFilter)

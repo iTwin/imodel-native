@@ -19,11 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
 //---------------------------------------------------------------------------------------
-EditHandle::EditHandle ()
-    :m_canEdit (true), m_isModified (false)
-    {
-
-    }
+EditHandle::EditHandle () :m_canEdit (true), m_isModified (false)  {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        11/2014
@@ -1303,7 +1299,7 @@ Utf8String ECDbSqlIndex::GenerateWhereClause(ECDbCR ecdb) const
     NativeSqlBuilder whereClauseBuilder;
 
     if (!m_additionalWhereExpression.empty())
-        whereClauseBuilder.AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight().Append(BooleanSqlOperator::And);
+        whereClauseBuilder.AppendParenLeft().Append(m_additionalWhereExpression.c_str()).AppendParenRight().AppendSpace().Append(BooleanSqlOperator::And);
 
     whereClauseBuilder.Append(classIdCol->GetName().c_str(), true);
     horizPartition->AppendECClassIdFilterSql(whereClauseBuilder);
@@ -3186,7 +3182,7 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
     stmt->BindInt64(3, o.GetClassId ());
     stmt->BindInt(4, (int) o.GetMapStrategy ().GetStrategy ());
     stmt->BindInt(5, (int) o.GetMapStrategy().GetOption());
-    stmt->BindInt(6, o.GetMapStrategy().IsPolymorphic() ? 1 : 0);
+    stmt->BindInt(6, o.GetMapStrategy().AppliesToSubclasses() ? 1 : 0);
     stmt->BindInt(7, o.GetDMLPolicy());
 
 

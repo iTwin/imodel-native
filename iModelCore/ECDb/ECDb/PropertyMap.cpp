@@ -1011,11 +1011,10 @@ Utf8String PropertyMapArrayOfPrimitives::_ToString() const
     {
     ArrayECPropertyCP arrayProperty = GetProperty().GetAsArrayProperty();
     BeAssert (arrayProperty);
-    PrimitiveType primitiveType = arrayProperty->GetPrimitiveElementType();
+    
     return Utf8PrintfString("PropertyMapArrayOfPrimitives: ecProperty=%s.%s, type=%s, columnName=%s", GetProperty().GetClass().GetFullName(), 
-        GetProperty().GetName().c_str(), ECDbMap::GetPrimitiveTypeName(primitiveType), m_columnInfo.GetName());
+                            GetProperty().GetName().c_str(), ExpHelper::ToString(arrayProperty->GetPrimitiveElementType()), m_columnInfo.GetName());
     }
 
-        
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

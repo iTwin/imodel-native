@@ -331,8 +331,7 @@ private:
 
     //! basic constructor
     PropertyMapArrayOfPrimitives (ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, ECDbMapCR ecDbMap, PropertyMapCP parentPropertyMap);
-    
-    
+        
     //! For debugging and logging
     Utf8String _ToString() const override;
 

@@ -88,7 +88,7 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 StorageDescription const& IClassMap::GetStorageDescription () const
     {
-    return GetECDbMap ().GetLightWeightMapCache ().GetStorageDescription (GetClass ().GetId ());
+    return GetECDbMap ().GetLightweightCache ().GetStorageDescription (*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIs
 MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy ();
-    IClassMap const* effectiveParentClassMap = mapStrategy.IsPolymorphicSharedTable() ? mapInfo.GetParentClassMap () : nullptr;
+    IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses ()) ? mapInfo.GetParentClassMap () : nullptr;
 
     auto stat = _InitializePart1 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
@@ -409,7 +409,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap con
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
-    auto stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
+    MapStatus stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
         return stat;
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
@@ -417,9 +417,9 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != NULL)
             {
-            auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
+            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
             BeAssert(column != nullptr && "TimeStamp column cannot be null");
-            if (column)
+            if (column != nullptr)
                 {
                 //! TODO: Handle this case for shared column strategy;
                 BeAssert(column->GetType() == ECDbSqlColumn::Type::DateTime);
@@ -963,18 +963,19 @@ BentleyStatus MappedTable::FinishTableDefinition ()
     if (m_table.GetOwnerType () == OwnerType::ECDb)
         {
         int nOwners = 0;
-        bool polymorphicSharedTable = false;
+        bool sharedTableWithAppliesToSubclasses = false;
         for (auto classMap : m_classMaps)
             {
             if (!classMap->GetMapStrategy().IsNotMapped() && classMap->GetClassMapType () != ClassMap::Type::RelationshipEndTable)
                 {
                 nOwners++;
-                if (classMap->GetMapStrategy ().IsPolymorphicSharedTable())
-                    polymorphicSharedTable = true;
+                ECDbMapStrategy const& mapStrategy = classMap->GetMapStrategy();
+                if (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses())
+                    sharedTableWithAppliesToSubclasses = true;
                 }
             }
 
-        if (polymorphicSharedTable || nOwners > 1)
+        if (sharedTableWithAppliesToSubclasses || nOwners > 1)
             {
             if (!m_generatedClassIdColumn)
                 {

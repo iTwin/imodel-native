@@ -22,12 +22,25 @@ TEST_F (SchemaImportTestFixture, ECDbMapTests)
     "<?xml version='1.0' encoding='utf-8'?>"
     "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
     "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+    "    <ECClass typeName='Parent' isDomainClass='True'>"
+    "        <ECProperty propertyName='Price' typeName='double' />"
+    "    </ECClass>"
+    "    <ECClass typeName='Base' isDomainClass='False' isStruct='True'>"
+    "        <BaseClass>Parent</BaseClass>"
+    "        <ECProperty propertyName='Item' typeName='double' />"
+    "    </ECClass>"
+    "</ECSchema>", false, "Struct is not supported within a class heirarchy."),
+
+    TestItem (
+    "<?xml version='1.0' encoding='utf-8'?>"
+    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+    "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
     "    <ECClass typeName='ParentA' isDomainClass='True'>"
     "        <ECCustomAttributes>"
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>OwnTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                 </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -39,7 +52,7 @@ TEST_F (SchemaImportTestFixture, ECDbMapTests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                 </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -57,7 +70,7 @@ TEST_F (SchemaImportTestFixture, ECDbMapTests)
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
     "                   <Options>SharedColumns</Options>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                 </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -86,7 +99,7 @@ TEST_F (SchemaImportTestFixture, ECDbMapTests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>ExistingTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                 </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -139,7 +152,7 @@ TEST_F (SchemaImportTestFixture, ECDbMapTests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>OwnTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -167,7 +180,7 @@ TEST_F (SchemaImportTestFixture, ECDbMapTests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -288,7 +301,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>OwnTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "                <TableName>bla</TableName>"
     "            </ClassMap>"
@@ -305,7 +318,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>OwnTable</Strategy>"
-    "                   <IsPolymorphic>False</IsPolymorphic>"
+    "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
     "                </MapStrategy>"
     "                <TableName>bla</TableName>"
     "            </ClassMap>"
@@ -322,7 +335,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "                <TableName>bla</TableName>"
     "            </ClassMap>"
@@ -339,7 +352,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>False</IsPolymorphic>"
+    "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -355,7 +368,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>False</IsPolymorphic>"
+    "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
     "                </MapStrategy>"
     "                <TableName>idontexistyet</TableName>"
     "            </ClassMap>"
@@ -372,7 +385,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>NotMapped</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "                <TableName>bla</TableName>"
     "            </ClassMap>"
@@ -389,7 +402,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>NotMapped</Strategy>"
-    "                   <IsPolymorphic>False</IsPolymorphic>"
+    "                   <AppliesToSubclasses>False</AppliesToSubclasses>"
     "                </MapStrategy>"
     "                <TableName>bla</TableName>"
     "            </ClassMap>"
@@ -406,7 +419,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -421,7 +434,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -438,7 +451,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -449,7 +462,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -471,7 +484,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>SharedTable</Strategy>"
-    "                  <IsPolymorphic>True</IsPolymorphic>"
+    "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -486,7 +499,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>NotMapped</Strategy>"
-    "                  <IsPolymorphic>False</IsPolymorphic>"
+    "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -515,7 +528,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>NotMapped</Strategy>"
-    "                  <IsPolymorphic>False</IsPolymorphic>"
+    "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -560,7 +573,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -598,7 +611,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "                <MapStrategy>"
     "                   <Strategy>SharedTable</Strategy>"
     "                   <Options>SharedColumns</Options>"
-    "                   <IsPolymorphic>True</IsPolymorphic>"
+    "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
     "                 </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -633,7 +646,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>NotMapped</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -658,7 +671,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>SharedTable</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -676,7 +689,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>NotMapped</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -687,7 +700,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>SharedTable</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -705,7 +718,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>NotMapped</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -747,7 +760,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>NotMapped</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -821,7 +834,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>SharedTable</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -853,7 +866,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>OwnTable</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -896,7 +909,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>SharedTable</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -918,7 +931,7 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
     "            <ClassMap xmlns='ECDbMap.01.00'>"
     "                <MapStrategy>"
     "                  <Strategy>OwnTable</Strategy>"
-    "                  <IsPolymorphic>true</IsPolymorphic>"
+    "                  <AppliesToSubclasses>true</AppliesToSubclasses>"
     "                </MapStrategy>"
     "            </ClassMap>"
     "        </ECCustomAttributes>"
@@ -949,55 +962,55 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, AbstractClassWithPolymorphicAndNonPolymorphicSharedTable)
     {
-    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
-                        "<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-                        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-                        "    <ECClass typeName='AbstractBaseClass' isDomainClass='False'>"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.01.00'>"
-                        "                <MapStrategy>"
-                        "                  <Strategy>SharedTable</Strategy>"
-                        "                  <IsPolymorphic>True</IsPolymorphic>"
-                        "                </MapStrategy>"
-                        "            </ClassMap>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='P1' typeName='string' />"
-                        "    </ECClass>"
-                        "    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
-                        "        <BaseClass>AbstractBaseClass</BaseClass>"
-                        "        <ECProperty propertyName='P2' typeName='string' />"
-                        "    </ECClass>"
-                        "    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
-                        "        <BaseClass>AbstractBaseClass</BaseClass>"
-                        "        <ECProperty propertyName='P3' typeName='string' />"
-                        "    </ECClass>"
-                        "    <ECClass typeName='SharedTable' isDomainClass='False'>"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.01.00'>"
-                        "                <MapStrategy>"
-                        "                  <Strategy>SharedTable</Strategy>"
-                        "                  <IsPolymorphic>False</IsPolymorphic>"
-                        "                </MapStrategy>"
-                        "                <TableName>SharedTable</TableName>"
-                        "            </ClassMap>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='P1' typeName='string' />"
-                        "    </ECClass>"
-                        "    <ECClass typeName='SharedTable1' isDomainClass='True'>"
-                        "        <ECCustomAttributes>"
-                        "            <ClassMap xmlns='ECDbMap.01.00'>"
-                        "                <MapStrategy>"
-                        "                  <Strategy>SharedTable</Strategy>"
-                        "                  <IsPolymorphic>False</IsPolymorphic>"
-                        "                </MapStrategy>"
-                        "                <TableName>SharedTable</TableName>"
-                        "            </ClassMap>"
-                        "        </ECCustomAttributes>"
-                        "        <ECProperty propertyName='P2' typeName='string' />"
-                        "    </ECClass>"
-                        "</ECSchema>",
-                        true, "");
+    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='AbstractBaseClass' isDomainClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P1' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
+        "        <BaseClass>AbstractBaseClass</BaseClass>"
+        "        <ECProperty propertyName='P2' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
+        "        <BaseClass>AbstractBaseClass</BaseClass>"
+        "        <ECProperty propertyName='P3' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='SharedTable' isDomainClass='False'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "                <TableName>SharedTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P1' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='SharedTable1' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
+        "                </MapStrategy>"
+        "                <TableName>SharedTable</TableName>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P2' typeName='string' />"
+        "    </ECClass>"
+        "</ECSchema>",
+        true, "");
 
     ECDb db;
     bool asserted = false;
@@ -1026,6 +1039,228 @@ TEST_F(SchemaImportTestFixture, AbstractClassWithPolymorphicAndNonPolymorphicSha
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
+    {
+    ECDb ecdb;
+    EXPECT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"Test.ecdb"));
+    EXPECT_TRUE (ecdb.IsDbOpen ());
+
+    EXPECT_FALSE (ecdb.TableExists ("TestTable"));
+
+    AString ddl = "ECInstanceId INTEGER PRIMARY KEY";
+    ddl.append (", Name STRING");
+    ddl.append (", Date INTEGER");
+
+    ecdb.CreateTable ("TestTable", ddl.c_str ());
+    EXPECT_TRUE (ecdb.TableExists ("TestTable"));
+
+    //TODO: Use TEstItem and AssertSchemaImport(bool,ECDbCR,TestItem const&) instead
+    Utf8CP testSchemaXML = "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "<ECClass typeName='Class' isDomainClass='True'>"
+        "<ECCustomAttributes>"
+        "<ClassMap xmlns='ECDbMap.01.00'>"
+        "<MapStrategy>"
+        "<Strategy>ExistingTable</Strategy>"
+        "</MapStrategy>"
+        "<TableName>TestTable</TableName>"
+        "</ClassMap>"
+        "</ECCustomAttributes>"
+        "<ECProperty propertyName='Name' typeName='string'/>"
+        "<ECProperty propertyName='Date' typeName='int'/>"
+        "</ECClass>"
+        "</ECSchema>";
+
+    auto schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXML);
+    ASSERT_TRUE (schemaCache != nullptr);
+
+    BentleyStatus status = ecdb.Schemas ().ImportECSchemas (*schemaCache);
+    ASSERT_TRUE (status == 0);
+
+    ECN::ECSchemaCP schema = ecdb.Schemas ().GetECSchema ("TestSchema");
+    ASSERT_TRUE (schema != nullptr);
+
+    ECClassCP Class = schema->GetClassCP ("Class");
+    ASSERT_TRUE (Class != nullptr) << "Couldn't locate class Base from schema";
+
+    //Insert Instances in the class.
+    ECN::StandaloneECInstancePtr Instance1 = Class->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECN::StandaloneECInstancePtr Instance2 = Class->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    Instance1->SetValue ("Name", ECValue ("Abc"));
+    Instance1->SetValue ("Date", ECValue (123));
+
+    Instance2->SetValue ("Name", ECValue ("Foo"));
+    Instance2->SetValue ("Date", ECValue (321));
+
+    ECInstanceInserter inserter (ecdb, *Class);
+    ASSERT_TRUE (inserter.IsValid ());
+
+    auto stat = inserter.Insert (*Instance1, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    stat = inserter.Insert (*Instance2, true);
+    ASSERT_TRUE (stat == SUCCESS);
+
+    //Verifying that the class is not mapped to any table other than the Existing Table.
+    ASSERT_FALSE (ecdb.TableExists ("t_Class"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, MismatchDataTypesInExistingTable)
+    {
+    ECDb ecdb;
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"Test.ecdb"));
+    ASSERT_TRUE (ecdb.IsDbOpen ());
+
+    ASSERT_FALSE (ecdb.TableExists ("TestTable"));
+    ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name STRING, Date INTEGER");
+    ASSERT_TRUE(ecdb.TableExists("TestTable"));
+
+    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                      "<ECClass typeName='Class' isDomainClass='True'>"
+                      "<ECCustomAttributes>"
+                      "<ClassMap xmlns='ECDbMap.01.00'>"
+                      "<MapStrategy>"
+                      "<Strategy>ExistingTable</Strategy>"
+                      "</MapStrategy>"
+                      "<TableName>TestTable</TableName>"
+                      "</ClassMap>"
+                      "</ECCustomAttributes>"
+                      "<ECProperty propertyName='Name' typeName='text'/>"
+                      "<ECProperty propertyName='Date' typeName='double'/>"
+                      "</ECClass>"
+                      "</ECSchema>", false);
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, InvalidPrimaryKeyInExistingTable)
+    {
+    ECDb ecdb;
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"InvalidPrimaryKeyInExistingTable.ecdb"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_FALSE(ecdb.TableExists("TestTable"));
+
+    ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name STRING, Date INTEGER");
+    ASSERT_TRUE(ecdb.TableExists("TestTable"));
+
+    TestItem testItem("<?xml version='1.0' encoding='utf-8'?>"
+                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+                      "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+                      "<ECClass typeName='TestClass' isDomainClass='True'>"
+                      "<ECCustomAttributes>"
+                      "<ClassMap xmlns='ECDbMap.01.00'>"
+                      "<MapStrategy>"
+                      "<Strategy>ExistingTable</Strategy>"
+                      "</MapStrategy>"
+                      "<TableName>TestTable</TableName>"
+                      "</ClassMap>"
+                      "</ECCustomAttributes>"
+                      "<ECProperty propertyName='Name' typeName='text'/>"
+                      "<ECProperty propertyName='Date' typeName='double'/>"
+                      "</ECClass>"
+                      "</ECSchema>", false);
+
+    bool asserted = false;
+    AssertSchemaImport(asserted, ecdb, testItem);
+    ASSERT_FALSE(asserted);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, SharedTableInstanceInsertionAndDeletion)
+    {
+    TestItem testItem ("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='t' version='1.0' description='Handles the insertion and deletion from standalone classes.' displayLabel='Table Per Hierarchy' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "<ECClass typeName='ClassA' isDomainClass='True'>"
+        "<ECCustomAttributes>"
+        "<ClassMap xmlns='ECDbMap.01.00'>"
+        "<MapStrategy>"
+        "<Strategy>SharedTable</Strategy>"
+        "<AppliesToSubclasses>False</AppliesToSubclasses>"
+        "</MapStrategy>"
+        "<TableName>TestTable</TableName>"
+        "</ClassMap>"
+        "</ECCustomAttributes>"
+        "<ECProperty propertyName='P1' typeName='string' />"
+        "</ECClass>"
+        "<ECClass typeName='ClassB' isDomainClass='True'>"
+        "<ECCustomAttributes>"
+        "<ClassMap xmlns='ECDbMap.01.00'>"
+        "<MapStrategy>"
+        "<Strategy>SharedTable</Strategy>"
+        "<AppliesToSubclasses>False</AppliesToSubclasses>"
+        "</MapStrategy>"
+        "<TableName>TestTable</TableName>"
+        "</ClassMap>"
+        "</ECCustomAttributes>"
+        "<ECProperty propertyName='P2' typeName='string' />"
+        "</ECClass>"
+        "<ECClass typeName='ClassC' isDomainClass='True'>"
+        "<ECCustomAttributes>"
+        "<ClassMap xmlns='ECDbMap.01.00'>"
+        "<MapStrategy>"
+        "<Strategy>SharedTable</Strategy>"
+        "<AppliesToSubclasses>False</AppliesToSubclasses>"
+        "</MapStrategy>"
+        "<TableName>TestTable</TableName>"
+        "</ClassMap>"
+        "</ECCustomAttributes>"
+        "<ECProperty propertyName='P3' typeName='string' />"
+        "</ECClass>"
+        "</ECSchema>", true);
+
+    ECDb ecdb;
+    bool asserted = false;
+    ECSqlStatement statment;
+
+    AssertSchemaImport (ecdb, asserted, testItem, "SharedTableTest.ecdb");
+    ASSERT_FALSE (asserted);
+
+    ECSchemaCP testSchema = ecdb.Schemas ().GetECSchema ("TestSchema");
+    EXPECT_TRUE (testSchema != nullptr);
+
+    //Inserts values in Class A,B and C.
+    EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "INSERT INTO t.ClassA(P1) VALUES ('Testval1')"));
+    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    statment.Finalize ();
+
+    EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "INSERT INTO t.ClassB(P2) VALUES ('Testval2')"));
+    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    statment.Finalize ();
+
+    EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "INSERT INTO t.ClassC(P3) VALUES ('Testval3')"));
+    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    statment.Finalize ();
+
+    //Deletes the instance of ClassA.
+    EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "DELETE FROM t.ClassA"));
+    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    statment.Finalize ();
+    
+    BeSQLite::Statement stmt;
+    EXPECT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM TestTable"));
+    ASSERT_TRUE (DbResult::BE_SQLITE_ROW == stmt.Step());
+    EXPECT_EQ (2, stmt.GetValueInt (0));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaImportTestFixture, PolymorphicSharedTable_SharedColumns)
@@ -1041,7 +1276,7 @@ TEST_F(SchemaImportTestFixture, PolymorphicSharedTable_SharedColumns)
         "                <MapStrategy>"
         "                  <Strategy>SharedTable</Strategy>"
         "                  <Options>SharedColumnsForSubclasses</Options>"
-        "                  <IsPolymorphic>True</IsPolymorphic>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
@@ -1123,7 +1358,7 @@ TEST_F(SchemaImportTestFixture, PolymorphicSharedTable_SharedColumns_DisableShar
         "                <MapStrategy>"
         "                  <Strategy>SharedTable</Strategy>"
         "                  <Options>SharedColumnsForSubclasses</Options>"
-        "                  <IsPolymorphic>True</IsPolymorphic>"
+        "                  <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
@@ -1224,7 +1459,7 @@ TEST_F(SchemaImportTestFixture, NotMappedWithinClassHierarchy)
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
         "                  <Strategy>NotMapped</Strategy>"
-        "                  <IsPolymorphic>False</IsPolymorphic>"
+        "                  <AppliesToSubclasses>False</AppliesToSubclasses>"
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
@@ -1344,7 +1579,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>"
         "                   <Strategy>SharedTable</Strategy>"
-        "                   <IsPolymorphic>True</IsPolymorphic>"
+        "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
         "                 </MapStrategy>"
         "                 <Indexes>"
         "                   <DbIndex>"
@@ -1386,7 +1621,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
                 "            <ClassMap xmlns='ECDbMap.01.00'>"
                 "                <MapStrategy>"
                 "                   <Strategy>SharedTable</Strategy>"
-                "                   <IsPolymorphic>True</IsPolymorphic>"
+                "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
                 "                 </MapStrategy>"
                 "                 <Indexes>"
                 "                   <DbIndex>"
@@ -1441,7 +1676,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
             "            <ClassMap xmlns='ECDbMap.01.00'>"
             "                <MapStrategy>"
             "                   <Strategy>SharedTable</Strategy>"
-            "                   <IsPolymorphic>True</IsPolymorphic>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
             "                 </MapStrategy>"
             "                 <Indexes>"
             "                   <DbIndex>"
@@ -1496,7 +1731,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
             "            <ClassMap xmlns='ECDbMap.01.00'>"
             "                <MapStrategy>"
             "                   <Strategy>SharedTable</Strategy>"
-            "                   <IsPolymorphic>True</IsPolymorphic>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
             "                 </MapStrategy>"
             "                 <Indexes>"
             "                   <DbIndex>"
@@ -1578,7 +1813,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
             "                <MapStrategy>"
             "                   <Strategy>SharedTable</Strategy>"
             "                   <Options>SharedColumnsForSubclasses</Options>"  
-            "                   <IsPolymorphic>True</IsPolymorphic>"
+            "                   <AppliesToSubclasses>True</AppliesToSubclasses>"
             "                 </MapStrategy>"
             "            </ClassMap>"
             "        </ECCustomAttributes>"
@@ -1639,7 +1874,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         AssertIndex(db, "ix_sub1_aid", false, "ts_Base", {"x01"}, {sub1ClassId, sub11ClassId});
 
         //now assert that the automatically generated index on the relationship foreign key column is correct
-        AssertIndex(db, "uix_ts_Base_fk_ts_Rel_target", true, "ts_Base", {"x01"}, "[x01] IS NOT NULL");
+        AssertIndex(db, "uix_ts_Base_fk_ts_Rel_target", true, "ts_Base", {"x01"}, "[x01] IS NOT NULL", {sub1ClassId, sub11ClassId});
 
         //insert a few objects to make sure the unique index' where clause is set up correctly
         ECSqlStatement stmt;
@@ -1696,7 +1931,7 @@ TEST_F (SchemaImportTestFixture, UserDefinedIndexTest)
         stmt.Reset();
         stmt.ClearBindings();
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "sub2:2", IECSqlBinder::MakeCopy::No));
-        ASSERT_EQ(ECSqlStepStatus::Error, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Second execution of " << ecsql << " Error: " << db.GetLastError ();
         }
     }
 
@@ -2235,7 +2470,7 @@ Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
                     "<ClassMap xmlns='ECDbMap.01.00'>"
                     "<MapStrategy>"
                         "<Strategy>SharedTable</Strategy>"
-                        "<IsPolymorphic>True</IsPolymorphic>"
+                        "<AppliesToSubclasses>True</AppliesToSubclasses>"
                     "</MapStrategy>"
                     "</ClassMap>"
                 "</ECCustomAttributes>"
@@ -2254,7 +2489,7 @@ Utf8CP const RelationshipsAndSharedTablesTestFixture::SCHEMA_XML =
                     "<ClassMap xmlns='ECDbMap.01.00'>"
                         "<MapStrategy>"
                         "<Strategy>SharedTable</Strategy>"
-                        "<IsPolymorphic>True</IsPolymorphic>"
+                        "<AppliesToSubclasses>True</AppliesToSubclasses>"
                         "</MapStrategy>"
                     "</ClassMap>"
                 "</ECCustomAttributes>"

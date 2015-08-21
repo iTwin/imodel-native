@@ -520,28 +520,6 @@ TEST_F (ECDbMapPersistenceTests, DGNSchemaStructureMapPersistence)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  03/2015
 //---------------------------------------------------------------------------------------
-TEST_F (ECDbMapPersistenceTests, MappingStrategyTest)
-    {
-    ECDbTestProject::Initialize ();
-    ECDb ECDbMapPersistence;
-    auto stat = ECDbTestUtility::CreateECDb (ECDbMapPersistence, NULL, L"MappingStrategyDb.ecdb");
-    ASSERT_EQ (stat, BE_SQLITE_OK);
-
-    ECSchemaPtr ecSchema = nullptr;
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    ECSchemaReadContextPtr schemaContext = nullptr;
-    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"TablePerHierarchyPrecedence.01.00.ecschema.xml", nullptr);
-
-    ASSERT_TRUE (ecSchema != nullptr);
-    ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
-    ASSERT_EQ (SUCCESS, ECDbMapPersistence.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed \n";
-    ECSchemaCP tablePerHierarchySchema = ECDbMapPersistence.Schemas ().GetECSchema ("dgn");
-    ASSERT_TRUE (tablePerHierarchySchema != NULL);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                  03/2015
-//---------------------------------------------------------------------------------------
 TEST_F (ECDbMapPersistenceTests, DGNSchemaTableColumnPropertyMapPersistence)
     {
     ECDbTestProject::Initialize ();

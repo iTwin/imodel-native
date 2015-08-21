@@ -223,7 +223,7 @@
         - Property @b Strategy (optional):
             - @c NotMapped : The class is not mapped to any database table.
             - @c OwnTable : This class is mapped to its own table.
-            - @c SharedTable : This class is mapped to @em table shared by other classes as well. If @b IsPolymorphic is false,
+            - @c SharedTable : This class is mapped to @em table shared by other classes as well. If @b AppliesToSubclasses is false,
             the @b TableName ECProperty must also be specified. Otherwise it is optional.
             - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
             The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
@@ -236,7 +236,7 @@
             - @c DisableSharedColumns: This option disables the column sharing for the class, if
             column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c Readonly : This will mark the table as readonly. Can only be used with @b ExistingTable.
-        - @b IsPolymorphic (optional): If true, the MapStrategy and options also apply to subclasses of this class. 
+        - @b AppliesToSubclasses (optional): If true, the MapStrategy and options also apply to subclasses of this class. 
         If false (default), the MapStrategy only applies to this class.
     - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
     Specify a table name for this class (instead of letting ECDb choose a name)
@@ -271,7 +271,7 @@
                 <ClassMap xmlns="ECDbMap.01.00">
                     <MapStrategy>
                        <Strategy>SharedTable</Strategy>
-                       <IsPolymorphic>True</IsPolymorphic>
+                       <AppliesToSubclasses>True</AppliesToSubclasses>
                     </MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
