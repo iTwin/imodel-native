@@ -4452,7 +4452,10 @@ DTMELEMENTECExtension* extension = nullptr;
 void    registerECExtension ()
     {
     extension = DTMELEMENTECExtension::Create();
-    ElementECExtension::RegisterExtension (DTMElementHandler::GetInstance(), *extension);
+    ElementECExtension::RegisterExtension (DTMElementHandler::GetInstance (), *extension);
+    extension = DTMELEMENTECExtension::Create ();
+    ElementECExtension::RegisterExtension (TMOverrideSymbologyManager::GetInstance (), *extension);
+
 
     DgnECExtendedType::GetByName (L"TMElementTemplate").SetTypeAdapter (*TMElementTemplateTypeAdapter::Create ());
     DgnECExtendedType::GetByName (L"TMColor").SetTypeAdapter (*TMColorTypeAdapter::Create ());
