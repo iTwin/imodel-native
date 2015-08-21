@@ -214,6 +214,8 @@ DbResult    Statement::BindGuid(int col, BeGuidCR guid) {return (DbResult)sqlite
 DbResult    Statement::BindLuid(int col, BeLuid luid) {return (DbResult)sqlite3_bind_int64(m_stmt, col, luid.GetValue());}
 DbResult    Statement::BindNull(int col) {return (DbResult)sqlite3_bind_null(m_stmt, col);}
 DbResult    Statement::BindVirtualSet(int col, VirtualSet const& intSet) {return BindInt64(col, (int64_t) &intSet);}
+DbResult    Statement::BindDbValue(int col, struct DbValue const& dbVal) { return (DbResult) sqlite3_bind_value(m_stmt, col, dbVal.GetSqlValueP()); }
+
 DbValueType Statement::GetColumnType(int col)   {return (DbValueType) sqlite3_column_type(m_stmt, col);}
 int         Statement::GetColumnCount()         {return sqlite3_column_count(m_stmt);}
 int         Statement::GetColumnBytes(int col)  {return sqlite3_column_bytes(m_stmt, col);}
@@ -225,6 +227,16 @@ int         Statement::GetValueInt(int col)     {return sqlite3_column_int(m_stm
 int64_t     Statement::GetValueInt64(int col)   {return sqlite3_column_int64(m_stmt, col);}
 double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_stmt, col);}
 BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetValueBlob(col), sizeof(guid)); return guid;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbDupValue  Statement::GetDbValue(int col) 
+    {
+    DbDupValue value(sqlite3_column_value(m_stmt, col));
+    return std::move(value);
+    }
+
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
 Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt); }
 DbResult    Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
@@ -238,6 +250,22 @@ int64_t     DbValue::GetValueInt64() const            {return sqlite3_value_int6
 double      DbValue::GetValueDouble() const           {return sqlite3_value_double(m_val);}
 BeLuid      DbValue::GetValueLuid() const             {return BeLuid((uint64_t) GetValueInt64());}
 BeGuid      DbValue::GetValueGuid() const {BeGuid guid; memcpy(&guid, GetValueBlob(), sizeof(guid)); return guid;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbDupValue::DbDupValue(SqlValueP val) : DbValue(nullptr) 
+    {
+    m_val = sqlite3_value_dup(val);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbDupValue::~DbDupValue() 
+    {
+    sqlite3_value_free(m_val);
+    }
 
 SqlDbP   Db::GetSqlDb() const {return m_dbFile->m_sqlDb;}
 bool     Db::IsReadonly() const {return m_dbFile->m_flags.m_readonly;}
@@ -2165,7 +2193,7 @@ void DbFunction::Context::SetResultInt64(int64_t val){sqlite3_result_int64((sqli
 void DbFunction::Context::SetResultNull(){sqlite3_result_null((sqlite3_context*) this);}
 void DbFunction::Context::SetResultText(Utf8CP val, int length, CopyData doCopy){sqlite3_result_text((sqlite3_context*) this, val, length,(sqlite3_destructor_type) doCopy);}
 void DbFunction::Context::SetResultZeroblob(int length){sqlite3_result_zeroblob((sqlite3_context*)this, length);}
-void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.m_val);}
+void DbFunction::Context::SetResultValue(DbValue val){sqlite3_result_value((sqlite3_context*)this, val.GetSqlValueP());}
 void* DbFunction::Context::GetAggregateContext(int nBytes) {return sqlite3_aggregate_context((sqlite3_context*)this, nBytes);}
 
 /*---------------------------------------------------------------------------------**//**

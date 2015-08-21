@@ -856,6 +856,10 @@ public:
     //! @see BeSQLite::VirtualSet
     BE_SQLITE_EXPORT DbResult BindVirtualSet(int paramNum, struct VirtualSet const& vSet);
 
+    //! @private internal use only
+    //! Bind a DbValue from a BeSQLite function.
+    BE_SQLITE_EXPORT DbResult BindDbValue(int paramNum, struct DbValue const& dbVal);
+
     //! Get the number of columns resulting from Step on this Statement
     //! @see sqlite3_column_count
     BE_SQLITE_EXPORT int GetColumnCount();
@@ -921,6 +925,12 @@ public:
     //! @param[in] col The column of interest
     //! @see sqlite3_column_blob
     BE_SQLITE_EXPORT BeGuid GetValueGuid(int col);
+
+    //! @private internal use only
+    //! Get an invariant sqlite value from a column returned from Step
+    //! @param[in] col The column of interest
+    //! @see sqlite3_column_value, sqlite3_value_dup
+    BE_SQLITE_EXPORT struct DbDupValue GetDbValue(int col);
 
     //! Get the index of a bound parameter by name.
     //! @param[in] name the name of the bound parameter
@@ -1005,11 +1015,16 @@ public:
 //=======================================================================================
 struct DbValue
 {
+protected:
     SqlValueP m_val;
-    DbValue(SqlValueP val) : m_val(val)  {}
 
+public:
+    DbValue(SqlValueP val) : m_val(val)  {}
+    
     bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
+    SqlValueP GetSqlValueP() const { return m_val; }  //!< for direct use of sqlite3 api
+
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
     BE_SQLITE_EXPORT int         GetValueBytes() const;     //!< see sqlite3_value_bytes
@@ -1023,6 +1038,20 @@ struct DbValue
     template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueInt64());}
 
     BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
+};
+
+//=======================================================================================
+//! A duplicated "value" from a BeSQLite function
+//! @remarks Used when the sqlite value may refer to unprotected memory, and needs to 
+//! be protected by duplication. @see sqlite3_value_dup
+// @bsiclass                                             Ramanujam.Raman   08/15
+//=======================================================================================
+struct DbDupValue : DbValue, NonCopyableClass
+{
+    BE_SQLITE_EXPORT DbDupValue(SqlValueP val);
+    DbDupValue(DbDupValue&& other) : DbValue(other.m_val) { other.m_val = nullptr; }
+    DbDupValue& operator=(DbDupValue&& other) { m_val = other.m_val; other.m_val = nullptr; return *this; }
+    BE_SQLITE_EXPORT ~DbDupValue();
 };
 
 //=======================================================================================
