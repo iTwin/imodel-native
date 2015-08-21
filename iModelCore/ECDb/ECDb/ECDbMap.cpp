@@ -149,7 +149,8 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             classMaps.insert (key.second.get ());
         }
-    
+    ECDbViewGenerator a;
+    a.BuildGraph (*this);
     SqlGenerator viewGen (*this);
     if (SUCCESS != viewGen.BuildViewInfrastructure (classMaps))
         {
@@ -1059,9 +1060,6 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId, TMI.TableName,DCL.DerivedClassId";
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
-    // auto currentTableId = -1;
-    //ECDbSqlTable const* currentTable;
-;
     while (stmt->Step () == BE_SQLITE_ROW)
         {
         auto rootClassId = stmt->GetValueInt64 (0);
@@ -1082,6 +1080,45 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         }
 
     m_loadedFlags.m_tablesByClassIdIsLoaded = true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::LoadRelationshipByTable ()  const
+    {
+    if (m_loadedFlags.m_relationshipPerTableLoaded)
+        return;
+
+    Utf8CP sql0 =
+        " SELECT DISTINCT ec_Class.Id, ec_Table.Name, ec_ClassMap.MapStrategy"
+        "    FROM ec_Column"
+        "        INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+        "        INNER JOIN ec_PropertyMap ON  ec_PropertyMap.ColumnId = ec_Column.Id"
+        "        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId"
+        "        INNER JOIN ec_Property ON ec_PropertyPath.RootPropertyId = ec_Property.Id"
+        "        INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
+        "        INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
+        "    WHERE ec_ClassMap.MapStrategy  <> 0 AND ec_Column.KnownColumn NOT IN (1, 2) AND ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
+
+
+    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
+    while (stmt->Step () == BE_SQLITE_ROW)
+        {
+        auto relationshipClassId = stmt->GetValueInt64 (0);
+        Utf8CP tableName = stmt->GetValueText (1);
+        RelationshipType type = RelationshipType::Link;
+        if (stmt->GetValueInt (2) == Enum::ToInt (RelationshipType::Source))
+            type = RelationshipType::Source;
+        else if (stmt->GetValueInt (2) == Enum::ToInt (RelationshipType::Target))
+            type = RelationshipType::Target;
+
+        auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
+        BeAssert (table != nullptr);
+        m_relationshipPerTable[table][relationshipClassId] = type;       
+        }
+
+    m_loadedFlags.m_relationshipPerTableLoaded = true;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1118,6 +1155,23 @@ ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::RelationshipTypeByClassId ECDbMap::LightWeightMapCache::GetRelationshipsMapToTable (ECDbSqlTable const& table) const
+    {
+    LoadRelationshipByTable ();
+    return m_relationshipPerTable[&table];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::RelationshipPerTable ECDbMap::LightWeightMapCache::GetRelationshipsMapToTables () const
+    {
+    LoadRelationshipByTable ();
+    return m_relationshipPerTable;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
 ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetClassesMapToTable (ECDbSqlTable const& table) const
     {
     LoadClassTableClasses ();
@@ -1145,6 +1199,14 @@ ECDbMap::LightWeightMapCache::TableClasses const& ECDbMap::LightWeightMapCache::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
+bmap<ECN::ECClassId, ECDbMap::LightWeightMapCache::TableClasses> const& ECDbMap::LightWeightMapCache::GetTablesMapToClass () const
+    {
+    LoadDerivedClasses ();
+    return m_tablesByClassId;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
 void ECDbMap::LightWeightMapCache::Load (bool forceReload)
     {
     if (forceReload)
@@ -1163,6 +1225,7 @@ void ECDbMap::LightWeightMapCache::Load (bool forceReload)
 void ECDbMap::LightWeightMapCache::Reset ()
     {
     m_loadedFlags.m_anyClassRelationshipsIsLoaded = 
+        m_loadedFlags.m_relationshipPerTableLoaded =
         m_loadedFlags.m_classIdsByTableIsLoaded =
         m_loadedFlags.m_relationshipEndsByClassIdIsLoaded =
         m_loadedFlags.m_anyClassReplacementsLoaded = 
@@ -1175,6 +1238,7 @@ void ECDbMap::LightWeightMapCache::Reset ()
     m_anyClassRelationships.clear ();
     m_anyClassReplacements.clear ();
     m_storageDescriptions.clear ();
+    m_relationshipPerTable.clear ();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015

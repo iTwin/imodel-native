@@ -10,6 +10,124 @@
 #include "ECDbInternalTypes.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+
+  
+struct NClass;
+struct NRelationship;
+struct NConstraint
+    {
+    typedef std::unique_ptr<NConstraint> Ptr;
+    enum class Type
+        {
+        Relationship, StructArray
+        };
+
+    private:
+        NClass const& m_class;
+
+    public:
+        virtual Type GetType () const = 0;
+        NClass const& GetClass () const;
+        NConstraint (NClass const& nclass);
+    };
+
+struct NRelationshipConstraint : NConstraint
+    {
+    typedef std::unique_ptr<NRelationshipConstraint> Ptr;
+    private:
+        std::map<ECN::ECClassId, ECDbMap::LightWeightMapCache::RelationshipEnd> m_constraintClasses;
+        NRelationshipConstraint (NRelationship const& nclass);
+
+    public:
+        void SetEnd (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipEnd end);
+        virtual Type GetType () const override;
+        static Ptr Create (NRelationship const& nclass);
+    };
+
+struct NStructArrayConstraint : NConstraint
+    {
+    typedef std::unique_ptr<NStructArrayConstraint> Ptr;
+    std::set<ECN::ECClassId> m_constraintClasses;
+    private:
+        NStructArrayConstraint (NClass const& view);
+
+    public:
+        virtual Type GetType () const override;
+        void SetEnd (ECN::ECClassId classId);
+        static Ptr Create (NClass const& nclass);
+    };
+
+struct NTable
+    {
+    typedef std::unique_ptr<NTable> Ptr;
+    private:
+        ECDbSqlTable const& m_table;
+        std::set<ECN::ECClassId> m_classIds;
+        std::set<ECN::ECClassId> m_relationshipIds;
+        std::map < ECN::ECClassId, NConstraint::Ptr> m_constraints;
+        NTable (ECDbSqlTable const& table, std::set<ECN::ECClassId> const& classIds);
+
+    public:
+        std::set<ECN::ECClassId> const& GetClassIds () const { return m_classIds; }
+        std::set<ECN::ECClassId> const&  GetRelationshipIds () const { return m_relationshipIds; }
+        std::set<ECN::ECClassId>&  GetRelationshipIdsR ()  { return m_relationshipIds; }
+        NConstraint* FindConstraint (ECN::ECClassId constraintClassId);
+        void AppendRelationshipConstraint (NRelationship const& relationship, ECN::ECClassId constraintClassId, ECDbMap::LightWeightMapCache::RelationshipEnd end);
+        void AppendStructArrayConstraint (NClass const& structClass, ECN::ECClassId constraintClassId);
+        bool StoreMany () const;
+        bool StoreOne () const;
+        static Ptr Create (ECDbSqlTable const& table, std::vector<ECN::ECClassId> const& classIds);
+    };
+
+struct NClass
+    {
+    typedef std::unique_ptr<NClass> Ptr;
+    typedef std::map<NTable*, std::set<ECN::ECClassId>> HorizontalParititions;
+    enum class Type
+        {
+        Class, Relationship
+        }; 
+    private:
+        ECN::ECClassId m_classId;
+        HorizontalParititions m_classesPerTable;
+    protected:
+        NClass (ECN::ECClassId classId);
+    public:
+        virtual Type GetType () const;
+        ECN::ECClassId GetClassId () const;
+        bool IsCompound () const;
+        bool IsEmpty () const;
+        static Ptr Create (ECN::ECClassId classId);
+        HorizontalParititions const& GetPartitions () const;
+        HorizontalParititions & GetPartitionsR ();
+
+    };
+struct NRelationship : NClass
+    {
+    typedef std::unique_ptr<NRelationship> Ptr;
+    private:
+        ECDbMap::LightWeightMapCache::RelationshipType m_type;
+        NRelationship (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipType type);
+
+    public:
+        virtual Type GetType () const override;
+        ECDbMap::LightWeightMapCache::RelationshipType GetMapType () const;
+        bool IsLinkTable () const;
+        static Ptr Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipType type);
+    };
+
+struct ECDbViewGenerator
+    {
+    private:
+        std::map<Utf8CP, NTable::Ptr, CompareIUtf8> m_tables;
+        std::map<ECN::ECClassId, std::unique_ptr<NClass>> m_classes;
+        std::map<ECN::ECClassId, std::unique_ptr<NConstraint>> m_constraints;
+        NClass const* FindClass (ECN::ECClassId classId, bool add);
+    public:
+        void BuildGraph (ECDbMapCR map);
+    };
+
 enum class SqlOption
     {
     Create,
@@ -248,7 +366,16 @@ struct SqlTriggerBuilder
                 }
         };
 
-
+    struct Graph
+        {
+        //Relationship a IN (...)
+            // delete relationship
+            // delete option other end
+        //Struct IN (...)
+        };
+    //Table
+    //View   //Relationship
+    //
 
     struct SqlClassPersistenceMethod : NonCopyableClass
     {

@@ -301,47 +301,35 @@ MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::_EvaluateDMLPolicy ()
     {
-    DMLPolicy::Target selectTarget = DMLPolicy::Target::View;
-    DMLPolicy::Target insertTarget = DMLPolicy::Target::View;
-    DMLPolicy::Target updateTarget = DMLPolicy::Target::View;
-    DMLPolicy::Target deleteTarget = DMLPolicy::Target::View;
- /*   auto& storagePartitions = GetStorageDescription ();
+    DMLPolicy::Target selectTarget = DMLPolicy::Target::None;
+    DMLPolicy::Target insertTarget = DMLPolicy::Target::None;
+    DMLPolicy::Target updateTarget = DMLPolicy::Target::None;
+    DMLPolicy::Target deleteTarget = DMLPolicy::Target::None;
+
+    auto& storagePartitions = GetStorageDescription ();
     auto& noneVirtualPartitions = storagePartitions.GetNonVirtualHorizontalPartitionIndices ();
-    auto isPersisted = GetTable ().GetPersistenceType () == PersistenceType::Persisted;
+    //auto isPersisted = GetTable ().GetPersistenceType () == PersistenceType::Persisted;
 
+    //! Existing table should be treated as ReadOnly
 
-
-    if (!isPersisted || GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
+    if (GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
+        {
+        selectTarget = DMLPolicy::Target::Table;
+        }
+    if (noneVirtualPartitions.size () == 0)
         {
         selectTarget = DMLPolicy::Target::View;
-        insertTarget = DMLPolicy::Target::None;
-        updateTarget = DMLPolicy::Target::None;
-        deleteTarget = DMLPolicy::Target::None;
         }
-    else
+    else if (noneVirtualPartitions.size () == 1)
         {
-        if (noneVirtualPartitions.size () == 0)
+        HorizontalPartition const* partition = GetStorageDescription ().GetHorizontalPartition (noneVirtualPartitions[0]);
+        BeAssert (partition != nullptr);
+        if (partition->GetClassIds ().size () == 1)
             {
-            selectTarget = DMLPolicy::Target::View;
-            }
-        else if (noneVirtualPartitions.size () == 1)
-            {
-            HorizontalPartition const* partition = GetStorageDescription ().GetHorizontalPartition (noneVirtualPartitions[0]);
-            BeAssert (partition != nullptr);
-            if (partition->GetClassIds ().size () == 1)
-                {
-                selectTarget = DMLPolicy::Target::Table;
-                insertTarget = DMLPolicy::Target::Table;
-                updateTarget = DMLPolicy::Target::Table;
-                deleteTarget = DMLPolicy::Target::Table;
-                }
-            else
-                {
-                insertTarget = DMLPolicy::Target::Table;
-                selectTarget = DMLPolicy::Target::View;
-                updateTarget = DMLPolicy::Target::View;
-                deleteTarget = DMLPolicy::Target::View;
-                }
+            selectTarget = DMLPolicy::Target::Table;
+            insertTarget = DMLPolicy::Target::Table;
+            updateTarget = DMLPolicy::Target::Table;
+            deleteTarget = DMLPolicy::Target::Table;
             }
         else
             {
@@ -350,7 +338,8 @@ BentleyStatus ClassMap::_EvaluateDMLPolicy ()
             updateTarget = DMLPolicy::Target::View;
             deleteTarget = DMLPolicy::Target::View;
             }
-        }*/
+        }
+
     GetDMLPolicyR ().Set (DMLPolicy::Operation::Select, selectTarget);
     GetDMLPolicyR ().Set (DMLPolicy::Operation::Insert, insertTarget);
     GetDMLPolicyR ().Set (DMLPolicy::Operation::Update, updateTarget);

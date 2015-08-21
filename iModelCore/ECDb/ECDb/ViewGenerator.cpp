@@ -2424,6 +2424,210 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
         first = false;
         }
     }
+//===========================================================================================================================================================
+
+NClass const& NConstraint::GetClass () const { return m_class; }
+
+NConstraint::NConstraint (NClass const& nclass)
+    :m_class (nclass)
+    {
+    }
+
+NRelationshipConstraint::NRelationshipConstraint (NRelationship const& nclass)
+    :NConstraint (nclass)
+    {
+    }
+void NRelationshipConstraint::SetEnd (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipEnd end)
+    {
+    auto itor = m_constraintClasses.find (classId);
+    if (itor == m_constraintClasses.end ())
+        {
+        m_constraintClasses[classId] = end;
+        return;
+        }
+
+    if (itor->second != ECDbMap::LightWeightMapCache::RelationshipEnd::Both)
+        {
+        itor->second = Enum::Or (itor->second, end);
+        }
+    }
+NConstraint::Type NRelationshipConstraint::GetType () const  { return Type::Relationship; }
+NRelationshipConstraint::Ptr NRelationshipConstraint::Create (NRelationship const& nclass)
+    {
+    return Ptr (new NRelationshipConstraint (nclass));
+    }
+
+NStructArrayConstraint::NStructArrayConstraint (NClass const& view)
+    :NConstraint (view)
+    {
+    }
+
+NConstraint::Type NStructArrayConstraint::GetType () const{ return Type::StructArray; }
+void  NStructArrayConstraint::SetEnd (ECN::ECClassId classId)
+    {
+    m_constraintClasses.insert (classId);
+    }
+NStructArrayConstraint::Ptr NStructArrayConstraint::Create (NClass const& nclass)
+    {
+    return Ptr (new NStructArrayConstraint (nclass));
+    }
+
+NClass::NClass (ECN::ECClassId classId)
+            : m_classId (classId)
+            {}
+NClass::Type NClass::GetType () const  { return Type::Class; }
+ECN::ECClassId NClass::GetClassId () const { return m_classId; };
+bool NClass::IsCompound () const { return m_classesPerTable.size () > 1; }
+bool NClass::IsEmpty () const { return m_classesPerTable.empty (); }
+NClass::Ptr NClass::Create (ECN::ECClassId classId)
+    {
+    return Ptr (new NClass (classId));
+    }
+NClass::HorizontalParititions const& NClass::GetPartitions () const { return m_classesPerTable; }
+NClass::HorizontalParititions & NClass::GetPartitionsR ()  { return m_classesPerTable; }
 
 
+NTable::NTable (ECDbSqlTable const& table, std::set<ECN::ECClassId> const& classIds)
+    :m_table (table), m_classIds (classIds)
+    {
+    }
+
+NConstraint* NTable::FindConstraint (ECN::ECClassId constraintClassId)
+    {
+    auto itor = m_constraints.find (constraintClassId);
+    if (itor != m_constraints.end ())
+        return itor->second.get ();
+
+    return nullptr;
+    }
+
+void NTable::AppendRelationshipConstraint (NRelationship const& relationship, ECN::ECClassId constraintClassId, ECDbMap::LightWeightMapCache::RelationshipEnd end)
+    {
+    auto constraint = FindConstraint (relationship.GetClassId ());
+    if (constraint != nullptr)
+        {
+        BeAssert (constraint->GetType () == NConstraint::Type::Relationship);
+        static_cast<NRelationshipConstraint*>(constraint)->SetEnd (constraintClassId, end);
+        }
+    else
+        {
+        NRelationshipConstraint::Ptr ptr = NRelationshipConstraint::Create (relationship);
+        ptr->SetEnd (constraintClassId, end);
+        m_constraints[ptr->GetClass().GetClassId()] = std::move (ptr);
+        }
+    }
+void NTable::AppendStructArrayConstraint (NClass const& structClass, ECN::ECClassId constraintClassId)
+    {
+    auto constraint = FindConstraint (structClass.GetClassId ());
+    if (constraint != nullptr)
+        {
+        BeAssert (constraint->GetType () == NConstraint::Type::StructArray);
+        static_cast<NStructArrayConstraint*>(constraint)->SetEnd (constraintClassId);
+        }
+    else
+        {
+        NStructArrayConstraint::Ptr ptr = NStructArrayConstraint::Create (structClass);
+        ptr->SetEnd (constraintClassId);
+        m_constraints[ptr->GetClass().GetClassId()] = std::move (ptr);
+        }
+    }
+bool NTable::StoreMany () const { return m_classIds.size () > 1; }
+bool NTable::StoreOne () const { return m_classIds.size () == 1; }
+NTable::Ptr NTable::Create (ECDbSqlTable const& table, std::vector<ECN::ECClassId> const& classIds)
+    {
+    std::set<ECN::ECClassId> tmp (classIds.begin (), classIds.end ());
+    return Ptr (new NTable (table, tmp));
+    }
+NRelationship::NRelationship (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipType type)
+    : NClass (classId), m_type (type)
+    {}
+
+NClass::Type NRelationship::GetType () const  { return Type::Relationship; }
+ECDbMap::LightWeightMapCache::RelationshipType NRelationship::GetMapType () const { return m_type; }
+bool NRelationship::IsLinkTable () const { return m_type == ECDbMap::LightWeightMapCache::RelationshipType::Link; }
+NRelationship::Ptr NRelationship::Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache::RelationshipType type)
+    {
+    return Ptr (new NRelationship (classId, type));
+    }
+
+
+NClass const* ECDbViewGenerator::FindClass (ECN::ECClassId classId, bool add)
+    {
+    auto itor = m_classes.find (classId);
+    if (itor != m_classes.end ())
+        return itor->second.get ();
+
+    if (add)
+        {
+        NClass::Ptr ptr = NClass::Create (classId);
+        auto p = ptr.get ();
+        m_classes[classId] = std::move (ptr);
+        return p;
+        }
+
+    return nullptr;
+    }
+
+void ECDbViewGenerator::BuildGraph (ECDbMapCR map)
+    {
+    //Load tables
+    auto const tables = map.GetSQLManager ().GetDbSchema ().GetTables ();
+    for (auto const table : tables)
+        {
+        m_tables[table->GetName ().c_str ()] = NTable::Create (*table, map.GetLightWeightMapCache ().GetClassesMapToTable (*table));
+        }
+    //Load relationships
+    for (auto const& i : map.GetLightWeightMapCache ().GetRelationshipsMapToTables ())
+        {
+        auto itor = m_tables.find (i.first->GetName ().c_str ());
+        if (itor == m_tables.end ())
+            {
+            BeAssert (false && "Failed to find table");
+            return;
+            }
+
+        for (auto const& j : i.second)
+            {
+            BeAssert (FindClass (j.first, false) == nullptr);
+            auto nRel = NRelationship::Create (j.first, j.second);
+            nRel->GetPartitionsR ()[itor->second.get ()].insert (j.first);
+            m_classes[j.first] = std::move (nRel);
+            itor->second->GetRelationshipIdsR ().insert (j.first);
+            }
+        }
+
+    //Load classes that are not relationship
+    for (auto const& i : map.GetLightWeightMapCache ().GetTablesMapToClass ())
+        {
+        if (FindClass (i.first, false) != nullptr) //Skip link table relationships;
+            continue;
+
+        NClass::Ptr nClass = NClass::Create (i.first);
+        for (auto const& j : i.second)
+            {
+            auto itor = m_tables.find (j.first->GetName ().c_str ());
+            if (itor == m_tables.end ())
+                {
+                BeAssert (false && "Failed to find table");
+                return;
+                }
+
+            nClass->GetPartitionsR ()[itor->second.get ()].insert (j.second.begin (), j.second.end ());
+            }
+
+        //load relationship constraints
+        for (auto const& r : map.GetLightWeightMapCache ().GetClassRelationships (i.first))
+            {
+            NRelationship* rel = (NRelationship*)FindClass (r.first, false);
+            BeAssert (rel != nullptr);
+            for (auto & partition : nClass->GetPartitionsR ())
+                {
+                partition.first->AppendRelationshipConstraint (*rel, nClass->GetClassId (), r.second);
+                }
+            }
+
+        m_classes[i.first] = std::move (nClass);
+        }
+    }
+    
 END_BENTLEY_SQLITE_EC_NAMESPACE

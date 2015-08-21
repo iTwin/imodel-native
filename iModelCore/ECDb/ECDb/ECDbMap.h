@@ -31,13 +31,21 @@ public:
             Target = 2,
             Both = Source | Target
             };
+        enum class RelationshipType
+            {
+            Link = 0,
+            Source = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
+            Target = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable,
+            };
 
 
         typedef  std::vector < ECN::ECClassId > ClassIds;
         typedef bmap<ECN::ECClassId, RelationshipEnd> ClassRelationshipEnds;
+        typedef bmap<ECN::ECClassId, RelationshipType> RelationshipTypeByClassId;
         typedef bmap <ECDbSqlTable const*, ClassIds> TableClasses;
-
+        typedef bmap<ECDbSqlTable const*, RelationshipTypeByClassId> RelationshipPerTable;
         private:
+            mutable RelationshipPerTable m_relationshipPerTable;
             mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassId;
             mutable bmap<ECN::ECClassId, TableClasses> m_tablesByClassId;
             mutable ClassRelationshipEnds m_anyClassRelationships;
@@ -52,11 +60,12 @@ public:
                 bool m_anyClassRelationshipsIsLoaded : 3;
                 bool m_classIdsByTableIsLoaded : 4;
                 bool m_anyClassReplacementsLoaded : 5;
+                bool m_relationshipPerTableLoaded : 6;
                 } m_loadedFlags;
 
             ECDbMapCR m_map;
         private:
-
+            void LoadRelationshipByTable () const;
             void LoadDerivedClasses () const;
             void LoadClassTableClasses () const;
             void LoadAnyClassRelationships () const;
@@ -67,6 +76,10 @@ public:
             LightWeightMapCache (ECDbMapCR map);
 
             ~LightWeightMapCache (){}
+            RelationshipTypeByClassId GetRelationshipsMapToTable (ECDbSqlTable const& table) const;
+            RelationshipPerTable GetRelationshipsMapToTables () const;
+
+            bmap<ECN::ECClassId, LightWeightMapCache::TableClasses> const& GetTablesMapToClass () const;
             ClassRelationshipEnds const& GetClassRelationships (ECN::ECClassId classId) const;
             ClassRelationshipEnds const& GetAnyClassRelationships () const;
             ClassIds const& GetClassesMapToTable (ECDbSqlTable const& table) const;
