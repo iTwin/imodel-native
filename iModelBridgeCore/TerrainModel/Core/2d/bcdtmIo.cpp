@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -2208,7 +2208,7 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToDtmObject(BC_DTM_OBJ *dtmP,WCharC
  if( ( xyzFP = bcdtmFile_open(xyzFile,L"r")) == NULL )
    { 
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFile) ;
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 ** Read ASCII XYZ File
@@ -2222,11 +2222,11 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToDtmObject(BC_DTM_OBJ *dtmP,WCharC
        *bp = 0 ;
        if( ! bcdtmUtl_decodeXYZRecord(inputBuffer,&x,&y,&z) )
          {
-		  dtmPoint.x = x ;
-		  dtmPoint.y = y ;
-		  dtmPoint.z = z ;
+          dtmPoint.x = x ;
+          dtmPoint.y = y ;
+          dtmPoint.z = z ;
           if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::RandomSpots,dtmP->nullUserTag,1,&dtmP->nullFeatureId,&dtmPoint,1)) goto errexit ;
-	     }
+         }
        bp = inputBuffer ; *bp = 0 ;
       }
     if( bp > bt ) bp = bt ;
@@ -3644,7 +3644,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
  if( ( xyzFP = bcdtmFile_open(xyzFileNameP,L"r")) == NULL )
    { 
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFileNameP) ;
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 ** Open DTM Feature File
@@ -3652,7 +3652,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
  if( ( dtmFP = bcdtmFile_open(dtmFileNameP,L"wb+")) == NULL )
    { 
     bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFileNameP) ;
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 **  Initialise DTM Feature Record
@@ -3718,9 +3718,9 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
              if( z < dtmHeader.zMin ) dtmHeader.zMin = z ;
              if( z > dtmHeader.zMax ) dtmHeader.zMax = z ;
             }
-		  dtmPoint.x = x ;
-		  dtmPoint.y = y ;
-		  dtmPoint.z = z ;
+          dtmPoint.x = x ;
+          dtmPoint.y = y ;
+          dtmPoint.z = z ;
           if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::RandomSpots,dtmP->nullUserTag,1,&dtmP->nullFeatureId,&dtmPoint,1)) goto errexit ;
           if( dtmP->numPoints >= maxPointSize )
             {
@@ -3748,7 +3748,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
                }
              dtmP->numPoints = 0 ;
             }
-	     }
+         }
        bp = inputBuffer ; *bp = 0 ;
       }
     if( bp > bt ) bp = bt ;
@@ -3847,7 +3847,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
  if( ( xyzFP = bcdtmFile_open(xyzFileNameP,L"rb")) == NULL )
    { 
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFileNameP) ;
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 ** Open DTM Feature File
@@ -3855,7 +3855,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
  if( ( dtmFP = bcdtmFile_open(dtmFileNameP,L"wb+")) == NULL )
    { 
     bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFileNameP) ;
-	goto errexit ; 
+    goto errexit ; 
    }
 /*
 **  Initialise DTM Feature Record
@@ -4205,7 +4205,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
     if( ( dtmFP = bcdtmFile_open(dtmFeatureFileNameP,L"wb+")) == NULL )
       { 
        bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFeatureFileNameP) ;
-	   goto errexit ; 
+       goto errexit ; 
       }
 /*
 **  Initialise DTM Header
@@ -4476,7 +4476,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
     if( ( dtmFP = bcdtmFile_open(dtmFeatureFileNameP,L"wb+")) == NULL )
       { 
        bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFeatureFileNameP) ;
-	   goto errexit ; 
+       goto errexit ; 
       }
 /*
 **  Initialise DTM Header
@@ -4799,23 +4799,23 @@ BENTLEYDTM_EXPORT FILE* bcdtmFile_open(WCharCP fileNameP, WCharCP openTypeP)
 ** Open Project Wise File
 */
 #ifdef USEPROJWISE
-	FILE  *pwFP = NULL, *fileFP = NULL;
-	wchar_t  dmsFileName[256];
+    FILE  *pwFP = NULL, *fileFP = NULL;
+    wchar_t  dmsFileName[256];
 
-	pwFP = bcFileWC_fopenPW(fileNameP, openTypeP) ;
-	if (pwFP)
-	{
-		bcFileWC_ProjectWise_ConvertPWpathToDMS(dmsFileName, fileNameP);
-		if (pwFP) bcFileWC_fclose(pwFP);
-	}
-	else 
+    pwFP = bcFileWC_fopenPW(fileNameP, openTypeP) ;
+    if (pwFP)
+    {
+        bcFileWC_ProjectWise_ConvertPWpathToDMS(dmsFileName, fileNameP);
+        if (pwFP) bcFileWC_fclose(pwFP);
+    }
+    else 
         wcscpy(dmsFileName, fileNameP);
-	fileFP = _wfopen(dmsFileName, openTypeP) ;
+    fileFP = _wfopen(dmsFileName, openTypeP) ;
 #else
-	FILE  *fileFP = NULL;
-	fileFP = _wfopen(fileNameP, openTypeP) ;
+    FILE  *fileFP = NULL;
+    fileFP = _wfopen(fileNameP, openTypeP) ;
 #endif
-	return(fileFP);
+    return(fileFP);
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -4958,7 +4958,7 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToPointArray(WCharCP xyzFileP,DPoin
           (*ptsPP+*numPtsP)->y = y  ;
           (*ptsPP+*numPtsP)->z = z  ;
           ++*numPtsP ;
-	     }
+         }
        bP = bufferP ; *bP = 0 ;
       }
     if( bP > bTopP ) bP = bTopP ;
@@ -5161,11 +5161,11 @@ BENTLEYDTM_Public int bcdtmRead_binaryFileP3D(WCharCP FileName, DPoint3d **DataP
       {
        MemAmt = MemAmt + MemInc ;
        if( ( *DataPts = (DPoint3d*) realloc(*DataPts,MemAmt * sizeof(DPoint3d)) ) == NULL )
-	     {
-	      bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	      fclose(fpBIN) ;
-	      return(1) ;
-	     }
+         {
+          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+          fclose(fpBIN) ;
+          return(1) ;
+         }
        p3d1 = *DataPts + *numPts ;
       }
    }

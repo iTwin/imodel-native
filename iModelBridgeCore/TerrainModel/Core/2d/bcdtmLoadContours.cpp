@@ -11,14 +11,15 @@
 #include "..\Drainage\PublicAPI\drainage.h"
 #include "..\Drainage\bcdtmDrainagePond.h"
 //#pragma optimize( "p", on )
-static DPoint3d  *conPtsP=NULL ;                    /* DTM Contour Points                                      */
-static long *conWghtP=NULL ;                   /* Weighting Of Each Contour Point                         */
-static long numConPts=0  ;                     /* Number Of DTM Contour Points                            */
-static long memConPts=0  ;                     /* Amount Of Memory Currently Allocated For Contour Points */
-static long memConPtsInc=10000 ;               /* Memory Allocation Amounts For Contour Points            */
+
+thread_local static DPoint3d  *conPtsP = NULL;               /* DTM Contour Points                                      */
+thread_local static long *conWghtP=NULL ;                   /* Weighting Of Each Contour Point                         */
+thread_local static long numConPts=0  ;                     /* Number Of DTM Contour Points                            */
+thread_local static long memConPts=0  ;                     /* Amount Of Memory Currently Allocated For Contour Points */
+thread_local static long memConPtsInc=10000 ;               /* Memory Allocation Amounts For Contour Points            */
 typedef int (*DtmCallBack) ();
-DTMFeatureCallback ContourLoadFunctionP = NULL ;
-void* ContourLoadFunctionUserArgP=NULL ;
+thread_local DTMFeatureCallback ContourLoadFunctionP = NULL;
+thread_local void* ContourLoadFunctionUserArgP = NULL;
 
 BcDTMAppData::Key const DTMPondAppData::AppDataID;
 // Prototype Functions

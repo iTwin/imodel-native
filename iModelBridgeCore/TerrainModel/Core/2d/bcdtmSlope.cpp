@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmSlope.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -98,11 +98,11 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
  if( dbg == 1 ) 
    {
     bcdtmWrite_message(0,0,0,"Calculating Tin Slope Area") ;
-	bcdtmWrite_message(0,0,0,"dtm1P        = %p",dtm1P) ;
-	bcdtmWrite_message(0,0,0,"slopePtsP    = %p",slopePtsP) ;
-	bcdtmWrite_message(0,0,0,"numSlopePts  = %8ld",numSlopePts) ;
-	bcdtmWrite_message(0,0,0,"flatAreaP    = %8.2lf",*flatAreaP) ;
-	bcdtmWrite_message(0,0,0,"slopeAreaP   = %8.2lf",*slopeAreaP) ;
+    bcdtmWrite_message(0,0,0,"dtm1P        = %p",dtm1P) ;
+    bcdtmWrite_message(0,0,0,"slopePtsP    = %p",slopePtsP) ;
+    bcdtmWrite_message(0,0,0,"numSlopePts  = %8ld",numSlopePts) ;
+    bcdtmWrite_message(0,0,0,"flatAreaP    = %8.2lf",*flatAreaP) ;
+    bcdtmWrite_message(0,0,0,"slopeAreaP   = %8.2lf",*slopeAreaP) ;
    }
 /*
 ** Initialise
@@ -168,9 +168,9 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
  if( numTempSlopePts > 0 )
    {
     if( bcdtmPolygon_intersectPointArrayPolygons(hullPtsP,numHullPts,tempSlopePtsP,numTempSlopePts,&intersectFlag,&polyObjP,dtm1P->ppTol,dtm1P->plTol)) goto errexit  ;
-	if( intersectFlag == 0 ) { bcdtmWrite_message(1,0,0,"Slope area Polygon And Tin Hull Do Not Intersect") ; goto errexit  ; }
-	free( tempSlopePtsP ) ;
-	tempSlopePtsP = NULL  ;
+    if( intersectFlag == 0 ) { bcdtmWrite_message(1,0,0,"Slope area Polygon And Tin Hull Do Not Intersect") ; goto errexit  ; }
+    free( tempSlopePtsP ) ;
+    tempSlopePtsP = NULL  ;
    }
 /*
 ** Store Tin Hull Polygon In A Polygon Object
@@ -265,23 +265,23 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
          {
           if( ( p2 = bcdtmList_nextAntDtmObject(dtm2P,p1,clistAddrP(dtm2P,clc)->pntNum)) < 0 ) goto errexit  ;
           while ( clc != dtm2P->nullPtr )
-	        {
-		     p3  = clistAddrP(dtm2P,clc)->pntNum ;
-		     clc = clistAddrP(dtm2P,clc)->nextPtr ;
-	         if( p2 > p1 && p3 > p1 && nodeAddrP(dtm2P,p1)->hPtr != p2 )
-	           {
+            {
+             p3  = clistAddrP(dtm2P,clc)->pntNum ;
+             clc = clistAddrP(dtm2P,clc)->nextPtr ;
+             if( p2 > p1 && p3 > p1 && nodeAddrP(dtm2P,p1)->hPtr != p2 )
+               {
                 bcdtmList_testForVoidTriangleDtmObject(dtm2P,p1,p2,p3,&voidFlag) ;
                 if( ! voidFlag )          
                   {
                    x1 = pointAddrP(dtm2P,p1)->x ; y1 = pointAddrP(dtm2P,p1)->y ; z1 = pointAddrP(dtm2P,p1)->z ;
                    x2 = pointAddrP(dtm2P,p2)->x ; y2 = pointAddrP(dtm2P,p2)->y ; z2 = pointAddrP(dtm2P,p2)->z ;
-	               x3 = pointAddrP(dtm2P,p3)->x ; y3 = pointAddrP(dtm2P,p3)->y ; z3 = pointAddrP(dtm2P,p3)->z ;
+                   x3 = pointAddrP(dtm2P,p3)->x ; y3 = pointAddrP(dtm2P,p3)->y ; z3 = pointAddrP(dtm2P,p3)->z ;
 /*
 **                 Get Translation Of Triangle Centre To Origon
 */
-		           tx = 0.0 - ( x1 + x2 + x3 ) / 3.0 ;
-			       ty = 0.0 - ( y1 + y2 + y3 ) / 3.0 ;
-			       tz = 0.0 - ( z1 + z2 + z3 ) / 3.0 ;
+                   tx = 0.0 - ( x1 + x2 + x3 ) / 3.0 ;
+                   ty = 0.0 - ( y1 + y2 + y3 ) / 3.0 ;
+                   tz = 0.0 - ( z1 + z2 + z3 ) / 3.0 ;
 /*
 **                 Translate Triangle Centre To Origon
 */
@@ -298,7 +298,7 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
                    if( fabs(z1-z2) > 0.000001 || fabs(z1-z3) > 0.000001 )
                      {
                       bcdtmMath_calculatePlaneCoefficients(x1,y1,z1,x2,y2,z2,x3,y3,z3,&ca,&cb,&cc,&cd) ;
-			          if( cd == 0.0 ) cd = 0.0000000001 ;
+                      if( cd == 0.0 ) cd = 0.0000000001 ;
                       ca = ca / cd ; cb = cb / cd ; cc = cc / cd ;
                       d  = 1.0 / sqrt( ca*ca + cb*cb + cc*cc ) ;
                       c  = cc * d ;
@@ -317,7 +317,7 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
 */
                       x11 = ( cos(xa) * x1 ) + ( sin(xa) * y1 )  ;
                       y11 = ( cos(xa) * y1 ) - ( sin(xa) * x1 )  ;
-			          z11 = z1 ;
+                      z11 = z1 ;
  
                       x21 = ( cos(xa) * x2 ) + ( sin(xa) * y2 )  ;
                       y21 = ( cos(xa) * y2 ) - ( sin(xa) * x2 )  ;
@@ -334,30 +334,30 @@ BENTLEYDTM_EXPORT int bcdtmSlope_calculateSlopeAreaDtmObject
 **                    Rotate About y Axis
 */
                       x11 = ( cos(ya) * x1 ) - ( sin(ya) * z1 ) ;
-			          y11 = y1 ;
-			          z11 = ( sin(ya) * x1 ) + ( cos(ya) * z1 ) ;
+                      y11 = y1 ;
+                      z11 = ( sin(ya) * x1 ) + ( cos(ya) * z1 ) ;
             
-			          x21 = ( cos(ya) * x2 ) - ( sin(ya) * z2 ) ;
-			          y21 = y2 ;
-			          z21 = ( sin(ya) * x2 ) + ( cos(ya) * z2 ) ;
+                      x21 = ( cos(ya) * x2 ) - ( sin(ya) * z2 ) ;
+                      y21 = y2 ;
+                      z21 = ( sin(ya) * x2 ) + ( cos(ya) * z2 ) ;
             
-			          x31 = ( cos(ya) * x3 ) - ( sin(ya) * z3 ) ;
-			          y31 = y3 ;
-			          z31 = ( sin(ya) * x3 ) + ( cos(ya) * z3 ) ;
+                      x31 = ( cos(ya) * x3 ) - ( sin(ya) * z3 ) ;
+                      y31 = y3 ;
+                      z31 = ( sin(ya) * x3 ) + ( cos(ya) * z3 ) ;
 
-			          x1 = x11 ; y1 = y11 ; z1 = z11 ;
-			          x2 = x21 ; y2 = y21 ; z2 = z21 ;
-			          x3 = x31 ; y3 = y31 ; z3 = z31 ;
+                      x1 = x11 ; y1 = y11 ; z1 = z11 ;
+                      x2 = x21 ; y2 = y21 ; z2 = z21 ;
+                      x3 = x31 ; y3 = y31 ; z3 = z31 ;
                      }
 /*
 **                 Calculate  Slope area
 */
                    *slopeAreaP = *slopeAreaP + bcdtmMath_coordinateTriangleArea(x1,y1,x2,y2,x3,y3) ;
                   } 
-	           }
-	         p2 = p3 ; 
+               }
+             p2 = p3 ; 
             }
-	     } 
+         } 
       }
 /*
 ** Free Memory

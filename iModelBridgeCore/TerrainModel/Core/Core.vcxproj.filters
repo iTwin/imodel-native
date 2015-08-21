@@ -172,9 +172,6 @@
     <ClCompile Include="2d\bcdtmMerge.cpp">
       <Filter>Source\2D</Filter>
     </ClCompile>
-    <ClCompile Include="2d\bcdtmMres.cpp">
-      <Filter>Source\2D</Filter>
-    </ClCompile>
     <ClCompile Include="2d\bcdtmNgp.cpp">
       <Filter>Source\2D</Filter>
     </ClCompile>

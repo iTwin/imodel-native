@@ -74,7 +74,6 @@
     <ClCompile Include="2d\bcdtmMem.cpp" />
     <ClCompile Include="2d\bcdtmMemory.cpp" />
     <ClCompile Include="2d\bcdtmMerge.cpp" />
-    <ClCompile Include="2d\bcdtmMres.cpp" />
     <ClCompile Include="2d\bcdtmNgp.cpp" />
     <ClCompile Include="2d\bcdtmObj.cpp" />
     <ClCompile Include="2d\bcdtmPatch.cpp" />

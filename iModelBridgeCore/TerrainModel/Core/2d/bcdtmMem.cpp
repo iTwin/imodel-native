@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmMem.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -71,7 +71,7 @@ BENTLEYDTM_Public int bcdtmMem_storePointsInPointerArray(DTM_POINT_ARRAY **point
  if( pointArrayP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	goto errexit ;
+    goto errexit ;
    } 
 /*
 ** Store Points In Point Array
@@ -119,7 +119,7 @@ BENTLEYDTM_Public int bcdtmMem_storePointsInPointerArrayToPointArray(DTM_POINT_A
  if( pointArrayP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	goto errexit ;
+    goto errexit ;
    } 
 /*
 ** Allocate Pointer To Point Array Memory
@@ -128,7 +128,7 @@ BENTLEYDTM_Public int bcdtmMem_storePointsInPointerArrayToPointArray(DTM_POINT_A
  if( *pointArrayPPP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	goto errexit ;
+    goto errexit ;
    } 
 /*
 ** Store Points In Point Array
@@ -176,7 +176,7 @@ BENTLEYDTM_Public int bcdtmMem_storePointsInExistingPointerArrayToPointArray(DTM
  if( pointArrayP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	goto errexit ;
+    goto errexit ;
    } 
 /*
 ** Store Points In Point Array

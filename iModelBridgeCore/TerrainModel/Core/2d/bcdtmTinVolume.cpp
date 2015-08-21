@@ -8,8 +8,8 @@
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
-static long numVolTriangles=0 ; 
-static double totTrgArea=0.0 ;
+thread_local static long numVolTriangles=0 ; 
+thread_local static double totTrgArea=0.0 ;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

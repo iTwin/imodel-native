@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadMesh.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -140,7 +140,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinTrianglesFromDtmObject
 */
                 loadTriangle = TRUE ;
                 if( useFence == TRUE )
-	              { 
+                  { 
 /*
 **                 Set Triangle Point Addresses
 */ 
@@ -365,7 +365,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinEdgesFromDtmObject
 */
                 loadLine = DTMFenceOption::Inside;
                 if( useFence == TRUE )
-	              { 
+                  { 
                   edgePts[0].x = pointAddrP(dtmP,pnt1)->x ; edgePts[0].y = pointAddrP(dtmP,pnt1)->y ;
                   edgePts[1].x = pointAddrP(dtmP,pnt2)->x ; edgePts[1].y = pointAddrP(dtmP,pnt2)->y ;
                   if( bcdtmLoad_testForOverlapWithTinHullDtmObject(clipTinP,edgePts,2,&loadLine)) goto errexit ; 
@@ -686,7 +686,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_tinMeshFromDtmObject
 */
                 loadTriangle = TRUE ;
                 if( useWindow == TRUE )
-	              { 
+                  { 
                    trgPts[0].x = pointAddrP(dtmP,p1)->x ; trgPts[0].y = pointAddrP(dtmP,p1)->y ;
                    trgPts[1].x = pointAddrP(dtmP,p2)->x ; trgPts[1].y = pointAddrP(dtmP,p2)->y ;
                    trgPts[2].x = pointAddrP(dtmP,p3)->x ; trgPts[2].y = pointAddrP(dtmP,p3)->y ;
@@ -1021,7 +1021,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_latticeMeshFromLatticeObject
     if( useFence == TRUE ) 
       {
        if( bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP,fencePtsP,numFencePts)) goto errexit ;
-	   if( dbg )
+       if( dbg )
          {
           bcdtmWrite_message(0,0,0,"Fence Range ** xMin = %12.5lf xMax = %12.5lf",clipDtmP->xMin,clipDtmP->xMax) ;
           bcdtmWrite_message(0,0,0,"            ** yMin = %12.5lf yMax = %12.5lf",clipDtmP->yMin,clipDtmP->yMax) ;
@@ -1067,7 +1067,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_latticeMeshFromLatticeObject
 */
           loadCell = TRUE ;
           if( useFence == TRUE )
-	        { 
+            { 
              latticePts[0].x = x1 ; latticePts[0].y = y1 ;
              latticePts[1].x = x2 ; latticePts[1].y = y1 ;
              latticePts[2].x = x2 ; latticePts[2].y = y2 ;
@@ -1079,7 +1079,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_latticeMeshFromLatticeObject
 /*
 **        Set Cell Markers
 */
-	      if( loadCell == TRUE )  
+          if( loadCell == TRUE )  
             {
              *(pntNumP+j*latticeP->NYL+i)       = 1 ;
              *(pntNumP+j*latticeP->NYL+i+1)     = 1 ;
@@ -1087,7 +1087,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_latticeMeshFromLatticeObject
              *(pntNumP+(j+1)*latticeP->NYL+i+1) = 1 ;
              ++numFaces ;
             }
-	     }
+         }
       }
     sj = 0 ;
    }
@@ -1173,7 +1173,7 @@ BENTLEYDTM_EXPORT int bcdtmLoad_latticeMeshFromLatticeObject
           *faceP = f2  ; ++faceP ;
           *faceP = f3  ; ++faceP ;
           *faceP = f4  ; ++faceP ;
-	     }
+         }
       }
    }
 /*

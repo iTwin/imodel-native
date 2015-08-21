@@ -9,10 +9,11 @@
 #include "dtmevars.h"
 #include "bcdtminlines.h"
 #include "bcdtmSideSlope.h"
-static long processingLimits=0 ;
-static BC_DTM_OBJ *benchTinP=NULL ;
 
 BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject2 (BC_DTM_OBJ *dtmP, long dtmFeature, bool clearup = false);
+thread_local static long processingLimits = 0;
+thread_local static BC_DTM_OBJ *benchTinP = nullptr;
+
 
 
 /*-------------------------------------------------------------------+
@@ -50,14 +51,14 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
  long    n,point,closedElement,numElemPts ;
  double  dist,angle ;
  wchar_t ssasc[10],SideSlopeFile[]=L"sideslopes0000.dat",SideSlopeElementFile[]=L"sideslopeElement00.dat" ;
- DPoint3d     *elemPtsP=NULL ;
+ DPoint3d     *elemPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radial ;
- BC_DTM_OBJ *tempObjP=NULL ;
+ BC_DTM_OBJ *tempObjP=nullptr ;
  long    start ;
  static long numSideSlopes=0,numSideSlopeElements=0 ;
  DTM_TIN_POINT   *pointP ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
- // FILE *xyzFP=NULL ;
+ // FILE *xyzFP=nullptr ;
 /*
 ** Set Static Debug Contol For Catching A Particular Side Slope OccurrenceIn A Sequence
 */
@@ -130,33 +131,33 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
 //fclose(xyzFP) ;
 
     if( bcdtmObject_storeDtmFeatureInDtmObject(tempObjP,DTMFeatureType::Breakline,tempObjP->nullUserTag,1,&tempObjP->nullFeatureId,elemPtsP,numElemPts)) goto errexit ;
-    if( elemPtsP != NULL ) { free(elemPtsP) ; elemPtsP = NULL ; }
+    if( elemPtsP != nullptr ) { free(elemPtsP) ; elemPtsP = nullptr ; }
     swprintf(ssasc,10,L"%2ld",seqdbg) ;
     if( ssasc[0] == ' ' ) ssasc[0] = '0' ;
     SideSlopeElementFile[16] = ssasc[0] ;
     SideSlopeElementFile[17] = ssasc[1] ;
     if( bcdtmWrite_geopakDatFileFromDtmObject(tempObjP,SideSlopeElementFile)) goto errexit ;
-    if( tempObjP != NULL ) bcdtmObject_destroyDtmObject(&tempObjP) ;
+    if( tempObjP != nullptr ) bcdtmObject_destroyDtmObject(&tempObjP) ;
    }
 /*
 ** Write Parallel Edges
 */
  if( dbg == 3 )
    {
-    if( ParallelEdgePts != NULL && NumParallelEdgePts > 0 )
+    if( ParallelEdgePts != nullptr && NumParallelEdgePts > 0 )
       {
        if( bcdtmObject_createDtmObject(&tempObjP)) goto errexit ;
        if( bcdtmObject_storeDtmFeatureInDtmObject(tempObjP,DTMFeatureType::Breakline,tempObjP->nullUserTag,1,&tempObjP->nullFeatureId,ParallelEdgePts,NumParallelEdgePts)) goto errexit ;
-       if( tempObjP != NULL ) bcdtmObject_destroyDtmObject(&tempObjP) ;
+       if( tempObjP != nullptr ) bcdtmObject_destroyDtmObject(&tempObjP) ;
       }
    }
 /*
 ** Initialise
 */
- benchTinP=NULL ;
+ benchTinP=nullptr ;
  if( dbg ) bcdtmWrite_message(0,0,0,"00 Number Of Side Slopes = %8ld ** sideSlopeArrayP = %p",*NumberOfDataObjects,*DataObjects) ;
  *NumberOfDataObjects = 0 ;
- if( *DataObjects != NULL ) { free(*DataObjects) ; *DataObjects = NULL ; }
+ if( *DataObjects != nullptr ) { free(*DataObjects) ; *DataObjects = nullptr ; }
  for( radial = *SideSlopeTable ; radial < *SideSlopeTable + *SideSlopeTableSize  ; ++radial )
    {
     radial->radialStatus     = 1 ;
@@ -217,7 +218,7 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
 /*
 ** If Element Open And Parallel Points Present, Extend Ends Of Parallel points
 */
- if( ! closedElement && ParallelEdgePts != NULL )
+ if( ! closedElement && ParallelEdgePts != nullptr )
    {
     dist  = bcdtmMath_distance((ParallelEdgePts+1)->x,(ParallelEdgePts+1)->y,ParallelEdgePts->x,ParallelEdgePts->y) ;
     angle = bcdtmMath_getAngle((ParallelEdgePts+1)->x,(ParallelEdgePts+1)->y,ParallelEdgePts->x,ParallelEdgePts->y) ;
@@ -290,14 +291,14 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
 */
  for( n = 0 ; n < *NumberOfDataObjects ; ++n )
    {
-    if( ( tempObjP = *(*DataObjects+n)) != NULL )
+    if( ( tempObjP = *(*DataObjects+n)) != nullptr )
       {
        for(  point = 0  ; point  < tempObjP->numPoints ; ++point )
          {
           pointP = pointAddrP(tempObjP,point) ;
           pointP->z = bcdtmMath_roundToDecimalPoints(pointP->z,8) ;
          }
-       tempObjP = NULL ;
+       tempObjP = nullptr ;
       }
    }
 /*
@@ -307,10 +308,10 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
    {
     BC_DTM_FEATURE *dtmFeatureP ;
     long numFeaturePts=0 ;
-    DPoint3d  *p3dP,*featurePtsP=NULL ;
+    DPoint3d  *p3dP,*featurePtsP=nullptr ;
     for( n = 0 ; n < *NumberOfDataObjects ; ++n )
       {
-       if( ( tempObjP = *(*DataObjects+n)) != NULL )
+       if( ( tempObjP = *(*DataObjects+n)) != nullptr )
          {
           bcdtmWrite_message(0,0,0,"Side Slope[%4ld]",n+1) ;
           for(  point = 0  ; point  < tempObjP->numFeatures ; ++point )
@@ -325,15 +326,15 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
                       bcdtmWrite_message(0,0,0,"**** Slope Toe Point[%4ld] = %12.5lf %12.5lf %10.4lf",(long)(p3dP-featurePtsP),p3dP->x,p3dP->y,p3dP->z) ;
                      }
                   }
-                if( featurePtsP != NULL )
+                if( featurePtsP != nullptr )
                   {
                    free(featurePtsP) ;
-                   featurePtsP = NULL ;
+                   featurePtsP = nullptr ;
                   }
                }
             }
          }
-         tempObjP = NULL ;
+         tempObjP = nullptr ;
       }
    }
 /*
@@ -363,8 +364,8 @@ int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Clean Up
 */
  cleanup :
- if( elemPtsP != NULL ) { free(elemPtsP) ; elemPtsP = NULL ; }
- if( tempObjP != NULL ) bcdtmObject_destroyDtmObject(&tempObjP) ;
+ if( elemPtsP != nullptr ) { free(elemPtsP) ; elemPtsP = nullptr ; }
+ if( tempObjP != nullptr ) bcdtmObject_destroyDtmObject(&tempObjP) ;
 /*
 ** Timing Information
 */
@@ -409,8 +410,8 @@ int bcdtmSideSlope_copySideSlopeElementPointsToPointArray
 ** Initialise
 */
  *numElemPtsP = 0 ;
- if( *elemPtsPP != NULL ) { free(*elemPtsPP) ; *elemPtsPP = NULL ; }
- if( sideSlopeTableP == NULL || sideSlopeTableSize <= 0 )
+ if( *elemPtsPP != nullptr ) { free(*elemPtsPP) ; *elemPtsPP = nullptr ; }
+ if( sideSlopeTableP == nullptr || sideSlopeTableSize <= 0 )
    {
     bcdtmWrite_message(2,0,0,"Empty Side Slope Table") ;
     goto errexit ;
@@ -420,7 +421,7 @@ int bcdtmSideSlope_copySideSlopeElementPointsToPointArray
 ** Allocate Memory
 */
  *elemPtsPP = ( DPoint3d * ) malloc( *numElemPtsP * sizeof(DPoint3d)) ;
- if( *elemPtsPP == NULL )
+ if( *elemPtsPP == nullptr )
    {
     bcdtmWrite_message(0,0,0,"Memory Allocation Error") ;
     goto errexit ;
@@ -488,7 +489,7 @@ int bcdtmSideSlope_pullSideSlopePointsOntoTin(DTM_SIDE_SLOPE_TABLE *SideSlopeTab
 /*
 ** Test For Cut Fill Tin
 */
-    if( radial->cutFillTin != NULL )
+    if( radial->cutFillTin != nullptr )
       {
        dtmP = (BC_DTM_OBJ *) radial->cutFillTin ;
        if( dbg == 2 ) bcdtmWrite_message(0,0,0,"cutFillTin = %p",dtmP) ;
@@ -508,7 +509,7 @@ int bcdtmSideSlope_pullSideSlopePointsOntoTin(DTM_SIDE_SLOPE_TABLE *SideSlopeTab
 /*
 ** Test For Slope To Tin
 */
-    if( radial->slopeToTin != NULL )
+    if( radial->slopeToTin != nullptr )
       {
        dtmP = (BC_DTM_OBJ *) radial->slopeToTin ;
        if( dbg == 2 ) bcdtmWrite_message(0,0,0,"slopeToTin = %p",dtmP) ;
@@ -662,8 +663,8 @@ int bcdtmSideSlope_checkForKnotsInSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlo
 {
  int             ret=0 ;
  long            dbg=0,StringPtsNe,KnotPtsNe ;
- DPoint3d             *p3d,*StringPts=NULL ;
- DTM_STR_INT_PTS *KnotPts=NULL ;
+ DPoint3d             *p3d,*StringPts=nullptr ;
+ DTM_STR_INT_PTS *KnotPts=nullptr ;
  DTM_SIDE_SLOPE_TABLE *pad ;
 /*
 ** Write Entry Message
@@ -674,7 +675,7 @@ int bcdtmSideSlope_checkForKnotsInSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlo
 */
  StringPtsNe = SideSlopeTableSize ;
  StringPts = (DPoint3d *)  malloc( StringPtsNe * sizeof(DPoint3d)) ;
- if( StringPts == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( StringPts == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Copy Pad Points To String Points
 */
@@ -696,8 +697,8 @@ int bcdtmSideSlope_checkForKnotsInSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlo
 ** Clean Up
 */
  cleanup :
- if( KnotPts   != NULL ) free(KnotPts) ;
- if( StringPts != NULL ) free(StringPts) ;
+ if( KnotPts   != nullptr ) free(KnotPts) ;
+ if( StringPts != nullptr ) free(StringPts) ;
 /*
 ** Job Completed
 */
@@ -827,27 +828,27 @@ int bcdtmSideSlope_setForceSlopeForVerticesNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
              if( nextRadialP >= sideSlopeTableP + sideSlopeTableSize )
                {
                 if( closeFlag ) nextRadialP = sideSlopeTableP + 1 ;
-                else            nextRadialP = NULL ;
+                else            nextRadialP = nullptr ;
                }
              if( priorRadialP < sideSlopeTableP )
                {
                 if( closeFlag ) priorRadialP = sideSlopeTableP + sideSlopeTableSize - 2 ;
-                else            priorRadialP = NULL ;
+                else            priorRadialP = nullptr ;
                }
 /*
 **           Calculate Angles To Next And Prior Radials
 */
-             if( nextRadialP  != NULL ) nextAngle  = bcdtmMath_getAngle(radialP->radialStartPoint.x,radialP->radialStartPoint.y,nextRadialP->radialStartPoint.x,nextRadialP->radialStartPoint.y) ;
-             if( priorRadialP != NULL ) priorAngle = bcdtmMath_getAngle(radialP->radialStartPoint.x,radialP->radialStartPoint.y,priorRadialP->radialStartPoint.x,priorRadialP->radialStartPoint.y) ;
+             if( nextRadialP  != nullptr ) nextAngle  = bcdtmMath_getAngle(radialP->radialStartPoint.x,radialP->radialStartPoint.y,nextRadialP->radialStartPoint.x,nextRadialP->radialStartPoint.y) ;
+             if( priorRadialP != nullptr ) priorAngle = bcdtmMath_getAngle(radialP->radialStartPoint.x,radialP->radialStartPoint.y,priorRadialP->radialStartPoint.x,priorRadialP->radialStartPoint.y) ;
 /*
 **           Calculate Radial Side Slope Angle
 */
-             if( nextRadialP == NULL )
+             if( nextRadialP == nullptr )
                {
                 if( sideSlopeDirection == 1 ) radialAngle = priorAngle + DTM_PYE / 2.0 ;
                 else                          radialAngle = priorAngle - DTM_PYE / 2.0 ;
                }
-             else if( priorRadialP == NULL )
+             else if( priorRadialP == nullptr )
                {
                 if( sideSlopeDirection == 1 ) radialAngle = nextAngle - DTM_PYE / 2.0 ;
                 else                          radialAngle = nextAngle + DTM_PYE / 2.0 ;
@@ -979,7 +980,7 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
  long   drapeResult,numDrapePts ;
  double z ;
  DPoint3d    segPtsP[2] ;
- DTM_DRAPE_POINT      *drapeP,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT      *drapeP,*drapePtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radialP  ;
 /*
 ** Write Entry Message
@@ -1033,7 +1034,7 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
              if( z >= (radialP+1)->radialStartPoint.z ) (radialP+1)->forcedSlope =  (radialP+1)->cutSlope ;
              else                                       (radialP+1)->forcedSlope = -(radialP+1)->fillSlope ;
             }
-          if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
+          if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
          }
       }
    }
@@ -1041,7 +1042,7 @@ int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSl
 ** Job Completed
 */
  cleanup :
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
+ if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Return
 */
@@ -1138,7 +1139,7 @@ int bcdtmSideSlope_insertVerticesAtElevationTransitions(DTM_SIDE_SLOPE_TABLE **S
             {
              MemSideSlopeTableSize =  MemSideSlopeTableSize + MemRadInc ;
              *SideSlopeTable = (DTM_SIDE_SLOPE_TABLE*) realloc( *SideSlopeTable , MemSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-             if( *SideSlopeTable == NULL ) { free( SideSlopeTable) ; bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *SideSlopeTable == nullptr ) { free( SideSlopeTable) ; bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
 /*
 ** Copy Radial Table Entries Down One Entry From Radofs
@@ -1256,7 +1257,7 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
  long   ofs1,ofs2,pofs,segmentInternal,zf1,zf2 ;
  double d1,d2,dd,ddx,ddy,ddz,dz1,dz2,dsz1,dsz2,sx1,sy1,sz1,sx2,sy2,sz2,sln,sdx,sdy,sdz,Xt,Yt,Zt,Zs=0.0 ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*DrapePts=NULL ;
+ DTM_DRAPE_POINT *drapeP,*DrapePts=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radial,*radialofs ;
 /*
 ** Write Entry Message
@@ -1319,7 +1320,7 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 /*
 **         Drape Side Slope Segment On Tin
 */
-           if( DrapePts != NULL )bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
+           if( DrapePts != nullptr )bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
            if( bcdtmDrape_stringDtmObject((BC_DTM_OBJ *) radial->cutFillTin,p3dPts,2,false,&DrapePts,&NumDrapePts)) goto errexit ;
 /*
 **         Check Side Slope Segment Is Within Tin Hull And Doesn't Pass Through Voids
@@ -1422,7 +1423,7 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
                         {
                          MemSideSlopeTableSize =  MemSideSlopeTableSize + MemRadInc ;
                          *SideSlopeTable = (DTM_SIDE_SLOPE_TABLE*) realloc( *SideSlopeTable , MemSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-                         if( *SideSlopeTable == NULL ) { free( SideSlopeTable) ; bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                         if( *SideSlopeTable == nullptr ) { free( SideSlopeTable) ; bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                         }
 /*
 **                    Copy Radial Table Entries Down One Entry From Radofs
@@ -1511,7 +1512,7 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 ** Clean Up
 */
  cleanup :
- if( DrapePts != NULL ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
+ if( DrapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
  *SideSlopeTable = (DTM_SIDE_SLOPE_TABLE *) realloc(*SideSlopeTable,*SideSlopeTableSize*sizeof(DTM_SIDE_SLOPE_TABLE)) ;
 /*
 ** Job Completed
@@ -1541,7 +1542,7 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
  long   ofs1,ofs2,pofs,sideSlopeOption,segmentInternal,zf1,zf2,DrapeFlag ;
  double d1,d2,dd,ddx,ddy,ddz,dz1,dz2,dsz1,dsz2,sx1,sy1,sz1,sx2,sy2,sz2,sln,sdx,sdy,sdz,Xt,Yt,Zt ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*DrapePts=NULL ;
+ DTM_DRAPE_POINT *drapeP,*DrapePts=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radial,*radialOfs ;
 /*
 ** Write Entry Message
@@ -1721,7 +1722,7 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
                         {
                          MemSideSlopeTableSize =  MemSideSlopeTableSize + MemRadInc ;
                          *SideSlopeTable = ( DTM_SIDE_SLOPE_TABLE*) realloc( *SideSlopeTable , MemSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-                         if( *SideSlopeTable == NULL ) { free( SideSlopeTable) ; bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                         if( *SideSlopeTable == nullptr ) { free( SideSlopeTable) ; bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                         }
 /*
 **                    Copy Radial Table Entries Down One Entry From Radofs
@@ -1747,7 +1748,7 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
 /*
 **     Free Drape Points Memory
 */
-       if( DrapePts != NULL ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
+       if( DrapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
       }
    }
 /*
@@ -1765,7 +1766,7 @@ int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE
 ** Clean Up
 */
  cleanup :
- if( DrapePts != NULL ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
+ if( DrapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&DrapePts,&NumDrapePts) ;
  *SideSlopeTable = ( DTM_SIDE_SLOPE_TABLE *) realloc(*SideSlopeTable,*SideSlopeTableSize*sizeof(DTM_SIDE_SLOPE_TABLE)) ;
 /*
 ** Job Completed
@@ -1797,10 +1798,10 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
  int      ret=0,dbg=0 ;
  long     n,CloseFlag,MemDataObjects=0,MemDataObjectsInc=100  ;
  long     RightSideSlopeTableSize,LeftSideSlopeTableSize,BenchFlag,NumberOfBenchObjects=0 ;
- BC_DTM_OBJ  *SideSlopes=NULL ;
- BC_DTM_OBJ* *BenchObjects=NULL ;
- BC_DTM_OBJ   *BenchTin=NULL ;
- DTM_SIDE_SLOPE_TABLE  *radial,*radial1,*radial2,*radial3,*RightSideSlopeTable=NULL,*LeftSideSlopeTable=NULL ;
+ BC_DTM_OBJ  *SideSlopes=nullptr ;
+ BC_DTM_OBJ* *BenchObjects=nullptr ;
+ BC_DTM_OBJ   *BenchTin=nullptr ;
+ DTM_SIDE_SLOPE_TABLE  *radial,*radial1,*radial2,*radial3,*RightSideSlopeTable=nullptr,*LeftSideSlopeTable=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -1872,7 +1873,7 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
 */
           RightSideSlopeTableSize = (long)(radial2-radial1) + 1 ;
           RightSideSlopeTable     = (DTM_SIDE_SLOPE_TABLE * ) malloc ( RightSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-          if( RightSideSlopeTable == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( RightSideSlopeTable == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **        Copy Side Slope Table To  Side Slope Element Section
 */
@@ -1891,7 +1892,7 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
 */
           LeftSideSlopeTableSize = (long)(radial2-radial1) + 1 ;
           LeftSideSlopeTable     = (DTM_SIDE_SLOPE_TABLE * ) malloc ( LeftSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-          if( LeftSideSlopeTable == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( LeftSideSlopeTable == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 **        Copy Side Slope Table To Element Section
 */
@@ -1927,7 +1928,7 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
 **     Create Data Object For Side Slopes
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Creating Data Object For Side Slopes") ;
-       if( SideSlopes != NULL ) if( bcdtmObject_destroyDtmObject(&SideSlopes)) goto errexit ;
+       if( SideSlopes != nullptr ) if( bcdtmObject_destroyDtmObject(&SideSlopes)) goto errexit ;
        if( bcdtmObject_createDtmObject(&SideSlopes)) goto errexit ;
 /*
 **     Resolve Overlapping Radials
@@ -1937,12 +1938,12 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
 /*
 **     Free Memory For Side Slope Tables
 */
-       if( RightSideSlopeTable != NULL ) { free(RightSideSlopeTable) ; RightSideSlopeTable = NULL ; }
-       if( LeftSideSlopeTable  != NULL ) { free(LeftSideSlopeTable)  ; LeftSideSlopeTable  = NULL ; }
+       if( RightSideSlopeTable != nullptr ) { free(RightSideSlopeTable) ; RightSideSlopeTable = nullptr ; }
+       if( LeftSideSlopeTable  != nullptr ) { free(LeftSideSlopeTable)  ; LeftSideSlopeTable  = nullptr ; }
 /*
 **     If Truncation Points  Remove Holes And Boundary Polygons From Side Slopes
 */
-       if( ParallelEdgePts != NULL )
+       if( ParallelEdgePts != nullptr )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Removing Holes And Boundary Polygons") ;
           bcdtmData_deleteAllOccurrencesOfDtmFeatureTypeDtmObject(SideSlopes,DTMFeatureType::Hole) ;
@@ -1957,7 +1958,7 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
           if( dbg ) bcdtmWrite_message(0,0,0,"Extracting Benches") ;
           if( bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BenchTin,SideSlopes,&BenchObjects,&NumberOfBenchObjects)) goto errexit  ;
           bcdtmObject_destroyDtmObject(&SideSlopes) ;
-          SideSlopes = NULL ;
+          SideSlopes = nullptr ;
          }
        if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Bench Objects = %2ld",NumberOfBenchObjects) ;
 /*
@@ -1969,13 +1970,13 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory For Data Object Pointers") ;
              MemDataObjects = MemDataObjects + MemDataObjectsInc ;
-             if( *DataObjects == NULL ) *DataObjects = (BC_DTM_OBJ **) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
+             if( *DataObjects == nullptr ) *DataObjects = (BC_DTM_OBJ **) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
              else                       *DataObjects = (BC_DTM_OBJ **) realloc( *DataObjects,MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
-             if( *DataObjects == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *DataObjects == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
           *(*DataObjects+*NumberOfDataObjects) = SideSlopes ;
           ++*NumberOfDataObjects ;
-          SideSlopes = NULL ;
+          SideSlopes = nullptr ;
          }
        else
          {
@@ -1984,14 +1985,14 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
              if( *NumberOfDataObjects == MemDataObjects )
                {
                 MemDataObjects = MemDataObjects + MemDataObjectsInc ;
-                if( *DataObjects == NULL ) *DataObjects = (BC_DTM_OBJ **) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
+                if( *DataObjects == nullptr ) *DataObjects = (BC_DTM_OBJ **) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
                 else                       *DataObjects = (BC_DTM_OBJ **) realloc( *DataObjects,MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
-                if( *DataObjects == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                if( *DataObjects == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                }
              *(*DataObjects+*NumberOfDataObjects) = *(BenchObjects+n) ;
              ++*NumberOfDataObjects ;
             }
-          if( BenchObjects != NULL ) { free(BenchObjects) ; BenchObjects = NULL ; }
+          if( BenchObjects != nullptr ) { free(BenchObjects) ; BenchObjects = nullptr ; }
           NumberOfBenchObjects = 0 ;
          }
       }
@@ -2004,10 +2005,10 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
 ** Clean Up
 */
  cleanup :
- if( RightSideSlopeTable != NULL ) free(RightSideSlopeTable) ;
- if( LeftSideSlopeTable  != NULL ) free(LeftSideSlopeTable) ;
- if( SideSlopes   != NULL ) bcdtmObject_destroyDtmObject(&SideSlopes) ;
- if( BenchObjects != NULL )
+ if( RightSideSlopeTable != nullptr ) free(RightSideSlopeTable) ;
+ if( LeftSideSlopeTable  != nullptr ) free(LeftSideSlopeTable) ;
+ if( SideSlopes   != nullptr ) bcdtmObject_destroyDtmObject(&SideSlopes) ;
+ if( BenchObjects != nullptr )
    {
     for( n = 0 ; n < NumberOfBenchObjects ; ++n )
       {
@@ -2028,7 +2029,7 @@ int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSl
        bcdtmObject_destroyDtmObject(&SideSlopes) ;
       }
     free(*DataObjects) ;
-    *DataObjects = NULL ;
+    *DataObjects = nullptr ;
     *NumberOfDataObjects = 0 ;
    }
 /*
@@ -2057,7 +2058,7 @@ int bcdtmSideSlope_reorderSideSlopeTable(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,lo
 {
  int       ret=0 ;
  long      dbg=0 ;
- DTM_SIDE_SLOPE_TABLE *radial,*radial1,*radial2,*sideSlopeTable=NULL ;
+ DTM_SIDE_SLOPE_TABLE *radial,*radial1,*radial2,*sideSlopeTable=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2088,7 +2089,7 @@ int bcdtmSideSlope_reorderSideSlopeTable(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,lo
     if( radial < SideSlopeTable + SideSlopeTableSize )
       {
        sideSlopeTable   = (DTM_SIDE_SLOPE_TABLE * ) malloc ( SideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-       if( sideSlopeTable == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( sideSlopeTable == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Copy Radials Starting At Active Radial To Temporary Side Slope Table
 */
@@ -2120,7 +2121,7 @@ int bcdtmSideSlope_reorderSideSlopeTable(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,lo
 ** Clean Up
 */
  cleanup :
- if( sideSlopeTable != NULL ) free(sideSlopeTable) ;
+ if( sideSlopeTable != nullptr ) free(sideSlopeTable) ;
 /*
 ** Normal Exit
 */
@@ -2386,7 +2387,7 @@ int bcdtmSideSlope_assignRadialTypesToSideSlopeTablePoints(DTM_SIDE_SLOPE_TABLE 
  int       ret=0,sdof ;
  long      dbg=0,CloseFlag,CornerFlag ;
  double    n1,pang,nang,dang ;
- DTM_SIDE_SLOPE_TABLE *radialp,*radial,*radialn,*tradial=NULL ;
+ DTM_SIDE_SLOPE_TABLE *radialp,*radial,*radialn,*tradial=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2451,7 +2452,7 @@ int bcdtmSideSlope_assignRadialTypesToSideSlopeTablePoints(DTM_SIDE_SLOPE_TABLE 
 ** Allocate Memory
 */
     tradial = ( DTM_SIDE_SLOPE_TABLE * ) malloc( SideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-    if ( tradial == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if ( tradial == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Scan To First Type 1 Point
 */
@@ -2492,7 +2493,7 @@ int bcdtmSideSlope_assignRadialTypesToSideSlopeTablePoints(DTM_SIDE_SLOPE_TABLE 
 ** Clean Up
 */
  cleanup :
- if( tradial != NULL ) free(tradial) ;
+ if( tradial != nullptr ) free(tradial) ;
 /*
 ** Job Completed
 */
@@ -2518,7 +2519,7 @@ int bcdtmSideSlope_insertNormalRadialsAtConvexCorners(DTM_SIDE_SLOPE_TABLE **Sid
 {
  int       ret=0 ;
  long      dbg=0,numConvexCorners,sideSlopeTableSize,CloseFlag ;
- DTM_SIDE_SLOPE_TABLE *pad,*padn,*sideSlopeTable=NULL ;
+ DTM_SIDE_SLOPE_TABLE *pad,*padn,*sideSlopeTable=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2557,7 +2558,7 @@ int bcdtmSideSlope_insertNormalRadialsAtConvexCorners(DTM_SIDE_SLOPE_TABLE **Sid
 */
     sideSlopeTableSize = *SideSlopeTableSize + numConvexCorners * 2 ;
     sideSlopeTable = ( DTM_SIDE_SLOPE_TABLE * ) malloc( sideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-    if( sideSlopeTable == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if( sideSlopeTable == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Scan Side Slope Table And Insert Normal Radials At Convex Corners
 */
@@ -2575,13 +2576,13 @@ int bcdtmSideSlope_insertNormalRadialsAtConvexCorners(DTM_SIDE_SLOPE_TABLE **Sid
     free(*SideSlopeTable) ;
     *SideSlopeTable = sideSlopeTable ;
     *SideSlopeTableSize = sideSlopeTableSize ;
-    sideSlopeTable  = NULL ;
+    sideSlopeTable  = nullptr ;
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( sideSlopeTable != NULL ) free(sideSlopeTable) ;
+ if( sideSlopeTable != nullptr ) free(sideSlopeTable) ;
 /*
 ** Job Completed
 */
@@ -2608,7 +2609,7 @@ int bcdtmSideSlope_insertNormalRadialsAtConcaveCorners(DTM_SIDE_SLOPE_TABLE **si
  int       ret=DTM_SUCCESS,dbg=0 ;
  double    angle ;
  long      numConcaveCorners,tempSideSlopeTableSize,closeFlag ;
- DTM_SIDE_SLOPE_TABLE *radP,*rad1P,*temP,*tempSideSlopeTableP=NULL ;
+ DTM_SIDE_SLOPE_TABLE *radP,*rad1P,*temP,*tempSideSlopeTableP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2638,7 +2639,7 @@ int bcdtmSideSlope_insertNormalRadialsAtConcaveCorners(DTM_SIDE_SLOPE_TABLE **si
 */
     tempSideSlopeTableSize = *sideSlopeTableSizeP + numConcaveCorners * 2 ;
     tempSideSlopeTableP = ( DTM_SIDE_SLOPE_TABLE * ) malloc( tempSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-    if( tempSideSlopeTableP == NULL )
+    if( tempSideSlopeTableP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -2710,13 +2711,13 @@ int bcdtmSideSlope_insertNormalRadialsAtConcaveCorners(DTM_SIDE_SLOPE_TABLE **si
     free(*sideSlopeTablePP) ;
     *sideSlopeTablePP    = tempSideSlopeTableP ;
     *sideSlopeTableSizeP = tempSideSlopeTableSize ;
-    tempSideSlopeTableP  = NULL ;
+    tempSideSlopeTableP  = nullptr ;
    }
 /*
 ** Clean Up
 */
  cleanup :
- if(tempSideSlopeTableP != NULL ) free(tempSideSlopeTableP) ;
+ if(tempSideSlopeTableP != nullptr ) free(tempSideSlopeTableP) ;
 /*
 ** Job Completed
 */
@@ -2780,7 +2781,7 @@ int bcdtmSideSlope_assignSlopesAndAnglesToRadials(DTM_SIDE_SLOPE_TABLE *SideSlop
  if( dbg ) bcdtmWrite_message(0,0,0,"Draping Side Slope Element On Slope To Tin") ;
  for( radial = SideSlopeTable ; radial < SideSlopeTable + SideSlopeTableSize ; ++radial )
    {
-    if( ! radial->isForceSlope && radial->slopeToTin != NULL )
+    if( ! radial->isForceSlope && radial->slopeToTin != nullptr )
       {
        if( bcdtmDrape_pointDtmObject((BC_DTM_OBJ *)radial->slopeToTin,radial->radialStartPoint.x,radial->radialStartPoint.y,&radial->surfaceZ,&DrapeFlag)) goto errexit ;
        if( DrapeFlag == 0 || DrapeFlag == 2 ) { bcdtmWrite_message(1,0,0,"Side Slope Element Point %10.4lf %10.4lf External To Tin Or In Void",radial->radialStartPoint.x,radial->radialStartPoint.y) ; goto errexit ; }
@@ -2844,25 +2845,25 @@ int bcdtmSideSlope_assignSlopesAndAnglesToRadials(DTM_SIDE_SLOPE_TABLE *SideSlop
           priorRadial = radial - 1 ;
           if ( priorRadial < SideSlopeTable )
             {
-             if( ! CloseFlag ) priorRadial = NULL ;
+             if( ! CloseFlag ) priorRadial = nullptr ;
              else              priorRadial = SideSlopeTable + SideSlopeTableSize - 2 ;
             }
-          if( priorRadial != NULL ) if( priorRadial->radialStartPoint.x == radial->radialStartPoint.x && priorRadial->radialStartPoint.y == radial->radialStartPoint.y ) priorRadial = NULL ;
+          if( priorRadial != nullptr ) if( priorRadial->radialStartPoint.x == radial->radialStartPoint.x && priorRadial->radialStartPoint.y == radial->radialStartPoint.y ) priorRadial = nullptr ;
 /*
 ** Get Next Radial
 */
           nextRadial = radial + 1 ;
           if( nextRadial > SideSlopeTable + SideSlopeTableSize - 1 )
             {
-             if( ! CloseFlag ) nextRadial = NULL ;
+             if( ! CloseFlag ) nextRadial = nullptr ;
              else              nextRadial = SideSlopeTable + 1 ;
             }
-          if( nextRadial != NULL ) if( nextRadial->radialStartPoint.x == radial->radialStartPoint.x && nextRadial->radialStartPoint.y == radial->radialStartPoint.y ) nextRadial = NULL ;
+          if( nextRadial != nullptr ) if( nextRadial->radialStartPoint.x == radial->radialStartPoint.x && nextRadial->radialStartPoint.y == radial->radialStartPoint.y ) nextRadial = nullptr ;
 /*
 ** Calculate Angles And Slopes For Edge Radial
 */
-          if( priorRadial != NULL && nextRadial != NULL ) nextRadial = NULL ;
-          if( priorRadial != NULL )
+          if( priorRadial != nullptr && nextRadial != nullptr ) nextRadial = nullptr ;
+          if( priorRadial != nullptr )
             {
              angp = bcdtmMath_getAngle(priorRadial->radialStartPoint.x,priorRadial->radialStartPoint.y,radial->radialStartPoint.x,radial->radialStartPoint.y) ;
              if( SideSlopeDirection == 1 ) radial->radialAngle = angp - ( DTM_PYE / 2.0 ) ;
@@ -2988,7 +2989,7 @@ int bcdtmSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_TABL
  long   Solution ;
  double saveSlope,angle,slope,horRatio ;
  DTM_SIDE_SLOPE_TABLE *radial  ;
- double *slpP,*slopesP=NULL ;
+ double *slpP,*slopesP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -3000,7 +3001,7 @@ int bcdtmSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_TABL
 **
 */
  slopesP = ( double * ) malloc ( SideSlopeTableSize * sizeof(double)) ;
- if( slopesP == NULL )
+ if( slopesP == nullptr )
    {
     bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -3075,7 +3076,7 @@ int bcdtmSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_TABL
 ** Clean Up
 */
  cleanup :
- if( slopesP != NULL ) free(slopesP) ;
+ if( slopesP != nullptr ) free(slopesP) ;
 /*
 ** Job Completed
 */
@@ -3274,7 +3275,7 @@ int bcdtmSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE *S
 {
  long   dbg=0,Solution ;
  double spz,snz,ang,priorAngle,nextAngle,deltaAngle,Slope,Angle,levelSlope,levelAngle ;
- DTM_SIDE_SLOPE_TABLE *priorRadial=NULL,*nextRadial=NULL ;
+ DTM_SIDE_SLOPE_TABLE *priorRadial=nullptr,*nextRadial=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -3636,7 +3637,7 @@ int bcdtmSideSlope_calculateAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *Sid
 {
  long      dbg=0,Solution,CloseFlag ;
  double    ang,Slope,Angle ;
- DTM_SIDE_SLOPE_TABLE *priorRadial=NULL,*nextRadial=NULL ;
+ DTM_SIDE_SLOPE_TABLE *priorRadial=nullptr,*nextRadial=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -3658,38 +3659,38 @@ int bcdtmSideSlope_calculateAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *Sid
  priorRadial = Radial - 1 ;
  if( priorRadial < SideSlopeTable )
    {
-    if(! CloseFlag ) priorRadial = NULL ;
+    if(! CloseFlag ) priorRadial = nullptr ;
     else             priorRadial = SideSlopeTable + SideSlopeTableSize - 1 ;
    }
- if( priorRadial != NULL && priorRadial->radialStartPoint.x == Radial->radialStartPoint.x && priorRadial->radialStartPoint.y == Radial->radialStartPoint.y ) priorRadial = NULL ;
+ if( priorRadial != nullptr && priorRadial->radialStartPoint.x == Radial->radialStartPoint.x && priorRadial->radialStartPoint.y == Radial->radialStartPoint.y ) priorRadial = nullptr ;
 /*
 ** Get Next Radial
 */
  nextRadial = Radial + 1 ;
  if( nextRadial > SideSlopeTable + SideSlopeTableSize - 1 )
    {
-    if(! CloseFlag ) nextRadial = NULL ;
+    if(! CloseFlag ) nextRadial = nullptr ;
     else             nextRadial = SideSlopeTable  ;
    }
- if( nextRadial != NULL && nextRadial->radialStartPoint.x == Radial->radialStartPoint.x && nextRadial->radialStartPoint.y == Radial->radialStartPoint.y ) nextRadial = NULL ;
+ if( nextRadial != nullptr && nextRadial->radialStartPoint.x == Radial->radialStartPoint.x && nextRadial->radialStartPoint.y == Radial->radialStartPoint.y ) nextRadial = nullptr ;
 /*
 ** Write Prior And Next Radials Radials
 */
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"priorRadial = %p nextRadial = %p",priorRadial,nextRadial) ;
-    if( priorRadial != NULL ) bcdtmWrite_message(0,0,0,"prior Radial Offset = %6ld",(long)(priorRadial-SideSlopeTable)) ;
-    if( nextRadial  != NULL ) bcdtmWrite_message(0,0,0,"next  Radial Offset = %6ld",(long)(nextRadial-SideSlopeTable)) ;
+    if( priorRadial != nullptr ) bcdtmWrite_message(0,0,0,"prior Radial Offset = %6ld",(long)(priorRadial-SideSlopeTable)) ;
+    if( nextRadial  != nullptr ) bcdtmWrite_message(0,0,0,"next  Radial Offset = %6ld",(long)(nextRadial-SideSlopeTable)) ;
    }
 /*
 ** If Corner Type 2 Radial Just Leave Current Angles
 */
- if( priorRadial == NULL && nextRadial == NULL )  Radial->radialSolution = 1 ;
+ if( priorRadial == nullptr && nextRadial == nullptr )  Radial->radialSolution = 1 ;
 /*
 ** Check For Slope Transition
 */
- else if( priorRadial != NULL && ( ( priorRadial->radialSlope > 0.0 && Radial->radialSlope < 0.0 ) || ( priorRadial->radialSlope < 0.0 && Radial->radialSlope > 0.0 ))) Radial->radialSolution = 1 ;
- else if( nextRadial  != NULL && ( ( nextRadial->radialSlope  > 0.0 && Radial->radialSlope < 0.0 ) || ( nextRadial->radialSlope  < 0.0 && Radial->radialSlope > 0.0 ))) Radial->radialSolution = 1 ;
+ else if( priorRadial != nullptr && ( ( priorRadial->radialSlope > 0.0 && Radial->radialSlope < 0.0 ) || ( priorRadial->radialSlope < 0.0 && Radial->radialSlope > 0.0 ))) Radial->radialSolution = 1 ;
+ else if( nextRadial  != nullptr && ( ( nextRadial->radialSlope  > 0.0 && Radial->radialSlope < 0.0 ) || ( nextRadial->radialSlope  < 0.0 && Radial->radialSlope > 0.0 ))) Radial->radialSolution = 1 ;
 /*
 ** If Edge Radial Calculate Planar Angles And Slope
 */
@@ -3774,10 +3775,10 @@ int bcdtmSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABL
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"priorRadial = %p nextRadial = %p",PriorRadial,NextRadial) ;
-    if( dbg && PriorRadial != NULL ) bcdtmWrite_message(0,0,0,"prior Radial Offset = %6ld",(long)(PriorRadial-SideSlopeTable)) ;
-    if( dbg && NextRadial  != NULL ) bcdtmWrite_message(0,0,0,"next  Radial Offset = %6ld",(long)(NextRadial-SideSlopeTable)) ;
+    if( dbg && PriorRadial != nullptr ) bcdtmWrite_message(0,0,0,"prior Radial Offset = %6ld",(long)(PriorRadial-SideSlopeTable)) ;
+    if( dbg && NextRadial  != nullptr ) bcdtmWrite_message(0,0,0,"next  Radial Offset = %6ld",(long)(NextRadial-SideSlopeTable)) ;
    }
- if( PriorRadial == NULL && NextRadial == NULL )
+ if( PriorRadial == nullptr && NextRadial == nullptr )
    {
     bcdtmWrite_message(1,0,0,"No Active Radials For Edge Radial Planar Calculations") ;
     goto errexit ;
@@ -3786,8 +3787,8 @@ int bcdtmSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABL
 **  Calculate Plane Coefficients
 */
  priorSolution = nextSolution = 0 ;
- if( PriorRadial != NULL ) if( bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(PriorRadial,Radial,SideSlopeDirection,&priorSolution,&A0,&B0,&C0,&D0)) goto errexit ;
- if( NextRadial  != NULL ) if( bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(Radial,NextRadial ,SideSlopeDirection,&nextSolution, &A1,&B1,&C1,&D1)) goto errexit ;
+ if( PriorRadial != nullptr ) if( bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(PriorRadial,Radial,SideSlopeDirection,&priorSolution,&A0,&B0,&C0,&D0)) goto errexit ;
+ if( NextRadial  != nullptr ) if( bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(Radial,NextRadial ,SideSlopeDirection,&nextSolution, &A1,&B1,&C1,&D1)) goto errexit ;
 /*
 ** Check For A Solution
 */
@@ -4126,7 +4127,7 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
  long   pntType,P1,P2,P3,startFlag,inVoidFlag ;
  double dl,z,radius ;
  DPoint3d    p3dPts[2] ;
- DTM_DRAPE_POINT *drapeP,*drapePts=NULL ;
+ DTM_DRAPE_POINT *drapeP,*drapePts=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -4218,7 +4219,7 @@ int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,
 ** Clean Up
 */
  cleanup :
- if( drapePts != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePts,&numDrapePts) ;
+ if( drapePts != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePts,&numDrapePts) ;
 /*
 ** Job Completed
 */
@@ -4874,7 +4875,7 @@ int bcdtmSideSlope_strokeConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
              radialOfs = (long)(radial-*SideSlopeTable) ;
              while( MemSideSlopeTableSize <= *SideSlopeTableSize + numStrokeRadials ) MemSideSlopeTableSize += MemTableInc ;
              *SideSlopeTable = ( DTM_SIDE_SLOPE_TABLE *) realloc ( *SideSlopeTable,MemSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-             if ( *SideSlopeTable == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if ( *SideSlopeTable == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
              radial = *SideSlopeTable + radialOfs ;
             }
 /*
@@ -4973,7 +4974,7 @@ int bcdtmSideSlope_strokeConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
              radialOfs = (long)(radial-*SideSlopeTable) ;
              while( MemSideSlopeTableSize <= *SideSlopeTableSize + numStrokeRadials ) MemSideSlopeTableSize += MemTableInc ;
              *SideSlopeTable = ( DTM_SIDE_SLOPE_TABLE *) realloc ( *SideSlopeTable,MemSideSlopeTableSize * sizeof(DTM_SIDE_SLOPE_TABLE)) ;
-             if ( *SideSlopeTable == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if ( *SideSlopeTable == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
              radial = *SideSlopeTable + radialOfs ;
             }
 /*
@@ -5066,9 +5067,9 @@ int bcdtmSideSlope_writeRadialsToBinaryDTMFile
 {
  int  ret=DTM_SUCCESS ;
  long numElemPts=0 ;
- DPoint3d  radialPts[2],*elemPtsP=NULL ;
+ DPoint3d  radialPts[2],*elemPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE  *radialP ;
- BC_DTM_OBJ *dataP=NULL ;
+ BC_DTM_OBJ *dataP=nullptr ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 /*
 ** Create Data Object
@@ -5103,8 +5104,8 @@ int bcdtmSideSlope_writeRadialsToBinaryDTMFile
 ** Delete Data Object
 */
  cleanup :
- if( elemPtsP != NULL ) { free(elemPtsP) ; elemPtsP = NULL ; }
- if( dataP    != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
+ if( elemPtsP != nullptr ) { free(elemPtsP) ; elemPtsP = nullptr ; }
+ if( dataP    != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -5133,8 +5134,8 @@ int bcdtmSideSlope_writeElementToBinaryDTMFile
 {
  int ret=DTM_SUCCESS ;
  long numElemPts=0 ;
- DPoint3d  *elemPtsP=NULL ;
- BC_DTM_OBJ *dataP=NULL ;
+ DPoint3d  *elemPtsP=nullptr ;
+ BC_DTM_OBJ *dataP=nullptr ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
  /*
 ** Create DTM Object
@@ -5153,8 +5154,8 @@ int bcdtmSideSlope_writeElementToBinaryDTMFile
 ** Clean Up
 */
  cleanup :
- if( elemPtsP != NULL ) { free(elemPtsP) ; elemPtsP = NULL ; }
- if( dataP    != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
+ if( elemPtsP != nullptr ) { free(elemPtsP) ; elemPtsP = nullptr ; }
+ if( dataP    != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -5188,7 +5189,7 @@ int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *Righ
  bool    useNewAlgorithm=true ;
  long    sideSlopeElementType,NumRghtRadials=0,NumLeftRadials=0,RadialIntersectFlag,numRemoved ;
  double  tolerance=0.05 ;
- DTM_OVERLAP_RADIAL_TABLE  *RghtRadials=NULL,*LeftRadials=NULL ;
+ DTM_OVERLAP_RADIAL_TABLE  *RghtRadials=nullptr,*LeftRadials=nullptr ;
  long start=0,finish=0,resStart=0 ;
 /*
 ** Set Static Debug Contol For Catching A Particular Side Slope Occurrence In A Sequence
@@ -5264,7 +5265,7 @@ int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *Righ
 /*
 ** Truncate Radials At Parallel Boundary Edge
 */
-    if( ParallelEdgePts != NULL && NumParallelEdgePts > 0 )
+    if( ParallelEdgePts != nullptr && NumParallelEdgePts > 0 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Right Radials At Parallel Boundary Edge") ;
        if( dbg ) start = bcdtmClock() ;
@@ -5388,7 +5389,7 @@ int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *Righ
 /*
 ** Truncate Radials At Parallel Boundary Edge
 */
-    if( ParallelEdgePts != NULL && NumParallelEdgePts > 0 )
+    if( ParallelEdgePts != nullptr && NumParallelEdgePts > 0 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Left Radials At Parallel Boundary Edge") ;
        if( dbg ) start = bcdtmClock() ;
@@ -5499,8 +5500,8 @@ int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *Righ
 /*
 ** Remove Type2 Radials Coincident With Type1
 */
-// if( RghtRadials != NULL ) bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(&RghtRadials,&NumRghtRadials) ;
-// if( LeftRadials != NULL ) bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(&LeftRadials,&NumLeftRadials) ;
+// if( RghtRadials != nullptr ) bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(&RghtRadials,&NumRghtRadials) ;
+// if( LeftRadials != nullptr ) bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(&LeftRadials,&NumLeftRadials) ;
 /*
 ** Write Side Slope Radials To Data Object
 */
@@ -5555,8 +5556,8 @@ int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *Righ
 ** Free Memory
 */
  cleanup :
- if( RghtRadials != NULL ) free(RghtRadials) ;
- if( LeftRadials != NULL ) free(LeftRadials) ;
+ if( RghtRadials != nullptr ) free(RghtRadials) ;
+ if( LeftRadials != nullptr ) free(LeftRadials) ;
 /*
 ** Write Debug Information
 */
@@ -5738,7 +5739,7 @@ int bcdtmSideSlope_createRadialOverlapTable(long sideSlopeElementType,DTM_SIDE_S
 ** Allocate memory
 */
  *Radials = (DTM_OVERLAP_RADIAL_TABLE *) malloc( *NumRadials * sizeof(DTM_OVERLAP_RADIAL_TABLE)) ;
- if( *Radials == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( *Radials == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Store Points In Ovelap Table
 */
@@ -5806,7 +5807,7 @@ int bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementTyp
        radpP = radP - 1 ;
        if( radpP <  radialsP )
          {
-          radpP = NULL ;
+          radpP = nullptr ;
           if( sideSlopeElementType == 2 ) radpP = radialsP + *numRadialsP - 1 ;
          }
 /*
@@ -5815,7 +5816,7 @@ int bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementTyp
        radnP = radP + 1 ;
        if( radnP >=  radialsP + *numRadialsP  )
          {
-          radnP = NULL ;
+          radnP = nullptr ;
           if( sideSlopeElementType == 2 ) radnP = radialsP  ;
          }
 /*
@@ -5825,7 +5826,7 @@ int bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementTyp
 /*
 **     Check If Prior Radial Can Be Removed
 */
-       if( radpP != NULL )
+       if( radpP != nullptr )
          {
           d2 = bcdtmMath_distance(radP->Gx,radP->Gy,radpP->Gx,radpP->Gy) ;
           if( d2 / d1 <= tolerance )
@@ -5837,7 +5838,7 @@ int bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementTyp
 /*
 **     Check If Next Radial Can Be Removed
 */
-       if( radnP != NULL )
+       if( radnP != nullptr )
          {
           d2 = bcdtmMath_distance(radP->Gx,radP->Gy,radnP->Gx,radnP->Gy) ;
           if( d2 / d1 <= tolerance )
@@ -6082,7 +6083,7 @@ int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile
  int  ret=DTM_SUCCESS ;
  DPoint3d  radialPts[2] ;
  DTM_OVERLAP_RADIAL_TABLE *radialP ;
- BC_DTM_OBJ *dataP=NULL ;
+ BC_DTM_OBJ *dataP=nullptr ;
 /*
 ** Create Data Object
 */
@@ -6108,7 +6109,7 @@ int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile
 ** Delete Data Object
 */
  cleanup :
- if( dataP    != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
+ if( dataP    != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -6159,8 +6160,8 @@ int bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *PadP
  long    dbg=0,IntTableNe,IntPtsNe,IntPtsMe,IntPtsMinc ;
  DPoint3d     *p3d ;
  DTM_OVERLAP_RADIAL_TABLE  *ovl,*ovp ;
- DTM_STR_INT_TAB *pint,*IntTable=NULL ;
- DTM_STR_INT_PTS *pinp,*IntPts=NULL ;
+ DTM_STR_INT_TAB *pint,*IntTable=nullptr ;
+ DTM_STR_INT_PTS *pinp,*IntPts=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -6287,8 +6288,8 @@ int bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *PadP
 ** Clean Up
 */
  cleanup :
- if( IntTable != NULL ) free(IntTable) ;
- if( IntPts   != NULL ) free(IntPts) ;
+ if( IntTable != nullptr ) free(IntTable) ;
+ if( IntPts   != nullptr ) free(IntPts) ;
 /*
 ** Job Completed
 */
@@ -6323,7 +6324,7 @@ int bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_T
 ** Initialise
 */
  *IntTableNe = IntTableMe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  IntTableMinc = NumOvlPts * 2  ;
 /*
 ** Store Parallel Edge Segments In Intersection Table
@@ -6337,9 +6338,9 @@ int bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_T
     if( *IntTableNe == IntTableMe )
       {
        IntTableMe = IntTableMe + IntTableMinc ;
-       if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+       if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
        else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-       if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
       }
 /*
 **  Store Pad Line
@@ -6368,9 +6369,9 @@ int bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_T
     if( *IntTableNe == IntTableMe )
       {
        IntTableMe = IntTableMe + IntTableMinc ;
-       if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+       if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
        else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-       if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
       }
 /*
 **  Store Ovl Line
@@ -6424,7 +6425,7 @@ int bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_T
 */
  errexit :
  *IntTableNe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  ret = 1 ;
  goto cleanup ;
 }
@@ -6440,7 +6441,7 @@ int bcdtmSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *IntTa
 {
  int     ret=0 ;
  long    ActIntTableNe=0,ActIntTableMe=0 ;
- DTM_STR_INT_TAB *pint,*ActIntTable=NULL ;
+ DTM_STR_INT_TAB *pint,*ActIntTable=nullptr ;
 /*
 ** Scan Intersection Table and Look For Intersections
 */
@@ -6454,7 +6455,7 @@ int bcdtmSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *IntTa
 ** Clean Up
 */
  cleanup :
- if( ActIntTable != NULL ) free(ActIntTable) ;
+ if( ActIntTable != nullptr ) free(ActIntTable) ;
 /*
 ** Job Completed
 */
@@ -6509,9 +6510,9 @@ int bcdtmSideSlope_determineRadialParallelEdgeIntersections(DTM_STR_INT_TAB *Act
           if( *IntPtsNe >= *IntPtsMe )
             {
              *IntPtsMe = *IntPtsMe + IntPtsMinc ;
-             if( *IntPts == NULL ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
+             if( *IntPts == nullptr ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
              else                  *IntPts = ( DTM_STR_INT_PTS * ) realloc( *IntPts,*IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
-             if( *IntPts == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *IntPts == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
 /*
 ** Calculate Distances For Alp
@@ -6560,8 +6561,8 @@ int bcdtmSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE *O
  int     ret=0 ;
  long    dbg=0,IntTableNe,IntPtsNe,IntPtsMe,IntPtsMinc ;
  DTM_OVERLAP_RADIAL_TABLE  *ovl ;
- DTM_STR_INT_TAB *pint,*IntTable=NULL ;
- DTM_STR_INT_PTS *pinp,*pinpn,*IntPts=NULL ;
+ DTM_STR_INT_TAB *pint,*IntTable=nullptr ;
+ DTM_STR_INT_PTS *pinp,*pinpn,*IntPts=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -6662,8 +6663,8 @@ int bcdtmSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE *O
 ** Clean Up
 */
  cleanup :
- if( IntTable != NULL ) free(IntTable) ;
- if( IntPts   != NULL ) free(IntPts) ;
+ if( IntTable != nullptr ) free(IntTable) ;
+ if( IntPts   != nullptr ) free(IntPts) ;
 /*
 ** Job Completed
 */
@@ -6697,7 +6698,7 @@ int bcdtmSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *Ov
 ** Initialise
 */
  *IntTableNe = IntTableMe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  IntTableMinc = NumOvlPts * 2  ;
 /*
 ** Store Pad Segments In Intersection Table
@@ -6717,9 +6718,9 @@ int bcdtmSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *Ov
        if( *IntTableNe == IntTableMe )
          {
           IntTableMe = IntTableMe + IntTableMinc ;
-          if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+          if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
           else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-          if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
          }
 /*
 **  Store Pad Line
@@ -6751,9 +6752,9 @@ int bcdtmSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *Ov
     if( *IntTableNe == IntTableMe )
       {
        IntTableMe = IntTableMe + IntTableMinc ;
-       if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+       if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
        else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-       if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
       }
 /*
 **  Store Ovl Line
@@ -6808,7 +6809,7 @@ int bcdtmSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *Ov
 */
  errexit :
  *IntTableNe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  ret = 1 ;
  goto cleanup ;
 }
@@ -6824,7 +6825,7 @@ int bcdtmSideSlope_scanForRadialEdgeIntersections(DTM_STR_INT_TAB *IntTable,long
 {
  int     ret=0 ;
  long    ActIntTableNe=0,ActIntTableMe=0 ;
- DTM_STR_INT_TAB *pint,*ActIntTable=NULL ;
+ DTM_STR_INT_TAB *pint,*ActIntTable=nullptr ;
 /*
 ** Scan Sorted Point Table and Look For Intersections
 */
@@ -6838,7 +6839,7 @@ int bcdtmSideSlope_scanForRadialEdgeIntersections(DTM_STR_INT_TAB *IntTable,long
 ** Clean Up
 */
  cleanup :
- if( ActIntTable != NULL ) free(ActIntTable) ;
+ if( ActIntTable != nullptr ) free(ActIntTable) ;
 /*
 ** Job Completed
 */
@@ -6900,9 +6901,9 @@ int bcdtmSideSlope_determineRadialEdgeIntersections(DTM_STR_INT_TAB *ActIntTable
              if( *IntPtsNe >= *IntPtsMe )
                {
                 *IntPtsMe = *IntPtsMe + IntPtsMinc ;
-                if( *IntPts == NULL ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
+                if( *IntPts == nullptr ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
                 else                  *IntPts = ( DTM_STR_INT_PTS * ) realloc( *IntPts,*IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
-                if( *IntPts == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                if( *IntPts == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
                }
 /*
 ** Calculate Distances For rlp
@@ -7038,8 +7039,8 @@ int bcdtmSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,lo
  int    ret=0 ;
  long   dbg=0,IntTableNe,IntPtsNe,IntPtsMe,IntPtsMinc ;
  DTM_OVERLAP_RADIAL_TABLE *ovl ;
- DTM_STR_INT_TAB *pint,*IntTable=NULL ;
- DTM_STR_INT_PTS *pinp,*IntPts=NULL ;
+ DTM_STR_INT_TAB *pint,*IntTable=nullptr ;
+ DTM_STR_INT_PTS *pinp,*IntPts=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -7127,8 +7128,8 @@ int bcdtmSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,lo
 ** CleanUp
 */
  cleanup :
- if( IntTable != NULL ) free(IntTable) ;
- if( IntPts   != NULL ) free(IntPts) ;
+ if( IntTable != nullptr ) free(IntTable) ;
+ if( IntPts   != nullptr ) free(IntPts) ;
 /*
 ** Normal Exit
 */
@@ -7178,7 +7179,7 @@ int bcdtmSideSlope_buildRadialIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts
 ** Initialise
 */
  *IntTableNe = IntTableMe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  IntTableMinc = NumOvlPts * 2  ;
 /*
 ** Store Radials In Intersection Table
@@ -7192,9 +7193,9 @@ int bcdtmSideSlope_buildRadialIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts
     if( *IntTableNe == IntTableMe )
       {
        IntTableMe = IntTableMe + IntTableMinc ;
-       if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+       if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
        else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-       if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+       if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
       }
 /*
 **  Store Ovl Line
@@ -7248,7 +7249,7 @@ int bcdtmSideSlope_buildRadialIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts
 */
  errexit :
  *IntTableNe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  ret = 1 ;
  goto cleanup ;
 }
@@ -7264,7 +7265,7 @@ int bcdtmSideSlope_scanForRadialIntersections(DTM_STR_INT_TAB *IntTable,long Int
 {
  int     ret=0 ;
  long    ActIntTableNe=0,ActIntTableMe=0 ;
- DTM_STR_INT_TAB *pint,*ActIntTable=NULL ;
+ DTM_STR_INT_TAB *pint,*ActIntTable=nullptr ;
 /*
 ** Scan Sorted Point Table and Look For Intersections
 */
@@ -7278,7 +7279,7 @@ int bcdtmSideSlope_scanForRadialIntersections(DTM_STR_INT_TAB *IntTable,long Int
 ** Clean Up
 */
  cleanup :
- if( ActIntTable != NULL ) free(ActIntTable) ;
+ if( ActIntTable != nullptr ) free(ActIntTable) ;
 /*
 ** Job Completed
 */
@@ -7335,9 +7336,9 @@ int bcdtmSideSlope_determineRadialIntersections(DTM_STR_INT_TAB *ActIntTable,lon
           if( *IntPtsNe + 1 >= *IntPtsMe )
             {
              *IntPtsMe = *IntPtsMe + IntPtsMinc ;
-             if( *IntPts == NULL ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
+             if( *IntPts == nullptr ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
              else                  *IntPts = ( DTM_STR_INT_PTS * ) realloc( *IntPts,*IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
-             if( *IntPts == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *IntPts == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
 /*
 ** Calculate Distances For Alp
@@ -7407,7 +7408,7 @@ int bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementT
 {
  int     ret=0 ;
  long    dbg=0,process,loop,NumIntersections,Offset,TruncatedRadial ;
- long    *IntIndex=NULL,*TmpIndex=NULL,*pind,*RadIndex=NULL ;
+ long    *IntIndex=nullptr,*TmpIndex=nullptr,*pind,*RadIndex=nullptr ;
  double  dz1,dz2,Nx,Ny,Nz1,Nz2 ;
  DTM_OVERLAP_RADIAL_TABLE  *ovl1,*ovl2 ;
  DTM_STR_INT_PTS *pinp,*pinp1 ;
@@ -7435,9 +7436,9 @@ int bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementT
 ** Allocate memory For Index
 */
  IntIndex = ( long * ) malloc( NumIntPts * sizeof(long) ) ;
- if( IntIndex == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( IntIndex == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
  TmpIndex = ( long * ) malloc( NumIntPts * sizeof(long) ) ;
- if( TmpIndex == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( TmpIndex == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Scan Intersection Points Table And Build Index To Corresponding Radial For Recursive Searching
 */
@@ -7454,7 +7455,7 @@ int bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementT
 /*
 ** Free Temp Index Memory
 */
- free(TmpIndex) ; TmpIndex = NULL ;
+ free(TmpIndex) ; TmpIndex = nullptr ;
 /*
 **  Write Intersection Point Index Table
 */
@@ -7470,7 +7471,7 @@ int bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementT
 ** Build Radial Index
 */
  RadIndex = ( long * ) malloc ( NumOvlPts * sizeof(long)) ;
- if( RadIndex == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( RadIndex == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Null Out Radial Index
 */
@@ -7642,9 +7643,9 @@ int bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementT
 ** Clean Up
 */
  cleanup :
- if( IntIndex != NULL ) free(IntIndex) ;
- if( TmpIndex != NULL ) free(TmpIndex) ;
- if( RadIndex != NULL ) free(RadIndex) ;
+ if( IntIndex != nullptr ) free(IntIndex) ;
+ if( TmpIndex != nullptr ) free(TmpIndex) ;
+ if( RadIndex != nullptr ) free(RadIndex) ;
 /*
 ** Normal Exit
 */
@@ -7822,7 +7823,7 @@ int bcdtmSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVERLA
     if( ovl1->TruncatingRadial != DTM_NULL_PNT )
       {
            ovl2 = OvlPts+ovl1->TruncatingRadial ;
-       ovl3 = NULL ;
+       ovl3 = nullptr ;
        if( ovl2->TruncatingRadial != DTM_NULL_PNT ) ovl3 = OvlPts+ovl2->TruncatingRadial ;
 /*
 **  Check If Radial Can Be Truncated
@@ -7896,10 +7897,10 @@ int bcdtmSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVERLA
 /*
 **  Check If Radial Can Be Truncated
 */
-             ovl3 = NULL ;
+             ovl3 = nullptr ;
              if( ovlP->TruncatingRadial == ofs ) ovl3 = ovlP ;
              if( ovlN->TruncatingRadial == ofs ) ovl3 = ovlN ;
-             if( ovl3 != NULL )
+             if( ovl3 != nullptr )
                {
                 dz1 = ovl1->Nz - ovl1->Pz ;
                 dz2 = ovl2->Nz - ovl2->Pz ;
@@ -8164,9 +8165,9 @@ int bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeElementT
  double  Nx,Ny,Nz ;
  DPoint3d     p3dPts[2] ;
  DTM_OVERLAP_RADIAL_TABLE  *ovl,*base1,*base2 ;
- DTM_STR_INT_TAB *pint,*IntTable=NULL ;
- DTM_STR_INT_PTS *pinp,*IntPts=NULL ;
- BC_DTM_OBJ *Data=NULL ;
+ DTM_STR_INT_TAB *pint,*IntTable=nullptr ;
+ DTM_STR_INT_PTS *pinp,*IntPts=nullptr ;
+ BC_DTM_OBJ *Data=nullptr ;
  long  loop=0;
  bool onlyLoopOnce=true ;
 /*
@@ -8360,9 +8361,9 @@ endloop :
 ** Clean Up
 */
  cleanup :
- if( IntTable != NULL )  free(IntTable) ;
- if( IntPts   != NULL )  free(IntPts) ;
- if( Data     != NULL )  bcdtmObject_destroyDtmObject(&Data) ;
+ if( IntTable != nullptr )  free(IntTable) ;
+ if( IntPts   != nullptr )  free(IntPts) ;
+ if( Data     != nullptr )  bcdtmObject_destroyDtmObject(&Data) ;
 /*
 ** Job Completed
 */
@@ -8396,7 +8397,7 @@ int bcdtmSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementTyp
 ** Initialise
 */
  *IntTableNe = IntTableMe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ;*IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ;*IntTable = nullptr ; }
  IntTableMinc = NumOvlPts * 3 ;
 /*
 ** Write Radials To Intersection Table
@@ -8404,7 +8405,7 @@ int bcdtmSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementTyp
  if( dbg ) bcdtmWrite_message(0,0,0,"Storing Radials In Intersection Table") ;
  for( ovl1 = OvlPts , ofs = 0 ; ovl1 < OvlPts + NumOvlPts ; ++ovl1 , ++ofs )
    {
-    ovl2 = NULL ;
+    ovl2 = nullptr ;
     if( ovl1->TruncatingRadial != DTM_NULL_PNT )
       {
        ovl2 = OvlPts + ovl1->TruncatingRadial ;
@@ -8466,7 +8467,7 @@ int bcdtmSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementTyp
 */
        ovl2 = ovl1 + 1 ;
        if( ovl2 >= OvlPts + NumOvlPts )  ovl2 = OvlPts ;
-       trovl2 = NULL ;
+       trovl2 = nullptr ;
        if( ovl2->TruncatingRadial != DTM_NULL_PNT ) trovl2 = OvlPts + ovl2->TruncatingRadial ;
        while ( trovl2 == ovl1 )
          {
@@ -8474,20 +8475,20 @@ int bcdtmSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementTyp
           if( ovl2 >= OvlPts + NumOvlPts )
             {
              if( SideSlopeElementType == 2 )  ovl2 = OvlPts ;
-             else                             ovl2 = trovl2 = NULL ;
+             else                             ovl2 = trovl2 = nullptr ;
             }
-          if( ovl2 != NULL )
+          if( ovl2 != nullptr )
             {
              if( ovl2->TruncatingRadial != DTM_NULL_PNT ) trovl2 = OvlPts + ovl2->TruncatingRadial ;
-             else                                   trovl2 = NULL ;
+             else                                   trovl2 = nullptr ;
             }
          }
 /*
 **  Store Base Line
 */
-       if( ovl2 != NULL )
+       if( ovl2 != nullptr )
          {
-          if( trovl2 == NULL || ( trovl2 != NULL && trovl2->Type != 1 ) )
+          if( trovl2 == nullptr || ( trovl2 != nullptr && trovl2->Type != 1 ) )
             {
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Base Line Radial1 = %6ld Radial2 = %6ld",(long)(ovl1-OvlPts),(long)(ovl2-OvlPts)) ;
              if( bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable((long)(ovl1-OvlPts),(long)(ovl2-OvlPts),1,1,ovl1->Nx,ovl1->Ny,ovl1->Nz,ovl2->Nx,ovl2->Ny,ovl2->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc ) ) goto errexit ;
@@ -8532,7 +8533,7 @@ int bcdtmSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementTyp
 */
  errexit :
  *IntTableNe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  ret = 1 ;
  goto cleanup ;
 }
@@ -8550,9 +8551,9 @@ int bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable(long Ofs
  if( *IntTableNe == *IntTableMe )
    {
     *IntTableMe = *IntTableMe + IntTableMinc ;
-    if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( *IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+    if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( *IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
     else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,*IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-    if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+    if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
    }
 /*
 **  Store Base Line
@@ -8591,7 +8592,7 @@ int bcdtmSideSlope_scanForRadialBaseLineIntersections(DTM_STR_INT_TAB *IntTable,
 {
  int     ret=0 ;
  long    ActIntTableNe=0,ActIntTableMe=0 ;
- DTM_STR_INT_TAB *pint,*ActIntTable=NULL ;
+ DTM_STR_INT_TAB *pint,*ActIntTable=nullptr ;
 /*
 ** Scan Sorted Point Table and Look For Intersections
 */
@@ -8605,7 +8606,7 @@ int bcdtmSideSlope_scanForRadialBaseLineIntersections(DTM_STR_INT_TAB *IntTable,
 ** Clean Up
 */
  cleanup :
- if( ActIntTable != NULL ) free(ActIntTable) ;
+ if( ActIntTable != nullptr ) free(ActIntTable) ;
 /*
 ** Job Completed
 */
@@ -8670,9 +8671,9 @@ int bcdtmSideSlope_determineActiveRadialBaseLineIntersections(DTM_STR_INT_TAB *A
              if( *IntPtsNe == *IntPtsMe )
                {
                 *IntPtsMe = *IntPtsMe + IntPtsMinc ;
-                if( *IntPts == NULL ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
+                if( *IntPts == nullptr ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
                 else                  *IntPts = ( DTM_STR_INT_PTS * ) realloc( *IntPts,*IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
-                if( *IntPts == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                if( *IntPts == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
                }
 /*
 ** Calculate Distances
@@ -8782,7 +8783,7 @@ void bcdtmSideSlope_setIntersectedSideSlopeRadialElevation(DTM_OVERLAP_RADIAL_TA
 {
  int    dbg=0 ;
  double d1,d2  ;
- DTM_OVERLAP_RADIAL_TABLE *Ovl3=NULL ;
+ DTM_OVERLAP_RADIAL_TABLE *Ovl3=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -8932,9 +8933,9 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 {
  int     ret=DTM_SUCCESS,dbg=0 ;
  long    sp,np,numHullPts,LeftTruncatedRadials,RightTruncatedRadials ;
- DPoint3d     p3dPts[2],*hullPtsP=NULL ;
+ DPoint3d     p3dPts[2],*hullPtsP=nullptr ;
  DTM_OVERLAP_RADIAL_TABLE  *ovl,*ovn ;
- BC_DTM_OBJ *Data=NULL,*openRightP=NULL,*openLeftP=NULL ;
+ BC_DTM_OBJ *Data=nullptr,*openRightP=nullptr,*openLeftP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -9169,7 +9170,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 */
  if( bcdtmList_extractHullDtmObject(Data,&hullPtsP,&numHullPts)) goto errexit ;
  if( bcdtmObject_storeDtmFeatureInDtmObject(SideSlopes,DTMFeatureType::Hull,SideSlopes->nullUserTag,1,&SideSlopes->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
- if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+ if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /*
 ** Mark All Points On Tin Hull
 */
@@ -9228,7 +9229,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
          {
           if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
           if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SideSlopes,DTMFeatureType::SlopeToe,SideSlopes->nullUserTag,1,&SideSlopes->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-          if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+          if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
        }
        else
          {
@@ -9238,7 +9239,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
       } while ( sp != Data->hullPoint ) ;
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SideSlopes,DTMFeatureType::SlopeToe,SideSlopes->nullUserTag,1,&SideSlopes->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
  else
    {
@@ -9249,7 +9250,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
          {
           if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
           if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SideSlopes,DTMFeatureType::SlopeToe,SideSlopes->nullUserTag,1,&SideSlopes->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-          if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+          if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
          }
        else
          {
@@ -9259,7 +9260,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
       } while ( sp != Data->hullPoint ) ;
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SideSlopes,DTMFeatureType::SlopeToe,SideSlopes->nullUserTag,1,&SideSlopes->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
 /*
 ** Mark Hull Points
@@ -9277,8 +9278,8 @@ int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 ** Clean Up
 */
  cleanup :
- if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
- if( Data     != NULL ) bcdtmObject_destroyDtmObject(&Data) ;
+ if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
+ if( Data     != nullptr ) bcdtmObject_destroyDtmObject(&Data) ;
 /*
 ** Write Status Message
 */
@@ -9340,8 +9341,8 @@ int bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP )
  long process,numBreaks=0,numPts ;
  DTMDirection direction,polyDirection;
  double polyArea,length,markedLength,unMarkedLength,totalLength,clkLength,antLength ;
- BC_DTM_OBJ *dataP=NULL ;
- DPoint3d  *ptsP=NULL ;
+ BC_DTM_OBJ *dataP=nullptr ;
+ DPoint3d  *ptsP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -9444,7 +9445,7 @@ int bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP )
              if( bcdtmList_copyTptrListToPointArrayDtmObject(tinP,hullPnt,&ptsP,&numPts)) goto errexit ;
              if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Breakline,dataP->nullUserTag,1,&dataP->nullFeatureId,ptsP,numPts)) goto errexit ;
              free(ptsP) ;
-             ptsP = NULL ;
+             ptsP = nullptr ;
              if( direction == DTMDirection::Clockwise )     if( bcdtmWrite_toFileDtmObject(dataP,L"clkBdy.dat")) goto errexit ;
              if( direction == DTMDirection::AntiClockwise ) if( bcdtmWrite_toFileDtmObject(dataP,L"antBdy.dat")) goto errexit ;
              if( bcdtmObject_destroyDtmObject(&dataP)) goto errexit ;
@@ -9511,8 +9512,8 @@ int bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP )
 ** Cleanup
 */
  cleanup :
- if( ptsP  != NULL ) free(ptsP) ;
- if( dataP != NULL )bcdtmObject_destroyDtmObject(&dataP) ;
+ if( ptsP  != nullptr ) free(ptsP) ;
+ if( dataP != nullptr )bcdtmObject_destroyDtmObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -9548,8 +9549,8 @@ int bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 {
  int     ret=DTM_SUCCESS,dbg=0 ;
  long    sp,numHullPts,numTruncatedRadials ;
- DPoint3d     p3dPts[2],*hullPtsP=NULL ;
- BC_DTM_OBJ *dtmP=NULL ;
+ DPoint3d     p3dPts[2],*hullPtsP=nullptr ;
+ BC_DTM_OBJ *dtmP=nullptr ;
  DTM_OVERLAP_RADIAL_TABLE  *ovlP,*ovnP ;
 
 // char ssasc[100] ;
@@ -9598,7 +9599,7 @@ int bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 */
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /*
 **  Clean Up Before Returning
 */
@@ -9649,7 +9650,7 @@ int bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /*
 **  Clean Up Before Returning
 */
@@ -9695,7 +9696,7 @@ int bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
  if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
  if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
  if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Breakline,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
- if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+ if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /*
 ** Mark Hull Points
 */
@@ -9711,8 +9712,8 @@ int bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 ** Clean Up
 */
  cleanup :
- if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
- if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
+ if( dtmP     != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Write Status Message
 */
@@ -9891,7 +9892,7 @@ int bcdtmSideSlope_detectAndFixBreaksInSlopeToes(BC_DTM_OBJ *tinP)
                }
              nodeAddrP(tinP,sp)->tPtr = np ;
              nodeAddrP(tinP,np)->tPtr = tinP->nullPnt ;
-             if( bcdtmInsert_addDtmFeatureToDtmObject(tinP,NULL,0,DTMFeatureType::Breakline,tinP->nullUserTag,tinP->nullFeatureId,sp,1)) goto errexit ;
+             if( bcdtmInsert_addDtmFeatureToDtmObject(tinP,nullptr,0,DTMFeatureType::Breakline,tinP->nullUserTag,tinP->nullFeatureId,sp,1)) goto errexit ;
             }
           else
             {
@@ -9931,11 +9932,11 @@ int bcdtmSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_O
  int     ret=0,dbg=0 ;
  long    padType,IntTableNe,IntPtsNe,IntPtsMe,IntPtsMinc,ToeFound ;
  double  Px=0.0,Py=0.0,Pz=0.0;
- long    *pl,*Index=NULL ;
+ long    *pl,*Index=nullptr ;
  DPoint3d     p3dPts[2] ;
  DTM_OVERLAP_RADIAL_TABLE  *ovl,*ovln,*ovlp,*Ovl ;
- DTM_STR_INT_TAB *pint,*IntTable=NULL ;
- DTM_STR_INT_PTS *pinp,*IntPts=NULL ;
+ DTM_STR_INT_TAB *pint,*IntTable=nullptr ;
+ DTM_STR_INT_PTS *pinp,*IntPts=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -9998,7 +9999,7 @@ int bcdtmSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_O
 ** Build Index Table To Intersection Points
 */
  Index = (long *) malloc( NumOvlPts * sizeof(long)) ;
- if( Index == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( Index == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
  for( pl = Index ; pl < Index + NumOvlPts ; ++pl ) *pl = DTM_NULL_PNT ;
 /*
 ** Place Index To Intersection Points In Index Table
@@ -10070,7 +10071,7 @@ int bcdtmSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_O
           else
                     {
              bcdtmSideSlope_findFirstPriorNonTruncatedPadToePoint(sideSlopeElementType,OvlPts,NumOvlPts,IntTable,IntTableNe,ovl,&Ovl) ;
-                         if( Ovl != NULL )
+                         if( Ovl != nullptr )
                            {
                             ToeFound = 1 ;
                             Px = Ovl->Nx ;
@@ -10147,7 +10148,7 @@ int bcdtmSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_O
           else
                     {
              bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint(sideSlopeElementType,OvlPts,NumOvlPts,IntTable,IntTableNe,ovl,&Ovl) ;
-                         if( Ovl != NULL )
+                         if( Ovl != nullptr )
                            {
                             ToeFound = 1 ;
                             Px = Ovl->Nx ;
@@ -10199,9 +10200,9 @@ int bcdtmSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_O
 ** Clean Up
 */
  cleanup :
- if( IntTable != NULL ) free(IntTable) ;
- if( IntPts   != NULL ) free(IntPts)   ;
- if( Index    != NULL ) free(Index)    ;
+ if( IntTable != nullptr ) free(IntTable) ;
+ if( IntPts   != nullptr ) free(IntPts)   ;
+ if( Index    != nullptr ) free(Index)    ;
 /*
 ** Job Completed
 */
@@ -10252,7 +10253,7 @@ int bcdtmSideSlope_buildSlopeToeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlP
 ** Initialise
 */
  *IntTableNe = IntTableMe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  IntTableMinc = NumOvlPts / 2  ;
  if( IntTableMinc == 0 ) IntTableMinc = 100 ;
 /*
@@ -10281,9 +10282,9 @@ int bcdtmSideSlope_buildSlopeToeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlP
           if( *IntTableNe == IntTableMe )
             {
              IntTableMe = IntTableMe + IntTableMinc ;
-             if( *IntTable == NULL ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+             if( *IntTable == nullptr ) *IntTable = ( DTM_STR_INT_TAB * ) malloc ( IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
              else                    *IntTable = ( DTM_STR_INT_TAB * ) realloc ( *IntTable,IntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-             if( *IntTable == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *IntTable == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
 /*
 **  Store Ovl Line
@@ -10339,7 +10340,7 @@ int bcdtmSideSlope_buildSlopeToeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlP
 */
  errexit :
  *IntTableNe = 0 ;
- if( *IntTable != NULL ) { free(*IntTable) ; *IntTable = NULL ; }
+ if( *IntTable != nullptr ) { free(*IntTable) ; *IntTable = nullptr ; }
  ret = 1 ;
  goto cleanup ;
 }
@@ -10355,7 +10356,7 @@ int bcdtmSideSlope_scanForSlopeToeIntersections(DTM_STR_INT_TAB *IntTable,long I
 {
  int     ret=0 ;
  long    ActIntTableNe=0,ActIntTableMe=0 ;
- DTM_STR_INT_TAB *pint,*ActIntTable=NULL ;
+ DTM_STR_INT_TAB *pint,*ActIntTable=nullptr ;
 /*
 ** Scan Sorted Point Table and Look For Intersections
 */
@@ -10369,7 +10370,7 @@ int bcdtmSideSlope_scanForSlopeToeIntersections(DTM_STR_INT_TAB *IntTable,long I
 ** Clean Up
 */
  cleanup :
- if( ActIntTable != NULL ) free(ActIntTable) ;
+ if( ActIntTable != nullptr ) free(ActIntTable) ;
 /*
 ** Job Completed
 */
@@ -10422,9 +10423,9 @@ int bcdtmSideSlope_determineSlopeToeIntersections(DTM_STR_INT_TAB *ActIntTable,l
           if( *IntPtsNe + 1 >= *IntPtsMe )
             {
              *IntPtsMe = *IntPtsMe + IntPtsMinc ;
-             if( *IntPts == NULL ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
+             if( *IntPts == nullptr ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
              else                  *IntPts = ( DTM_STR_INT_PTS * ) realloc( *IntPts,*IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
-             if( *IntPts == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *IntPts == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
 /*
 ** Calculate Distances For Alp
@@ -10500,7 +10501,7 @@ int bcdtmSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElementTy
 /*
 ** Initialise
 */
- *Ovp = NULL ;
+ *Ovp = nullptr ;
  NumTested = 0 ;
 /*
 ** Scan Backwards Through Overlay Table Looking For Non Truncated Toe Point
@@ -10510,9 +10511,9 @@ int bcdtmSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElementTy
    {
     --ovp ;
     IntFlag = 1 ;
-    if      ( ovp < OvlPts && sideSlopeElementType == 1 ) ovp = NULL ;
+    if      ( ovp < OvlPts && sideSlopeElementType == 1 ) ovp = nullptr ;
     else if ( ovp < OvlPts && sideSlopeElementType == 2 ) ovp = OvlPts + NumOvlPts - 1 ;
-    if( ovp != NULL )
+    if( ovp != nullptr )
       {
 /*
 **  Check For Non Truncated Slope Toe Point
@@ -10527,11 +10528,11 @@ int bcdtmSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElementTy
           bcdtmSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(OvlPts,ovp,Ovl,IntTable,IntTableNe,&IntFlag) ;
          }
       }
-   } while ( IntFlag && ovp != Ovl && ovp != NULL ) ;
+   } while ( IntFlag && ovp != Ovl && ovp != nullptr ) ;
 /*
 ** Set Return Values
 */
- if( ! IntFlag  && ovp != Ovl && ovp != NULL ) *Ovp = ovp ;
+ if( ! IntFlag  && ovp != Ovl && ovp != nullptr ) *Ovp = ovp ;
 /*
 ** Job Completed
 */
@@ -10554,7 +10555,7 @@ int bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElementTyp
 /*
 ** Initialise
 */
- *Ovn = NULL ;
+ *Ovn = nullptr ;
  NumTested = 0 ;
 /*
 ** Scan Forwards Through Overlay Table Looking For Non Truncated Toe Point
@@ -10564,9 +10565,9 @@ int bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElementTyp
    {
     ++ovn ;
     IntFlag = 1 ;
-    if      (  ovn >= OvlPts + NumOvlPts && sideSlopeElementType == 1 ) ovn = NULL   ;
+    if      (  ovn >= OvlPts + NumOvlPts && sideSlopeElementType == 1 ) ovn = nullptr   ;
     else if (  ovn >= OvlPts + NumOvlPts && sideSlopeElementType == 2 ) ovn = OvlPts ;
-    if( ovn != NULL )
+    if( ovn != nullptr )
           {
 /*
 **  Check For Non Truncated Slope Toe Point
@@ -10581,11 +10582,11 @@ int bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElementTyp
           bcdtmSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(OvlPts,Ovl,ovn,IntTable,IntTableNe,&IntFlag) ;
          }
       }
-   } while ( IntFlag && ovn != Ovl && ovn != NULL ) ;
+   } while ( IntFlag && ovn != Ovl && ovn != nullptr ) ;
 /*
 ** Set Return Values
 */
- if( ! IntFlag && ovn != Ovl && ovn != NULL )  *Ovn = ovn ;
+ if( ! IntFlag && ovn != Ovl && ovn != nullptr )  *Ovn = ovn ;
 /*
 ** Job Completed
 */
@@ -10679,8 +10680,8 @@ int bcdtmSideSlope_writePadSideSlopeHolesToDataObject
 {
  int     ret=DTM_SUCCESS,dbg=0 ;
  long    sp,numHullPts,numTruncatedRadials ;
- DPoint3d     p3dPts[2],*hullPtsP=NULL ;
- BC_DTM_OBJ  *dtmP=NULL ;
+ DPoint3d     p3dPts[2],*hullPtsP=nullptr ;
+ BC_DTM_OBJ  *dtmP=nullptr ;
  DTM_OVERLAP_RADIAL_TABLE *ovlP,*ovnP ;
 /*
 ** Set Static Debug Contol For Catching A Particular Side Slope Occurrence In A Sequence
@@ -10753,7 +10754,7 @@ int bcdtmSideSlope_writePadSideSlopeHolesToDataObject
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hole,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /*
 ** Clean Up And Return
 */
@@ -10821,7 +10822,7 @@ int bcdtmSideSlope_writePadSideSlopeHolesToDataObject
 ** Delete DTm Object
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Write Status Message
 */
@@ -10850,7 +10851,7 @@ int bcdtmSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_OBJ 
  DTMDirection Direction ;
  long   dtmFeature,numFeaturePts,HullCoincidentFlag,NoHoles,numTmpFeatureCodes ;
  double Area ;
- DPoint3d    *featurePtsP=NULL ;
+ DPoint3d    *featurePtsP=nullptr ;
  DTM_TIN_NODE   *pd ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
@@ -11054,7 +11055,7 @@ int bcdtmSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_OBJ 
 ** Clean Up
 */
  cleanup :
- if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+ if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -11332,9 +11333,9 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
  DTMUserTag UserTag ;
  static  long MemDataObjects=0 ;
  double  area,Sz ;
- DPoint3d     *p3d,*p3dt,*SlopeToePts=NULL,*TmpolyPtsP=NULL ;
- DPoint3d     *cachePtsP=NULL ;
- BC_DTM_OBJ *SlopeToeObject=NULL ;
+ DPoint3d     *p3d,*p3dt,*SlopeToePts=nullptr,*TmpolyPtsP=nullptr ;
+ DPoint3d     *cachePtsP=nullptr ;
+ BC_DTM_OBJ *SlopeToeObject=nullptr ;
 /*
 ** Write Status Message - Development Only
 */
@@ -11343,7 +11344,7 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
 /*
 ** Initialise
 */
- if( *DataObjects == NULL ) MemDataObjects = 0 ;
+ if( *DataObjects == nullptr ) MemDataObjects = 0 ;
 /*
 ** Extract First Set Of Slope Toe Points
 */
@@ -11431,14 +11432,14 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
           NumTmpolyPtsP = NumSlopePts - ((long)(p3d-SlopeToePts) + 1 ) ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Last Section Offset = %6ld  NumTmpolyPtsP = %6ld",(long)(p3d-SlopeToePts)+1,NumTmpolyPtsP) ;
           TmpolyPtsP = ( DPoint3d * ) malloc( NumSlopePts * sizeof(DPoint3d)) ;
-          if( TmpolyPtsP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+          if( TmpolyPtsP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
           ++p3d ;
           memcpy(TmpolyPtsP,p3d,NumTmpolyPtsP*sizeof(DPoint3d)) ;
           memcpy(TmpolyPtsP+NumTmpolyPtsP-1,SlopeToePts,((long)(p3d-SlopeToePts)+1)*sizeof(DPoint3d)) ;
           *(TmpolyPtsP+NumSlopePts-1) = *TmpolyPtsP ;
           free(SlopeToePts) ;
           SlopeToePts = TmpolyPtsP ;
-          TmpolyPtsP = NULL ;
+          TmpolyPtsP = nullptr ;
 /*
 **        Write Out Slope Toes ** Development Only
 */
@@ -11484,7 +11485,7 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
             {
              if( bcdtmLoad_getCachePoints(&cachePtsP,&numCachePts)) goto errexit ;
              if( numCachePts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SlopeToeObject,DTMFeatureType::SlopeToe,SlopeToeObject->nullUserTag,1,&SlopeToeObject->nullFeatureId,cachePtsP,numCachePts)) goto errexit ;
-             if( cachePtsP != NULL ) { free(cachePtsP) ; cachePtsP = NULL ; }
+             if( cachePtsP != nullptr ) { free(cachePtsP) ; cachePtsP = nullptr ; }
 
              if( SlopeToeClosed ||  p3d > SlopeToePts )
                {
@@ -11546,16 +11547,16 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
          if( dbg ) bcdtmWrite_message(0,0,0,"**** Number Of Cache Points = %8ld",numCachePts) ;
 //         if( numCachePts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SlopeToeObject,DTMFeatureType::SlopeToe,SlopeToeObject->nullUserTag,1,&SlopeToeObject->nullFeatureId,cachePtsP,numCachePts)) goto errexit ;
          if( numCachePts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SlopeToeObject,DTMFeatureType::SlopeToe,PointOnSurface,1,&SlopeToeObject->nullFeatureId,cachePtsP,numCachePts)) goto errexit ;
-         if( cachePtsP != NULL ) { free(cachePtsP) ; cachePtsP = NULL ; }
+         if( cachePtsP != nullptr ) { free(cachePtsP) ; cachePtsP = nullptr ; }
 /*
 **        Allocate Memory For Data Object Pointer Array
 */
           if( *NumberOfDataObjects == MemDataObjects )
             {
              MemDataObjects = MemDataObjects + MemIncDataObjects ;
-             if( *DataObjects == NULL ) *DataObjects  = ( BC_DTM_OBJ ** ) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
+             if( *DataObjects == nullptr ) *DataObjects  = ( BC_DTM_OBJ ** ) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
              else                       *DataObjects  = ( BC_DTM_OBJ ** ) realloc ( *DataObjects,MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
-             if( *DataObjects == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *DataObjects == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
           if( SlopeToeObject->numPoints <= 1 ) bcdtmObject_destroyDtmObject(&SlopeToeObject) ;
           else
@@ -11566,7 +11567,7 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
 /*
 **        Reset For Next Section Of Slope Toe
 */
-          SlopeToeObject = NULL ;
+          SlopeToeObject = nullptr ;
           if( bcdtmObject_createDtmObject(&SlopeToeObject)) goto errexit ;
           --p3d ;
           PointOnSurface = IsPointOnSurface ;
@@ -11577,13 +11578,13 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
 /*
 ** Store Pointer To Last Data Object
 */
-    if( SlopeToeObject != NULL )
+    if( SlopeToeObject != nullptr )
       {
        if( bcdtmLoad_getCachePoints(&cachePtsP,&numCachePts)) goto errexit ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Last Number Of Cache Points = %8ld",numCachePts) ;
 //       if( numCachePts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SlopeToeObject,DTMFeatureType::SlopeToe,SlopeToeObject->nullUserTag,1,&SlopeToeObject->nullFeatureId,cachePtsP,numCachePts)) goto errexit ;
        if( numCachePts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(SlopeToeObject,DTMFeatureType::SlopeToe,PointOnSurface,1,&SlopeToeObject->nullFeatureId,cachePtsP,numCachePts)) goto errexit ;
-       if( cachePtsP != NULL ) { free(cachePtsP) ; cachePtsP = NULL ; }
+       if( cachePtsP != nullptr ) { free(cachePtsP) ; cachePtsP = nullptr ; }
 
 /*
 **     Allocate Memory For Data Object Pointer Array
@@ -11594,13 +11595,13 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
           if( *NumberOfDataObjects == MemDataObjects )
             {
              MemDataObjects = MemDataObjects + MemIncDataObjects ;
-             if( *DataObjects == NULL ) *DataObjects  = ( BC_DTM_OBJ ** ) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
+             if( *DataObjects == nullptr ) *DataObjects  = ( BC_DTM_OBJ ** ) malloc ( MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
              else                       *DataObjects  = ( BC_DTM_OBJ ** ) realloc ( *DataObjects,MemDataObjects * sizeof(BC_DTM_OBJ *)) ;
-             if( *DataObjects == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+             if( *DataObjects == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
             }
           *(*DataObjects+*NumberOfDataObjects) = SlopeToeObject ;
           ++*NumberOfDataObjects ;
-          SlopeToeObject = NULL ;
+          SlopeToeObject = nullptr ;
          }
       }
 /*
@@ -11632,9 +11633,9 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
 ** Cleanup
 */
  cleanup :
- if( cachePtsP   != NULL ) { free(cachePtsP) ; cachePtsP = NULL ; }
- if( SlopeToePts != NULL ) free(SlopeToePts) ;
- if( TmpolyPtsP  != NULL ) free(TmpolyPtsP) ;
+ if( cachePtsP   != nullptr ) { free(cachePtsP) ; cachePtsP = nullptr ; }
+ if( SlopeToePts != nullptr ) free(SlopeToePts) ;
+ if( TmpolyPtsP  != nullptr ) free(TmpolyPtsP) ;
 /*
 ** Job Completed
 */
@@ -11645,7 +11646,7 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
 ** Error Exit
 */
  errexit :
- if( SlopeToeObject != NULL ) bcdtmObject_destroyDtmObject(&SlopeToeObject) ;
+ if( SlopeToeObject != nullptr ) bcdtmObject_destroyDtmObject(&SlopeToeObject) ;
  if( *NumberOfDataObjects > 0 )
    {
     for( ss = 0 ; ss < *NumberOfDataObjects ; ++ss )
@@ -11655,7 +11656,7 @@ int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_D
       }
    }
  *NumberOfDataObjects = 0  ;
- if( *DataObjects != NULL ) { free(*DataObjects) ; *DataObjects = NULL ; }
+ if( *DataObjects != nullptr ) { free(*DataObjects) ; *DataObjects = nullptr ; }
  ret = 1 ;
  goto cleanup ;
 }
@@ -11929,7 +11930,7 @@ int bcdtmSideSlope_copyParallel3D
  int      ret=DTM_SUCCESS,dbg=0 ;
  long     numKnotPts ;
  DPoint3d      *p3dP ;
- DTM_STR_INT_PTS  *knotPtsP=NULL ;
+ DTM_STR_INT_PTS  *knotPtsP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -11953,9 +11954,9 @@ int bcdtmSideSlope_copyParallel3D
 /*
 ** Validate
 */
- if( pointsP == NULL )   goto errexit ;
+ if( pointsP == nullptr )   goto errexit ;
  if( numPoints < 2   )   goto errexit ;
- if( *parallelPtsPP != NULL ) { free(*parallelPtsPP) ; *parallelPtsPP = NULL ; }
+ if( *parallelPtsPP != nullptr ) { free(*parallelPtsPP) ; *parallelPtsPP = nullptr ; }
 /*
 ** Initialise
 */
@@ -12040,7 +12041,7 @@ int bcdtmSideSlope_copyParallel3D
 ** Clean Up
 */
  cleanup :
- if( knotPtsP != NULL ) { free(knotPtsP) ; knotPtsP = NULL ; }
+ if( knotPtsP != nullptr ) { free(knotPtsP) ; knotPtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -12053,7 +12054,7 @@ int bcdtmSideSlope_copyParallel3D
  errexit :
  ret = DTM_ERROR ;
  *numParallelPtsP = 0 ;
- if( *parallelPtsPP != NULL ) { free(*parallelPtsPP) ; *parallelPtsPP = NULL ; }
+ if( *parallelPtsPP != nullptr ) { free(*parallelPtsPP) ; *parallelPtsPP = nullptr ; }
  goto cleanup ;
 }
 /*==============================================================================*//**
@@ -12082,7 +12083,7 @@ int bcdtmSideSlope_removeDuplicatesPointArray
 /*
 ** Check For Presence Of Line String
 */
- if( sizeLineString <= 0 || lineString == NULL ) goto errexit ;
+ if( sizeLineString <= 0 || lineString == nullptr ) goto errexit ;
 /*
 ** Check Point To Point Tolerance Is Greater Than Or Equal To Zero
 */
@@ -12160,11 +12161,11 @@ int bcdtmSideSlope_detectKnotsPointArray
 ** Initialise
 */
  *numKnotPoints = 0 ;
- if( *knotPoints != NULL ) { free(*knotPoints) ; *knotPoints = NULL ; }
+ if( *knotPoints != nullptr ) { free(*knotPoints) ; *knotPoints = nullptr ; }
 /*
 ** Check For Presence Of Line String
 */
- if( lineString == NULL ) goto errexit ;
+ if( lineString == nullptr ) goto errexit ;
  if( sizeLineString <= 2 ) goto cleanup ;
 /*
 ** Check String For Knots
@@ -12184,7 +12185,7 @@ int bcdtmSideSlope_detectKnotsPointArray
 **  Clean Up
 */
  cleanup :
- if( *numKnotPoints == 0 && *knotPoints != NULL ) { free(*knotPoints) ; *knotPoints = NULL ; }
+ if( *numKnotPoints == 0 && *knotPoints != nullptr ) { free(*knotPoints) ; *knotPoints = nullptr ; }
 /*
 **  Return
 */
@@ -12229,11 +12230,11 @@ int bcdtmSideSlope_insertKnots
 ** Initialise
 */
  *numKnotPoints = 0 ;
- if( *knotPoints != NULL ) { free(*knotPoints) ; *knotPoints = NULL ; }
+ if( *knotPoints != nullptr ) { free(*knotPoints) ; *knotPoints = nullptr ; }
 /*
 ** Check For Presence Of Line String
 */
- if( lineString == NULL ) goto errexit ;
+ if( lineString == nullptr ) goto errexit ;
  if( sizeLineString <= 2 ) goto cleanup ;
 /*
 ** Check String For Knots
@@ -12257,7 +12258,7 @@ int bcdtmSideSlope_insertKnots
 **  Clean Up
 */
  cleanup :
- if( *numKnotPoints == 0 && *knotPoints != NULL ) { free(*knotPoints) ; *knotPoints = NULL ; }
+ if( *numKnotPoints == 0 && *knotPoints != nullptr ) { free(*knotPoints) ; *knotPoints = nullptr ; }
 /*
 **  Return
 */
@@ -12315,11 +12316,11 @@ int bcdtmSideSlope_removeKnots
 ** Initialise
 */
  *numKnotPtsP = 0 ;
- if( *knotPtsPP != NULL ) { free(*knotPtsPP) ; *knotPtsPP = NULL ; }
+ if( *knotPtsPP != nullptr ) { free(*knotPtsPP) ; *knotPtsPP = nullptr ; }
 /*
 ** Check For Presence Of Line String
 */
- if( *linePtsPP == NULL ) goto errexit ;
+ if( *linePtsPP == nullptr ) goto errexit ;
  if( *numLinePtsP <= 2 ) goto cleanup ;
 /*
 ** Remove Duplicate Points
@@ -12395,7 +12396,7 @@ int bcdtmSideSlope_removeKnots
 **  Clean Up
 */
  cleanup :
- if( *numKnotPtsP == 0 && *knotPtsPP != NULL ) { free(*knotPtsPP) ; *knotPtsPP = NULL ; }
+ if( *numKnotPtsP == 0 && *knotPtsPP != nullptr ) { free(*knotPtsPP) ; *knotPtsPP = nullptr ; }
 /*
 **  Return
 */
@@ -12433,16 +12434,16 @@ int bcdtmSideSlope_detectStringIntersections
 {
  int                ret=DTM_SUCCESS,dbg=0 ;
  long               intTableSize=0,memIntPoints=0,memIntPointsInc=5000 ;
- DTM_STR_INT_TAB  *intTable=NULL ;
+ DTM_STR_INT_TAB  *intTable=nullptr ;
 /*
 ** Initialise
 */
  *numIntPoints = 0 ;
- if( *intPoints != NULL ) { free(*intPoints) ; *intPoints = NULL ; }
+ if( *intPoints != nullptr ) { free(*intPoints) ; *intPoints = nullptr ; }
 /*
 ** Check For Presence Of Line Strings
 */
- if( numLineStrings <= 0 || lineStrings == NULL ) goto errexit ;
+ if( numLineStrings <= 0 || lineStrings == nullptr ) goto errexit ;
 /*
 ** Build Line String Table
 */
@@ -12470,8 +12471,8 @@ int bcdtmSideSlope_detectStringIntersections
 **  Clean Up
 */
  cleanup :
- if( intTable != NULL ) free(intTable) ;
- if( *numIntPoints == 0 && *intPoints != NULL ) { free(*intPoints) ; *intPoints = NULL ; }
+ if( intTable != nullptr ) free(intTable) ;
+ if( *numIntPoints == 0 && *intPoints != nullptr ) { free(*intPoints) ; *intPoints = nullptr ; }
 /*
 **  Return
 */
@@ -12510,16 +12511,16 @@ int bcdtmSideSlope_insertStringIntersections
 {
  int                ret=DTM_SUCCESS ;
  long               intTableSize=0,memIntPoints=0,memIntPointsInc=5000 ;
- DTM_STR_INT_TAB  *intTable=NULL ;
+ DTM_STR_INT_TAB  *intTable=nullptr ;
 /*
 ** Initialise
 */
  *numIntPoints = 0 ;
- if( *intPoints != NULL ) { free(*intPoints) ; *intPoints = NULL ; }
+ if( *intPoints != nullptr ) { free(*intPoints) ; *intPoints = nullptr ; }
 /*
 ** Check For Presence Of Line Strings
 */
- if( numLineStrings <= 0 || lineStrings == NULL ) goto errexit ;
+ if( numLineStrings <= 0 || lineStrings == nullptr ) goto errexit ;
 /*
 ** Build Line String Table
 */
@@ -12550,8 +12551,8 @@ int bcdtmSideSlope_insertStringIntersections
 **  Clean Up
 */
  cleanup :
- if( intTable != NULL ) free(intTable) ;
- if( *numIntPoints == 0 && *intPoints != NULL ) { free(*intPoints) ; *intPoints = NULL ; }
+ if( intTable != nullptr ) free(intTable) ;
+ if( *numIntPoints == 0 && *intPoints != nullptr ) { free(*intPoints) ; *intPoints = nullptr ; }
 /*
 **  Return
 */
@@ -12585,7 +12586,7 @@ int  bcdtmSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* *li
 ** Initialise
 */
  *intTableSize = intTableMe = 0 ;
- if( *intTable != NULL ) { free(*intTable) ; *intTable = NULL ; }
+ if( *intTable != nullptr ) { free(*intTable) ; *intTable = nullptr ; }
 /*
 ** Determine Size Of Line String Intersection Table
 */
@@ -12624,9 +12625,9 @@ int  bcdtmSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* *li
        if( *intTableSize == intTableMe )
          {
           intTableMe = intTableMe + intTableMinc ;
-          if( *intTable == NULL ) *intTable = ( DTM_STR_INT_TAB * ) malloc ( intTableMe * sizeof(DTM_STR_INT_TAB)) ;
+          if( *intTable == nullptr ) *intTable = ( DTM_STR_INT_TAB * ) malloc ( intTableMe * sizeof(DTM_STR_INT_TAB)) ;
           else                    *intTable = ( DTM_STR_INT_TAB * ) realloc ( *intTable,intTableMe * sizeof(DTM_STR_INT_TAB)) ;
-          if( *intTable == NULL ) goto errexit ;
+          if( *intTable == nullptr ) goto errexit ;
          }
 /*
 **  Store String Line
@@ -12682,7 +12683,7 @@ int  bcdtmSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* *li
 */
  errexit :
  *intTableSize = 0 ;
- if( *intTable != NULL ) { free(*intTable) ; *intTable = NULL ; }
+ if( *intTable != nullptr ) { free(*intTable) ; *intTable = nullptr ; }
  ret = DTM_ERROR ;
  goto cleanup ;
 }
@@ -12714,7 +12715,7 @@ int bcdtmSideSlope_scanForStringLineIntersections(DTM_STR_INT_TAB *IntTable,long
 {
  int     ret=DTM_SUCCESS,dbg=0 ;
  long    ActIntTableNe=0,ActIntTableMe=0 ;
- DTM_STR_INT_TAB *pint,*ActIntTable=NULL ;
+ DTM_STR_INT_TAB *pint,*ActIntTable=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -12732,7 +12733,7 @@ int bcdtmSideSlope_scanForStringLineIntersections(DTM_STR_INT_TAB *IntTable,long
 ** Clean Up
 */
  cleanup :
- if( ActIntTable != NULL ) free(ActIntTable) ;
+ if( ActIntTable != nullptr ) free(ActIntTable) ;
 /*
 ** Job Completed
 */
@@ -12806,9 +12807,9 @@ int bcdtmSideSlope_addActiveStringLine(DTM_STR_INT_TAB **ActIntTable,long *ActIn
  if( *ActIntTableNe == *ActIntTableMe )
    {
     *ActIntTableMe = *ActIntTableMe + MemInc ;
-    if( *ActIntTable == NULL ) *ActIntTable = ( DTM_STR_INT_TAB * ) malloc ( *ActIntTableMe * sizeof(DTM_STR_INT_TAB)) ;
+    if( *ActIntTable == nullptr ) *ActIntTable = ( DTM_STR_INT_TAB * ) malloc ( *ActIntTableMe * sizeof(DTM_STR_INT_TAB)) ;
     else                       *ActIntTable = ( DTM_STR_INT_TAB * ) realloc( *ActIntTable, *ActIntTableMe * sizeof(DTM_STR_INT_TAB)) ;
-    if( *ActIntTable == NULL )  return(1) ;
+    if( *ActIntTable == nullptr )  return(1) ;
    }
 /*
 ** Store Entry
@@ -12866,9 +12867,9 @@ int bcdtmSideSlope_determineActiveStringLineIntersections(DTM_STR_INT_TAB *ActIn
              if( *IntPtsNe + 1 >= *IntPtsMe )
                {
                 *IntPtsMe = *IntPtsMe + IntPtsMinc ;
-                if( *IntPts == NULL ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
+                if( *IntPts == nullptr ) *IntPts = ( DTM_STR_INT_PTS * ) malloc ( *IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
                 else                  *IntPts = ( DTM_STR_INT_PTS * ) realloc( *IntPts,*IntPtsMe * sizeof(DTM_STR_INT_PTS)) ;
-                if( *IntPts == NULL )  goto errexit ;
+                if( *IntPts == nullptr )  goto errexit ;
                }
 /*
 ** Calculate Distances For Alp
@@ -13079,7 +13080,7 @@ int  bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING*
 {
  int    ret=DTM_SUCCESS ;
  long   numInts,numStringPts,strSegNo ;
- DPoint3d   *p3d1,*p3d2,*string=NULL ;
+ DPoint3d   *p3d1,*p3d2,*string=nullptr ;
  DTM_P3D_LINE_STRING*  *pline ;
  DTM_STR_INT_PTS *pinp,*ninp  ;
 /*
@@ -13110,7 +13111,7 @@ int  bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING*
 */
     numStringPts = (*pline)->numStringPts + numInts ;
     string = ( DPoint3d *) malloc ( numStringPts * sizeof(DPoint3d)) ;
-    if( string == NULL ) goto errexit ;
+    if( string == nullptr ) goto errexit ;
 /*
 ** Copy Old String And Intersection Points To New String
 */
@@ -13152,7 +13153,7 @@ int  bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING*
     free((*pline)->stringPts) ;
     (*pline)->stringPts = string ;
     (*pline)->numStringPts = numStringPts ;
-    string = NULL ;
+    string = nullptr ;
     numStringPts = 0 ;
 /*
 ** Reset For Next String
@@ -13163,7 +13164,7 @@ int  bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING*
 ** Clean Up
 */
  cleanup :
- if( string != NULL ) free(string) ;
+ if( string != nullptr ) free(string) ;
 /*
 ** Job Completed
 */
@@ -13183,10 +13184,10 @@ int  bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING*
 int  bcdtmSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *numLinePtsP,DTM_STR_INT_PTS *intPtsP,long numIntPts)
 {
  int                ret=DTM_SUCCESS,dbg=0 ;
- long               *lP,*l1P,*l2P,*l3P,*l4P,loop,process,*knotFlagP=NULL,numKnotPts,numKnots,closeFlag ;
+ long               *lP,*l1P,*l2P,*l3P,*l4P,loop,process,*knotFlagP=nullptr,numKnotPts,numKnots,closeFlag ;
  double             knotLength,startLength,endLength ;
  DPoint3d           *p3dP ;
- DTM_STR_INT_PTS *inpP,*inp1P,*inp2P,*knotPtsP=NULL  ;
+ DTM_STR_INT_PTS *inpP,*inp1P,*inp2P,*knotPtsP=nullptr  ;
 /*
 ** Write Entry Message
 */
@@ -13196,7 +13197,7 @@ int  bcdtmSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *numLi
 */
  numKnotPts = numIntPts  ;
  knotPtsP = ( DTM_STR_INT_PTS * ) malloc( numKnotPts * sizeof(DTM_STR_INT_PTS)) ;
- if( knotPtsP == NULL ) goto errexit ;
+ if( knotPtsP == nullptr ) goto errexit ;
 /*
 ** Copy The Knots
 */
@@ -13217,7 +13218,7 @@ int  bcdtmSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *numLi
 ** Allocate Memory For Knot Flag Array
 */
  knotFlagP = ( long * ) malloc(*numLinePtsP * sizeof(long)) ;
- if( knotFlagP == NULL ) goto errexit ;
+ if( knotFlagP == nullptr ) goto errexit ;
 /*
 ** Initialise Knot Flags
 */
@@ -13484,8 +13485,8 @@ int  bcdtmSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *numLi
 ** Clean Up
 */
  cleanup :
- if( knotPtsP   != NULL ) free(knotPtsP) ;
- if( knotFlagP  != NULL ) free(knotFlagP) ;
+ if( knotPtsP   != nullptr ) free(knotPtsP) ;
+ if( knotFlagP  != nullptr ) free(knotFlagP) ;
 /*
 ** Job Completed
 */
@@ -13549,9 +13550,9 @@ int bcdtmSideSlope_storePoint(double x,double y,double z,DPoint3d **pointsPP,lon
  if( *numPtsP == *memPtsP )
    {
     *memPtsP = *memPtsP + memPtsInc ;
-    if( *pointsPP == NULL ) *pointsPP = (DPoint3d * ) malloc ( *memPtsP * sizeof(DPoint3d)) ;
+    if( *pointsPP == nullptr ) *pointsPP = (DPoint3d * ) malloc ( *memPtsP * sizeof(DPoint3d)) ;
     else                    *pointsPP = (DPoint3d * ) realloc( *pointsPP,*memPtsP * sizeof(DPoint3d)) ;
-    if( *pointsPP == NULL ) goto errexit ;
+    if( *pointsPP == nullptr ) goto errexit ;
    }
 /*
 ** Store Point
@@ -13582,7 +13583,7 @@ int bcdtmSideSlope_normalisePointArray(DPoint3d *pointsP,long numPts)
 /*
 ** Validate
 */
- if( pointsP == NULL || numPts < 0 ) goto errexit ;
+ if( pointsP == nullptr || numPts < 0 ) goto errexit ;
 /*
 ** Scan Points And Get Largest Absolute Number
 */
@@ -13703,9 +13704,9 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
 {
  int      ret=DTM_SUCCESS,dbg=0 ;
  long     numTempStrings,numStringPts,memStrings=0,memStringsInc=100,numTempStringPts ;
- long     *lP,*l1P,*knotFlagP=NULL ;
- DPoint3d *p3dP,*p3d1P,*p3d2P,*p3d3P,*stringPtsP=NULL ;
- DTM_P3D_LINE_STRING *tempStringsP=NULL ;
+ long     *lP,*l1P,*knotFlagP=nullptr ;
+ DPoint3d *p3dP,*p3d1P,*p3d2P,*p3d3P,*stringPtsP=nullptr ;
+ DTM_P3D_LINE_STRING *tempStringsP=nullptr ;
  DTM_STR_INT_PTS *inpP ;
 /*
 ** Write Entry Message
@@ -13715,21 +13716,21 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
 ** Initialise
 */
  *numStringsP = 0 ;
- if( *stringsPP != NULL ) goto errexit ;
+ if( *stringsPP != nullptr ) goto errexit ;
 /*
 ** Create An Array Of Point Array Of Size One
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating An Array Of Point Array Of Size 1") ;
  tempStringsP = ( DTM_P3D_LINE_STRING *) malloc ( sizeof(DTM_P3D_LINE_STRING)) ;
- if( tempStringsP == NULL ) goto errexit ;
- tempStringsP->stringPts    = NULL ;
+ if( tempStringsP == nullptr ) goto errexit ;
+ tempStringsP->stringPts    = nullptr ;
  tempStringsP->numStringPts = 0 ;
 /*
 ** Allocate Memory For Point Array
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory For Point Array") ;
  tempStringsP->stringPts = ( DPoint3d * ) malloc (numPoints * sizeof(DPoint3d)) ;
- if( tempStringsP->stringPts == NULL ) goto errexit ;
+ if( tempStringsP->stringPts == nullptr ) goto errexit ;
 /*
 ** Copy Points
 */
@@ -13744,7 +13745,7 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
    {
     *stringsPP = tempStringsP ;
     *numStringsP = 1 ;
-    tempStringsP = NULL ;
+    tempStringsP = nullptr ;
    }
 /*
 ** Knots Present
@@ -13775,7 +13776,7 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
     if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory For Knot Flags") ;
     numTempStringPts = tempStringsP->numStringPts ;
     knotFlagP = ( long * ) malloc(numTempStringPts * sizeof(long)) ;
-    if( knotFlagP == NULL ) goto errexit ;
+    if( knotFlagP == nullptr ) goto errexit ;
 /*
 ** Initialise Knot Flags
 */
@@ -13830,7 +13831,7 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
          {
           numStringPts = (long)(p3d2P-p3d1P) + 1 ;
           stringPtsP   = ( DPoint3d * ) malloc(numStringPts*sizeof(DPoint3d)) ;
-          if( stringPtsP == NULL ) goto errexit ;
+          if( stringPtsP == nullptr ) goto errexit ;
           for( p3dP = stringPtsP , p3d3P = p3d1P ; p3d3P <= p3d2P ; ++p3dP ,++p3d3P )
              {
               *p3dP = *p3d3P ;
@@ -13842,9 +13843,9 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
             {
              if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory") ;
              memStrings = memStrings + memStringsInc ;
-             if( *stringsPP == NULL ) *stringsPP = ( DTM_P3D_LINE_STRING * ) malloc(memStrings*sizeof(DTM_P3D_LINE_STRING)) ;
+             if( *stringsPP == nullptr ) *stringsPP = ( DTM_P3D_LINE_STRING * ) malloc(memStrings*sizeof(DTM_P3D_LINE_STRING)) ;
              else                     *stringsPP = ( DTM_P3D_LINE_STRING * ) realloc(*stringsPP,memStrings*sizeof(DTM_P3D_LINE_STRING)) ;
-             if( *stringsPP == NULL ) goto errexit ;
+             if( *stringsPP == nullptr ) goto errexit ;
             }
 /*
 ** Store String
@@ -13852,7 +13853,7 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
           (*stringsPP+*numStringsP)->stringPts    = stringPtsP ;
           (*stringsPP+*numStringsP)->numStringPts = numStringPts ;
           ++*numStringsP ;
-          stringPtsP = NULL ;
+          stringPtsP = nullptr ;
          }
 /*
 ** Reset For Next String
@@ -13865,10 +13866,10 @@ int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_S
 ** Clean Up
 */
  cleanup :
- if( stringPtsP   != NULL )  free(stringPtsP) ;
- if( tempStringsP != NULL )
+ if( stringPtsP   != nullptr )  free(stringPtsP) ;
+ if( tempStringsP != nullptr )
    {
-    if( tempStringsP->stringPts != NULL ) free(tempStringsP->stringPts) ;
+    if( tempStringsP->stringPts != nullptr ) free(tempStringsP->stringPts) ;
     free(tempStringsP) ;
    }
 /*
@@ -13904,14 +13905,14 @@ int bcdtmSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,doubl
 ** Initialise
 */
  *numParallelPtsP = 0 ;
- if( *parallelPtsPP != NULL ) { free(*parallelPtsPP) ; *parallelPtsPP = NULL ; }
+ if( *parallelPtsPP != nullptr ) { free(*parallelPtsPP) ; *parallelPtsPP = nullptr ; }
  gpkPye = atan2(0.0,-1.0) ;
  gpk2Pye = gpkPye * 2.0 ;
  memPtsInc =  numPoints + 100 ;
 /*
 ** Validate
 */
- if( pointsP == NULL ) goto errexit ;
+ if( pointsP == nullptr ) goto errexit ;
  if( numPoints < 2   ) goto errexit ;
  if( cornerStrokeTolerance < 0.0 ) cornerStrokeTolerance = 0.0 ;
  if( copyMode != DTM_MITRE_CORNER && copyMode != DTM_ROUND_CORNER ) copyMode = DTM_MITRE_CORNER ;
@@ -13947,7 +13948,7 @@ int bcdtmSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,doubl
  if( dbg ) bcdtmWrite_message(0,0,0,"Copying Parallel") ;
  *numParallelPtsP = 0 ;
  if( closeFlag ) ppP = pointsP + numPoints - 2 ;
- else            ppP = NULL ;
+ else            ppP = nullptr ;
  for( cpP = pointsP  ; cpP < pointsP + numPoints - closeFlag ; ++cpP )
    {
     if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Offseting From Point %6ld ** %12.6lf %12.6lf %12.6lf",(long)(cpP-pointsP),cpP->x,cpP->y,cpP->z) ;
@@ -13955,12 +13956,12 @@ int bcdtmSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,doubl
     if( npP >= pointsP + numPoints )
       {
        if( closeFlag ) npP = pointsP + 1 ;
-       else            npP = NULL ;
+       else            npP = nullptr ;
       }
     priorAngle = nextAngle = 0.0 ;
-    if( ppP != NULL ) priorAngle = bcdtmSideSlope_getAngle(cpP->x,cpP->y,ppP->x,ppP->y) ;
-    if( npP != NULL ) nextAngle  = bcdtmSideSlope_getAngle(cpP->x,cpP->y,npP->x,npP->y) ;
-    if( ppP != NULL && npP != NULL ) sideOf = bcdtmSideSlope_sideOf(ppP->x,ppP->y,npP->x,npP->y,cpP->x,cpP->y) ;
+    if( ppP != nullptr ) priorAngle = bcdtmSideSlope_getAngle(cpP->x,cpP->y,ppP->x,ppP->y) ;
+    if( npP != nullptr ) nextAngle  = bcdtmSideSlope_getAngle(cpP->x,cpP->y,npP->x,npP->y) ;
+    if( ppP != nullptr && npP != nullptr ) sideOf = bcdtmSideSlope_sideOf(ppP->x,ppP->y,npP->x,npP->y,cpP->x,cpP->y) ;
 /*
 ** zero offset
 */
@@ -13977,10 +13978,10 @@ int bcdtmSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,doubl
     else if( offset > 0.0 )
       {
        if( dbg == 2 ) bcdtmWrite_message(0,0,0,"offsetting To Right") ;
-       if( ppP == NULL || npP == NULL )
+       if( ppP == nullptr || npP == nullptr )
          {
-          if( ppP == NULL ) deltaAngle = nextAngle  - gpkPye / 2.0 ;
-          if( npP == NULL ) deltaAngle = priorAngle + gpkPye / 2.0 ;
+          if( ppP == nullptr ) deltaAngle = nextAngle  - gpkPye / 2.0 ;
+          if( npP == nullptr ) deltaAngle = priorAngle + gpkPye / 2.0 ;
           x = cpP->x + offset * cos(deltaAngle) ;
           y = cpP->y + offset * sin(deltaAngle) ;
           z = z = cpP->z + slope * offset ;
@@ -14105,10 +14106,10 @@ int bcdtmSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,doubl
        if( priorAngle < nextAngle ) priorAngle += gpk2Pye ;
        bisectorAngle = ( priorAngle + nextAngle ) / 2.0 ;
        if( priorAngle > gpk2Pye ) priorAngle -= gpk2Pye ;
-       if( ppP == NULL || npP == NULL )
+       if( ppP == nullptr || npP == nullptr )
          {
-          if( ppP == NULL ) deltaAngle = nextAngle  + gpkPye / 2.0 ;
-          if( npP == NULL ) deltaAngle = priorAngle - gpkPye / 2.0 ;
+          if( ppP == nullptr ) deltaAngle = nextAngle  + gpkPye / 2.0 ;
+          if( npP == nullptr ) deltaAngle = priorAngle - gpkPye / 2.0 ;
           x = cpP->x - offset * cos(deltaAngle) ;
           y = cpP->y - offset * sin(deltaAngle) ;
           z = z = cpP->z + slope * offset ;
@@ -14282,16 +14283,16 @@ int bcdtmSideSlope_copyParallelSideSlopeElement
  int  ret=DTM_SUCCESS,dbg=0 ;
  long copyMode,numElementPts,numParallelPts ;
  double slope,horOffset ;
- DPoint3d  *p3dP,*elementPtsP=NULL,*parallelPtsP=NULL ;
+ DPoint3d  *p3dP,*elementPtsP=nullptr,*parallelPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radialP ;
- BC_DTM_OBJ *dataP=NULL ;
+ BC_DTM_OBJ *dataP=nullptr ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
  /*
 ** Allocate Memory For Side Slope Element Points
 */
  numElementPts = sideSlopeTableSize ;
  elementPtsP   = (DPoint3d *) malloc( numElementPts * sizeof(DPoint3d)) ;
- if( elementPtsP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( elementPtsP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Copy Element Points
 */
@@ -14330,16 +14331,16 @@ int bcdtmSideSlope_copyParallelSideSlopeElement
 */
  *numberOfDataObjectsP = 1 ;
  *dataObjectsPPP = (BC_DTM_OBJ **) malloc (*numberOfDataObjectsP * sizeof(BC_DTM_OBJ *)) ;
- if( *dataObjectsPPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( *dataObjectsPPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
  *(*dataObjectsPPP) = dataP ;
- dataP = NULL ;
+ dataP = nullptr ;
 /*
 ** Clean Up
 */
  cleanup :
- if( elementPtsP  != NULL ) { free(elementPtsP)  ; elementPtsP  = NULL ; }
- if( parallelPtsP != NULL ) { free(parallelPtsP) ; parallelPtsP = NULL ; }
- if( dataP != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
+ if( elementPtsP  != nullptr ) { free(elementPtsP)  ; elementPtsP  = nullptr ; }
+ if( parallelPtsP != nullptr ) { free(parallelPtsP) ; parallelPtsP = nullptr ; }
+ if( dataP != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
 /*
 ** Job Completed
 */
@@ -14372,7 +14373,7 @@ int bcdtmSideSlope_copyParallelSideSlopeElementToPointArray
  int  ret=DTM_SUCCESS,dbg=0 ;
  long copyMode,numElementPts,numParallelPts ;
  double slope,horOffset ;
- DPoint3d  *p3dP,*elementPtsP=NULL,*parallelPtsP=NULL ;
+ DPoint3d  *p3dP,*elementPtsP=nullptr,*parallelPtsP=nullptr ;
  DTM_SIDE_SLOPE_TABLE *radialP ;
 /*
 ** Write stroke
@@ -14381,7 +14382,7 @@ int bcdtmSideSlope_copyParallelSideSlopeElementToPointArray
 */
  numElementPts = sideSlopeTableSize ;
  elementPtsP   = (DPoint3d *) malloc( numElementPts * sizeof(DPoint3d)) ;
- if( elementPtsP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( elementPtsP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Copy Element Points
 */
@@ -14410,13 +14411,13 @@ int bcdtmSideSlope_copyParallelSideSlopeElementToPointArray
 */
  *paraElmemPolyPtsPP   = parallelPtsP  ;
  *numParaElmemPolyPtsP = numParallelPts ;
-  parallelPtsP   = NULL ;
+  parallelPtsP   = nullptr ;
 /*
 ** Clean Up
 */
  cleanup :
- if( elementPtsP  != NULL ) { free(elementPtsP)  ; elementPtsP  = NULL ; }
- if( parallelPtsP != NULL ) { free(parallelPtsP) ; parallelPtsP = NULL ; }
+ if( elementPtsP  != nullptr ) { free(elementPtsP)  ; elementPtsP  = nullptr ; }
+ if( parallelPtsP != nullptr ) { free(parallelPtsP) ; parallelPtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -14445,9 +14446,9 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
  long   padType,intersectionFound,ovlOnSurface,nextOnSurface,ovnOnSurface,priorOnSurface,drapeFlag;
  double  ovlX,ovlY,ovlZ,nextX,nextY,nextZ,priorX,priorY,priorZ,ovnX,ovnY,ovnZ,intX,intY,intZ,intZ1,intZ2 ;
  DTM_OVERLAP_RADIAL_TABLE *ovlP,*ovnP,*startOvlP,*nextP,*priorP ;
- DPoint3d             pnt,p3dPts[2],*p3dP,*p3dLastP,*slopeToePtsP=NULL ;
+ DPoint3d             pnt,p3dPts[2],*p3dP,*p3dLastP,*slopeToePtsP=nullptr ;
  long            numSlopeToePts,numKnotPts,direction ;
- DTM_STR_INT_PTS *knotPtsP=NULL ;
+ DTM_STR_INT_PTS *knotPtsP=nullptr ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 
 /*
@@ -14485,7 +14486,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
     numSlopeToePts  = numOvlPts ;
     if( ! padType ) ++numSlopeToePts ;
     slopeToePtsP = ( DPoint3d * ) malloc( numSlopeToePts * sizeof(DPoint3d)) ;
-    if( slopeToePtsP == NULL )
+    if( slopeToePtsP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Faailure") ;
        goto errexit ;
@@ -14571,8 +14572,8 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
 /*
 ** Scan To First Non Truncated Slope Toe
 */
- startOvlP = NULL ;
- for( ovlP = ovlPtsP ; ovlP < ovlPtsP + numOvlPts - padType && startOvlP == NULL ; ++ovlP )
+ startOvlP = nullptr ;
+ for( ovlP = ovlPtsP ; ovlP < ovlPtsP + numOvlPts - padType && startOvlP == nullptr ; ++ovlP )
    {
     if( ovlP->Status ) startOvlP = ovlP ;
    }
@@ -14580,7 +14581,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
 /*
 ** Store Slope Toes In Data Object
 */
- if( startOvlP != NULL )
+ if( startOvlP != nullptr )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Storing Slope Toes In Data Object") ;
     ovlP = startOvlP ;
@@ -14593,7 +14594,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
        ovlY = ovlP->Gy ;
        ovlZ = ovlP->Gz ;
        ovlOnSurface = 0 ;
-       if( benchTinP != NULL )
+       if( benchTinP != nullptr )
          {
           if( bcdtmDrape_pointDtmObject(benchTinP,ovlX,ovlY,&intZ1,&drapeFlag)) goto errexit ;
           if( fabs(intZ1-ovlZ) < 0.0001 ) ovlOnSurface = 1 ;
@@ -14603,7 +14604,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
        priorY = priorP->Gy ;
        priorZ = priorP->Gz ;
        priorOnSurface = 0 ;
-       if( benchTinP != NULL )
+       if( benchTinP != nullptr )
          {
           if( bcdtmDrape_pointDtmObject(benchTinP,priorX,priorY,&intZ1,&drapeFlag)) goto errexit ;
           if( fabs(intZ1-priorZ) < 0.0001 ) priorOnSurface = 1 ;
@@ -14637,13 +14638,13 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
        ovnP = ovlP + 1 ;
        if( ovnP >= ovlPtsP + numOvlPts )
          {
-          if( padType == 1 ) ovnP = NULL ;
+          if( padType == 1 ) ovnP = nullptr ;
           else               ovnP = ovlPtsP ;
          }
 /*
 **     Check Next Radial Found
 */
-       if( ovnP != NULL )
+       if( ovnP != nullptr )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Processing Slope Toe %6ld ** %6ld",(long)(ovlP-ovlPtsP),(long)(ovnP-ovlPtsP)) ;
 /*
@@ -14674,7 +14675,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
 /*
 **           Check Next Radial Found
 */
-             if( ovnP != NULL )
+             if( ovnP != nullptr )
                {
 /*
 **              Set Coordinates
@@ -14683,7 +14684,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
                 ovlY = ovlP->Gy ;
                 ovlZ = ovlP->Gz ;
                 ovlOnSurface = 0 ;
-                if( benchTinP != NULL )
+                if( benchTinP != nullptr )
                   {
                    if( bcdtmDrape_pointDtmObject(benchTinP,ovlX,ovlY,&intZ1,&drapeFlag)) goto errexit ;
                    if( fabs(intZ1-ovlZ) < 0.0001 ) ovlOnSurface = 1 ;
@@ -14697,7 +14698,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
                 nextY = nextP->Gy ;
                 nextZ = nextP->Gz ;
                 nextOnSurface = 0 ;
-                if( benchTinP != NULL )
+                if( benchTinP != nullptr )
                   {
                    if( bcdtmDrape_pointDtmObject(benchTinP,nextX,nextY,&intZ1,&drapeFlag)) goto errexit ;
                    if( fabs(intZ1-nextZ) < 0.0001 ) nextOnSurface = 1 ;
@@ -14723,7 +14724,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
                 ovnY = ovnP->Gy ;
                 ovnZ = ovnP->Gz ;
                 ovnOnSurface = 0 ;
-                if( benchTinP != NULL )
+                if( benchTinP != nullptr )
                   {
                    if( bcdtmDrape_pointDtmObject(benchTinP,ovnX,ovnY,&intZ1,&drapeFlag)) goto errexit ;
                    if( fabs(intZ1-ovnZ) < 0.0001 ) ovnOnSurface = 1 ;
@@ -14734,7 +14735,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
                 priorY = priorP->Gy ;
                 priorZ = priorP->Gz ;
                 priorOnSurface = 0 ;
-                if( benchTinP != NULL )
+                if( benchTinP != nullptr )
                   {
                    if( bcdtmDrape_pointDtmObject(benchTinP,priorX,priorY,&intZ1,&drapeFlag)) goto errexit ;
                    if( fabs(intZ1-priorZ) < 0.0001 ) priorOnSurface = 1 ;
@@ -14817,9 +14818,9 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
 /*
 **     Set For Next Slope Toe
 */
-       if( ovlP == ovnP ) ovnP = NULL ;
+       if( ovlP == ovnP ) ovnP = nullptr ;
        ovlP = ovnP ;
-      } while ( ovlP != startOvlP && ovlP != NULL ) ;
+      } while ( ovlP != startOvlP && ovlP != nullptr ) ;
 /*
 **  Check For Next Slope Toe From None Truncated Radial Of Open Side Slope Element
 */
@@ -14828,21 +14829,21 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
 /*
 **     Scan Back To Get First None Truncated Radial
 */
-       ovlP = NULL ;
-       for( ovnP = ovlPtsP+numOvlPts-1 ; ovnP >= ovlPtsP && ovlP == NULL ; --ovnP )
+       ovlP = nullptr ;
+       for( ovnP = ovlPtsP+numOvlPts-1 ; ovnP >= ovlPtsP && ovlP == nullptr ; --ovnP )
          {
           if( ovnP->Status ) ovlP = ovnP ;
          }
 /*
 **     Get Next Slope Toe
 */
-       if( ovlP == NULL )
+       if( ovlP == nullptr )
          {
           ovlX = ovlP->Gx ;
           ovlY = ovlP->Gy ;
           ovlZ = ovlP->Gz ;
           ovlOnSurface = 0 ;
-          if( benchTinP != NULL )
+          if( benchTinP != nullptr )
             {
              if( bcdtmDrape_pointDtmObject(benchTinP,ovlX,ovlY,&intZ1,&drapeFlag)) goto errexit ;
              if( fabs(intZ1-ovlZ) < 0.0001 ) ovlOnSurface = 1 ;
@@ -14853,7 +14854,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
           nextY = nextP->Gy ;
           nextZ = nextP->Gz ;
           nextOnSurface = 0 ;
-          if( benchTinP != NULL )
+          if( benchTinP != nullptr )
             {
              if( bcdtmDrape_pointDtmObject(benchTinP,nextX,nextY,&intZ1,&drapeFlag)) goto errexit ;
              if( fabs(intZ1-nextZ) < 0.0001 ) nextOnSurface = 1 ;
@@ -14891,8 +14892,8 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ
 ** Clean Up
 */
  cleanup :
- if( knotPtsP     != NULL ) free(knotPtsP)  ;
- if( slopeToePtsP != NULL ) free(slopeToePtsP) ;
+ if( knotPtsP     != nullptr ) free(knotPtsP)  ;
+ if( slopeToePtsP != nullptr ) free(slopeToePtsP) ;
 /*
 ** Job Completed
 */
@@ -14927,15 +14928,15 @@ int bcdtmSideSlope_findFirstNonTruncatedRadial
  *ovnPP = ovlP + 1 ;
  if( *ovnPP >= ovlPtsP + numOvlPts )
    {
-    if( padType == 1 ) *ovnPP = NULL ;
+    if( padType == 1 ) *ovnPP = nullptr ;
     else               *ovnPP = ovlPtsP ;
    }
-while ( *ovnPP != NULL && (*ovnPP)->Status != 1 )
+while ( *ovnPP != nullptr && (*ovnPP)->Status != 1 )
    {
     ++*ovnPP ;
     if( *ovnPP >= ovlPtsP + numOvlPts )
       {
-       if( padType == 1 ) *ovnPP = NULL ;
+       if( padType == 1 ) *ovnPP = nullptr ;
        else               *ovnPP = ovlPtsP ;
       }
    }
@@ -15023,7 +15024,7 @@ int bcdtmSideSlope_writeLimitSlopeToesToDataObjectOld(long sideSlopeType,BC_DTM_
  long   padType,intersectionFound ;
  double x,y,xInt=0.0,yInt=0.0,zInt=0.0,dist,dmin=0.0 ;
  DPoint3d    p3dPts[2] ;
- DTM_OVERLAP_RADIAL_TABLE *ovlP,*ovnP,*trn1P,*trn2P,*rad1P,*rad2P,*rad3P=NULL,*rad4P=NULL,*crad1P,*crad2P ;
+ DTM_OVERLAP_RADIAL_TABLE *ovlP,*ovnP,*trn1P,*trn2P,*rad1P,*rad2P,*rad3P=nullptr,*rad4P=nullptr,*crad1P,*crad2P ;
  double angle,rad2X,rad2Y,rad4X,rad4Y ;
  static long seqdbg=0 ;
 /*
@@ -15286,16 +15287,16 @@ int bcdtmSideSlope_limitFindFirstNonTruncatedSlopeToe
  if( radP == ovlP )
    {
     scanP = ovnP ;
-    while ( scanP != NULL && scanP->Status != 1 )
+    while ( scanP != nullptr && scanP->Status != 1 )
       {
        ++scanP ;
        if( scanP >= ovlPtsP + numOvlPts )
          {
-          if( padType == 1 ) scanP = NULL ;
+          if( padType == 1 ) scanP = nullptr ;
           else               scanP = ovlPtsP ;
          }
       }
-    if( scanP != NULL )
+    if( scanP != nullptr )
       {
        *xIntP = scanP->Gx ;
        *yIntP = scanP->Gy ;
@@ -15317,16 +15318,16 @@ int bcdtmSideSlope_limitFindFirstNonTruncatedSlopeToe
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"==== Scanning Backwards") ;
     scanP = ovlP ;
-    while ( scanP != NULL && scanP->Status != 1 )
+    while ( scanP != nullptr && scanP->Status != 1 )
       {
        --scanP ;
        if( scanP < ovlPtsP )
          {
-          if( padType == 1 ) scanP = NULL ;
+          if( padType == 1 ) scanP = nullptr ;
           else               scanP = ovlPtsP + numOvlPts - 1 ;
          }
       }
-    if( scanP != NULL )
+    if( scanP != nullptr )
       {
        *xIntP = scanP->Gx ;
        *yIntP = scanP->Gy ;
@@ -15358,7 +15359,7 @@ int bcdtmSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM
  DTMDirection Direction;
  long HullCoincidentFlag,NoHoles,numTmpFeatureCodes ;
  double Area ;
- DPoint3d    *featurePtsP=NULL ;
+ DPoint3d    *featurePtsP=nullptr ;
  DTM_TIN_NODE   *pd ;
  static long seqdbg=0 ;
  BC_DTM_FEATURE *dtmFeatureP ;
@@ -15543,7 +15544,7 @@ int bcdtmSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM
 ** Clean Up
 */
  cleanup :
- if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+ if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -15834,12 +15835,12 @@ int bcdtmSideSlope_removeBreakLineSegmentDtmObject(BC_DTM_OBJ *tinP,long pnt1,lo
     if( nodeAddrP(tinP,fPnt)->tPtr != tinP->nullPnt )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Adding Feature ** fPnt = %9ld",fPnt) ;
-       if( bcdtmInsert_addDtmFeatureToDtmObject(tinP,NULL,0,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,nullFeatureId,fPnt,1)) goto errexit ;
+       if( bcdtmInsert_addDtmFeatureToDtmObject(tinP,nullptr,0,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,nullFeatureId,fPnt,1)) goto errexit ;
       }
     if( nodeAddrP(tinP,nPnt)->tPtr != tinP->nullPnt )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Adding Feature ** nPnt = %9ld",nPnt) ;
-       if( bcdtmInsert_addDtmFeatureToDtmObject(tinP,NULL,0,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,nullFeatureId,nPnt,1)) goto errexit ;
+       if( bcdtmInsert_addDtmFeatureToDtmObject(tinP,nullptr,0,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,nullFeatureId,nPnt,1)) goto errexit ;
       }
    }
 /*
@@ -15985,8 +15986,8 @@ int bcdtmSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
   DTMDirection polyDirection;
   bool useNewAlgorithm=false ;
   double  polyArea ;
-  DPoint3d     *p3dP,slopeToe[2],*hullPtsP=NULL ;
-  BC_DTM_OBJ *dtmP=NULL ;
+  DPoint3d     *p3dP,slopeToe[2],*hullPtsP=nullptr ;
+  BC_DTM_OBJ *dtmP=nullptr ;
   DTM_OVERLAP_RADIAL_TABLE *rad1P,*rad2P,*firstRadialP ;
   long loop=0 ;
   DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
@@ -16029,7 +16030,7 @@ int bcdtmSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
 /*
 **     Free Memory
 */
-      if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+      if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
      }
 /*
 **  Resolve Intersecting Side Slope Toes
@@ -16058,15 +16059,15 @@ loop = 10 ;
 /*
 **          Find First Non Truncated Radial
 */
-            firstRadialP = NULL ;
-            for( rad1P = leftRadialsP ; rad1P < leftRadialsP + numLeftRadials && firstRadialP == NULL ; ++rad1P )
+            firstRadialP = nullptr ;
+            for( rad1P = leftRadialsP ; rad1P < leftRadialsP + numLeftRadials && firstRadialP == nullptr ; ++rad1P )
               {
                if( rad1P->Status == 1 ) firstRadialP = rad1P ;
               }
 /*
 **          If First Radial Found Then There Are Holes
 */
-            if( firstRadialP != NULL )
+            if( firstRadialP != nullptr )
               {
                process = true ;
 /*
@@ -16114,7 +16115,7 @@ loop = 10 ;
 /*
 **             Free Hull Points Memory
 */
-               if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+               if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
               }
            }
         }
@@ -16222,7 +16223,7 @@ loop = 10 ;
                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hole,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-                        if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+                        if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
                        }
                     }
                  }
@@ -16232,15 +16233,15 @@ loop = 10 ;
 /*
 **    Destroy Data Object
 */
-      if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+      if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
      }
   }
 /*
 ** Clean Up
 */
  cleanup :
- if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
- if( hullPtsP != NULL ) free(hullPtsP) ;
+ if( dtmP     != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( hullPtsP != nullptr ) free(hullPtsP) ;
 /*
 ** Write Status Message
 */
@@ -16338,8 +16339,8 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
   long    flPtr,listPoint,numTruncated,pointOnHull ;
   DTMDirection polyDirection;
   double  polyArea ;
-  DPoint3d     slopeToe[2],*hullPtsP=NULL ;
-  BC_DTM_OBJ *dtmP=NULL ;
+  DPoint3d     slopeToe[2],*hullPtsP=nullptr ;
+  BC_DTM_OBJ *dtmP=nullptr ;
   DTM_OVERLAP_RADIAL_TABLE *rad1P,*rad2P;
   DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 
@@ -16375,7 +16376,7 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 /*
 **     Free Memory
 */
-       if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+       if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
       }
 /*
 **  External Side Slopes - Check For Truncated Radials
@@ -16401,7 +16402,7 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 /*
 **        Free Memory
 */
-          if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+          if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
          }
 /*
 **     Resolve Intersecting Slope Toes
@@ -16474,7 +16475,7 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
              if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
              if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
              if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-             if( hullPtsP != NULL ) { free( hullPtsP ) ; hullPtsP = NULL ; }
+             if( hullPtsP != nullptr ) { free( hullPtsP ) ; hullPtsP = nullptr ; }
             }
 /*
 **        Look For Internal Slope Toes In External Side Slopes
@@ -16546,7 +16547,7 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
                          if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hole,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
                          if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
                          if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-                         if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+                         if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
                         }
                      }
                   }
@@ -16555,7 +16556,7 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 /*
 **        Destroy Data Object
 */
-          if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+          if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
          }
       }
    }
@@ -16563,8 +16564,8 @@ int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 ** Clean Up
 */
  cleanup :
- if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
- if( hullPtsP != NULL ) free(hullPtsP) ;
+ if( dtmP     != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( hullPtsP != nullptr ) free(hullPtsP) ;
 /*
 ** Write Status Message
 */
@@ -16607,7 +16608,7 @@ int bcdtmSideSlope_copySideSlopeRadialStartPointsToPointArray
 ** Allocate Memory
 */
  *elemPtsPP = ( DPoint3d * ) malloc ( *numElemPtsP * sizeof(DPoint3d)) ;
- if( *elemPtsPP == NULL )
+ if( *elemPtsPP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -16669,7 +16670,7 @@ int bcdtmSideSlope_copySideSlopeRadialToePointsToPointArray
 ** Allocate Memory
 */
  *elemPtsPP = ( DPoint3d * ) malloc ( *numElemPtsP * sizeof(DPoint3d)) ;
- if( *elemPtsPP == NULL )
+ if( *elemPtsPP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -16750,8 +16751,8 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
  bool process;
  DTMDirection toeDirection ;
  double  toeArea ;
- DPoint3d     *p3dP,*slopeToePtsP=NULL ;
- DTM_STR_INT_PTS *knotPtsP=NULL ;
+ DPoint3d     *p3dP,*slopeToePtsP=nullptr ;
+ DTM_STR_INT_PTS *knotPtsP=nullptr ;
  DTM_OVERLAP_RADIAL_TABLE *radP,*startRightRadialP;
 /*
 ** Write Entry Message
@@ -16761,7 +16762,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 ** Initialise
 */
  *numHullPtsP = 0 ;
- if( *hullPtsPP != NULL ) { free(*hullPtsPP) ; *hullPtsPP = NULL ; }
+ if( *hullPtsPP != nullptr ) { free(*hullPtsPP) ; *hullPtsPP = nullptr ; }
 /*
 ** Copy Slope Toe Points To Point Array
 */
@@ -16775,7 +16776,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 ** Remove Knots From Slope Toe Polygon
 */
  if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
- if( knotPtsP != NULL ) { free( knotPtsP) ; knotPtsP     = NULL ; }
+ if( knotPtsP != nullptr ) { free( knotPtsP) ; knotPtsP     = nullptr ; }
 /*
 ** Remove Truncated Radials Whose Slope Toe Intersects Boundary Polygon
 */
@@ -16806,14 +16807,14 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 */
     if( process == true )
       {
-       if( slopeToePtsP != NULL ) { free( slopeToePtsP) ; slopeToePtsP = NULL ; }
+       if( slopeToePtsP != nullptr ) { free( slopeToePtsP) ; slopeToePtsP = nullptr ; }
        startRightRadialP = sideSlopeRadialsP ;
        while( startRightRadialP->Status == 3 ) ++startRightRadialP ;
        numSlopeToePts = 0 ;
        for( radP = startRightRadialP ; radP < sideSlopeRadialsP + numSideSlopeRadials ; ++radP )if( radP->Status != 3 ) ++numSlopeToePts ;
        ++numSlopeToePts ;
        slopeToePtsP = ( DPoint3d * ) malloc(numSlopeToePts*sizeof(DPoint3d)) ;
-       if( slopeToePtsP == NULL )
+       if( slopeToePtsP == nullptr )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
@@ -16836,7 +16837,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
           p3dP->z = radP->Gz ;
          }
        if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
-       if( knotPtsP     != NULL ) { free( knotPtsP)     ; knotPtsP     = NULL ; }
+       if( knotPtsP     != nullptr ) { free( knotPtsP)     ; knotPtsP     = nullptr ; }
       }
    }
 /*
@@ -16873,14 +16874,14 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 */
     if( process == true )
       {
-       if( slopeToePtsP != NULL ) { free( slopeToePtsP) ; slopeToePtsP = NULL ; }
+       if( slopeToePtsP != nullptr ) { free( slopeToePtsP) ; slopeToePtsP = nullptr ; }
        startRightRadialP = sideSlopeRadialsP ;
        while( startRightRadialP->Status == 3 ) ++startRightRadialP ;
        numSlopeToePts = 0 ;
        for( radP = startRightRadialP ; radP < sideSlopeRadialsP + numSideSlopeRadials ; ++radP )if( radP->Status != 3 ) ++numSlopeToePts ;
        ++numSlopeToePts ;
        slopeToePtsP = ( DPoint3d * ) malloc(numSlopeToePts*sizeof(DPoint3d)) ;
-       if( slopeToePtsP == NULL )
+       if( slopeToePtsP == nullptr )
          {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
@@ -16903,7 +16904,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
           p3dP->z = radP->Gz ;
          }
        if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
-       if( knotPtsP     != NULL ) { free( knotPtsP)     ; knotPtsP     = NULL ; }
+       if( knotPtsP     != nullptr ) { free( knotPtsP)     ; knotPtsP     = nullptr ; }
        process = false ;  // Only Do One Loop Robc 2/Nov/2007
       }
    }
@@ -16912,13 +16913,13 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 */
  *hullPtsPP   = slopeToePtsP ;
  *numHullPtsP = numSlopeToePts ;
- slopeToePtsP = NULL ;
+ slopeToePtsP = nullptr ;
 /*
 ** Clean Up
 */
  cleanup :
- if( slopeToePtsP != NULL ) { free( slopeToePtsP) ; slopeToePtsP = NULL ; }
- if( knotPtsP     != NULL ) { free( knotPtsP)     ; knotPtsP     = NULL ; }
+ if( slopeToePtsP != nullptr ) { free( slopeToePtsP) ; slopeToePtsP = nullptr ; }
+ if( knotPtsP     != nullptr ) { free( knotPtsP)     ; knotPtsP     = nullptr ; }
 /*
 ** Return
 */
@@ -16950,8 +16951,8 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
     long         side,startPoint,listPoint,numRadials ;
     long         numHullPts ;
     double       polyArea ;
-    DPoint3d          *hullPtsP=NULL;
-    BC_DTM_OBJ   *dataP=NULL ;
+    DPoint3d          *hullPtsP=nullptr;
+    BC_DTM_OBJ   *dataP=nullptr ;
     DTM_OVERLAP_RADIAL_TABLE *rad1P ;
     DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 
@@ -16962,7 +16963,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
     */
     if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,DTMUserTagConst::DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
     if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,DTMUserTagConst::DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 
     /*
     **  Get External Right Slope Toes
@@ -17012,8 +17013,8 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
                         if (bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts))
                             goto errexit ;
                         }
-                    if (hullPtsP != NULL)
-                        { free(hullPtsP) ; hullPtsP = NULL ;}
+                    if (hullPtsP != nullptr)
+                        { free(hullPtsP) ; hullPtsP = nullptr ;}
                     }
                 startPoint = -1;
                 }
@@ -17065,8 +17066,8 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
                     if (numHullPts > 0)
                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP, DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts))
                             goto errexit ;
-                    if( hullPtsP != NULL )
-                        { free(hullPtsP) ; hullPtsP = NULL ;}
+                    if( hullPtsP != nullptr )
+                        { free(hullPtsP) ; hullPtsP = nullptr ;}
                     }
                 startPoint = -1;
                 }
@@ -17080,7 +17081,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
         DTM_OVERLAP_RADIAL_TABLE *radialsP;
         if( side == 0 ) { radialsP   = rightRadialsP ; numRadials = numRightRadials ; }
         else            { radialsP   = leftRadialsP  ; numRadials = numLeftRadials  ; }
-        if( radialsP != NULL )
+        if( radialsP != nullptr )
             {
             if( dbg && side == 0 ) bcdtmWrite_message(0,0,0,"Getting Internal Right Slope Toes") ;
             if( dbg && side == 1 ) bcdtmWrite_message(0,0,0,"Getting Internal Left Slope Toes") ;
@@ -17151,7 +17152,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
                                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hole,DTMUserTagConst::DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
                                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,DTMUserTagConst::DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
                                         if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,DTMUserTagConst::DTM_NULL_USER_TAG,1,&nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-                                        if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+                                        if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
                                         }
                                     }
                             }
@@ -17164,8 +17165,8 @@ int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
     ** Clean Up
     */
 cleanup :
-    if( dataP    != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( dataP    != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
     /*
     ** Write Status Message
     */
@@ -17325,7 +17326,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
 {
  int  ret=DTM_SUCCESS,dbg=0 ;
  long numHullPts ;
- DPoint3d  *hullPtsP=NULL ;
+ DPoint3d  *hullPtsP=nullptr ;
  DTM_OVERLAP_RADIAL_TABLE  *rad1P,*rad2P ;
 /*
 ** Write Entry Message
@@ -17354,7 +17355,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
           {
             if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
             if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-            if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+            if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
             continue;
           }
        if( bcdtmLoad_storePointInCache(rad1P->Gx,rad1P->Gy,rad1P->Gz)) goto errexit ;
@@ -17366,7 +17367,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
       }
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
 /*
     for( rad1P = rightRadialsP + numRightRadials - 1 ; rad1P > rightRadialsP  ; --rad1P )
       {
@@ -17392,7 +17393,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
           {
             if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
             if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-            if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+            if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
             continue;
           }
        if( dbg ) bcdtmWrite_message(0,0,0,"Left Slope Toe Point[%4ld] = %12.5 %12.5lf %10.4lf",(long)(rad1P-leftRadialsP),rad1P->Gx,rad1P->Gy,rad1P->Gz) ;
@@ -17424,7 +17425,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Slope Toe Points = %8ld",numHullPts) ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::SlopeToe,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
 /*
 **  Write Boundary Polygon
@@ -17457,7 +17458,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
  if( sideSlopeDirection == 2 )
    {
@@ -17483,7 +17484,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
  if( sideSlopeDirection == 3 )
    {
@@ -17515,7 +17516,7 @@ int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
     if( bcdtmLoad_getCachePoints(&hullPtsP,&numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::Hull,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
     if( numHullPts > 0 ) if( bcdtmObject_storeDtmFeatureInDtmObject(sideSlopesP,DTMFeatureType::GraphicBreak,sideSlopesP->nullUserTag,1,&sideSlopesP->nullFeatureId,hullPtsP,numHullPts)) goto errexit ;
-    if( hullPtsP != NULL ) { free(hullPtsP) ; hullPtsP = NULL ; }
+    if( hullPtsP != nullptr ) { free(hullPtsP) ; hullPtsP = nullptr ; }
    }
 /*
 ** Clean Up
@@ -17557,7 +17558,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes
  long    pnt,lpnt,cpnt ;
  DPoint3d     p3dPts[2] ;
  DTM_OVERLAP_RADIAL_TABLE *radP,*rad1P,*rad2P ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -17566,7 +17567,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes
 ** Initialise
 */
  *numHullPtsP = 0 ;
- if( *hullPtsPP != NULL ) { free(*hullPtsPP) ; *hullPtsPP = NULL ; }
+ if( *hullPtsPP != nullptr ) { free(*hullPtsPP) ; *hullPtsPP = nullptr ; }
 /*
 ** Loop And Fix
 */
@@ -17577,7 +17578,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes
 /*
 ** Store Slope Toes In Data Object
 */
-    if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+    if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
     if( bcdtmObject_createDtmObject(&dtmP)) goto errexit ;
     bcdtmObject_setPointMemoryAllocationParametersDtmObject(dtmP,*numSideSlopeRadialsP*2,*numSideSlopeRadialsP) ;
     for( rad1P = *sideSlopeRadialsPP ; rad1P < *sideSlopeRadialsPP + *numSideSlopeRadialsP  ; ++rad1P )
@@ -17655,7 +17656,7 @@ int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes
 ** Clean Up
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Return
 */
@@ -17693,11 +17694,11 @@ int bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes
 {
  int     ret=DTM_SUCCESS,dbg=0 ;
  long    side,loop,numSlopeToePts,numRadials ;
- DPoint3d     *p3dP,*slopeToePtsP=NULL,p3dPts[2] ;
+ DPoint3d     *p3dP,*slopeToePtsP=nullptr,p3dPts[2] ;
  wchar_t    datFile[]=L"openElement00.dat" ;
  wchar_t    tinFile[]=L"openElement00.tin" ;
  DTM_OVERLAP_RADIAL_TABLE *radP,*rad1P,*rad2P,*radialsP;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -17705,8 +17706,8 @@ int bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes
 /*
 ** Initialise
 */
- if( *hullPtsPP != NULL ) { free(*hullPtsPP) ; *hullPtsPP = NULL ; }
- if( *dtmPP     != NULL ) bcdtmObject_destroyDtmObject(dtmPP) ;
+ if( *hullPtsPP != nullptr ) { free(*hullPtsPP) ; *hullPtsPP = nullptr ; }
+ if( *dtmPP     != nullptr ) bcdtmObject_destroyDtmObject(dtmPP) ;
 /*
 ** Loop A Number Of Times To Refine Slope Toes
 */
@@ -17808,9 +17809,9 @@ int bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes
 /*
 **  Set Tin
 */
-    if( *dtmPP != NULL ) bcdtmObject_destroyDtmObject(dtmPP) ;
+    if( *dtmPP != nullptr ) bcdtmObject_destroyDtmObject(dtmPP) ;
     *dtmPP = dtmP ;
-    dtmP = NULL ;
+    dtmP = nullptr ;
 /*
 **  Truncate Truncated Radials That Cut Slope Toes
 */
@@ -17820,7 +17821,7 @@ int bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes
          {
           if( side == 0 ) { radialsP   = rightRadialsP ; numRadials = numRightRadials ; }
           else            { radialsP   = leftRadialsP  ; numRadials = numLeftRadials  ; }
-          if( radialsP != NULL )
+          if( radialsP != nullptr )
             {
              if( dbg && side == 0 ) bcdtmWrite_message(0,0,0,"Truncating Right Truncated Radials") ;
              if( dbg && side == 1 ) bcdtmWrite_message(0,0,0,"Truncating Left Truncated Radials") ;
@@ -17860,20 +17861,20 @@ int bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes
 /*
 **  Free Slope Toes Points
 */
-    if( *hullPtsPP != NULL ) free(*hullPtsPP) ;
-    if( slopeToePtsP != NULL )
+    if( *hullPtsPP != nullptr ) free(*hullPtsPP) ;
+    if( slopeToePtsP != nullptr )
       {
        *hullPtsPP   = slopeToePtsP ;
        *numHullPtsP = numSlopeToePts ;
-       slopeToePtsP = NULL ;
+       slopeToePtsP = nullptr ;
       }
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
- if( slopeToePtsP != NULL ) { free( slopeToePtsP) ; slopeToePtsP = NULL ; }
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( slopeToePtsP != nullptr ) { free( slopeToePtsP) ; slopeToePtsP = nullptr ; }
 /*
 ** Return
 */

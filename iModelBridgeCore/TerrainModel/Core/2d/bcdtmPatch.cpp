@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmPatch.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -445,9 +445,9 @@ BENTLEYDTM_Public int bcdtmPatch_moveZElevationLatticeObject
       {
        if( *(latticeP->LAT + latticeP->NYL *  j + i)  != latticeP->NULLVAL )
          {
-	      if( moveOption == 0 ) *(latticeP->LAT + latticeP->NYL *  j + i) = (float) moveValue ;
-	      if( moveOption == 1 ) *(latticeP->LAT + latticeP->NYL *  j + i) = *(latticeP->LAT + latticeP->NYL *  j + i) + (float) moveValue ;
-	      if( moveOption == 2 ) *(latticeP->LAT + latticeP->NYL *  j + i) = *(latticeP->LAT + latticeP->NYL *  j + i) - (float) moveValue ;
+          if( moveOption == 0 ) *(latticeP->LAT + latticeP->NYL *  j + i) = (float) moveValue ;
+          if( moveOption == 1 ) *(latticeP->LAT + latticeP->NYL *  j + i) = *(latticeP->LAT + latticeP->NYL *  j + i) + (float) moveValue ;
+          if( moveOption == 2 ) *(latticeP->LAT + latticeP->NYL *  j + i) = *(latticeP->LAT + latticeP->NYL *  j + i) - (float) moveValue ;
          }
       }
    } 
@@ -629,9 +629,9 @@ BENTLEYDTM_Public int bcdtmPatch_loadBackSurfaceToPlaneIsoCells
 **        Get Reference Cell
 */
           latPts[0].z = (float) z1 - ((float) z1 - elevation ) ; 
- 	      latPts[1].z = (float) z2 - ((float) z2 - elevation ) ;
-	      latPts[2].z = (float) z3 - ((float) z3 - elevation ) ; 
-		  latPts[3].z = (float) z4 - ((float) z4 - elevation ) ;
+          latPts[1].z = (float) z2 - ((float) z2 - elevation ) ;
+          latPts[2].z = (float) z3 - ((float) z3 - elevation ) ; 
+          latPts[3].z = (float) z4 - ((float) z4 - elevation ) ;
           if( bcdtmLoad_storePointInCache(latPts[0].x,latPts[0].y,latPts[0].z)) goto errexit ;
           if( bcdtmLoad_storePointInCache(latPts[1].x,latPts[1].y,latPts[1].z)) goto errexit ;
           if( bcdtmLoad_storePointInCache(latPts[2].x,latPts[2].y,latPts[2].z)) goto errexit ;
@@ -712,8 +712,8 @@ BENTLEYDTM_Public int bcdtmPatch_loadBackSurfaceToSurfaceIsoCells
 */
           latPts[0].z = (float) ( z1 - p1 ) ;
           latPts[1].z = (float) ( z2 - p2 ) ;
-	      latPts[2].z = (float) ( z3 - p3 ) ; 
-		  latPts[3].z = (float) ( z4 - p4 ) ;
+          latPts[2].z = (float) ( z3 - p3 ) ; 
+          latPts[3].z = (float) ( z4 - p4 ) ;
           if( bcdtmLoad_storePointInCache(latPts[0].x,latPts[0].y,latPts[0].z)) goto errexit ;
           if( bcdtmLoad_storePointInCache(latPts[1].x,latPts[1].y,latPts[1].z)) goto errexit ;
           if( bcdtmLoad_storePointInCache(latPts[2].x,latPts[2].y,latPts[2].z)) goto errexit ;

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmJoin.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -592,7 +592,7 @@ BENTLEYDTM_Private int bcdtmJoin_nodes(DTM_JOIN_NODE_TABLE *nodeTableP,long numN
                 ++numJoinedNodes ;
                }
             } 
-	     }
+         }
       }
    }
 /*
@@ -636,14 +636,14 @@ BENTLEYDTM_Private int bcdtmJoin_findClosestNode(DTM_JOIN_NODE_TABLE *nodeTableP
        if( snodeP->userTag == nodeP->userTag && snodeP->joinNode == DTM_NULL_PNT && snodeP->featureOfs != nodeP->featureOfs )
          {
           if( ( dd = bcdtmMath_distance(snodeP->x,snodeP->y,nodeP->x,nodeP->y) ) <= tolerance )
-	        {
-	         if( firstCompare || dd < dn ) 
+            {
+             if( firstCompare || dd < dn ) 
                { 
                 firstCompare = 0 ; 
                 dn = dd ; 
                 *closestNodePP = snodeP ; 
                }
-	        }
+            }
          }
       }
 /*
@@ -654,14 +654,14 @@ BENTLEYDTM_Private int bcdtmJoin_findClosestNode(DTM_JOIN_NODE_TABLE *nodeTableP
        if( snodeP->userTag == nodeP->userTag && snodeP->joinNode == DTM_NULL_PNT && snodeP->featureOfs != nodeP->featureOfs )
          {
           if( ( dd = bcdtmMath_distance(snodeP->x,snodeP->y,nodeP->x,nodeP->y) ) <= tolerance )
-	        {
-	         if( firstCompare || dd < dn ) 
+            {
+             if( firstCompare || dd < dn ) 
                { 
                 firstCompare = 0 ; 
                 dn = dd ; 
                 *closestNodePP = snodeP ; 
                }
-	        }
+            }
          }
       }
    }
@@ -679,14 +679,14 @@ BENTLEYDTM_Private int bcdtmJoin_findClosestNode(DTM_JOIN_NODE_TABLE *nodeTableP
        if( snodeP->z == nodeP->z && snodeP->userTag == nodeP->userTag && snodeP->joinNode == DTM_NULL_PNT && snodeP->featureOfs != nodeP->featureOfs )
          {
           if( ( dd = bcdtmMath_distance(snodeP->x,snodeP->y,nodeP->x,nodeP->y) ) <= tolerance )
-	        {
-	         if( firstCompare || dd < dn ) 
+            {
+             if( firstCompare || dd < dn ) 
                { 
                 firstCompare = 0 ; 
                 dn = dd ; 
                 *closestNodePP = snodeP ; 
                }
-	        }
+            }
          }
       }
 /*
@@ -697,14 +697,14 @@ BENTLEYDTM_Private int bcdtmJoin_findClosestNode(DTM_JOIN_NODE_TABLE *nodeTableP
        if( snodeP->z == nodeP->z && snodeP->userTag == nodeP->userTag && snodeP->joinNode == DTM_NULL_PNT && snodeP->featureOfs != nodeP->featureOfs )
          {
           if( ( dd = bcdtmMath_distance(snodeP->x,snodeP->y,nodeP->x,nodeP->y) ) <= tolerance )
-	        {
-	         if( firstCompare || dd < dn ) 
+            {
+             if( firstCompare || dd < dn ) 
                { 
                 firstCompare = 0 ; 
                 dn = dd ; 
                 *closestNodePP = snodeP ; 
                }
-	        }
+            }
          }
       }
    }

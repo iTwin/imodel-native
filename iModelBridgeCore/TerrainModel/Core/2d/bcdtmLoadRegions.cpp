@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadRegions.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -168,10 +168,10 @@ BENTLEYDTM_Public int bcdtmMark_internalRegionPointsDtmObject
 */
        if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
          { 
-		  nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
-		  lastPnt = clPnt ; 
-		  nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
-	     }
+          nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
+          lastPnt = clPnt ; 
+          nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
+         }
       }
     firstPnt = nextPnt ;
    }
@@ -331,10 +331,10 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject2(BC_DTM_OBJ *
           bcdtmMark_checkAndMarkPolygonsDtmObject(dtmP, clPnt);
        if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
          { 
-		  nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
-		  lastPnt = clPnt ; 
-		  nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
-	     }
+          nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
+          lastPnt = clPnt ; 
+          nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
+         }
       }
     firstPnt = nextPnt ;
    }

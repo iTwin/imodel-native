@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmMath.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -906,21 +906,21 @@ BENTLEYDTM_Public int bcdtmMath_calculatePartialDerivativesDtmObject(BC_DTM_OBJ 
        dz1  = pntP->z - z ;
        cp   = clistAddrP(dtmP,cl)->nextPtr    ;
        while ( cp != dtmP->nullPtr )
-	     {
+         {
           pntP = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum) ;
-	      dx2  = pntP->x - x ;
-	      dy2  = pntP->y - y ;
-	      dnmz = dx1*dy2 - dy1*dx2 ;
-	      if( dnmz != 0.0 )
-	        {
-	         dz2  = pntP->z - z ;
-	         dnmx = dy1*dz2 - dz1*dy2 ;
-	         dnmy = dz1*dx2 - dx1*dz2 ;
-	         if( dnmz < 0.0 ) { dnmx = - dnmx ; dnmy = - dnmy ; dnmz = - dnmz ; }
-	         nmx = nmx + dnmx ; nmy = nmy + dnmy ; nmz = nmz + dnmz ;
-	        }
-	      cp = clistAddrP(dtmP,cp)->nextPtr ;
-	     }
+          dx2  = pntP->x - x ;
+          dy2  = pntP->y - y ;
+          dnmz = dx1*dy2 - dy1*dx2 ;
+          if( dnmz != 0.0 )
+            {
+             dz2  = pntP->z - z ;
+             dnmx = dy1*dz2 - dz1*dy2 ;
+             dnmy = dz1*dx2 - dx1*dz2 ;
+             if( dnmz < 0.0 ) { dnmx = - dnmx ; dnmy = - dnmy ; dnmz = - dnmz ; }
+             nmx = nmx + dnmx ; nmy = nmy + dnmy ; nmz = nmz + dnmz ;
+            }
+          cp = clistAddrP(dtmP,cp)->nextPtr ;
+         }
        cl = clistAddrP(dtmP,cl)->nextPtr ;
       }
     if( bcdtmList_testForPointOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Breakline,p,&feature) ) goto errexit ;
@@ -956,31 +956,31 @@ BENTLEYDTM_Public int bcdtmMath_calculatePartialDerivativesDtmObject(BC_DTM_OBJ 
        dzy1 = *(*partialDerivPP+clistAddrP(dtmP,cl)->pntNum * 5 + 1 ) - zy ;
        cp   = clistAddrP(dtmP,cl)->nextPtr    ;
        while ( cp != dtmP->nullPtr )
-	     {
+         {
           pntP = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum) ;
-	      dx2  = pntP->x - x ;
-	      dy2  = pntP->y - y ;
-	      dnmz = dx1*dy2 - dy1*dx2 ;
-	      if( dnmz != 0.0 )
-	        {
-	         dzx2 = *( *partialDerivPP +clistAddrP(dtmP,cp)->pntNum * 5 )     - zx ;
-	         dzy2 = *( *partialDerivPP +clistAddrP(dtmP,cp)->pntNum * 5 + 1 ) - zy ;
-	         dnmxx = dy1 * dzx2 - dzx1 * dy2 ;
-	         dnmxy = dzx1 * dx2 - dx1 * dzx2 ;
-	         dnmyx = dy1 * dzy2 - dzy1 * dy2 ;
-	         dnmyy = dzy1 * dx2 - dx1 * dzy2 ;
-	         if( dnmz < 0.0 )
-	           {
-		        dnmxx = - dnmxx ; dnmxy = - dnmxy ;
-		        dnmyx = - dnmyx ; dnmyy = - dnmyy ;
-		        dnmz  = - dnmz  ;
-	           }
-	         nmxx = nmxx + dnmxx ; nmxy = nmxy + dnmxy ;
-	         nmyx = nmyx + dnmyx ; nmyy = nmyy + dnmyy ;
-	         nmz = nmz + dnmz ;
-	        }
-	      cp = clistAddrP(dtmP,cp)->nextPtr ;
-	     }
+          dx2  = pntP->x - x ;
+          dy2  = pntP->y - y ;
+          dnmz = dx1*dy2 - dy1*dx2 ;
+          if( dnmz != 0.0 )
+            {
+             dzx2 = *( *partialDerivPP +clistAddrP(dtmP,cp)->pntNum * 5 )     - zx ;
+             dzy2 = *( *partialDerivPP +clistAddrP(dtmP,cp)->pntNum * 5 + 1 ) - zy ;
+             dnmxx = dy1 * dzx2 - dzx1 * dy2 ;
+             dnmxy = dzx1 * dx2 - dx1 * dzx2 ;
+             dnmyx = dy1 * dzy2 - dzy1 * dy2 ;
+             dnmyy = dzy1 * dx2 - dx1 * dzy2 ;
+             if( dnmz < 0.0 )
+               {
+                dnmxx = - dnmxx ; dnmxy = - dnmxy ;
+                dnmyx = - dnmyx ; dnmyy = - dnmyy ;
+                dnmz  = - dnmz  ;
+               }
+             nmxx = nmxx + dnmxx ; nmxy = nmxy + dnmxy ;
+             nmyx = nmyx + dnmyx ; nmyy = nmyy + dnmyy ;
+             nmz = nmz + dnmz ;
+            }
+          cp = clistAddrP(dtmP,cp)->nextPtr ;
+         }
        cl = clistAddrP(dtmP,cl)->nextPtr ;
       }
     if( bcdtmList_testForPointOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Breakline,p,&feature) ) goto errexit ;
@@ -1071,12 +1071,12 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnPolynomial(long newTriangle,do
      dd = d*d ;
      for( i = 0 ; i < 3 ; ++i )
        {
-	    jpd = 5 * (i+1) - 1 ;
-	    zu[i]  = a*pd[jpd-4]  + c*pd[jpd-3] ;
-	    zv[i]  = b*pd[jpd-4]  + d*pd[jpd-3] ;
-	    zuu[i] = aa*pd[jpd-2] + act2*pd[jpd-1] + cc*pd[jpd] ;
-	    zuv[i] = ab*pd[jpd-2] + adbc*pd[jpd-1] + cd*pd[jpd] ;
-	    zvv[i] = bb*pd[jpd-2] + bdt2*pd[jpd-1] + dd*pd[jpd] ;
+        jpd = 5 * (i+1) - 1 ;
+        zu[i]  = a*pd[jpd-4]  + c*pd[jpd-3] ;
+        zv[i]  = b*pd[jpd-4]  + d*pd[jpd-3] ;
+        zuu[i] = aa*pd[jpd-2] + act2*pd[jpd-1] + cc*pd[jpd] ;
+        zuv[i] = ab*pd[jpd-2] + adbc*pd[jpd-1] + cd*pd[jpd] ;
+        zvv[i] = bb*pd[jpd-2] + bdt2*pd[jpd-1] + dd*pd[jpd] ;
        }
 /*
 ** Calculate the coefficients of the polynominal
@@ -1126,7 +1126,7 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePointOnPolynomial(long newTriangle,do
      g1 = aa * ac * ( 3.0*bc + 2.0*ad) ;
      g2 = cc * ac * ( 3.0*ad + 2.0*bc) ;
      h1 = -aa*aa*aa*(5.0*aa*bb*p50+(4.0*bc+ad)*p41) -
-	   cc*cc*cc*(5.0*cc*dd*p05+(4.0*ad+bc)*p14) ;
+       cc*cc*cc*(5.0*cc*dd*p05+(4.0*ad+bc)*p14) ;
      h2 = 0.5 * zvv[1] - p02 - p12 ;
      h3 = 0.5 * zuu[2] - p20 - p21 ;
      p22 = (g1*h2 + g2*h3 - h1) / ( g1 + g2 ) ;
@@ -1212,7 +1212,7 @@ BENTLEYDTM_Public int bcdtmMath_getTriangleAttributesDtmObject(BC_DTM_OBJ *dtmP,
     *slopeDegreesP = *slopePercentP = 0.0 ;
     *aspectP = 360.0 ;
     *heightP = Z1 ;
-	return(0) ;
+    return(0) ;
    }
 /*
 ** Calculate Plane Coefficients
@@ -3353,7 +3353,7 @@ BENTLEYDTM_Public int bcdtmMath_validateStringP3D(DPoint3d *StringPts,long *NumS
    {
     for( p3d2 = p3d1 + 2 ; p3d2 < StringPts + *NumStringPts - 1 ; ++p3d2 )
       {
-	   if(bcdtmMath_intersectCordLines(p3d1->x,p3d1->y,(p3d1+1)->x,(p3d1+1)->y,p3d2->x,p3d2->y,(p3d2+1)->x,(p3d2+1)->y,&Xi,&Yi))  
+       if(bcdtmMath_intersectCordLines(p3d1->x,p3d1->y,(p3d1+1)->x,(p3d1+1)->y,p3d2->x,p3d2->y,(p3d2+1)->x,(p3d2+1)->y,&Xi,&Yi))  
          { bcdtmWrite_message(1,0,0,"Knot In String") ; return(1) ; }
       }
    }
@@ -3477,28 +3477,28 @@ BENTLEYDTM_Public int bcdtmMath_deletePolygonKnotsP3D(DPoint3d **Polygon,long *n
        X1 = p1->x ; Y1 = p1->y ; Z1 = p1->z ;
        X2 = p2->x ; Y2 = p2->y ; Z2 = p2->z ;
        for ( p3 = pSp ; p3 < pEp - 1 ; ++p3 )
-	     {
-	      p4 = p3 + 1 ;
-	      if( p4 == pEp - 1 ) p4 = p1 ;
-	      if( p3 != p1 && p3 != p2 && p4 != p1 )
-	        {
-	         X3 = p3->x ; Y3 = p3->y ; Z3 = p3->z ;
-	         X4 = p4->x ; Y4 = p4->y ; Z4 = p4->z ;
-	         if(bcdtmMath_intersectCordLines(X1,Y1,X2,Y2,X3,Y3,X4,Y4,&Xc,&Yc))
-	           {
-		        ++*IntFlag  ; process = 1 ;
-		        d1 = sqrt((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2)) ;
-		        d2 = sqrt((Xc-X2)*(Xc-X2)+(Yc-Y2)*(Yc-Y2)) ;
-		        Z1 = Z2 + ( Z1 - Z2 ) * d2 /d1 ;
-		        d1 = sqrt((X3-X4)*(X3-X4)+(Y3-Y4)*(Y3-Y4)) ;
-		        d2 = sqrt((Xc-X4)*(Xc-X4)+(Yc-Y4)*(Yc-Y4)) ;
-		        Z3 = Z4 + ( Z3 - Z4 ) * d2 /d1 ;
-		        Zc = ( Z1 + Z2 ) / 2.0 ;
-		        if( bcdtmMath_deleteKnotP3D(p2,p3,p4,Xc,Yc,Zc,&*Polygon,numPts,Pptol)) return(1) ;
-		        p1 = p3 = pEp = *Polygon + *numPts - 1 ;
-	           }
-	        }
-	     }
+         {
+          p4 = p3 + 1 ;
+          if( p4 == pEp - 1 ) p4 = p1 ;
+          if( p3 != p1 && p3 != p2 && p4 != p1 )
+            {
+             X3 = p3->x ; Y3 = p3->y ; Z3 = p3->z ;
+             X4 = p4->x ; Y4 = p4->y ; Z4 = p4->z ;
+             if(bcdtmMath_intersectCordLines(X1,Y1,X2,Y2,X3,Y3,X4,Y4,&Xc,&Yc))
+               {
+                ++*IntFlag  ; process = 1 ;
+                d1 = sqrt((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2)) ;
+                d2 = sqrt((Xc-X2)*(Xc-X2)+(Yc-Y2)*(Yc-Y2)) ;
+                Z1 = Z2 + ( Z1 - Z2 ) * d2 /d1 ;
+                d1 = sqrt((X3-X4)*(X3-X4)+(Y3-Y4)*(Y3-Y4)) ;
+                d2 = sqrt((Xc-X4)*(Xc-X4)+(Yc-Y4)*(Yc-Y4)) ;
+                Z3 = Z4 + ( Z3 - Z4 ) * d2 /d1 ;
+                Zc = ( Z1 + Z2 ) / 2.0 ;
+                if( bcdtmMath_deleteKnotP3D(p2,p3,p4,Xc,Yc,Zc,&*Polygon,numPts,Pptol)) return(1) ;
+                p1 = p3 = pEp = *Polygon + *numPts - 1 ;
+               }
+            }
+         }
       }
    }
 /*
@@ -3739,7 +3739,7 @@ BENTLEYDTM_Public int bcdtmMath_getTriangleAttributesJay(DPoint3d TrgPts[],doubl
    {
     Sd = Sp = As = -1.0 ; Ht = Z1 ;
     *SlopeDegrees = *SlopePercent = *Aspect = -1.0 ; *Height = Z1 ;
-	return(0) ;
+    return(0) ;
    }
 /*
 ** Calculate Plane Coefficients
@@ -3896,12 +3896,12 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePoly(long NewTrg,double xp,double yp,
      dd = d*d ;
      for( i = 0 ; i < 3 ; ++i )
        {
-	jpd = 5 * (i+1) - 1 ;
-	zu[i]  = a*pd[jpd-4]  + c*pd[jpd-3] ;
-	zv[i]  = b*pd[jpd-4]  + d*pd[jpd-3] ;
-	zuu[i] = aa*pd[jpd-2] + act2*pd[jpd-1] + cc*pd[jpd] ;
-	zuv[i] = ab*pd[jpd-2] + adbc*pd[jpd-1] + cd*pd[jpd] ;
-	zvv[i] = bb*pd[jpd-2] + bdt2*pd[jpd-1] + dd*pd[jpd] ;
+    jpd = 5 * (i+1) - 1 ;
+    zu[i]  = a*pd[jpd-4]  + c*pd[jpd-3] ;
+    zv[i]  = b*pd[jpd-4]  + d*pd[jpd-3] ;
+    zuu[i] = aa*pd[jpd-2] + act2*pd[jpd-1] + cc*pd[jpd] ;
+    zuv[i] = ab*pd[jpd-2] + adbc*pd[jpd-1] + cd*pd[jpd] ;
+    zvv[i] = bb*pd[jpd-2] + bdt2*pd[jpd-1] + dd*pd[jpd] ;
        }
 /*
 ** Calculate the coefficients of the polynominal
@@ -3951,7 +3951,7 @@ BENTLEYDTM_Public int bcdtmMath_interpolatePoly(long NewTrg,double xp,double yp,
      g1 = aa * ac * ( 3.0*bc + 2.0*ad) ;
      g2 = cc * ac * ( 3.0*ad + 2.0*bc) ;
      h1 = -aa*aa*aa*(5.0*aa*bb*p50+(4.0*bc+ad)*p41) -
-	   cc*cc*cc*(5.0*cc*dd*p05+(4.0*ad+bc)*p14) ;
+       cc*cc*cc*(5.0*cc*dd*p05+(4.0*ad+bc)*p14) ;
      h2 = 0.5 * zvv[1] - p02 - p12 ;
      h3 = 0.5 * zuu[2] - p20 - p21 ;
      p22 = (g1*h2 + g2*h3 - h1) / ( g1 + g2 ) ;

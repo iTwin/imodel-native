@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/TerrainModel/TerrainModel.h $
 |
-| $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -144,6 +144,10 @@ typedef RefCountedPtr<TMTransformHelper> TMTransformHelperPtr;
 //__PUBLISH_SECTION_START__
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE
+
+#if (_MSC_VER == 1800)
+#define thread_local __declspec(thread)
+#endif
 
 //__PUBLISH_SECTION_END__
 

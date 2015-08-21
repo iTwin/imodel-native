@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmSite.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1403,8 +1403,8 @@ BENTLEYDTM_Private int bcdtmSite_markInternalFeatureLinesDtmObject(BC_DTM_OBJ *d
     do
       {
        sp = nodeAddrP(dtmP,sp)->tPtr ;
-	    if( sp < lp ) lp = sp ;
-	    if( sp > hp ) hp = sp ;
+        if( sp < lp ) lp = sp ;
+        if( sp > hp ) hp = sp ;
       } while ( sp != startPoint ) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"lp = %8ld  hp = %8ld",lp,hp) ;
 /*
@@ -1425,9 +1425,9 @@ BENTLEYDTM_Private int bcdtmSite_markInternalFeatureLinesDtmObject(BC_DTM_OBJ *d
             {
              clPtr = nodeAddrP(dtmP,sp)->cPtr ;
              while( clPtr != dtmP->nullPtr )
-	            {
+                {
                 np    = clistAddrP(dtmP,clPtr)->pntNum ;
-		          clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
+                  clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,sp,np)) goto errexit ;
                 bcdtmFlag_setFlag(*featureLinePP,offset) ;
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,np,sp)) goto errexit ;

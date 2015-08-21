@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmGeopak.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -403,9 +403,9 @@ BENTLEYDTM_EXPORT int bcdtmObject_createLatticeObject(DTM_LAT_OBJ **latticePP)
   *latticePP = ( DTM_LAT_OBJ * ) malloc ( sizeof(DTM_LAT_OBJ)) ;
   if( *latticePP == NULL )
     {
-	 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	 goto errexit ; 
-	}
+     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+     goto errexit ; 
+    }
 /*
 ** Initialise Lattice Object
 */	
@@ -2369,14 +2369,14 @@ BENTLEYDTM_EXPORT int bcdtmGeopak_getPositiveUserTagListDtmObject
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-	if( dtmFeatureP->dtmUserTag != DTM_NULL_USER_TAG && dtmFeatureP->dtmUserTag > 0 )
+    if( dtmFeatureP->dtmUserTag != DTM_NULL_USER_TAG && dtmFeatureP->dtmUserTag > 0 )
       {
 /*
 **     Write User Tag To Log File
 */
        if( dbg )
          {
-		  bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureP->dtmFeatureType,dtmFeatureTypeName) ;
+          bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureP->dtmFeatureType,dtmFeatureTypeName) ;
           bcdtmWrite_message(0,0,0,"dtmFeature[%8ld] = %20s * %9ld * %12I64d",dtmFeature,dtmFeatureTypeName,dtmFeatureP->dtmFeaturePts.firstPoint,dtmFeatureP->dtmUserTag) ;
          }
 /*
@@ -3146,9 +3146,9 @@ BENTLEYDTM_Public int bcdtmCheck_topologyTinObject(DTM_TIN_OBJ *Tin,long Message
     if( clc == Tin->nullPtr )
       {
        if( WarnFlag && MessageFlag )
-	     {
-	      bcdtmWrite_message(0,0,0,"Warning ** No Circular List For Point %6ld",p1) ;
-	     }
+         {
+          bcdtmWrite_message(0,0,0,"Warning ** No Circular List For Point %6ld",p1) ;
+         }
       }
     else if( clc < 0 || clc >= Tin->cListPtr )
       {
@@ -3159,31 +3159,31 @@ BENTLEYDTM_Public int bcdtmCheck_topologyTinObject(DTM_TIN_OBJ *Tin,long Message
       {
        p2 = (Tin->cListP+clc)->pntNum ;
        if( (p2 = bcdtmList_nextAntTinObject(Tin,p1,p2)) < 0 )
-	     {
-	      bcdtmWrite_message(2,0,0,"Circular List Corrupted Counter Clockwise ** %8ld %8ld",p1,p2) ;
-	      ++err ;
-	     }
+         {
+          bcdtmWrite_message(2,0,0,"Circular List Corrupted Counter Clockwise ** %8ld %8ld",p1,p2) ;
+          ++err ;
+         }
        else
-	     {
-	      while( clc != Tin->nullPtr )
-	        {
-	         p3 = (Tin->cListP+clc)->pntNum ;
-	         p4 = bcdtmList_nextClockTinObject(Tin,p3,p1) ;
-	         if( p4 < 0 )
-	           {
+         {
+          while( clc != Tin->nullPtr )
+            {
+             p3 = (Tin->cListP+clc)->pntNum ;
+             p4 = bcdtmList_nextClockTinObject(Tin,p3,p1) ;
+             if( p4 < 0 )
+               {
                 bcdtmWrite_message(0,0,0,"clc = %8ld  p3 = %6ld  p1 = %6ld",clc,p3,p1) ;
-		        bcdtmWrite_message(2,0,0,"Circular List Corrupted Clockwise ** %8ld %8ld",p1,p2) ;
-		        ++err ;
-	           }
-	         else if( (Tin->nodesP+p3)->hPtr != p1 && p4 != p2 )
-	           {
-		        bcdtmWrite_message(2,0,0,"Circular List Corrupted ** %8ld %8ld %8ld",p1,p2,p3) ;
-		        ++err  ;
-	           }
-	         p2 = p3 ;
-	         clc = (Tin->cListP+clc)->nextPtr ;
-	        }
-	     }
+                bcdtmWrite_message(2,0,0,"Circular List Corrupted Clockwise ** %8ld %8ld",p1,p2) ;
+                ++err ;
+               }
+             else if( (Tin->nodesP+p3)->hPtr != p1 && p4 != p2 )
+               {
+                bcdtmWrite_message(2,0,0,"Circular List Corrupted ** %8ld %8ld %8ld",p1,p2,p3) ;
+                ++err  ;
+               }
+             p2 = p3 ;
+             clc = (Tin->cListP+clc)->nextPtr ;
+            }
+         }
       }
    }
 /*
@@ -3226,12 +3226,12 @@ BENTLEYDTM_Public int bcdtmCheck_precisionTinObject(DTM_TIN_OBJ *Tin,long Messag
          {
           p3  = (Tin->cListP+clc)->pntNum ;
           clc = (Tin->cListP+clc)->nextPtr ;
-		  if( p2 > p1 && p3 > p1 && (Tin->nodesP+p1)->hPtr != p2 )
-		    {
-			 if( bcdtmMath_allPointSideOfTinObject(Tin,p1,p2,p3) >= 0 )
-			   {
-	            if( MessageFlag )
-		          {
+          if( p2 > p1 && p3 > p1 && (Tin->nodesP+p1)->hPtr != p2 )
+            {
+             if( bcdtmMath_allPointSideOfTinObject(Tin,p1,p2,p3) >= 0 )
+               {
+                if( MessageFlag )
+                  {
                    bcdtmWrite_message(1,0,0,"Precision Error ** Point = %8ld %8ld %8ld",p1,p2,p3) ;
                    bcdtmList_writeCircularListForPointTinObject(Tin,p1) ; 
                    bcdtmList_writeCircularListForPointTinObject(Tin,p2) ; 
@@ -3240,9 +3240,9 @@ BENTLEYDTM_Public int bcdtmCheck_precisionTinObject(DTM_TIN_OBJ *Tin,long Messag
                 ++errcnt ;
                }
             }  
-	      p2 = p3 ;
-		 }
-	  }
+          p2 = p3 ;
+         }
+      }
    }
 /*
 ** Check Tin Hull
@@ -3382,17 +3382,17 @@ BENTLEYDTM_Public int bcdtmCheck_pointPrecisionTinObject(DTM_TIN_OBJ *Tin,long P
       {
        p3  = (Tin->cListP+clc)->pntNum ;
        clc = (Tin->cListP+clc)->nextPtr ;
- 	   if( bcdtmMath_allPointSideOfTinObject(Tin,p1,p2,p3) >= 0 )
-	     {
-	      if( MessageFlag )
-	        {
+       if( bcdtmMath_allPointSideOfTinObject(Tin,p1,p2,p3) >= 0 )
+         {
+          if( MessageFlag )
+            {
              bcdtmWrite_message(1,0,0,"Precision Error ** Point = %8ld %8ld %8ld",p1,p2,p3) ;
              bcdtmList_writeCircularListForPointTinObject(Tin,p1) ; 
             }
           ++errcnt ;
          }
        p2 = p3 ;
-	  }
+      }
    }
 /*
 ** Print Error Statistics
@@ -3531,8 +3531,8 @@ BENTLEYDTM_Public int bcdtmCheck_forSliverTrianglesTinObject(DTM_TIN_OBJ *Tin,do
          {
           p3  = (Tin->cListP+clc)->pntNum ;
           clc = (Tin->cListP+clc)->nextPtr ;
-		  if( /* p2 > p1 && p3 > p1 && */ (Tin->nodesP+p1)->hPtr != p2 )
-		    {
+          if( /* p2 > p1 && p3 > p1 && */ (Tin->nodesP+p1)->hPtr != p2 )
+            {
              dn = bcdtmMath_distanceOfPointFromLine(&lineflag,(Tin->pointsP+p2)->x,(Tin->pointsP+p2)->y,(Tin->pointsP+p3)->x,(Tin->pointsP+p3)->y,(Tin->pointsP+p1)->x,(Tin->pointsP+p1)->y,&Xi,&Yi) ;
              if( dn < Pltol && lineflag )
                {
@@ -4642,7 +4642,7 @@ BENTLEYDTM_Public int bcdtmObject_deSortDataObject(DTM_DAT_OBJ *dataP)
 BENTLEYDTM_EXPORT int bcdtmUtl_setCurrentTinFileName(WCharCP TinFile)
 {
     // Not Implemented For Vancouver 
-	return(DTM_SUCCESS);
+    return(DTM_SUCCESS);
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -4652,7 +4652,7 @@ BENTLEYDTM_EXPORT int bcdtmUtl_setCurrentTinFileName(WCharCP TinFile)
 BENTLEYDTM_EXPORT int bcdtmUtl_setCurrentDataFileName(WCharCP DataFile)
 {
     // Not Implemented For Vancouver 
-	return(DTM_SUCCESS);
+    return(DTM_SUCCESS);
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -4662,5 +4662,5 @@ BENTLEYDTM_EXPORT int bcdtmUtl_setCurrentDataFileName(WCharCP DataFile)
 BENTLEYDTM_EXPORT int bcdtmUtl_setCurrentLatticeFileName(WCharCP LatticeFile)
 {
     // Not Implemented For Vancouver 
-	return(DTM_SUCCESS);
+    return(DTM_SUCCESS);
 }

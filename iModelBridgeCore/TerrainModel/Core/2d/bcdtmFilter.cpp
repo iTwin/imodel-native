@@ -1982,10 +1982,10 @@ BENTLEYDTM_Private int bcdtmFilter_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lo
  if( numPts > 2 )
    {
     numPts1 = numPts / 2  ; 
-	if( numPts % 2 != 0 ) numPts1 = numPts1 + 1 ; 
-	numPts2 = numPts - numPts1 ;
+    if( numPts % 2 != 0 ) numPts1 = numPts1 + 1 ; 
+    numPts2 = numPts - numPts1 ;
     startPnt1 = startPnt  ; 
-	startPnt2 = startPnt + numPts1 ;
+    startPnt2 = startPnt + numPts1 ;
     bcdtmFilter_divConqMergeSortDtmObject(dtmP,startPnt1,numPts1) ;
     bcdtmFilter_divConqMergeSortDtmObject(dtmP,startPnt2,numPts2) ;
 /*

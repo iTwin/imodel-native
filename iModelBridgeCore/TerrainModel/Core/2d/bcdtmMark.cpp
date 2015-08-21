@@ -85,10 +85,10 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsDtmObject(BC_DTM_OBJ *d
        clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
        if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
          { 
-		  nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
-		  lastPnt = clPnt ; 
-		  nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
-	     }
+          nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
+          lastPnt = clPnt ; 
+          nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
+         }
       }
     firstPnt = nextPnt ;
    }
@@ -199,10 +199,10 @@ BENTLEYDTM_Public int bcdtmMark_internalTptrPolygonPointsMinMaxDtmObject(BC_DTM_
        clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
        if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
          { 
-		  nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
-		  lastPnt = clPnt ; 
-		  nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
-	     }
+          nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ;
+          lastPnt = clPnt ; 
+          nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
+         }
       }
     firstPnt = nextPnt ;
    }
@@ -298,10 +298,10 @@ BENTLEYDTM_Public int bcdtmMark_externalTptrPolygonPointsDtmObject(BC_DTM_OBJ *d
        clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
        if(nodeAddrP(dtmP,clPnt)->tPtr == dtmP->nullPnt )  
          { 
-		  nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ; 
-		  lastPnt = clPnt ;
-		  nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
-		 }
+          nodeAddrP(dtmP,lastPnt)->tPtr = clPnt ; 
+          lastPnt = clPnt ;
+          nodeAddrP(dtmP,clPnt)->tPtr = clPnt ;
+         }
       }
     firstPnt = nextPnt ;
    }
@@ -879,9 +879,9 @@ BENTLEYDTM_Public int bcdtmMark_setLineDtmObject(BC_DTM_OBJ *dtmP,long pnt1,long
    {
     if( clistAddrP(dtmP,cPtr)->pntNum == pnt2 ) 
       { 
-	   bcdtmFlag_setFlag(lineFlagP,cPtr) ;
-	   return(0) ; 
-	  }
+       bcdtmFlag_setFlag(lineFlagP,cPtr) ;
+       return(0) ; 
+      }
     cPtr = clistAddrP(dtmP,cPtr)->nextPtr ;
    }
 /*

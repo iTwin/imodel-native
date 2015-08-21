@@ -626,11 +626,18 @@ BENTLEYDTM_Private int bcdtmTin_multiThreadTriangulateDtmObject(BC_DTM_OBJ *dtmP
  long n,p,node,numDtmPoints,numClist ;
  long startTime,tinTime ;
  long *sortOfsP=NULL,*longP ;
- long startPoint,numThreadPoints=0,numThreadArrayPoints[DTM_MAX_PROCESSORS] ;
+ long startPoint, numThreadPoints = 0;
+ bvector<long> numThreadArrayPoints;
  long p1l,p1r,col1,p2l,p2r,col2,cListPtr,cListDelPtr ;
- std::thread thread[DTM_MAX_PROCESSORS] ;
- DTM_MULTI_THREAD multiThread[DTM_MAX_PROCESSORS] ;
-/*
+ std::vector<std::thread> thread;
+ bvector<DTM_MULTI_THREAD> multiThread;
+ /*
+ ** Resize arrays
+ */
+ numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);
+ thread.resize (DTM_NUM_PROCESSORS);;
+ multiThread.resize (DTM_NUM_PROCESSORS);
+ /*
 ** Write Entry Message
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Multi Thread Triangulating Dtm Object %p",dtmP) ;
@@ -1151,7 +1158,7 @@ BENTLEYDTM_Private int bcdtmTin_delaunayTriangulateDtmObject(BC_DTM_OBJ *dtmP,lo
  //   *lpnt = bcdtmTin_leftMostPointDtmObject(dtmP,*lpnt,iofs+2)  ;
  //   *rpnt = bcdtmTin_rightMostPointDtmObject(dtmP,*rpnt,iofs+1) ;
  //   *rpnt = bcdtmTin_rightMostPointDtmObject(dtmP,*rpnt,iofs+2) ;
-	//*tpnt = *bpnt = iofs ;
+    //*tpnt = *bpnt = iofs ;
  //   *bpnt = bcdtmTin_bottomMostPointDtmObject(dtmP,*bpnt,iofs+1) ;
  //   *bpnt = bcdtmTin_bottomMostPointDtmObject(dtmP,*bpnt,iofs+2) ;
  //   *tpnt = bcdtmTin_topMostPointDtmObject(dtmP,*tpnt,iofs+1) ;
@@ -1324,14 +1331,14 @@ BENTLEYDTM_Private int bcdtmTin_mergeTrianglesDtmObject(BC_DTM_OBJ *dtmP,long p1
      if( (l1 = bcdtmList_nextAntDtmObject(dtmP,l,r)) < 0 ) goto errexit ;
      if( bcdtmMath_pointSideOfDtmObject(dtmP,l,r,l1) > 0 )
        {
-	    if( colinear1 == 0 )
-	      {
-	       if( ( l2 = bcdtmList_nextAntDtmObject(dtmP,l,l1) ) < 0 ) goto errexit ;
+        if( colinear1 == 0 )
+          {
+           if( ( l2 = bcdtmList_nextAntDtmObject(dtmP,l,l1) ) < 0 ) goto errexit ;
            while ( bcdtmTin_inCircleTestDtmObject(dtmP,1,l,r,l1,l2) )
              {
-	          if( bcdtmList_deleteLineDtmObject(dtmP,l,l1) ) goto errexit ;
-	          l1 = l2  ;
-	          if( ( l2 = bcdtmList_nextAntDtmObject(dtmP,l,l1) ) < 0 ) goto errexit ;
+              if( bcdtmList_deleteLineDtmObject(dtmP,l,l1) ) goto errexit ;
+              l1 = l2  ;
+              if( ( l2 = bcdtmList_nextAntDtmObject(dtmP,l,l1) ) < 0 ) goto errexit ;
              }
           }
        }
@@ -1344,7 +1351,7 @@ BENTLEYDTM_Private int bcdtmTin_mergeTrianglesDtmObject(BC_DTM_OBJ *dtmP,long p1
       {
        if( colinear2 == 0 )
          {
-	      if( ( r2 = bcdtmList_nextClkDtmObject(dtmP,r,r1)) < 0 ) goto errexit ;
+          if( ( r2 = bcdtmList_nextClkDtmObject(dtmP,r,r1)) < 0 ) goto errexit ;
           while( bcdtmTin_inCircleTestDtmObject(dtmP,2,l,r,r1,r2) )
             {
              if( bcdtmList_deleteLineDtmObject(dtmP,r,r1) ) goto errexit ;
@@ -1428,7 +1435,7 @@ BENTLEYDTM_Private int bcdtmTin_getLcTangentDtmObject(BC_DTM_OBJ *dtmP,long p1l,
        else            { *right = nr ; nr = nodeAddrP(dtmP,*right)->hPtr ; }
       }
     else if( bcdtmMath_pointSideOfDtmObject(dtmP,*left,*right,nl) < 0 && bcdtmMath_pointSideOfDtmObject(dtmP,*right,nl,*left) < 0 )
-	  {
+      {
        if( colinear1 ) {  s = *left ; *left = nl ; nl = s ; }
        else            {  s = nl ; if( (nl = bcdtmList_nextClkDtmObject(dtmP,nl,*left)) < 0 ) goto errexit ; *left = s ; }
       }
@@ -2120,8 +2127,8 @@ BENTLEYDTM_Public int bcdtmTin_swapTinLinesThatIntersectConnectLineDtmObject
     bcdtmWrite_message(0,0,0,"startPnt = %6ld ** %10.4lf %10.4lf %10.4lf",startPnt,pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y,pointAddrP(dtmP,startPnt)->z) ;
     bcdtmWrite_message(0,0,0,"lastPnt  = %6ld ** %10.4lf %10.4lf %10.4lf",lastPnt,pointAddrP(dtmP,lastPnt)->x,pointAddrP(dtmP,lastPnt)->y,pointAddrP(dtmP,lastPnt)->z) ;
     bcdtmWrite_message(0,0,0,"Angle startPntlastPnt = %12.10lf",bcdtmMath_getAngle(pointAddrP(dtmP,startPnt)->x,pointAddrP(dtmP,startPnt)->y,pointAddrP(dtmP,lastPnt)->x,pointAddrP(dtmP,lastPnt)->y)) ;
-	bcdtmList_writeCircularListForPointDtmObject(dtmP,startPnt) ;
-	bcdtmList_writeCircularListForPointDtmObject(dtmP,lastPnt) ;
+    bcdtmList_writeCircularListForPointDtmObject(dtmP,startPnt) ;
+    bcdtmList_writeCircularListForPointDtmObject(dtmP,lastPnt) ;
    }
 /*
 ** Scan From startPnt To lastPnt And Swap Lines That Intersect line startPntlastPnt
@@ -2422,7 +2429,7 @@ BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dt
                if( bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI)[0] != bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI)[dtmFeatureP->numDtmFeaturePts-1] )bcdtmWrite_message(0,0,0,"Feature Does Not Close") ;
               }
            }
-	   break ;
+       break ;
 
        case DTMFeatureType::DrapeVoid :
          if( dbg ) bcdtmWrite_message(0,0,0,"Validating Drape Void") ;
@@ -2432,7 +2439,7 @@ BENTLEYDTM_Private int bcdtmTin_insertDtmFeatureTypeIntoDtmObject(BC_DTM_OBJ *dt
             insertError = 1 ;
             if( drapeVoidPtsP != NULL ) { free(drapeVoidPtsP) ; drapeVoidPtsP = NULL ; }
            }
- 	   break   ;
+       break   ;
 
        default :
        break   ;
@@ -2894,7 +2901,7 @@ BENTLEYDTM_Private int bcdtmTin_validateDrapeVoidDtmObject
     if( *drapeVoidPtsPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
+       goto errexit ;
       }
 /*
 **  Copy Drape Void Points
@@ -3293,7 +3300,7 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureTableDtmObject(BC_DTM_OBJ *dtmP)
 /*
 **     Test For Deleted Feature
 */
-	   if( ftableP->dtmFeatureState == DTMFeatureState::Deleted )
+       if( ftableP->dtmFeatureState == DTMFeatureState::Deleted )
          {
           if( dbg )
             {
@@ -3315,16 +3322,16 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureTableDtmObject(BC_DTM_OBJ *dtmP)
        LongArray tempP;
        if( tempP.resize(dtmP->numFeatures) != 0)
          {
-	      bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	      goto errexit ;
-	     }
+          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+          goto errexit ;
+         }
        for( ofsP = tempP.start() ; ofsP != tempP.end()  ; ++ofsP ) *ofsP = 0 ;
 /*
 **     Mark All Deleted Records
 */
        ftableP = ftableArray.start();
        for( ftable = 0 ; ftable < dtmP->numFeatures ; ++ftable, ++ftableP )
-	     {
+         {
           if( ftableP->dtmFeatureState == DTMFeatureState::Deleted )
             {
              *(tempP+ftable) = 1 ;
@@ -3358,7 +3365,7 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureTableDtmObject(BC_DTM_OBJ *dtmP)
        if( dbg ) bcdtmWrite_message(0,0,0,"Adjusting Feature List Numbers") ;
         for( flist = 0 ; flist < dtmP->numFlist ; ++flist )
          {
-		  flistP = flistAddrP(dtmP,flist) ;
+          flistP = flistAddrP(dtmP,flist) ;
           if( flistP->dtmFeature != dtmP->nullPnt ) flistP->dtmFeature -= (long)*(tempP+flistP->dtmFeature) ;
          }
       }
@@ -3455,9 +3462,9 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureListDtmObject(BC_DTM_OBJ *dtmP)
 */
     if( tempP.resize(dtmP->numFlist) != 0)
       {
-	   bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
-	  }
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
+      }
     LongArray::iterator ofsP;
     for( ofsP = tempP.start(); ofsP != tempP.end() ; ++ofsP ) *ofsP = 0;
 /*
@@ -3465,10 +3472,10 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureListDtmObject(BC_DTM_OBJ *dtmP)
 */
     while( fl1Ptr != dtmP->nullPtr )
       {
-	   *(tempP+fl1Ptr) = 1 ;
-	   fl1Ptr = fList[fl1Ptr].nextPtr ;
-	   ++delCount;
-	  }
+       *(tempP+fl1Ptr) = 1 ;
+       fl1Ptr = fList[fl1Ptr].nextPtr ;
+       ++delCount;
+      }
     if( dbg ) bcdtmWrite_message(0,0,0,"delCount = %8ld",delCount) ;
 /*
 **  Copy Over Deleted Records
@@ -3476,10 +3483,10 @@ BENTLEYDTM_Public int bcdtmTin_compactFeatureListDtmObject(BC_DTM_OBJ *dtmP)
     for( fl1Ptr = fl2Ptr = 0 ; fl2Ptr < dtmP->numFlist ; ++fl2Ptr )
       {
        if( ! *(tempP+fl2Ptr) )
-	     {
-	      if( fl1Ptr != fl2Ptr ) fList[fl1Ptr] = fList[fl2Ptr] ;
-	      ++fl1Ptr ;
-	     }
+         {
+          if( fl1Ptr != fl2Ptr ) fList[fl1Ptr] = fList[fl2Ptr] ;
+          ++fl1Ptr ;
+         }
       }
 /*
 **  Adjust Pointers
@@ -3556,9 +3563,9 @@ BENTLEYDTM_Public int bcdtmTin_compactCircularListDtmObject(BC_DTM_OBJ *dtmP)
 */
     if( tempP.resize(dtmP->cListPtr) != 0)
       {
-	   bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
-	  }
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
+      }
 /*
 **   Initialise
 */
@@ -3571,10 +3578,10 @@ BENTLEYDTM_Public int bcdtmTin_compactCircularListDtmObject(BC_DTM_OBJ *dtmP)
     cl1Ptr = dtmP->cListDelPtr ;
     while( cl1Ptr != dtmP->nullPtr )
       {
-	   *(tempP+cl1Ptr) = 1 ;
-	   cl1Ptr = clistAddrP(dtmP,cl1Ptr)->nextPtr ;
-	   ++delCount ;
-	  }
+       *(tempP+cl1Ptr) = 1 ;
+       cl1Ptr = clistAddrP(dtmP,cl1Ptr)->nextPtr ;
+       ++delCount ;
+      }
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Deleted Clist Records = %6ld",delCount) ;
 /*
 ** Copy Over Deleted Records
@@ -3583,10 +3590,10 @@ BENTLEYDTM_Public int bcdtmTin_compactCircularListDtmObject(BC_DTM_OBJ *dtmP)
     for( cl1Ptr = cl2Ptr = 0 ; cl2Ptr < dtmP->cListPtr ; ++cl2Ptr )
       {
        if( ! *(tempP+cl2Ptr) )
-	     {
-	      if( cl1Ptr != cl2Ptr ) *(clistAddrP(dtmP,cl1Ptr)) = *(clistAddrP(dtmP,cl2Ptr)) ;
-	      ++cl1Ptr ;
-	     }
+         {
+          if( cl1Ptr != cl2Ptr ) *(clistAddrP(dtmP,cl1Ptr)) = *(clistAddrP(dtmP,cl2Ptr)) ;
+          ++cl1Ptr ;
+         }
       }
 /*
 **  Adjust Circular List Pointers
@@ -3813,27 +3820,27 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalSliverTrianglesDtmObject(BC_DTM_OBJ
    {
     process = 1 ;
     while (process)
-	  {
-	   process = 0 ;
-	   nextPnt = nodeAddrP(dtmP,hullPnt)->hPtr ;
-	   if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,hullPnt,nextPnt)) < 0 ) goto errexit ;
-	   if( nodeAddrP(dtmP,antPnt)->hPtr == dtmP->nullPnt && ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,hullPnt,nextPnt) )
-	     {
-	      bls = bcdtmMath_pointDistanceDtmObject(dtmP,hullPnt,nextPnt)  ;
-	      s1s = bcdtmMath_pointDistanceDtmObject(dtmP,hullPnt,antPnt)  ;
-	      s2s = bcdtmMath_pointDistanceDtmObject(dtmP,antPnt,nextPnt) ;
+      {
+       process = 0 ;
+       nextPnt = nodeAddrP(dtmP,hullPnt)->hPtr ;
+       if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,hullPnt,nextPnt)) < 0 ) goto errexit ;
+       if( nodeAddrP(dtmP,antPnt)->hPtr == dtmP->nullPnt && ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,hullPnt,nextPnt) )
+         {
+          bls = bcdtmMath_pointDistanceDtmObject(dtmP,hullPnt,nextPnt)  ;
+          s1s = bcdtmMath_pointDistanceDtmObject(dtmP,hullPnt,antPnt)  ;
+          s2s = bcdtmMath_pointDistanceDtmObject(dtmP,antPnt,nextPnt) ;
           if( bls > s1s && bls > s2s )
             {
-	         if(( s1s + s2s - bls ) / bls  <= sliverRatio ) process = 1 ;
-	         if( process )
-	           {
-		        if((bcdtmList_deleteLineDtmObject(dtmP,hullPnt,nextPnt))) goto errexit ;
-		        nodeAddrP(dtmP,hullPnt)->hPtr = antPnt ;
-		        nodeAddrP(dtmP,antPnt)->hPtr  = nextPnt ;
+             if(( s1s + s2s - bls ) / bls  <= sliverRatio ) process = 1 ;
+             if( process )
+               {
+                if((bcdtmList_deleteLineDtmObject(dtmP,hullPnt,nextPnt))) goto errexit ;
+                nodeAddrP(dtmP,hullPnt)->hPtr = antPnt ;
+                nodeAddrP(dtmP,antPnt)->hPtr  = nextPnt ;
                }
-	        }
-	     }
-	  }
+            }
+         }
+      }
     hullPnt = nextPnt ;
    } while ( hullPnt != dtmP->hullPoint ) ;
 /*
@@ -3885,40 +3892,40 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObjectOld(BC_DTM
 **     Scan Boundary Line to get largest line
 */
        do
-	     {
-	      np = nodeAddrP(dtmP,p)->hPtr ;
+         {
+          np = nodeAddrP(dtmP,p)->hPtr ;
           if (np >= 0)
               {
-	          if( (ap = bcdtmList_nextAntDtmObject(dtmP,p,np) ) < 0 ) goto errexit ;
-	          if( nodeAddrP(dtmP,ap)->hPtr == dtmP->nullPnt && ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,p,np) )
-	            {
+              if( (ap = bcdtmList_nextAntDtmObject(dtmP,p,np) ) < 0 ) goto errexit ;
+              if( nodeAddrP(dtmP,ap)->hPtr == dtmP->nullPnt && ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,p,np) )
+                {
                  b1s = bcdtmMath_pointDistanceSquaredDtmObject(dtmP,p,np)  ; //
-	             if( b1s > maxSideSquared )
-	               {
-		            if( b1s > scanside )
-		              {
-		               p1 = p ;
+                 if( b1s > maxSideSquared )
+                   {
+                    if( b1s > scanside )
+                      {
+                       p1 = p ;
                        p2 = np ;
                        p3 = ap ;
-		               scanside = b1s ;
-		              }
-		            process = 1 ;
+                       scanside = b1s ;
+                      }
+                    process = 1 ;
                      }
                  else
                      nodeAddrP(dtmP,p)->hPtr = -np - 1;
                 }
                 else
                     nodeAddrP(dtmP,p)->hPtr = -np - 1;
-    	      p = np ;
-	        }
+              p = np ;
+            }
           else
               p = -np - 1;
-	     } while ( p != dtmP->hullPoint ) ;
+         } while ( p != dtmP->hullPoint ) ;
 /*
 **     Delete Largest Hull Line
 */
        if( process )
-	     {
+         {
           if( dbg )
             {
              bcdtmWrite_message(0,0,0,"Deleting Line %6ld %6ld  %6ld ** Length  = %10.4lf",p1,p2,p3,sqrt(scanside)) ;
@@ -3930,7 +3937,7 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObjectOld(BC_DTM
               nodeAddrP(dtmP,p1)->hPtr = p3 ;
               nodeAddrP(dtmP,p3)->hPtr = p2 ;
               ++numRemoved ;
-	     }
+         }
       }
    }
 /*
@@ -3942,15 +3949,15 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObjectOld(BC_DTM
 */
        p = dtmP->hullPoint ;
        do
-	     {
-	      np = nodeAddrP(dtmP,p)->hPtr ;
+         {
+          np = nodeAddrP(dtmP,p)->hPtr ;
           if (np < 0)
               {
               np = -np -1;
               nodeAddrP(dtmP,p)->hPtr = np;
               }
-  	      p = np ;
-	     } while ( p != dtmP->hullPoint ) ;
+          p = np ;
+         } while ( p != dtmP->hullPoint ) ;
 /*
 ** Clean Up
 */
@@ -4027,8 +4034,8 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObject(BC_DTM_OB
 **     Scan Boundary Line to get largest line
 */
     do
-	 {
-	  np = nodeAddrP(dtmP,p)->hPtr ;
+     {
+      np = nodeAddrP(dtmP,p)->hPtr ;
       if( (ap = bcdtmList_nextAntDtmObject(dtmP,p,np) ) < 0 ) goto errexit ;
       if( nodeAddrP(dtmP,ap)->hPtr == dtmP->nullPnt && ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,p,np) )
         {
@@ -4038,8 +4045,8 @@ BENTLEYDTM_Public int bcdtmTin_removeExternalMaxSideTrianglesDtmObject(BC_DTM_OB
            removeEdges.push_back (removeEdge(b1s, p, np, ap));
            }
         }
-	  p = np ;
-	 } while ( p != dtmP->hullPoint ) ;
+      p = np ;
+     } while ( p != dtmP->hullPoint ) ;
 /*
 **     Delete Largest Hull Line
 */
@@ -4272,7 +4279,7 @@ BENTLEYDTM_Public int bcdtmTin_clipTinToBoundaryPolygonDtmObject(BC_DTM_OBJ *dtm
              if( dbg ) bcdtmWrite_message(0,0,0,"Knot Detected At Point %7ld ** %12.6lf %12.6lf %10.4lf",knotPoint,pointAddrP(dtmP,knotPoint)->x,pointAddrP(dtmP,knotPoint)->y,pointAddrP(dtmP,knotPoint)->z) ;
              if( knotPoint != dtmP->nullPnt ) knotDetected = TRUE ;
             }
-		  ++lineNum ;
+          ++lineNum ;
 /*
 **        Log Inserted Segment
 */
@@ -4290,14 +4297,14 @@ BENTLEYDTM_Public int bcdtmTin_clipTinToBoundaryPolygonDtmObject(BC_DTM_OBJ *dtm
 /*
 **        Check Tin Precision
 */
-		  if( cdbg )
-		    {
+          if( cdbg )
+            {
              if( bcdtmCheck_precisionDtmObject(dtmP,1) )
                {
                 bcdtmWrite_message(1,0,0,"Tin Precision Invalid") ;
                 goto errexit ;
                }
-		    }
+            }
          }
        if( dbg ) bcdtmWrite_message(0,0,0,"Boundary Polygon Inserted") ;
       }
@@ -6196,7 +6203,7 @@ BENTLEYDTM_Public int bcdtmTin_clipVoidLinesFromDtmFeatureDtmObject(BC_DTM_OBJ *
  do
    {
     if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&np) ) goto errexit ;
-	voidLine= 0 ;
+    voidLine= 0 ;
     if( np != dtmP->nullPnt )
       {
        if( bcdtmList_testForVoidLineDtmObject(dtmP,sp,np,&voidLine) )goto errexit  ;
@@ -6728,7 +6735,7 @@ int bcdtmTin_insertDtmFeatureTypeIntoDtmObjectNew(BC_DTM_OBJ *dtmP,DTMFeatureTyp
                if( bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI)[0] != bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI)[dtmFeatureP->numDtmFeaturePts-1] )bcdtmWrite_message(0,0,0,"Feature Does Not Close") ;
               }
            }
-	   break ;
+       break ;
 
        case DTMFeatureType::DrapeVoid :
          if( dbg ) bcdtmWrite_message(0,0,0,"Validating Drape Void") ;
@@ -6738,7 +6745,7 @@ int bcdtmTin_insertDtmFeatureTypeIntoDtmObjectNew(BC_DTM_OBJ *dtmP,DTMFeatureTyp
             insertError = 1 ;
             if( drapeVoidPtsP != NULL ) { free(drapeVoidPtsP) ; drapeVoidPtsP = NULL ; }
            }
- 	   break   ;
+       break   ;
 
        default :
        break   ;

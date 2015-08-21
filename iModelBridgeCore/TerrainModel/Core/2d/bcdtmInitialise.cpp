@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmInitialise.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -43,7 +43,6 @@ BENTLEYDTM_EXPORT int bcdtmInitialise(void)
 ** Set Number Of CPU Processors
 */
     DTM_NUM_PROCESSORS = std::thread::hardware_concurrency();
-    if( DTM_NUM_PROCESSORS > DTM_MAX_PROCESSORS ) DTM_NUM_PROCESSORS = DTM_MAX_PROCESSORS ; 
     if( dbg ) bcdtmWrite_message(0,0,0,"DTM_NUM_PROCESSORS = %2ld",DTM_NUM_PROCESSORS) ; 
 /*
 ** Set Floating Point Control Word To 64 Bit Precision
@@ -80,13 +79,13 @@ BENTLEYDTM_EXPORT int bcdtmInitialise_openGpkDtmLogFile(void)
  if( fpLOG == NULL )
    {
     // Modified by Joe Roberts on 10/15/2008 for D-28436
-	// This is the GEOPAK/PW problem caused by inclusion of Civil Accudraw, GPS, and Roundabouts 
-	// into the GEOPAK install.  The inclusion caused the BCivilDTM.2.0.dll to load earlier - before PW is ready.  
-	// The first thing the init function for the DTM dll did was to try to create a log file in PW.  
-	// But PW wasn't ready, so the connection failed and because of the optimization of the connection function, 
-	// it did not retry.  So as far as GEOPAK was concerned, PW was not active. The solution was since the dtm 
-	// log file truly did not need to be created in PW, then don't do it.  Create the log file on the local disk.  
-	// End of problem.
+    // This is the GEOPAK/PW problem caused by inclusion of Civil Accudraw, GPS, and Roundabouts 
+    // into the GEOPAK install.  The inclusion caused the BCivilDTM.2.0.dll to load earlier - before PW is ready.  
+    // The first thing the init function for the DTM dll did was to try to create a log file in PW.  
+    // But PW wasn't ready, so the connection failed and because of the optimization of the connection function, 
+    // it did not retry.  So as far as GEOPAK was concerned, PW was not active. The solution was since the dtm 
+    // log file truly did not need to be created in PW, then don't do it.  Create the log file on the local disk.  
+    // End of problem.
 /*
 **  Check Log File Environment Variable Exists
 */

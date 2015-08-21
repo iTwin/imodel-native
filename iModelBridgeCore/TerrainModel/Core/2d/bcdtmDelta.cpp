@@ -2,13 +2,14 @@
 |
 |     $Source: Core/2d/bcdtmDelta.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
-extern long numPrecisionError,numSnapFix ;
+
+extern long numPrecisionError,numSnapFix ;  //These are only used in Debug Code.
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -406,7 +407,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
    {
     if( (*dtm1PP)->ppTol == 0.0 )bcdtmWrite_message(1,0,0,"Convert From Dtm File/Object") ;
     if( (*dtm2PP)->ppTol == 0.0 )bcdtmWrite_message(1,0,0,"Convert To Dtm File/Object")   ;
-	ret = 20  ;
+    ret = 20  ;
     goto errexit ;
    }
 /*
@@ -676,7 +677,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
    {
     if( (dtm1P)->ppTol == 0.0 )bcdtmWrite_message(1,0,0,"Convert From Dtm File/Object") ;
     if( (dtm2P)->ppTol == 0.0 )bcdtmWrite_message(1,0,0,"Convert To Dtm File/Object")   ;
-	ret = 20  ;
+    ret = 20  ;
     goto errexit ;
    }
 /*
@@ -889,7 +890,7 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
    {
     if( dtm1P->ppTol == 0.0 ) bcdtmWrite_message(1,0,0,"Convert From Dtm File/Object") ;
     if( dtm2P->ppTol == 0.0 ) bcdtmWrite_message(1,0,0,"Convert To Dtm File/Object")   ;
-	ret = 20  ;
+    ret = 20  ;
     goto errexit ;
    }
 /*
@@ -914,11 +915,11 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaLatticeToSurfaceDtmObject(BC_DTM_OBJ
     for( plist2P = polyP->polyListP ; plist2P < polyP->polyListP + polyP->numPolygons ; ++plist2P ) 
       { 
        if( plist2P->area > largestArea ) 
-	     {
-	      largestArea = plist2P->area ;
-	      plist1P = plist2P ;
-	     }
-	  }
+         {
+          largestArea = plist2P->area ;
+          plist1P = plist2P ;
+         }
+      }
    }
 /*
 ** Copy Polygon Object Polygon To DPoint3d Polygon
@@ -1189,7 +1190,7 @@ BENTLEYDTM_Private int bcdtmDelta_copyTinPtsToP3DArrayDtmObject(BC_DTM_OBJ *dtmP
  if( *tinPtsPP == NULL ) 
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Copy The Points
@@ -1252,7 +1253,7 @@ BENTLEYDTM_Private int bcdtmDelta_copyTinLinesToPointLinesDtmObject(BC_DTM_OBJ *
     clcPtr = nodeAddrP(dtmP,p1)->cPtr ;
     while ( clcPtr != DTM_NULL_PTR )
       {
-	   clistP = clistAddrP(dtmP,clcPtr) ;
+       clistP = clistAddrP(dtmP,clcPtr) ;
        p2     = clistP->pntNum ;
        clcPtr = clistP->nextPtr ;
        if( p2 > p1 ) 
@@ -1314,11 +1315,11 @@ BENTLEYDTM_Private int bcdtmDelta_insertTinIntoTinDtmObject
  for( p3dP = *tinPtsPP ; p3dP < *tinPtsPP + numTinPts ; ++p3dP )
    {
     bcdtmFind_closestPointDtmObject(dtmP,p3dP->x,p3dP->y,&p1) ;
-	pntP = pointAddrP(dtmP,p1) ;
+    pntP = pointAddrP(dtmP,p1) ;
     if( fabs(p3dP->x-pntP->x) <= dtmP->ppTol && fabs(p3dP->y-pntP->y) <= dtmP->ppTol )
       {
        if( bcdtmMath_distance(p3dP->x,p3dP->y,pntP->x,pntP->y) < dtmP->ppTol )
-	     { 
+         { 
           p3dP->x = pntP->x ; 
           p3dP->y = pntP->y ; 
           ++numMoved ;

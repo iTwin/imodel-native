@@ -2,15 +2,18 @@
 |
 |     $Source: Core/2d/bcdtmSort.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
-static unsigned long randomSeed ;
-static unsigned long dtmRandomSeed=0 ;
-static long  lastStartPoint=-1,numTiles=0,tileStartPointArray[100000],numTilePoints[100000] ;
+thread_local static unsigned long randomSeed ;
+thread_local static unsigned long dtmRandomSeed=0 ;
+thread_local static long  lastStartPoint = -1;
+thread_local static long  numTiles = 0;
+thread_local static long  tileStartPointArray[100000];
+thread_local static long  numTilePoints[100000];
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -273,38 +276,38 @@ BENTLEYDTM_Private void bcdtmSort_mergeSortTaggedPointsInTileDtmObject(BC_DTM_OB
     left = -1;
     right = numPoints;
     while (left < right) 
-	  {
+      {
 /* 
 **     Search for a point whose coordinate is too large for the left. 
 */
        do 
          {
           ++left ;
-	       scan = false ;
+           scan = false ;
            p1P = pointAddrP(dtmP,startPoint+left) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = true ;
-	       if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = true ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = true ;
+           if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = true ;
          } while( left <= right && scan == true ) ;
 /* 
 **     Search for a point whose coordinate is too small for the right. 
 */
        do 
-	     {
+         {
           --right ;
-	       scan = false ;
+           scan = false ;
            p1P = pointAddrP(dtmP,startPoint+right) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = true ;
-	       if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = true ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = true ;
+           if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = true ;
          } while( left <= right &&  scan == true ) ;
 /* 
 **     Swap the left and right points 
 */
        if( left < right ) 
-	     {
+         {
           p1P = pointAddrP(dtmP,startPoint+left) ;
           p2P = pointAddrP(dtmP,startPoint+right) ;
           temp = *p1P ;
@@ -510,38 +513,38 @@ BENTLEYDTM_Private void bcdtmSort_tilePointsDtmObject(BC_DTM_OBJ *dtmP,long star
     left = -1;
     right = numPoints;
     while (left < right) 
-	  {
+      {
 /* 
 **     Search for a point whose coordinate is too large for the left. 
 */
        do 
          {
           ++left ;
-	       scan = FALSE ;
+           scan = FALSE ;
            p1P = pointAddrP(dtmP,startPoint+left) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
          } while( left <= right && scan == TRUE ) ;
 /* 
 **     Search for a point whose coordinate is too small for the right. 
 */
        do 
-	     {
+         {
           --right ;
-	       scan = FALSE ;
+           scan = FALSE ;
            p1P = pointAddrP(dtmP,startPoint+right) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
          } while( left <= right &&  scan == TRUE ) ;
 /* 
 **     Swap the left and right points 
 */
        if( left < right ) 
-	     {
+         {
           p1P = pointAddrP(dtmP,startPoint+left) ;
           p2P = pointAddrP(dtmP,startPoint+right) ;
           temp = *p1P ;
@@ -746,38 +749,38 @@ BENTLEYDTM_Private void bcdtmSort_tileTaggedPointsDtmObject(BC_DTM_OBJ *dtmP,lon
     left = -1;
     right = numPoints;
     while (left < right) 
-	  {
+      {
 /* 
 **     Search for a point whose coordinate is too large for the left. 
 */
        do 
          {
           ++left ;
-	       scan = FALSE ;
+           scan = FALSE ;
            p1P = pointAddrP(dtmP,startPoint+left) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
          } while( left <= right && scan == TRUE ) ;
 /* 
 **     Search for a point whose coordinate is too small for the right. 
 */
        do 
-	     {
+         {
           --right ;
-	       scan = FALSE ;
+           scan = FALSE ;
            p1P = pointAddrP(dtmP,startPoint+right) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
          } while( left <= right &&  scan == TRUE ) ;
 /* 
 **     Swap the left and right points 
 */
        if( left < right ) 
-	     {
+         {
           p1P = pointAddrP(dtmP,startPoint+left) ;
           p2P = pointAddrP(dtmP,startPoint+right) ;
           temp = *p1P ;
@@ -1088,44 +1091,44 @@ BENTLEYDTM_Private void bcdtmSort_pointArrayCluster(DPoint3d *ptsP,long numPts,l
 ** Choose a random point to split the point array. 
 */
     pivot  = (long) randomNumber(numPts);
-	if( axis == DTM_X_AXIS ) { pivot1 = (ptsP+pivot)->x ; pivot2 = (ptsP+pivot)->y ; }
-	if( axis == DTM_Y_AXIS ) { pivot1 = (ptsP+pivot)->y ; pivot2 = (ptsP+pivot)->x ; }
+    if( axis == DTM_X_AXIS ) { pivot1 = (ptsP+pivot)->x ; pivot2 = (ptsP+pivot)->y ; }
+    if( axis == DTM_Y_AXIS ) { pivot1 = (ptsP+pivot)->y ; pivot2 = (ptsP+pivot)->x ; }
 /* 
 **  Split the point array. 
 */
     left = -1;
     right = numPts;
     while (left < right) 
-	  {
+      {
 /* 
 **  Search for a point whose coordinate is too large for the left. 
 */
        do 
          {
           ++left ;
-	      scan = FALSE ;
+          scan = FALSE ;
           x = (ptsP+left)->x ; 
-	      y = (ptsP+left)->y ; 
-	      if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
-	      if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
+          y = (ptsP+left)->y ; 
+          if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
+          if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
          } while( left <= right && scan == TRUE ) ;
 /* 
 **  Search for a point whose coordinate is too small for the right. 
 */
        do 
-	     {
+         {
           --right ;
-	      scan = FALSE ;
+          scan = FALSE ;
           x = (ptsP+right)->x ; 
-	      y = (ptsP+right)->y ; 
-	      if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
-	      if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
+          y = (ptsP+right)->y ; 
+          if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
+          if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
          } while( left <= right &&  scan == TRUE ) ;
 /* 
 ** Swap the left and right points 
 */
        if( left < right ) 
-	     {
+         {
           p1P = ptsP + left ;
           p2P = ptsP + right ;
           temp = *p1P ;
@@ -1411,36 +1414,36 @@ BENTLEYDTM_Private void bcdtmSort_pointArrayClusterWithTag(DPoint3d *ptsP,long *
     left = -1;
     right = numPts;
     while (left < right) 
-	   {
+       {
 /* 
 **  Search for a point whose coordinate is too large for the left. 
 */
        do 
          {
           ++left ;
-	       scan = FALSE ;
+           scan = FALSE ;
           x = (ptsP+left)->x ; 
-	       y = (ptsP+left)->y ; 
-	       if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
+           y = (ptsP+left)->y ; 
+           if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
          } while( left <= right && scan == TRUE ) ;
 /* 
 **  Search for a point whose coordinate is too small for the right. 
 */
        do 
-	      {
+          {
           --right ;
-	       scan = FALSE ;
+           scan = FALSE ;
           x = (ptsP+right)->x ; 
-	       y = (ptsP+right)->y ; 
-	       if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
+           y = (ptsP+right)->y ; 
+           if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
          } while( left <= right &&  scan == TRUE ) ;
 /* 
 ** Swap the left and right points 
 */
        if( left < right ) 
-	      {
+          {
           p1P = ptsP + left ;
           p2P = ptsP + right ;
           temp = *p1P ;

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmClip.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1113,10 +1113,10 @@ BENTLEYDTM_Public int bcdtmClip_testForStartOfAdjoingFeatureDtmObject(BC_DTM_OBJ
                 fl1Ptr = flistAddrP(dtmP,fl1Ptr)->nextPtr ;                
                }
              if( isw ) 
-			   { 
-			    *adjacentFeatureP = flistAddrP(dtmP,flPtr)->dtmFeature ;
-				return(0) ;
-		       }
+               { 
+                *adjacentFeatureP = flistAddrP(dtmP,flPtr)->dtmFeature ;
+                return(0) ;
+               }
             }
          }
       }
@@ -1436,14 +1436,14 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
     while ( process && nodeAddrP(dtmP,sp)->tPtr == mark )
       {
        if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&sp)) goto errexit ; 
-	   if( sp == dtmP->nullPnt || sp == firstPnt ) process = 0 ;
+       if( sp == dtmP->nullPnt || sp == firstPnt ) process = 0 ;
       }
     if( dbg ) bcdtmWrite_message(0,0,0,"First Unmarked Point = %8ld",sp) ;
 /*
 **  Scan To Next Mark Point
 */
     if( process )  	   
-	  {
+      {
 /*
 **     Set New First Point
 */
@@ -1453,10 +1453,10 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
 **     Scan To Next Marked Point
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Scanning To Next Marked Point") ;
-	   np = sp ;
+       np = sp ;
        process = 1 ;
        while ( process && nodeAddrP(dtmP,np)->tPtr != mark )
-	     {
+         {
           lnp = np ;
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,np,&np)) goto errexit ; 
           if( np == dtmP->nullPnt || np == firstPnt ) process = 0 ;
@@ -1468,7 +1468,7 @@ BENTLEYDTM_Public int bcdtmClip_groupSpotDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,lo
        if( dbg ) bcdtmWrite_message(0,0,0,"Last Unmarked Point = %8ld",lnp) ;
        if( np == firstPnt ) nodeAddrP(dtmP,lnp)->tPtr = np ; 
        sp = np ;
-	  }
+      }
    }
 /*
 ** Add Feature To Dtm 
@@ -2862,12 +2862,12 @@ BENTLEYDTM_Public int bcdtmClip_externalToTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,
       {
        clc = nodeAddrP(dtmP,sp)->cPtr ;
        while ( clc != dtmP->nullPtr )
-	     {
-	      cp  = clistAddrP(dtmP,clc)->pntNum ;
-	      clc = clistAddrP(dtmP,clc)->nextPtr ;
-	      if( bcdtmList_deleteLineDtmObject(dtmP,sp,cp) ) goto errexit ;
+         {
+          cp  = clistAddrP(dtmP,clc)->pntNum ;
+          clc = clistAddrP(dtmP,clc)->nextPtr ;
+          if( bcdtmList_deleteLineDtmObject(dtmP,sp,cp) ) goto errexit ;
          ++numLines ;
-	     }
+         }
        nodeP = nodeAddrP(dtmP,sp) ; 
        nodeP->hPtr = dtmP->nullPnt ;
        nodeP->tPtr = dtmP->nullPnt ;
@@ -3634,7 +3634,7 @@ BENTLEYDTM_Private int bcdtmClip_copyTptrListToPointArrayDtmObject(BC_DTM_OBJ *d
  if( nodeAddrP(dtmP,startPnt)->tPtr == dtmP->nullPnt )
    {
     bcdtmWrite_message(2,0,0,"Start Point Has A Null Tptr Value") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Scan Tptr List And Count Number Of Points
@@ -3853,7 +3853,7 @@ BENTLEYDTM_Private int bcdtmClip_externalCleanPolygonalFeaturesDtmObject(BC_DTM_
  do
    { 
     nodeAddrP(dtmP,sp)->PRGN = 0 ; 
-	sp = nodeAddrP(dtmP,sp)->hPtr ;
+    sp = nodeAddrP(dtmP,sp)->hPtr ;
    } while ( sp != dtmP->hullPoint ) ;
 /*
 **  Scan Tin Hull Looking For Voids Or Holes On Tin Hull
@@ -4248,18 +4248,18 @@ BENTLEYDTM_Private int bcdtmClip_checkReverseLineConnectionsDtmObject(BC_DTM_OBJ
  for( point = 0 ; point < dtmP->numPoints ; ++point )
    {
     if( ( clPtr = nodeAddrP(dtmP,point)->cPtr ) != dtmP->nullPtr )
-	  {
-	   while( clPtr != dtmP->nullPtr )
-	     {
-		  clPnt = clistAddrP(dtmP,clPtr)->pntNum ;
-		  clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
+      {
+       while( clPtr != dtmP->nullPtr )
+         {
+          clPnt = clistAddrP(dtmP,clPtr)->pntNum ;
+          clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
           if( ! bcdtmList_testLineDtmObject(dtmP,clPnt,point)) 
-		    {
-		     bcdtmWrite_message(0,0,0,"No Reverse Connection For Tin Line %8ld %8ld",point,clPnt) ; 
+            {
+             bcdtmWrite_message(0,0,0,"No Reverse Connection For Tin Line %8ld %8ld",point,clPnt) ; 
              ret = DTM_ERROR ;
-			}
-		 }
-	  }
+            }
+         }
+      }
    }
 /*
 ** If Errors Detected Error Exit
@@ -4320,7 +4320,7 @@ BENTLEYDTM_EXPORT int bcdtmClip_buildClippingTinFromFencePointsDtmObject(BC_DTM_
  if( fencePtsP == NULL || numFencePts < 3 )
    {
     bcdtmWrite_message(2,0,0,"Invalid Clipping Fence") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Delete Clip Tin Object If It Exists
@@ -5484,7 +5484,7 @@ BENTLEYDTM_Public int bcdtmClip_checkPolygonsIntersect(DPoint3d *Poly1,long numP
     for( p3d2 = Poly2 ; p3d2 < Poly2 + numPts2 && ! coinflag ; ++p3d2 )
       {
        if( p3d1->x == p3d2->x && p3d1->y == p3d2->y ) 
-	     { coinflag = 1 ; *IntersectFlag = 1 ; }
+         { coinflag = 1 ; *IntersectFlag = 1 ; }
       }
    }
 /*
@@ -5495,10 +5495,10 @@ BENTLEYDTM_Public int bcdtmClip_checkPolygonsIntersect(DPoint3d *Poly1,long numP
     for( p3d1 = Poly1 ; p3d1 < Poly1 + numPts1 - 1 && ! intflag ; ++p3d1 )
       {
        for( p3d2 = Poly2 ; p3d2 < Poly2 + numPts2 - 1 && ! intflag ; ++p3d2 )
-	     {
-	      if(bcdtmMath_intersectCordLines(p3d1->x,p3d1->y,(p3d1+1)->x,(p3d1+1)->y,p3d2->x,p3d2->y,(p3d2+1)->x,(p3d2+1)->y,&Xi,&Yi))  
-		    { intflag = 1 ; *IntersectFlag = 1 ; }
-	     }
+         {
+          if(bcdtmMath_intersectCordLines(p3d1->x,p3d1->y,(p3d1+1)->x,(p3d1+1)->y,p3d2->x,p3d2->y,(p3d2+1)->x,(p3d2+1)->y,&Xi,&Yi))  
+            { intflag = 1 ; *IntersectFlag = 1 ; }
+         }
       }
     if( ! intflag )
       {

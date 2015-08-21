@@ -1154,7 +1154,6 @@ struct DTM_MX_TRG_INDEX { long index , trgPnt1, trgPnt2,trgPnt3 ; } ;
 |    TypeDefs For Multi Threading Triangulation                                         |
 |                                                                                       |
 +--------------------------------------------------------------------------------------*/
-#define DTM_MAX_PROCESSORS 10
 struct DTM_MULTI_THREAD
 {
  BC_DTM_OBJ *dtmP ;

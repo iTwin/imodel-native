@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmCheck.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -230,29 +230,29 @@ BENTLEYDTM_Public int bcdtmCheck_topologyDtmObject(BC_DTM_OBJ *dtmP,long writeEr
           {
            p2 = clistAddrP(dtmP,clPtr)->pntNum ;
            if( (p2 = bcdtmList_nextAntDtmObject(dtmP,p1,p2)) < 0 )
-	         {
-	          if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Counter Clockwise ** %8ld %8ld",p1,p2) ;
-	          ++errcnt ;
-	         }
+             {
+              if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Counter Clockwise ** %8ld %8ld",p1,p2) ;
+              ++errcnt ;
+             }
            else
-	         {
-	          while( clPtr != dtmP->nullPtr )
-	            {
-	             p3 = clistAddrP(dtmP,clPtr)->pntNum ;
-	             if( ( p4 = bcdtmList_nextClkDtmObject(dtmP,p3,p1)) < 0 )
-	               {
-		            if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Clockwise ** %8ld %8ld",p1,p2) ;
-		            ++errcnt ;
-	               }
-	             else if( nodeAddrP(dtmP,p3)->hPtr != p1 && p4 != p2 )
-	               {
-		            if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted ** %8ld %8ld %8ld",p1,p2,p3) ;
-		            ++errcnt  ;
-	               }
-	             p2 = p3 ;
-	             clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-	            }
-	         }
+             {
+              while( clPtr != dtmP->nullPtr )
+                {
+                 p3 = clistAddrP(dtmP,clPtr)->pntNum ;
+                 if( ( p4 = bcdtmList_nextClkDtmObject(dtmP,p3,p1)) < 0 )
+                   {
+                    if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Clockwise ** %8ld %8ld",p1,p2) ;
+                    ++errcnt ;
+                   }
+                 else if( nodeAddrP(dtmP,p3)->hPtr != p1 && p4 != p2 )
+                   {
+                    if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted ** %8ld %8ld %8ld",p1,p2,p3) ;
+                    ++errcnt  ;
+                   }
+                 p2 = p3 ;
+                 clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
+                }
+             }
           }
        }
     }
@@ -319,12 +319,12 @@ BENTLEYDTM_Public int bcdtmCheck_precisionDtmObject(BC_DTM_OBJ *dtmP,long writeE
             {
              p3  = clistAddrP(dtmP,clPtr)->pntNum ;
              clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-		     if( p2 > p1 && p3 > p1 && nodeAddrP(dtmP,+p1)->hPtr != p2 )
-		       {
-			    if( bcdtmMath_allPointSideOfDtmObject(dtmP,p1,p2,p3) >= 0 )
-			      {
-	               if( writeError )
-		             {
+             if( p2 > p1 && p3 > p1 && nodeAddrP(dtmP,+p1)->hPtr != p2 )
+               {
+                if( bcdtmMath_allPointSideOfDtmObject(dtmP,p1,p2,p3) >= 0 )
+                  {
+                   if( writeError )
+                     {
                       bcdtmWrite_message(0,0,0,"Precision Error ** Point = %8ld %8ld %8ld",p1,p2,p3) ;
                       bcdtmList_writeCircularListForPointDtmObject(dtmP,p1) ; 
                       bcdtmList_writeCircularListForPointDtmObject(dtmP,p2) ; 
@@ -333,9 +333,9 @@ BENTLEYDTM_Public int bcdtmCheck_precisionDtmObject(BC_DTM_OBJ *dtmP,long writeE
                    ++errcnt ;
                   }
                }  
-	         p2 = p3 ;
-		    }
-	     }
+             p2 = p3 ;
+            }
+         }
       }
    }
 /*
@@ -1423,29 +1423,29 @@ BENTLEYDTM_Public int bcdtmCheck_topologyRangeDtmObject(BC_DTM_OBJ *dtmP,long fi
           {
            p2 = clistAddrP(dtmP,clPtr)->pntNum ;
            if( (p2 = bcdtmList_nextAntDtmObject(dtmP,p1,p2)) < 0 )
-	         {
-	          if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Counter Clockwise ** %8ld %8ld",p1,p2) ;
-	          ++errcnt ;
-	         }
+             {
+              if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Counter Clockwise ** %8ld %8ld",p1,p2) ;
+              ++errcnt ;
+             }
            else
-	         {
-	          while( clPtr != dtmP->nullPtr )
-	            {
-	             p3 = clistAddrP(dtmP,clPtr)->pntNum ;
-	             if( ( p4 = bcdtmList_nextClkDtmObject(dtmP,p3,p1)) < 0 )
-	               {
-		            if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Clockwise ** %8ld %8ld",p1,p2) ;
-		            ++errcnt ;
-	               }
-	             else if( nodeAddrP(dtmP,p3)->hPtr != p1 && p4 != p2 )
-	               {
-		            if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted ** %8ld %8ld %8ld",p1,p2,p3) ;
-		            ++errcnt  ;
-	               }
-	             p2 = p3 ;
-	             clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-	            }
-	         }
+             {
+              while( clPtr != dtmP->nullPtr )
+                {
+                 p3 = clistAddrP(dtmP,clPtr)->pntNum ;
+                 if( ( p4 = bcdtmList_nextClkDtmObject(dtmP,p3,p1)) < 0 )
+                   {
+                    if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted Clockwise ** %8ld %8ld",p1,p2) ;
+                    ++errcnt ;
+                   }
+                 else if( nodeAddrP(dtmP,p3)->hPtr != p1 && p4 != p2 )
+                   {
+                    if( writeError ) bcdtmWrite_message(0,0,0,"Circular List Corrupted ** %8ld %8ld %8ld",p1,p2,p3) ;
+                    ++errcnt  ;
+                   }
+                 p2 = p3 ;
+                 clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
+                }
+             }
           }
        }
     }

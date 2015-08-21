@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmPolygon.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -42,9 +42,9 @@ BENTLEYDTM_Public int bcdtmPolygon_storeTptrPolygonInPolygonObjectDtmObject(BC_D
  do
    {
     if( polyP->numPolyPts == polyP->memPolyPts ) 
-	  { 
-	   if( bcdtmPolygon_allocateMemoryPolygonObject(polyP)) goto errexit ;
-	  }
+      { 
+       if( bcdtmPolygon_allocateMemoryPolygonObject(polyP)) goto errexit ;
+      }
     (polyP->polyPtsP+polyP->numPolyPts)->x = pointAddrP(dtmP,sp)->x ;
     (polyP->polyPtsP+polyP->numPolyPts)->y = pointAddrP(dtmP,sp)->y ;
     (polyP->polyPtsP+polyP->numPolyPts)->z = pointAddrP(dtmP,sp)->z ;
@@ -145,10 +145,10 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 */
     polyPtsP = ( DPoint3d * ) malloc( numPolyPts * sizeof(DPoint3d)) ;
     if( polyPtsP == NULL ) 
-	  { 
-	   bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
-	  }
+      { 
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
+      }
     for( p3d1P = polyPtsP , p3d2P = userPolyPtsP ; p3d1P < polyPtsP + numPolyPts ; ++p3d1P , ++p3d2P ) *p3d1P = *p3d2P ;
 /*
 **  Validate Pad Polygon
@@ -274,10 +274,10 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
 */
     polyPtsP = ( DPoint3d * ) malloc( numPolyPts * sizeof(DPoint3d)) ;
     if( polyPtsP == NULL ) 
-	  { 
-	   bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
-	  }
+      { 
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
+      }
     for( p3d1P = polyPtsP , p3d2P = userPolyPtsP ; p3d1P < polyPtsP + numPolyPts ; ++p3d1P , ++p3d2P ) *p3d1P = *p3d2P ;
 /*
 ** Validate Volume Polygon
@@ -301,7 +301,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
  if( *intersectFlagP == 0 )
    {
     bcdtmWrite_message(1,0,0,"Tin Hulls Do Not Intersect") ;
-	goto errexit ;
+    goto errexit ;
    }   
  else if( *intersectFlagP == 2 || *intersectFlagP == 4 ) *intersectFlagP = 1 ;
  else                                                    *intersectFlagP = 2 ;  
@@ -313,15 +313,15 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Volume Polygon With Intersection Of Tin Hulls") ; 
     bcdtmPolygon_intersectPolygonWithPolgyonObject(polyPtsP,numPolyPts,*polyPP,ppTol,plTol,&intFlag,&tempPolyP) ;
     if( intFlag == 0 ) 
-	  { 
-	   bcdtmWrite_message(1,0,0,"Polygon And Tin Hulls Do Not Intersect") ;
-	   goto errexit ;
+      { 
+       bcdtmWrite_message(1,0,0,"Polygon And Tin Hulls Do Not Intersect") ;
+       goto errexit ;
       }
     else if( intFlag == 2 || intFlag == 4 ) *intersectFlagP = 1 ;
     else                                    *intersectFlagP = 2 ; 
     bcdtmPolygon_deletePolygonObject(polyPP) ; 
     *polyPP   = tempPolyP ;
-	tempPolyP = NULL ;
+    tempPolyP = NULL ;
    }
 /*
 ** Clean Up
@@ -884,11 +884,11 @@ BENTLEYDTM_Private int bcdtmPolygon_intersectPolygonWithPolgyonObject
 */
     numTempPts = plistP->lastPnt - plistP->firstPnt + 1 ;
     tempPtsP = ( DPoint3d * ) malloc ( numTempPts * sizeof(DPoint3d)) ;
-	if( tempPtsP == NULL ) 
-	  { 
-	   bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
-	  }
+    if( tempPtsP == NULL ) 
+      { 
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
+      }
 /*
 **  Copy Polygon Object Polygon to DPoint3d Polygon
 */
@@ -1497,11 +1497,11 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject
 */
     numNewPolyPts = pl->lastPnt - pl->firstPnt + 1 ;
     newPolyPtsP = ( DPoint3d * ) malloc ( numNewPolyPts * sizeof(DPoint3d)) ;
-	if( newPolyPtsP == NULL ) 
-	  { 
-	   bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
-	  }
+    if( newPolyPtsP == NULL ) 
+      { 
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
+      }
 /*
 **  Copy Points
 */
@@ -1513,10 +1513,10 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject
 **  Intersect polygonPtsPgons
 */
     if( bcdtmPolygon_intersectPointArrayPolygons(polygonPtsP,numPolygonPts,newPolyPtsP,numNewPolyPts,intersectFlagP,polygon2PP,ppTol,plTol)) 
-	  { 
-	   free( newPolyPtsP) ; 
-	   goto errexit ; 
-	  }
+      { 
+       free( newPolyPtsP) ; 
+       goto errexit ; 
+      }
 /*
 **   Free memory
 */
@@ -1999,7 +1999,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
                          do
                            {
                             nodeAddrP(dtmP,cp)->PRGN = 1 ;
-			                if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs,cp,nodeAddrP(dtmP,cp)->tPtr) ) goto errexit ;
+                            if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs,cp,nodeAddrP(dtmP,cp)->tPtr) ) goto errexit ;
                             bcdtmFlag_setFlag(lineMarkP,ofs) ;
                             cp = nodeAddrP(dtmP,cp)->tPtr ;
                            } while ( cp != spnt ) ;

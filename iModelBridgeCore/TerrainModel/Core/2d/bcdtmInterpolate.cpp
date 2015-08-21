@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmInterpolate.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -84,7 +84,7 @@ BENTLEYDTM_EXPORT int bcdtmInterpolate_dtmFeatureTypeDtmObject
        if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,dtmFeature,&featurePtsP,&numFeaturePts )) goto errexit ;
        if( numFeaturePts > 1 )
          {
- 	      if( bcdtmInterpolate_linearFeatureDtmObject(spotsP,&featurePtsP,&numFeaturePts,snapTolerance,&interpolateResult)) goto errexit ;
+          if( bcdtmInterpolate_linearFeatureDtmObject(spotsP,&featurePtsP,&numFeaturePts,snapTolerance,&interpolateResult)) goto errexit ;
           if( interpolateResult )
             {
              ++numDtmFeaturesInterpolated ;
@@ -284,17 +284,17 @@ BENTLEYDTM_Private int bcdtmInterpolate_linearFeatureDtmObject
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Scanning Forwards") ;
           for( p = pnt1 ; p <= pnt2  ; ++p )
-	        {
+            {
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"p = %6ld",p) ; 
              if( ( p != ps || ds > snapTolerance ) && ( p != pe || de > snapTolerance ) )
                {
                 pntP = pointAddrP(spotsDtmP,p) ;
-	            if( pntP->y >= yMin && pntP->y <= yMax && pntP->x >= xMin && pntP->x <= xMax    )
-	              {
+                if( pntP->y >= yMin && pntP->y <= yMax && pntP->x >= xMin && pntP->x <= xMax    )
+                  {
                    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Distance From Line = %10.4lf", bcdtmMath_distanceOfPointFromLine(&onLine,xs,ys,xe,ye,pntP->x,pntP->y,&xn,&yn)) ;
-	               if( ( dm = bcdtmMath_distanceOfPointFromLine(&onLine,xs,ys,xe,ye,pntP->x,pntP->y,&xn,&yn)) <= snapTolerance )
-	                 {
-		              if( onLine ) 
+                   if( ( dm = bcdtmMath_distanceOfPointFromLine(&onLine,xs,ys,xe,ye,pntP->x,pntP->y,&xn,&yn)) <= snapTolerance )
+                     {
+                      if( onLine ) 
                         {
                          if( dbg == 2 ) bcdtmWrite_message(0,0,0,"onLine = %2ld ** p = %8ld %12.5lf %12.5lf %10.4lf ** dm = %10.4lf xn = %12.5lf yn = %12.5lf len = %10.4lf",onLine,p,pntP->x,pntP->y,pntP->z,dm,xn,yn,bcdtmMath_distance(xs,ys,xn,yn)) ;
 /*
@@ -322,24 +322,24 @@ BENTLEYDTM_Private int bcdtmInterpolate_linearFeatureDtmObject
                          ++numIntPoints ;
                         }
                      } 
-	              }
-	           }
-	        }
+                  }
+               }
+            }
          }
        else
          {
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Scanning Backwards") ;
           for( p = pnt1 ; p >= pnt2 ; --p )
-	        {
+            {
              if( ( p != ps || ds > snapTolerance ) && ( p != pe || de > snapTolerance ) )
                {
                 pntP = pointAddrP(spotsDtmP,p) ;
                 if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Distance From Line = %10.4lf", bcdtmMath_distanceOfPointFromLine(&onLine,xs,ys,xe,ye,pntP->x,pntP->y,&xn,&yn)) ;
-	            if( pntP->y >= yMin && pntP->y <= yMax && pntP->x >= xMin && pntP->x <= xMax    )
-	              {
-	               if( ( dm = bcdtmMath_distanceOfPointFromLine(&onLine,xs,ys,xe,ye,pntP->x,pntP->y,&xn,&yn)) < snapTolerance )
-	                 {
-		              if( onLine )
+                if( pntP->y >= yMin && pntP->y <= yMax && pntP->x >= xMin && pntP->x <= xMax    )
+                  {
+                   if( ( dm = bcdtmMath_distanceOfPointFromLine(&onLine,xs,ys,xe,ye,pntP->x,pntP->y,&xn,&yn)) < snapTolerance )
+                     {
+                      if( onLine )
                         { 
                          if( dbg == 2 ) bcdtmWrite_message(0,0,0,"onLine = %2ld ** p = %8ld %12.5lf %12.5lf %10.4lf ** dm = %10.4lf xn = %12.5lf yn = %12.5lf len = %10.4lf",onLine,p,pntP->x,pntP->y,pntP->z,dm,xn,yn,bcdtmMath_distance(xs,ys,xn,yn)) ;
 /*
@@ -367,9 +367,9 @@ BENTLEYDTM_Private int bcdtmInterpolate_linearFeatureDtmObject
                          ++numIntPoints ;
                         }
                      }
-	              }
-	           }
-	        }
+                  }
+               }
+            }
          }
 /*
 **     Store Last Point

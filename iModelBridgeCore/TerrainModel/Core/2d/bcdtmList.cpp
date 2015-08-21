@@ -248,7 +248,7 @@ BENTLEYDTM_Public int bcdtmList_addLineDtmObject(BC_DTM_OBJ *dtmP,long p1,long p
       {
        if( bcdtmMath_pointSideOfDtmObject(dtmP,p1,clistAddrP(dtmP,cl1Ptr)->pntNum,clistAddrP(dtmP,cl2Ptr)->pntNum) <= 0 )
          {
-	      clistAddrP(dtmP,cl2Ptr)->nextPtr = cl1Ptr ;
+          clistAddrP(dtmP,cl2Ptr)->nextPtr = cl1Ptr ;
          }
        else
          {
@@ -778,7 +778,7 @@ BENTLEYDTM_Public int bcdtmList_writePointsForDtmFeatureDtmObject(BC_DTM_OBJ *dt
           while ( listPtr != dtmP->nullPtr )
             {
              nextPnt = dtmP->nullPnt ;
-	         while ( listPtr != dtmP->nullPtr  && flistAddrP(dtmP,listPtr)->dtmFeature != dtmFeature ) listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
+             while ( listPtr != dtmP->nullPtr  && flistAddrP(dtmP,listPtr)->dtmFeature != dtmFeature ) listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
              if( listPtr != dtmP->nullPtr )
                {
                 nextPnt = flistAddrP(dtmP,listPtr)->nextPnt ;
@@ -992,9 +992,9 @@ BENTLEYDTM_Public int bcdtmList_reportAndSetToNullNoneNullTptrValuesDtmObject(BC
     if( nodeP->cPtr != dtmP->nullPtr && nodeP->tPtr != dtmP->nullPnt )
       {
        if( reportFlag )
-	     {
-		  pointP = pointAddrP(dtmP,ofs) ;
-	      bcdtmWrite_message(0,0,0,"Point[%6ld] ** %10.4lf %10.4lf %10.4lf ** tPtr = %9ld",ofs,pointP->x,pointP->y,pointP->z,nodeP->tPtr) ;
+         {
+          pointP = pointAddrP(dtmP,ofs) ;
+          bcdtmWrite_message(0,0,0,"Point[%6ld] ** %10.4lf %10.4lf %10.4lf ** tPtr = %9ld",ofs,pointP->x,pointP->y,pointP->z,nodeP->tPtr) ;
          }
        nodeP->tPtr = dtmP->nullPnt ;
       }
@@ -1027,9 +1027,9 @@ BENTLEYDTM_Public int bcdtmList_reportAndSetToNullNoneNullSptrValuesDtmObject(BC
     if( nodeP->cPtr != dtmP->nullPtr && nodeP->sPtr != dtmP->nullPnt )
       {
        if( reportFlag )
-	     {
-		  pointP = pointAddrP(dtmP,ofs) ;
-	      bcdtmWrite_message(0,0,0,"Point[%6ld] ** %10.4lf %10.4lf %10.4lf ** sPtr = %9ld",ofs,pointP->x,pointP->y,pointP->z,nodeP->sPtr) ;
+         {
+          pointP = pointAddrP(dtmP,ofs) ;
+          bcdtmWrite_message(0,0,0,"Point[%6ld] ** %10.4lf %10.4lf %10.4lf ** sPtr = %9ld",ofs,pointP->x,pointP->y,pointP->z,nodeP->sPtr) ;
          }
        nodeP->sPtr = dtmP->nullPnt ;
       }
@@ -1695,7 +1695,7 @@ BENTLEYDTM_Public int bcdtmList_testForPointOnTinFeatureDtmObject(BC_DTM_OBJ *dt
  do
    {
     if( scanPnt == point ) *onFeatureP = 1 ;
-	bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,scanPnt,&scanPnt) ;
+    bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,scanPnt,&scanPnt) ;
    } while ( scanPnt != dtmP->nullPnt && scanPnt != dtmFeatureP->dtmFeaturePts.firstPoint && ! *onFeatureP ) ;
 /*
 ** Job Completed
@@ -1845,7 +1845,7 @@ BENTLEYDTM_Public int bcdtmList_testForLineOnDtmFeatureTypeDtmObject(BC_DTM_OBJ 
     while( flPtr != dtmP->nullPtr )
       {
        if( flistAddrP(dtmP,flPtr)->nextPnt == pnt2 && ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == dtmFeatureType ) return(1) ;
-	   flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+       flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
       }
    }
 /*
@@ -1861,7 +1861,7 @@ BENTLEYDTM_Public int bcdtmList_testForLineOnDtmFeatureTypeDtmObject(BC_DTM_OBJ 
     while( flPtr != dtmP->nullPtr )
       {
        if( flistAddrP(dtmP,flPtr)->nextPnt == pnt1 && ftableAddrP(dtmP,flistAddrP(dtmP,flPtr)->dtmFeature)->dtmFeatureType == dtmFeatureType ) return(1) ;
-	   flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
+       flPtr = flistAddrP(dtmP,flPtr)->nextPtr ;
       }
    }
 /*
@@ -2257,7 +2257,7 @@ BENTLEYDTM_Public int bcdtmList_nullTptrListDtmObject(BC_DTM_OBJ *dtmP,long star
     sp = startPnt ;
     do
       {
-	   nodeP       = nodeAddrP(dtmP,sp) ;
+       nodeP       = nodeAddrP(dtmP,sp) ;
        np          = nodeP->tPtr ;
        nodeP->tPtr = dtmP->nullPnt ;
        sp          = np ;
@@ -2291,7 +2291,7 @@ BENTLEYDTM_Public int bcdtmList_nullSptrListDtmObject(BC_DTM_OBJ *dtmP,long star
     sp = startPnt ;
     do
       {
-	   nodeP       = nodeAddrP(dtmP,sp) ;
+       nodeP       = nodeAddrP(dtmP,sp) ;
        np          = nodeP->sPtr ;
        nodeP->sPtr = dtmP->nullPnt ;
        sp          = np ;
@@ -2404,7 +2404,7 @@ BENTLEYDTM_Public int bcdtmList_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
     ofs2 = dtmP->numSortedPoints ;
     if(   pointAddrP(dtmP,*(sortP+ofs2-1))->x >   pointAddrP(dtmP,*(sortP+ofs2))->x  ||
         ( pointAddrP(dtmP,*(sortP+ofs2-1))->x ==  pointAddrP(dtmP,*(sortP+ofs2))->x  &&
-	      pointAddrP(dtmP,*(sortP+ofs2-1))->y >   pointAddrP(dtmP,*(sortP+ofs2))->y )    )
+          pointAddrP(dtmP,*(sortP+ofs2-1))->y >   pointAddrP(dtmP,*(sortP+ofs2))->y )    )
       {
        ofs1 = 0 ;
        for( ofs = 0 ; ofs < dtmP->numPoints  ; ++ofs )
@@ -2413,9 +2413,9 @@ BENTLEYDTM_Public int bcdtmList_resortTinStructureDtmObject(BC_DTM_OBJ *dtmP)
           else if( ofs2 >= dtmP->numPoints )       {*(tempP+ofs)=*(sortP+ofs1);++ofs1;}
           else
             {
-	         if(   pointAddrP(dtmP,*(sortP+ofs1))->x <   pointAddrP(dtmP,*(sortP+ofs2))->x  ||
-		         ( pointAddrP(dtmP,*(sortP+ofs1))->x ==  pointAddrP(dtmP,*(sortP+ofs2))->x  &&
-		           pointAddrP(dtmP,*(sortP+ofs1))->y <=  pointAddrP(dtmP,*(sortP+ofs2))->y)    )
+             if(   pointAddrP(dtmP,*(sortP+ofs1))->x <   pointAddrP(dtmP,*(sortP+ofs2))->x  ||
+                 ( pointAddrP(dtmP,*(sortP+ofs1))->x ==  pointAddrP(dtmP,*(sortP+ofs2))->x  &&
+                   pointAddrP(dtmP,*(sortP+ofs1))->y <=  pointAddrP(dtmP,*(sortP+ofs2))->y)    )
                {
                 *(tempP+ofs) = *(sortP+ofs1) ;
                 ++ofs1 ;
@@ -2556,7 +2556,7 @@ BENTLEYDTM_Private int bcdtmList_qsortDtmObject(BC_DTM_OBJ *dtmP,long ns,long of
    {
     if(   pointAddrP(dtmP,*(sortP+ofs))->x >   pointAddrP(dtmP,*(sortP+ofs+1))->x  ||
         ( pointAddrP(dtmP,*(sortP+ofs))->x ==  pointAddrP(dtmP,*(sortP+ofs+1))->x  &&
-	      pointAddrP(dtmP,*(sortP+ofs))->y >   pointAddrP(dtmP,*(sortP+ofs+1))->y )   )
+          pointAddrP(dtmP,*(sortP+ofs))->y >   pointAddrP(dtmP,*(sortP+ofs+1))->y )   )
       {
        temp = *(sortP+ofs) ;
        *(sortP+ofs) = *(sortP+ofs+1) ;
@@ -2577,7 +2577,7 @@ BENTLEYDTM_Private int bcdtmList_qsortDtmObject(BC_DTM_OBJ *dtmP,long ns,long of
 */
     if(   pointAddrP(dtmP,*(sortP+ofs2-1))->x >   pointAddrP(dtmP,*(sortP+ofs2))->x  ||
         ( pointAddrP(dtmP,*(sortP+ofs2-1))->x ==  pointAddrP(dtmP,*(sortP+ofs2))->x  &&
-	      pointAddrP(dtmP,*(sortP+ofs2-1))->y >   pointAddrP(dtmP,*(sortP+ofs2))->y )    )
+          pointAddrP(dtmP,*(sortP+ofs2-1))->y >   pointAddrP(dtmP,*(sortP+ofs2))->y )    )
       {
        for( i = ofs ; i < ofs+ns ; ++i )
          {
@@ -2585,9 +2585,9 @@ BENTLEYDTM_Private int bcdtmList_qsortDtmObject(BC_DTM_OBJ *dtmP,long ns,long of
           else if( ofs2 >= ofs+ns  ) {*(tempP+i)=*(sortP+ofs1);++ofs1;}
           else
             {
-	         if(   pointAddrP(dtmP,*(sortP+ofs1))->x <   pointAddrP(dtmP,*(sortP+ofs2))->x  ||
-		         ( pointAddrP(dtmP,*(sortP+ofs1))->x ==  pointAddrP(dtmP,*(sortP+ofs2))->x  &&
-		           pointAddrP(dtmP,*(sortP+ofs1))->y <=  pointAddrP(dtmP,*(sortP+ofs2))->y)    )
+             if(   pointAddrP(dtmP,*(sortP+ofs1))->x <   pointAddrP(dtmP,*(sortP+ofs2))->x  ||
+                 ( pointAddrP(dtmP,*(sortP+ofs1))->x ==  pointAddrP(dtmP,*(sortP+ofs2))->x  &&
+                   pointAddrP(dtmP,*(sortP+ofs1))->y <=  pointAddrP(dtmP,*(sortP+ofs2))->y)    )
                   { *(tempP+i) = *(sortP+ofs1) ; ++ofs1 ; }
              else { *(tempP+i) = *(sortP+ofs2) ; ++ofs2 ; }
             }
@@ -3923,7 +3923,7 @@ BENTLEYDTM_Public int bcdtmList_getFirstAndLastPointForDtmTinFeatureDtmObject(BC
     while ( listPtr != dtmP->nullPtr )
       {
        nextPnt = dtmP->nullPnt ;
-	   while( listPtr != dtmP->nullPtr  && flistAddrP(dtmP,listPtr)->dtmFeature != dtmFeature ) listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
+       while( listPtr != dtmP->nullPtr  && flistAddrP(dtmP,listPtr)->dtmFeature != dtmFeature ) listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
        if( listPtr != dtmP->nullPtr )
          {
           nextPnt = flistAddrP(dtmP,listPtr)->nextPnt ;
@@ -4191,10 +4191,10 @@ BENTLEYDTM_EXPORT int bcdtmList_getDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,
           if( *lineFeaturesPP == NULL ) *lineFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) malloc ( memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
           else                          *lineFeaturesPP = ( DTM_TIN_POINT_FEATURES * ) realloc ( *lineFeaturesPP , memFeatureTable * sizeof(DTM_TIN_POINT_FEATURES)) ;
           if( *lineFeaturesPP == NULL )
-		    {
+            {
              bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-			 goto errexit ;
-			}
+             goto errexit ;
+            }
          }
 /*
 **     Store Point Feature
@@ -4412,7 +4412,7 @@ BENTLEYDTM_EXPORT int bcdtmList_extractHullDtmObject(BC_DTM_OBJ *dtmP, DPoint3d 
     if( *hullPtsPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
+       goto errexit ;
       }
 /*
 **  Store Hull Points
@@ -5087,8 +5087,8 @@ BENTLEYDTM_EXPORT int bcdtmList_countTinFeaturesWithErrorsDtmObject
  for( feature = 0 ; feature < dtmP->numFeatures  ; ++feature )
    {
     dtmFeatureP =  ftableAddrP(dtmP,feature) ;
-	if( dtmFeatureP->dtmFeatureState == DTMFeatureState::TinError )
-	  {
+    if( dtmFeatureP->dtmFeatureState == DTMFeatureState::TinError )
+      {
        ++*numFeatureErrorsP ;
        if     ( dtmFeatureP->dtmFeatureType == DTMFeatureType::Breakline    ) ++*numHardBreaksP   ;
        else if( dtmFeatureP->dtmFeatureType == DTMFeatureType::ContourLine  ) ++*numContourLinesP ;
@@ -5253,7 +5253,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListToPointArrayDtmObject
  if( nodeAddrP(dtmP,startPnt)->tPtr == dtmP->nullPnt )
    {
     bcdtmWrite_message(2,0,0,"Start Point Has A Null Tptr Value") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Scan Tptr List And Count Number Of Points
@@ -5340,7 +5340,7 @@ BENTLEYDTM_Public int bcdtmList_copySptrListToPointArrayDtmObject
  if( nodeAddrP(dtmP,startPnt)->sPtr == dtmP->nullPnt )
    {
     bcdtmWrite_message(2,0,0,"Start Point Has A Null Tptr Value") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Scan Tptr List And Count Number Of Points
@@ -5420,7 +5420,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrValuesToPointListDtmObject(BC_DTM_OBJ *d
  if( *pntListPP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Copy Tptr List
@@ -5509,7 +5509,7 @@ BENTLEYDTM_Public int bcdtmList_copyTptrListToPointListDtmObject(BC_DTM_OBJ *dtm
     if( *pntListPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
+       goto errexit ;
       }
 /*
 **   Copy Tptr List
@@ -5579,7 +5579,7 @@ BENTLEYDTM_Public int bcdtmList_copySptrListToPointListDtmObject(BC_DTM_OBJ *dtm
     if( *pntListPP == NULL )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-	   goto errexit ;
+       goto errexit ;
       }
 /*
 **   Copy Tptr List
@@ -5674,7 +5674,7 @@ BENTLEYDTM_EXPORT int bcdtmList_setConvexHullDtmObject(BC_DTM_OBJ *dtmP)
           clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
           if( ! bcdtmList_testLineDtmObject(dtmP,nextHullPoint,np) || bcdtmMath_pointSideOfDtmObject(dtmP,nextHullPoint,np,hullPoint) > 0 ) isw = 0 ;
           else                                                                                                                              nextHullPoint = np ;
-	     }
+         }
       }
    }
 /*
@@ -6102,7 +6102,7 @@ BENTLEYDTM_Public int bcdtmList_getFirstAndLastPointForDtmFeatureDtmObject(BC_DT
        while ( flistPtr != dtmP->nullPtr )
          {
           nextPnt = dtmP->nullPnt ;
-	      while( flistPtr != dtmP->nullPtr  && flistAddrP(dtmP,flistPtr)->dtmFeature != dtmFeature ) flistPtr = flistAddrP(dtmP,flistPtr)->nextPtr ;
+          while( flistPtr != dtmP->nullPtr  && flistAddrP(dtmP,flistPtr)->dtmFeature != dtmFeature ) flistPtr = flistAddrP(dtmP,flistPtr)->nextPtr ;
           if( flistPtr != dtmP->nullPtr )
             {
              nextPnt = flistAddrP(dtmP,flistPtr)->nextPnt ;
@@ -6156,7 +6156,7 @@ BENTLEYDTM_Private int bcdtmList_removeLastPointFromDtmFeatureListDtmObject(BC_D
     if( fListPtr != dtmP->nullPtr )
       {
        pp  = lp ;
-	   lp  = sp ;
+       lp  = sp ;
        sp  = flistAddrP(dtmP,fListPtr)->nextPnt ;
        if( sp != dtmP->nullPnt ) fListPtr = nodeAddrP(dtmP,sp)->fPtr ;
       }
@@ -6174,12 +6174,12 @@ BENTLEYDTM_Private int bcdtmList_removeLastPointFromDtmFeatureListDtmObject(BC_D
 **  Update dtmFeature List For Point
 */
     if( fListPtr == nodeAddrP(dtmP,lp)->fPtr ) nodeAddrP(dtmP,lp)->fPtr = flistAddrP(dtmP,fListPtr)->nextPtr ;
-	else                                       flistAddrP(dtmP,lastFlistPtr)->nextPtr = flistAddrP(dtmP,fListPtr)->nextPtr ;
+    else                                       flistAddrP(dtmP,lastFlistPtr)->nextPtr = flistAddrP(dtmP,fListPtr)->nextPtr ;
 /*
 **  Null Out dtmFeature List Entry
 */
-	flistAddrP(dtmP,fListPtr)->nextPnt = dtmP->nullPnt ;
-	flistAddrP(dtmP,fListPtr)->nextPtr = dtmP->nullPtr ;
+    flistAddrP(dtmP,fListPtr)->nextPnt = dtmP->nullPnt ;
+    flistAddrP(dtmP,fListPtr)->nextPtr = dtmP->nullPtr ;
 /*
 **  Update Delete Dtm Feature List Pointer
 */
@@ -7548,7 +7548,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getFeaturesAtPointDtmObject
           do
             {
              pointP = pointAddrP(dtmP,point) ;
-	         if( fabs( pointP->x - x ) <= dtmP->ppTol  && fabs(pointP->y - y ) <= dtmP->ppTol )
+             if( fabs( pointP->x - x ) <= dtmP->ppTol  && fabs(pointP->y - y ) <= dtmP->ppTol )
                {
                 if( *numFeaturesP < maxFeatures )
                   {
@@ -7568,7 +7568,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getFeaturesAtPointDtmObject
           for( point = dtmFeatureP->dtmFeaturePts.firstPoint ; point < dtmFeatureP->dtmFeaturePts.firstPoint + dtmFeatureP->numDtmFeaturePts ; ++point )
             {
              pointP = pointAddrP(dtmP,point) ;
-	         if( fabs( pointP->x - x ) <= dtmP->ppTol  && fabs(pointP->y - y ) <= dtmP->ppTol )
+             if( fabs( pointP->x - x ) <= dtmP->ppTol  && fabs(pointP->y - y ) <= dtmP->ppTol )
                {
                 if( *numFeaturesP < maxFeatures )
                   {
@@ -7586,7 +7586,7 @@ BENTLEYDTM_EXPORT int bcdtmList_getFeaturesAtPointDtmObject
           ptsP = bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI) ;
           for( p3dP = ptsP ; p3dP < ptsP + dtmFeatureP->numDtmFeaturePts ; ++p3dP )
             {
-	         if( fabs( p3dP->x - x ) <= dtmP->ppTol  && fabs(p3dP->y - y ) <= dtmP->ppTol )
+             if( fabs( p3dP->x - x ) <= dtmP->ppTol  && fabs(p3dP->y - y ) <= dtmP->ppTol )
                {
                 if( *numFeaturesP < maxFeatures )
                   {

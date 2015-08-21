@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmPolyContour.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -149,20 +149,20 @@ BENTLEYDTM_Private int    bcdtmPolyContour_xyFilterContourPoints(DPoint3d *Point
 **  CL           Value Of Contour Being Plotted 
 **
 */
-static double  X[3],Y[3],Z[3],DX[3],DY[3],DX2[3],DY2[3],SL[3],SL2[3],ZT[3][3],ZTT[3][3],ZUV[3],AP,BP,CP,DP ;
-static double  P0[3],P1[3],P2[3],P3[3],P4[3],P5[3] ;
-static double  Q0[3],Q1[3],Q2[3],Q3[3],Q4[3] ;
-static double  R0[3],R1[3],R2[3],R3[3] ;
-static double  S0[3],S1[3],S2[3] ;
-static double  T0[3],T1[3] ;
-static double  P11,P12,P13,P14,P21,P22,P23,P31,P32,P41 ;
-static double  CL ;
-static long    TotalContourPoints=0,TotalFilteredPoints=0 ;
+thread_local static double  X[3],Y[3],Z[3],DX[3],DY[3],DX2[3],DY2[3],SL[3],SL2[3],ZT[3][3],ZTT[3][3],ZUV[3],AP,BP,CP,DP ;
+thread_local static double  P0[3],P1[3],P2[3],P3[3],P4[3],P5[3] ;
+thread_local static double  Q0[3],Q1[3],Q2[3],Q3[3],Q4[3] ;
+thread_local static double  R0[3],R1[3],R2[3],R3[3] ;
+thread_local static double  S0[3],S1[3],S2[3] ;
+thread_local static double  T0[3],T1[3] ;
+thread_local static double  P11,P12,P13,P14,P21,P22,P23,P31,P32,P41 ;
+thread_local static double  CL ;
+thread_local static long    TotalContourPoints=0,TotalFilteredPoints=0 ;
 /*
 ** Contour Points Cache
 */
-static long  NumContourCachePts=0,MemContourCachePts=0,MemContourCachePtsInc=50000 ;
-static DPoint3d   *ContourPtsCacheP=NULL ; 
+thread_local static long  NumContourCachePts=0,MemContourCachePts=0,MemContourCachePtsInc=50000 ;
+thread_local static DPoint3d   *ContourPtsCacheP=nullptr ; 
 /*-----------------------------------------------------------+
 |                                                            |
 |                                                            |
@@ -174,7 +174,7 @@ BENTLEYDTM_EXPORT int bcdtmPolyContour_plotContoursFromDtmFile(WCharCP dtmFileP,
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -191,7 +191,7 @@ BENTLEYDTM_EXPORT int bcdtmPolyContour_plotContoursFromDtmFile(WCharCP dtmFileP,
 ** Clean Up
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ;
 /*
 ** Return
 */
@@ -262,12 +262,12 @@ BENTLEYDTM_EXPORT int bcdtmPolyContour_plotContoursFromDtmObject
 {
  int       ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long      i,lr,level,voidsInDTM,contoursInDTM,dtmFeature ;
- double    *partDerivP=NULL,bottomContour,topContour,cv,contourValue,cf,cr,polyZMin,polyZMax ;
+ double    *partDerivP=nullptr,bottomContour,topContour,cv,contourValue,cf,cr,polyZMin,polyZMax ;
  double    Fstep,Eps,Rmax,XYTolerance,ZTolerance ;
  long      startTime,contourStartTime ;
  BC_DTM_FEATURE *dtmFeatureP ;
- BC_DTM_OBJ    *tempDtmP=NULL ;
- DTM_SMOOTH_CONTOUR_INDEX *contourIndexP=NULL ;
+ BC_DTM_OBJ    *tempDtmP=nullptr ;
+ DTM_SMOOTH_CONTOUR_INDEX *contourIndexP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -322,13 +322,13 @@ BENTLEYDTM_EXPORT int bcdtmPolyContour_plotContoursFromDtmObject
     if( contourMinimum  >= contourMaximum ) { bcdtmWrite_message(0,0,0,"Invalid Value For Contour Minimum And/Or Contour Maximum") ; goto errexit ; }
    }
  if( plotSingleContours  && numContourValues <= 0  ) { bcdtmWrite_message(1,0,0,"Invalid Value For Number Of Single Contours") ; goto errexit ; }
- if( numContourValues    && contourValues == NULL  ) { bcdtmWrite_message(1,0,0,"Single Contour Value Array NULL") ; goto errexit ; }
- if( numFencePts         && fencePtsP == NULL      ) { bcdtmWrite_message(1,0,0,"Fence Point Array NULL") ; goto errexit ; }
+ if( numContourValues    && contourValues == nullptr  ) { bcdtmWrite_message(1,0,0,"Single Contour Value Array nullptr") ; goto errexit ; }
+ if( numFencePts         && fencePtsP == nullptr      ) { bcdtmWrite_message(1,0,0,"Fence Point Array nullptr") ; goto errexit ; }
  if( ! plotRangeContours && ! plotSingleContours   ) { bcdtmWrite_message(1,0,0,"No Contour Values Specified For Plotting") ; goto errexit ; }
 /*
 **  Test For And Clip Dtm Prior To Contouring
 */
- if( numFencePts > 0 && fencePtsP != NULL )
+ if( numFencePts > 0 && fencePtsP != nullptr )
    {
     if( dbg  )  bcdtmWrite_message(0,0,0,"Clipping DTM") ; 
     startTime = bcdtmClock() ; 
@@ -451,10 +451,10 @@ BENTLEYDTM_EXPORT int bcdtmPolyContour_plotContoursFromDtmObject
  cleanup :
  NumContourCachePts = 0 ;
  MemContourCachePts = 0 ;
- if( ContourPtsCacheP != NULL ) free(ContourPtsCacheP) ; 
- if( contourIndexP    != NULL ) free(contourIndexP) ;
- if( partDerivP       != NULL ) free(partDerivP) ; 
- if( tempDtmP         != NULL && tempDtmP != dtmP ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
+ if( ContourPtsCacheP != nullptr ) free(ContourPtsCacheP) ; 
+ if( contourIndexP    != nullptr ) free(contourIndexP) ;
+ if( partDerivP       != nullptr ) free(partDerivP) ; 
+ if( tempDtmP         != nullptr && tempDtmP != dtmP ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
 /*
 ** Return
 */
@@ -511,7 +511,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
  double     Zx,Zy,Zz,LineZ,DeveZ,ProdZ,Pd[15],StartAngle ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTM_SMOOTH_CONTOUR_INDEX      *indexP,*startLineP,*lastLineP,*scanLineP ; 
- DTM_SMOOTH_CONTOUR_ZERO_POINT *zptsP,*zeroPtsP=NULL ;
+ DTM_SMOOTH_CONTOUR_ZERO_POINT *zptsP,*zeroPtsP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -520,7 +520,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 ** Initialise
 */
  numLines = dtmP->numLines  ;
- startLineP = lastLineP = NULL ;
+ startLineP = lastLineP = nullptr ;
 /*
 ** Scan Tin Lines And Calculate Contour Zeros
 */
@@ -531,8 +531,8 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 /*
 **     Set Linked List Into Structure For Subsequent Scanning 
 */
-       if( startLineP == NULL )  { startLineP = lastLineP = indexP ; lastLineP->Next = NULL ;  }
-       else                      { lastLineP->Next = indexP ; lastLineP = indexP ; lastLineP->Next = NULL ;} 
+       if( startLineP == nullptr )  { startLineP = lastLineP = indexP ; lastLineP->Next = nullptr ;  }
+       else                      { lastLineP->Next = indexP ; lastLineP = indexP ; lastLineP->Next = nullptr ;} 
 /*
 **    Get Triangle Points For Line
 */ 
@@ -592,7 +592,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
  if( numZeroPts > 0 )
    {
     scanLineP = startLineP ;
-    while ( scanLineP != NULL )
+    while ( scanLineP != nullptr )
       {
        if( scanLineP->NumZero > 0 && scanLineP->Zeros[0] == 0.0 )
          {
@@ -615,7 +615,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
        if( bcdtmPolyContour_findEntryInZeroTinPointTable(zeroPtsP,numZeroPts,p0,dtmP->nullPnt,dtmP->nullPnt,&p1,&p2,&StartAngle)) goto errexit ;
        while ( p1 != dtmP->nullPnt )
          {
-          if( bcdtmPolyContour_traceContourDtmObject(dtmP,contourValue,p0,p1,p2,1,StartAngle,XYTolerance,ZTolerance,NULL,contourIndexP,numLines,zeroPtsP,numZeroPts,partDerivP,callBackFunctionP,userP) ) goto errexit  ;
+          if( bcdtmPolyContour_traceContourDtmObject(dtmP,contourValue,p0,p1,p2,1,StartAngle,XYTolerance,ZTolerance,nullptr,contourIndexP,numLines,zeroPtsP,numZeroPts,partDerivP,callBackFunctionP,userP) ) goto errexit  ;
           if( bcdtmPolyContour_findEntryInZeroTinPointTable(zeroPtsP,numZeroPts,p0,dtmP->nullPnt,dtmP->nullPnt,&p1,&p2,&StartAngle)) goto errexit ;
          }
       }
@@ -640,7 +640,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
                 if( bcdtmPolyContour_findEntryInZeroTinPointTable(zeroPtsP,numZeroPts,p0,dtmP->nullPnt,dtmP->nullPnt,&p1,&p2,&StartAngle)) goto errexit ;
                 while ( p1 != dtmP->nullPnt )
                   {
-                   if( bcdtmPolyContour_traceContourDtmObject(dtmP,contourValue,p0,p1,p2,1,StartAngle,XYTolerance,ZTolerance,NULL,contourIndexP,numLines,zeroPtsP,numZeroPts,partDerivP,callBackFunctionP,userP) ) goto errexit  ;
+                   if( bcdtmPolyContour_traceContourDtmObject(dtmP,contourValue,p0,p1,p2,1,StartAngle,XYTolerance,ZTolerance,nullptr,contourIndexP,numLines,zeroPtsP,numZeroPts,partDerivP,callBackFunctionP,userP) ) goto errexit  ;
                    if( bcdtmPolyContour_findEntryInZeroTinPointTable(zeroPtsP,numZeroPts,p0,dtmP->nullPnt,dtmP->nullPnt,&p1,&p2,&StartAngle)) goto errexit ;
                   }
                }
@@ -655,7 +655,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Plotting Contours Starting On Tin Hull Lines") ;
  scanLineP = startLineP ;
- while ( scanLineP != NULL )
+ while ( scanLineP != nullptr )
    {
 /*
 ** Test For Contour Start On Tin Hull
@@ -678,7 +678,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Plotting Contours Starting On Internal Tin Lines") ;
  scanLineP = startLineP ;
- while ( scanLineP != NULL )
+ while ( scanLineP != nullptr )
    {
 /*
 ** Test For Contour Start On An Internal Tin Line
@@ -698,10 +698,10 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 /*
 ** Scan And Null Out Tin Line Linked List Pointers
 */
- while ( startLineP != NULL )
+ while ( startLineP != nullptr )
    {
     scanLineP = startLineP->Next ;
-    startLineP->Next = NULL  ;
+    startLineP->Next = nullptr  ;
     startLineP = scanLineP ;
    }
 /*
@@ -720,7 +720,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_scanForContourDtmObject
 ** Clean Up
 */
  cleanup :
- if( zeroPtsP != NULL ) { free(zeroPtsP) ; zeroPtsP = NULL ; }
+ if( zeroPtsP != nullptr ) { free(zeroPtsP) ; zeroPtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -1057,12 +1057,12 @@ BENTLEYDTM_Private int bcdtmPolyContour_traceContourDtmObject
 /*
 ** Plot Contour
 */
- if( callBackFunctionP != NULL )
+ if( callBackFunctionP != nullptr )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Contour Points Before Filter = %8ld",NumContourCachePts) ;
     if( bcdtmPolyContour_xyFilterContourPoints(ContourPtsCacheP,&NumContourCachePts,XYTolerance)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Contour Points After  Filter = %8ld",NumContourCachePts) ;
-    if( NumContourCachePts > 1 && ContourPtsCacheP != NULL )
+    if( NumContourCachePts > 1 && ContourPtsCacheP != nullptr )
       {
        if( callBackFunctionP(DTMFeatureType::Contour,dtmP->nullUserTag,dtmP->nullFeatureId,ContourPtsCacheP,NumContourCachePts,userP)) goto errexit ;
       }
@@ -2490,7 +2490,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_getNextTraceTriangleForContourDtmObject
 /*
 **        Scan Triangle Edges  For Closest Zero Point ** Fudge
 */
-          Zline = NULL ;
+          Zline = nullptr ;
           *P0 = *P1 = *P2 = dtmP->nullPnt ;
           if( bcdtmPolyContour_getLineOffsetInLineIndexTable(contourIndexP,numLines,Sp0,Sp1,&Offset)) goto errexit ; 
           Cline = contourIndexP + Offset ;
@@ -2517,7 +2517,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_getNextTraceTriangleForContourDtmObject
              Dp = bcdtmMath_distance(*Zx,*Zy,X1,Y1) ;
              if( *P0 == dtmP->nullPnt || Dp < Dz ) { Dz = Dp ; Cz = Nz ; Zline = Cline ; *P0 = Sp2 ; *P1 = Sp0 ; X2 = X1 ; Y2 = Y1 ; Z2 = Z1 ; }
             }
-          if( Zline != NULL )
+          if( Zline != nullptr )
             {
              for( Nz = Cz ; Nz < Zline->NumZero - 1 ; ++Nz ) Zline->Zeros[Nz] = Zline->Zeros[Nz+1] ;
               --Zline->NumZero ;
@@ -3219,12 +3219,12 @@ BENTLEYDTM_Private int bcdtmPolyContour_buildLineIndexTable(BC_DTM_OBJ *dtmP,DTM
 /*
 ** Validate Line Index Table
 */
- if( *contourIndexP != NULL ) { bcdtmWrite_message(0,0,0,"Line Index Table Not Initialised To NULL") ; goto errexit ; }
+ if( *contourIndexP != nullptr ) { bcdtmWrite_message(0,0,0,"Line Index Table Not Initialised To nullptr") ; goto errexit ; }
 /*
 ** Allocate Memory For Table
 */
  *contourIndexP = ( DTM_SMOOTH_CONTOUR_INDEX * ) malloc( dtmP->numLines * sizeof(DTM_SMOOTH_CONTOUR_INDEX)) ;
- if( *contourIndexP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( *contourIndexP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
 /*
 ** Initialise Table
 */
@@ -3232,7 +3232,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_buildLineIndexTable(BC_DTM_OBJ *dtmP,DTM
    { 
     pItab->P1 = pItab->P2 =  dtmP->nullPnt ;
     pItab->NumZero = 0 ; 
-    pItab->Idx = pItab->Next = NULL ; 
+    pItab->Idx = pItab->Next = nullptr ; 
     pItab->Zeros[0] = pItab->Zeros[1] = pItab->Zeros[2] = pItab->Zeros[3] = pItab->Zeros[4] = 0.0 ;
     pItab->Zmin = pItab->Zmax = 0.0 ;
    }
@@ -3370,7 +3370,7 @@ BENTLEYDTM_Private int bcdtmPolyContour_buildZeroTinPointTableDtmObject(BC_DTM_O
 ** Initialise
 */
  *numZeroPts = 0 ; 
- if( *zeroPtsP != NULL ) { free(*zeroPtsP) ; *zeroPtsP = NULL ; }
+ if( *zeroPtsP != nullptr ) { free(*zeroPtsP) ; *zeroPtsP = nullptr ; }
 /*
 ** Scan Tin Points
 */
@@ -3504,9 +3504,9 @@ BENTLEYDTM_Private int bcdtmPolyContour_getScanTrianglesAtZeroTinPointDtmObject(
                    if( *numZeroPts == *MemZeroPTab )
                      {
                       *MemZeroPTab = *MemZeroPTab + MemZeroPTabInc ; 
-                      if( *zeroPtsP == NULL ) *zeroPtsP = ( DTM_SMOOTH_CONTOUR_ZERO_POINT *) malloc(*MemZeroPTab * sizeof(DTM_SMOOTH_CONTOUR_ZERO_POINT)) ;
+                      if( *zeroPtsP == nullptr ) *zeroPtsP = ( DTM_SMOOTH_CONTOUR_ZERO_POINT *) malloc(*MemZeroPTab * sizeof(DTM_SMOOTH_CONTOUR_ZERO_POINT)) ;
                       else                      *zeroPtsP = ( DTM_SMOOTH_CONTOUR_ZERO_POINT *) realloc(zeroPtsP,*MemZeroPTab * sizeof(DTM_SMOOTH_CONTOUR_ZERO_POINT)) ;
-                      if(  *zeroPtsP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
+                      if(  *zeroPtsP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
                      }
                    (*zeroPtsP+*numZeroPts)->P0 = P0 ;
                    (*zeroPtsP+*numZeroPts)->P1 = P1 ;
@@ -3570,7 +3570,7 @@ int bcdtmPolyContour_findEntryInZeroTinPointTable(DTM_SMOOTH_CONTOUR_ZERO_POINT 
 /*
 ** Check There Are Entries In Table
 */
- if( zeroPtsP != NULL && numZeroPts > 0 ) 
+ if( zeroPtsP != nullptr && numZeroPts > 0 ) 
    {
 /*
 ** Write Zero Point Table Developement Only
@@ -3838,7 +3838,7 @@ int bcdtmPolyContour_calculateSideEndPointsAndMinimaMaxima(long Side,double Tzr1
        Tb = Tzr1[j][Side] ; 
        F2 = bcdtmPolyContour_evaluatePolynomialFunction(k,Tb,Side) ;
        if( F1 * F2 < 0.0  ) 
-	     {
+         {
           Tzr2[Nii] =  bcdtmPolyContour_calculatePolynomialFunctionZero(k,Side,Ta,Tb,F1,F2) ;
           Nii= Nii + 1 ;
          } 
@@ -4009,7 +4009,7 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObjectOld(BC_DTM_OBJ *dtmP,do
 ** Allocate Storage for Partial Derivatives
 */
  *partDerivP = ( double * ) malloc( dtmP->numPoints * 5 * sizeof(double) ) ;
- if( *partDerivP == NULL )
+ if( *partDerivP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto cleanup ;
@@ -4031,20 +4031,20 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObjectOld(BC_DTM_OBJ *dtmP,do
        dz1 = pointAddrP(dtmP,clistAddrP(dtmP,cl)->pntNum)->z - z ;
        cp  = clistAddrP(dtmP,cl)->nextPtr    ;
        while ( cp != dtmP->nullPtr )
-	     {
-	      dx2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->x - x ;
-	      dy2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->y - y ;
-	      dnmz = dx1*dy2 - dy1*dx2 ;
-	      if( dnmz != 0.0 )
-	        {
-	         dz2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->z - z ;
-	         dnmx = dy1*dz2 - dz1*dy2 ;
-	         dnmy = dz1*dx2 - dx1*dz2 ;
-	         if( dnmz < 0.0 ) { dnmx = - dnmx ; dnmy = - dnmy ; dnmz = - dnmz ; }
-	         nmx = nmx + dnmx ; nmy = nmy + dnmy ; nmz = nmz + dnmz ;
-	        }
-	      cp = clistAddrP(dtmP,cp)->nextPtr ;
-	     }
+         {
+          dx2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->x - x ;
+          dy2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->y - y ;
+          dnmz = dx1*dy2 - dy1*dx2 ;
+          if( dnmz != 0.0 )
+            {
+             dz2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->z - z ;
+             dnmx = dy1*dz2 - dz1*dy2 ;
+             dnmy = dz1*dx2 - dx1*dz2 ;
+             if( dnmz < 0.0 ) { dnmx = - dnmx ; dnmy = - dnmy ; dnmz = - dnmz ; }
+             nmx = nmx + dnmx ; nmy = nmy + dnmy ; nmz = nmz + dnmz ;
+            }
+          cp = clistAddrP(dtmP,cp)->nextPtr ;
+         }
        cl = clistAddrP(dtmP,cl)->nextPtr ;
       }
     *(*partDerivP + p*5 )     = -nmx/nmz ;
@@ -4069,30 +4069,30 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObjectOld(BC_DTM_OBJ *dtmP,do
        dzy1 = *(*partDerivP+clistAddrP(dtmP,cl)->pntNum * 5 + 1 ) - zy ;
        cp  = clistAddrP(dtmP,cl)->nextPtr    ;
        while ( cp != dtmP->nullPtr )
-	     {
-	      dx2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->x - x ;
-	      dy2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->y - y ;
-	      dnmz = dx1*dy2 - dy1*dx2 ;
-	      if( dnmz != 0.0 )
-	        {
-	         dzx2 = *( *partDerivP +clistAddrP(dtmP,cp)->pntNum * 5 )     - zx ;
-	         dzy2 = *( *partDerivP +clistAddrP(dtmP,cp)->pntNum * 5 + 1 ) - zy ;
-	         dnmxx = dy1 * dzx2 - dzx1 * dy2 ;
-	         dnmxy = dzx1 * dx2 - dx1 * dzx2 ;
-	         dnmyx = dy1 * dzy2 - dzy1 * dy2 ;
-	         dnmyy = dzy1 * dx2 - dx1 * dzy2 ;
-	         if( dnmz < 0.0 )
-	           {
-		        dnmxx = - dnmxx ; dnmxy = - dnmxy ;
-		        dnmyx = - dnmyx ; dnmyy = - dnmyy ;
-		        dnmz  = - dnmz  ;
-	           }
-	         nmxx = nmxx + dnmxx ; nmxy = nmxy + dnmxy ;
-	         nmyx = nmyx + dnmyx ; nmyy = nmyy + dnmyy ;
-	         nmz = nmz + dnmz ;
-	        }
-	      cp = clistAddrP(dtmP,cp)->nextPtr ;
-	     }
+         {
+          dx2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->x - x ;
+          dy2 = pointAddrP(dtmP,clistAddrP(dtmP,cp)->pntNum)->y - y ;
+          dnmz = dx1*dy2 - dy1*dx2 ;
+          if( dnmz != 0.0 )
+            {
+             dzx2 = *( *partDerivP +clistAddrP(dtmP,cp)->pntNum * 5 )     - zx ;
+             dzy2 = *( *partDerivP +clistAddrP(dtmP,cp)->pntNum * 5 + 1 ) - zy ;
+             dnmxx = dy1 * dzx2 - dzx1 * dy2 ;
+             dnmxy = dzx1 * dx2 - dx1 * dzx2 ;
+             dnmyx = dy1 * dzy2 - dzy1 * dy2 ;
+             dnmyy = dzy1 * dx2 - dx1 * dzy2 ;
+             if( dnmz < 0.0 )
+               {
+                dnmxx = - dnmxx ; dnmxy = - dnmxy ;
+                dnmyx = - dnmyx ; dnmyy = - dnmyy ;
+                dnmz  = - dnmz  ;
+               }
+             nmxx = nmxx + dnmxx ; nmxy = nmxy + dnmxy ;
+             nmyx = nmyx + dnmyx ; nmyy = nmyy + dnmyy ;
+             nmz = nmz + dnmz ;
+            }
+          cp = clistAddrP(dtmP,cp)->nextPtr ;
+         }
        cl = clistAddrP(dtmP,cl)->nextPtr ;
       }
     *(*partDerivP + p * 5 + 2 ) = - ( nmxx / nmz ) ;
@@ -4407,7 +4407,7 @@ int bcdtmPolyContour_interpolatePolynomialTriangle(long NewTrg,double xp,double 
      dd = d*d ;
      for( i = 0 ; i < 3 ; ++i )
        {
-	    jpd = 5 * (i+1) - 1 ;
+        jpd = 5 * (i+1) - 1 ;
         zu[i]  = a*pd[jpd-4]  + c*pd[jpd-3] ;
         zv[i]  = b*pd[jpd-4]  + d*pd[jpd-3] ;
         zuu[i] = aa*pd[jpd-2] + act2*pd[jpd-1] + cc*pd[jpd] ;
@@ -4940,9 +4940,9 @@ int bcdtmPolyContour_storeContourPointInCache(double x, double y, double z)
  if( NumContourCachePts == MemContourCachePts )
    {
     MemContourCachePts = MemContourCachePts + MemContourCachePtsInc ;
-    if( ContourPtsCacheP == NULL ) ContourPtsCacheP = ( DPoint3d * ) malloc( MemContourCachePts * sizeof(DPoint3d)) ;
+    if( ContourPtsCacheP == nullptr ) ContourPtsCacheP = ( DPoint3d * ) malloc( MemContourCachePts * sizeof(DPoint3d)) ;
     else                           ContourPtsCacheP = ( DPoint3d * ) realloc( ContourPtsCacheP, MemContourCachePts * sizeof(DPoint3d)) ;
-    if( ContourPtsCacheP == NULL )
+    if( ContourPtsCacheP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
@@ -4986,10 +4986,10 @@ int bcdtmPolyContour_writeContourPoints(FILE **fpDATA,DPoint3d *ContourPts,long 
 **  Write To File
 */
 /*
- if( *fpDATA == NULL )
+ if( *fpDATA == nullptr )
    {
     *fpDATA = bcdtmFile_open("contour.dat",L"wb") ;
-    if( *fpDATA == NULL ) { bcdtmWrite_message(1,0,0,"Error Opening Contour Data file") ; goto errexit ; }
+    if( *fpDATA == nullptr ) { bcdtmWrite_message(1,0,0,"Error Opening Contour Data file") ; goto errexit ; }
    } 
  fc = 5 ;
  for( p3d = ContourPts ; p3d < ContourPts + NumConPts ; ++p3d )
@@ -5033,7 +5033,7 @@ int bcdtmPolyContour_xyzFilterContourPoints(DPoint3d *Points,long *NumPts,double
 {
  int     err=0,s2 ;
  long    dbg=DTM_TRACE_VALUE(0),memamt ;
- unsigned char    *FilterFlag=NULL ; 
+ unsigned char    *FilterFlag=nullptr ; 
  double  xydelta,zdelta,d,dx,dy,a1,a2,a3,r,angle,zx,zy,zz ;
  DPoint3d     *p3d1,*p3d2,*p3d3,*p3dt ;
 /*
@@ -5043,14 +5043,14 @@ int bcdtmPolyContour_xyzFilterContourPoints(DPoint3d *Points,long *NumPts,double
 /*
 ** Validate
 */
- if( Points == NULL ) { bcdtmWrite_message(1,0,0,"Points Array NULL") ; goto errexit ; }
+ if( Points == nullptr ) { bcdtmWrite_message(1,0,0,"Points Array nullptr") ; goto errexit ; }
  if( *NumPts <= 0   )  goto cleanup ;
 /*
 ** Allocate Memory For Filter Flag
 */
  memamt = *NumPts / 8  + 1 ;
  FilterFlag = (unsigned char *) malloc( memamt * sizeof(char)) ;
- if( FilterFlag == NULL ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
+ if( FilterFlag == nullptr ) { bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ; goto errexit ; }
  memset(FilterFlag,0,memamt) ;
 /*
 ** Filter Points
@@ -5112,7 +5112,7 @@ int bcdtmPolyContour_xyzFilterContourPoints(DPoint3d *Points,long *NumPts,double
 ** Free Memory
 */
  cleanup :
- if( FilterFlag != NULL ) free(FilterFlag) ;
+ if( FilterFlag != nullptr ) free(FilterFlag) ;
 /*
 ** Job Completed
 */
@@ -5138,7 +5138,7 @@ int bcdtmPolyContour_xyFilterContourPoints(DPoint3d *contourPtsP,long *numContou
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    memamt ;
- unsigned char    *filterFlagP=NULL ; 
+ unsigned char    *filterFlagP=nullptr ; 
  double  xydelta,d,dx,dy,a1,a2,a3,r;
  DPoint3d     *p3d1P,*p3d2P,*p3d3P,*p3dtP ;
 /*
@@ -5148,7 +5148,7 @@ int bcdtmPolyContour_xyFilterContourPoints(DPoint3d *contourPtsP,long *numContou
 /*
 ** Validate
 */
- if( contourPtsP == NULL || *numContourPtsP <= 0 ) 
+ if( contourPtsP == nullptr || *numContourPtsP <= 0 ) 
    { 
     bcdtmWrite_message(2,0,0,"No Contour Points To Filter") ;
     goto errexit ; 
@@ -5163,7 +5163,7 @@ int bcdtmPolyContour_xyFilterContourPoints(DPoint3d *contourPtsP,long *numContou
 */
     memamt = *numContourPtsP / 8  + 1 ;
     filterFlagP = (unsigned char *) malloc( memamt * sizeof(char)) ;
-    if( filterFlagP == NULL ) 
+    if( filterFlagP == nullptr ) 
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -5217,7 +5217,7 @@ int bcdtmPolyContour_xyFilterContourPoints(DPoint3d *contourPtsP,long *numContou
 ** Free Memory
 */
  cleanup :
- if( filterFlagP != NULL ) free(filterFlagP) ;
+ if( filterFlagP != nullptr ) free(filterFlagP) ;
 /*
 ** Job Completed
 */
@@ -5258,7 +5258,7 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObject(BC_DTM_OBJ *dtmP,doubl
 ** Allocate Storage for Partial Derivatives
 */
  *partDerivP = ( double * ) malloc( dtmP->numPoints * 5 * sizeof(double) ) ;
- if( *partDerivP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto cleanup ; }
+ if( *partDerivP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto cleanup ; }
 /*
 ** Scan Points In DTMFeatureState::Tin To Extimate zx and zy
 */
@@ -5289,24 +5289,24 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObject(BC_DTM_OBJ *dtmP,doubl
            np  = pp + 1 ;
            for( np = pp + 1 ; np < Pts + NumPts ; ++np )
              {
-	          dx2 = pointAddrP(dtmP,*np)->x - x ;
-	          dy2 = pointAddrP(dtmP,*np)->y - y ;
-	          dnmz = dx1*dy2 - dy1*dx2 ;
-	          if( dnmz != 0.0 )
-	            {
-	             dz2 = pointAddrP(dtmP,*np)->z - z ;
-	             dnmx = dy1*dz2 - dz1*dy2 ;
-	             dnmy = dz1*dx2 - dx1*dz2 ;
-	             if( dnmz < 0.0 ) 
+              dx2 = pointAddrP(dtmP,*np)->x - x ;
+              dy2 = pointAddrP(dtmP,*np)->y - y ;
+              dnmz = dx1*dy2 - dy1*dx2 ;
+              if( dnmz != 0.0 )
+                {
+                 dz2 = pointAddrP(dtmP,*np)->z - z ;
+                 dnmx = dy1*dz2 - dz1*dy2 ;
+                 dnmy = dz1*dx2 - dx1*dz2 ;
+                 if( dnmz < 0.0 ) 
                    { 
                     dnmx = - dnmx ; 
                     dnmy = - dnmy ; 
                     dnmz = - dnmz ; 
                    }
-	             nmx = nmx + dnmx ; 
+                 nmx = nmx + dnmx ; 
                  nmy = nmy + dnmy ; 
                  nmz = nmz + dnmz ;
-	            }
+                }
              }
          }  
        *(*partDerivP + p*5 )     = -nmx/nmz ;
@@ -5344,28 +5344,28 @@ int bcdtmPolyContour_calculatePartialDerivativesDtmObject(BC_DTM_OBJ *dtmP,doubl
           dzy1 = *(*partDerivP+ *pp * 5 + 1 ) - zy ;
           for( np = pp + 1 ; np < Pts + NumPts ; ++np )
             {
-	         dx2 = pointAddrP(dtmP,*np)->x - x ;
-	         dy2 = pointAddrP(dtmP,*np)->y - y ;
-	         dnmz = dx1*dy2 - dy1*dx2 ;
-	         if( dnmz != 0.0 )
-	           {
-	            dzx2  = *( *partDerivP + *np * 5 )     - zx ;
-	            dzy2  = *( *partDerivP + *np * 5 + 1 ) - zy ;
-	            dnmxx = dy1 * dzx2 - dzx1 * dy2 ;
-	            dnmxy = dzx1 * dx2 - dx1 * dzx2 ;
-	            dnmyx = dy1 * dzy2 - dzy1 * dy2 ;
-	            dnmyy = dzy1 * dx2 - dx1 * dzy2 ;
-	            if( dnmz < 0.0 )
-	              {
-		           dnmxx = - dnmxx ; dnmxy = - dnmxy ;
-		           dnmyx = - dnmyx ; dnmyy = - dnmyy ;
-		           dnmz  = - dnmz  ;
-	              }
-	            nmxx = nmxx + dnmxx ; nmxy = nmxy + dnmxy ;
-	            nmyx = nmyx + dnmyx ; nmyy = nmyy + dnmyy ;
-	            nmz = nmz + dnmz ;
-	           } 
-	        }
+             dx2 = pointAddrP(dtmP,*np)->x - x ;
+             dy2 = pointAddrP(dtmP,*np)->y - y ;
+             dnmz = dx1*dy2 - dy1*dx2 ;
+             if( dnmz != 0.0 )
+               {
+                dzx2  = *( *partDerivP + *np * 5 )     - zx ;
+                dzy2  = *( *partDerivP + *np * 5 + 1 ) - zy ;
+                dnmxx = dy1 * dzx2 - dzx1 * dy2 ;
+                dnmxy = dzx1 * dx2 - dx1 * dzx2 ;
+                dnmyx = dy1 * dzy2 - dzy1 * dy2 ;
+                dnmyy = dzy1 * dx2 - dx1 * dzy2 ;
+                if( dnmz < 0.0 )
+                  {
+                   dnmxx = - dnmxx ; dnmxy = - dnmxy ;
+                   dnmyx = - dnmyx ; dnmyy = - dnmyy ;
+                   dnmz  = - dnmz  ;
+                  }
+                nmxx = nmxx + dnmxx ; nmxy = nmxy + dnmxy ;
+                nmyx = nmyx + dnmyx ; nmyy = nmyy + dnmyy ;
+                nmz = nmz + dnmz ;
+               } 
+            }
          }
        *(*partDerivP + p * 5 + 2 ) = - ( nmxx / nmz ) ;
        *(*partDerivP + p * 5 + 3 ) = - ((nmxy + nmyx) / (2.0 * nmz)) ;

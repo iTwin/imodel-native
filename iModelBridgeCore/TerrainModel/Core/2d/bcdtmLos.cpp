@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLos.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -14,9 +14,11 @@
 /*
 ** Static Global Variables For Accumulating Los Vertices
 */
-static DPoint3d  *losPtsP=NULL  ;
-static long *losLinesP=NULL ;
-static long numLosPts=0,memLosPts=0,memLosPtsInc=1000 ;
+thread_local static DPoint3d  *losPtsP = nullptr;
+thread_local static long *losLinesP = nullptr;
+thread_local static long numLosPts = 0;
+thread_local static long memLosPts = 0;
+thread_local static long memLosPtsInc = 1000;
 
 BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsTotallyCovered
 (
@@ -29,11 +31,11 @@ BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsTotallyCovered
 /*
 ** Static Global Variables 
 */
-static long   numHorLines=0,memHorLines=0,trgNumber,numHorLinesIndex=0,*hozIndexListP=NULL,numHorIndexList=0,memHorIndexList=0 ;
+static long   numHorLines=0,memHorLines=0,trgNumber,numHorLinesIndex=0,*hozIndexListP=nullptr,numHorIndexList=0,memHorIndexList=0 ;
 static double eyeX,eyeY,eyeZ,tinRadius=0.0 ;
-static BC_DTM_OBJ              *losDtmP=NULL ;
-static DTM_HORIZON_LINE        *horLinesP=NULL ;
-static DTM_HORIZON_LINE_INDEX  *horLinesIndexP=NULL ;
+static BC_DTM_OBJ              *losDtmP=nullptr ;
+static DTM_HORIZON_LINE        *horLinesP=nullptr ;
+static DTM_HORIZON_LINE_INDEX  *horLinesIndexP=nullptr ;
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -63,8 +65,8 @@ BENTLEYDTM_Private int bcdtmVisibility_freeLosVertices(void)
 {
  numLosPts = 0 ;
  memLosPts = 0 ;
- if( losPtsP   != NULL ) { free(losPtsP)   ; losPtsP   = NULL ; }
- if( losLinesP != NULL ) { free(losLinesP) ; losLinesP = NULL ; }
+ if( losPtsP   != nullptr ) { free(losPtsP)   ; losPtsP   = nullptr ; }
+ if( losLinesP != nullptr ) { free(losLinesP) ; losLinesP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -85,9 +87,9 @@ BENTLEYDTM_Private int bcdtmVisibility_freeHorizonLineArrays(void)
  numHorLinesIndex = 0 ;
  numHorIndexList  = 0 ;
  memHorIndexList  = 0 ;
- if( horLinesP      != NULL ) { free(horLinesP)      ; horLinesP      = NULL ; }
- if( horLinesIndexP != NULL ) { free(horLinesIndexP) ; horLinesIndexP = NULL ; }
- if( hozIndexListP  != NULL ) { free(hozIndexListP)  ; hozIndexListP  = NULL ; }
+ if( horLinesP      != nullptr ) { free(horLinesP)      ; horLinesP      = nullptr ; }
+ if( horLinesIndexP != nullptr ) { free(horLinesIndexP) ; horLinesIndexP = nullptr ; }
+ if( hozIndexListP  != nullptr ) { free(hozIndexListP)  ; hozIndexListP  = nullptr ; }
 /*
 ** Job Completed
 */
@@ -459,7 +461,7 @@ BENTLEYDTM_Private double bcdtmVisibility_interpolateZOnLineOfSight(double Xe,do
 BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmFile(WCharCP dtmFileP,double Xe,double Ye,double Ze,double Xp,double Yp,double Zp,long *IsVisible)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -513,7 +515,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
  long    drapeFlag,numDrapePts ;
  DPoint3d     stringPts[2] ;
  double  Zs ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT *drapeP,*drapePtsP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -606,7 +608,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 ** Clean Up
 */
  cleanup :
- if( drapePtsP != NULL ) 
+ if( drapePtsP != nullptr ) 
    {
     bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
    } 
@@ -653,7 +655,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmFile
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -809,13 +811,13 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
 /*
 ** Load Visibility Lines
 */
- if( loadFunctionP != NULL  )
+ if( loadFunctionP != nullptr  )
    {
     for( p3dP = losPtsP , pl = losLinesP ; p3dP < losPtsP + numLosPts ; p3dP = p3dP + 2 , pl = pl + 2  )
       {
        loadPts[0].x = p3dP->x     ; loadPts[0].y = p3dP->y     ; loadPts[0].z = p3dP->z ; 
        loadPts[1].x = (p3dP+1)->x ; loadPts[1].y = (p3dP+1)->y ; loadPts[1].z = (p3dP+1)->z ; 
-	   if( *pl ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPts,2,userP)) goto errexit ; }
+       if( *pl ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPts,2,userP)) goto errexit ; }
        else      { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPts,2,userP)) goto errexit ; }
       }
    } 
@@ -856,7 +858,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmFile
 */
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -953,7 +955,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
 /*
 ** Check Load Function Is Set
 */
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(2,0,0,"No Load Function Set") ;
     goto errexit ;
@@ -1043,7 +1045,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmFile
 */
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -1138,7 +1140,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
 /*
 ** Check Load Function Is Set
 */
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(2,0,0,"No Load Function Set") ;
     goto errexit ;
@@ -1181,7 +1183,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
                   {
                    linePts[0].x = p3dP->x     ; linePts[0].y = p3dP->y     ; linePts[0].z = p3dP->z ;
                    linePts[1].x = (p3dP+1)->x ; linePts[1].y = (p3dP+1)->y ; linePts[1].z = (p3dP+1)->z ;
-	               if( *losLineP ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,linePts,2,userP)) goto errexit ; }
+                   if( *losLineP ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,linePts,2,userP)) goto errexit ; }
                    else            { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,linePts,2,userP)) goto errexit ; }
                   }
                }
@@ -1232,7 +1234,7 @@ BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibil
  if( numLosPts == memLosPts )
    {
     memLosPts = memLosPts + memLosPtsInc ;
-    if( losPtsP == NULL )  
+    if( losPtsP == nullptr )  
       {
        losPtsP   = (  DPoint3d  * )  malloc  ( memLosPts * sizeof(DPoint3d)) ;
        losLinesP = ( long  * )  malloc  ( memLosPts * sizeof(long)) ;
@@ -1242,10 +1244,10 @@ BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibil
        losPtsP   = (  DPoint3d  * )  realloc  ( losPtsP, memLosPts * sizeof(DPoint3d)) ;
        losLinesP = ( long  * )  realloc  ( losLinesP,memLosPts * sizeof(long)) ;
       }    
-    if( losPtsP == NULL || losLinesP == NULL )
+    if( losPtsP == nullptr || losLinesP == nullptr )
       {
-       if( losPtsP   != NULL ) { free(losPtsP)   ; losPtsP = NULL ; }
-       if( losLinesP != NULL ) { free(losLinesP) ; losPtsP = NULL ; }
+       if( losPtsP   != nullptr ) { free(losPtsP)   ; losPtsP = nullptr ; }
+       if( losLinesP != nullptr ) { free(losLinesP) ; losPtsP = nullptr ; }
        numLosPts = memLosPts = 0 ;
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
        goto errexit ; 
@@ -1304,7 +1306,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmFile
 )
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0)  ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -1356,9 +1358,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
  long   *pl,scan,process,drapeFlag,numDrapePts ;
  long   numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double dd,dx,dy,dz,Zs,x,y,z,angle,anginc,radius,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
- DPoint3d    *p3d,radial[2],*loadPtsP=NULL ;
+ DPoint3d    *p3d,radial[2],*loadPtsP=nullptr ;
  long   start,finish ;
- DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -1408,7 +1410,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 /*
 ** Check Load Function Is Set
 */
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(2,0,0,"No Load Function Set") ;
     goto errexit ;
@@ -1544,7 +1546,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
    {
     if( bcdtmLoad_storeFeaturePoint(p3d->x,p3d->y,p3d->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
     if( bcdtmLoad_storeFeaturePoint((p3d+1)->x,(p3d+1)->y,(p3d+1)->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
-	if( *pl ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
+    if( *pl ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     else      { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     numLoadPts = 0 ;
    } 
@@ -1555,7 +1557,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 /*
 **  Free Drape Points
 */
-    if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
+    if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
    } 
 /*
 ** Get Elapsed Time ** Developement Purposes Only
@@ -1566,8 +1568,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 ** Clean Up
 */
  cleanup :
- if( loadPtsP != NULL ) { free(loadPtsP) ; loadPtsP = NULL ; }
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
+ if( loadPtsP != nullptr ) { free(loadPtsP) ; loadPtsP = nullptr ; }
+ if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Job Completed
 */
@@ -1597,7 +1599,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmFile
 )
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -1653,7 +1655,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   drapeFlag,startTime=0,processTime=bcdtmClock() ;
  double Zs ;
- BC_DTM_OBJ *tempDtmP=NULL ;
+ BC_DTM_OBJ *tempDtmP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -1696,7 +1698,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
 /*
 ** Check Load Function Is Set
 */
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(2,0,0,"Load Function Not set") ;
     goto errexit ;
@@ -1734,7 +1736,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
 ** Clean Up
 */
  cleanup :
- if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
+ if( tempDtmP != nullptr ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
 /*
 ** Job Completed
 */
@@ -1769,7 +1771,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
  long  dtmFeature,voidsInDtm,voidLine,startTime=bcdtmClock() ;
  DPoint3d   breakPts[2] ;
  BC_DTM_FEATURE *dtmFeatureP ;
- BC_DTM_OBJ *dataDtmP=NULL ;
+ BC_DTM_OBJ *dataDtmP=nullptr ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Log Entry Message
@@ -1784,7 +1786,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
 /*
 ** Only Build Visibility Tables For Tin If Necessary
 */
- if( Xe == eyeX && Ye == eyeY && Ze == eyeZ && losDtmP == dtmP && horLinesP != NULL && horLinesIndexP != NULL && hozIndexListP != NULL ) goto cleanup ;
+ if( Xe == eyeX && Ye == eyeY && Ze == eyeZ && losDtmP == dtmP && horLinesP != nullptr && horLinesIndexP != nullptr && hozIndexListP != nullptr ) goto cleanup ;
 /*
 ** Check For Voids In DTM
 */
@@ -1885,7 +1887,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
 ** Clean Up
 */
  cleanup :
- if( dataDtmP != NULL ) bcdtmObject_destroyDtmObject(&dataDtmP);
+ if( dataDtmP != nullptr ) bcdtmObject_destroyDtmObject(&dataDtmP);
 /*
 ** Job Completed
 */
@@ -1925,7 +1927,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonTableFromDtmObject
 */
  *numHorLinesP = 0 ;
  *numHorLinesP = 0 ;  
- if( *horLinesPP != NULL ) { free(*horLinesPP) ; *horLinesPP = NULL ; }
+ if( *horLinesPP != nullptr ) { free(*horLinesPP) ; *horLinesPP = nullptr ; }
 /*
 ** Copy Horizon Line Coordinates To Horizon Table Data Structure
 */
@@ -2048,9 +2050,9 @@ BENTLEYDTM_Private int bcdtmVisibility_storeLineInHorizonTable
  if( *numHorLinesP == *memHorLinesP )
    {
     *memHorLinesP = *memHorLinesP + minc ;
-    if( *horLinesPP == NULL )  *horLinesPP = (DTM_HORIZON_LINE *) malloc  ( *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
+    if( *horLinesPP == nullptr )  *horLinesPP = (DTM_HORIZON_LINE *) malloc  ( *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
     else                       *horLinesPP = (DTM_HORIZON_LINE *) realloc ( *horLinesPP, *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;  
-    if( *horLinesPP == NULL ) 
+    if( *horLinesPP == nullptr ) 
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -2116,8 +2118,8 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
  double radius,X1,Y1,Z1,X2,Y2,Z2,D1,D2,Ang1,Ang2 ;
  DPoint3d    visiblePts[2] ;
  DTM_HORIZON_LINE      *hLine1P,*hLine2P,*hozLineOfs1P,*hozLineOfs2P,*saveHorLinesP ;
- DTM_HORIZON_LINE      *hozLineLowP,*hozLineHighP,*tempHorLinesP=NULL ;
- DTM_HORIZON_DISTANCE  *hDistP,*hozDistP=NULL ;
+ DTM_HORIZON_LINE      *hozLineLowP,*hozLineHighP,*tempHorLinesP=nullptr ;
+ DTM_HORIZON_DISTANCE  *hDistP,*hozDistP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -2334,7 +2336,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
 /*
 **     Free Temporary Table
 */
-       if( tempHorLinesP != NULL ) { free(tempHorLinesP) ; tempHorLinesP = NULL ; }
+       if( tempHorLinesP != nullptr ) { free(tempHorLinesP) ; tempHorLinesP = nullptr ; }
        numTempHorLines = memTempHorLines = 0 ;
 /*
 **     Sort Horizon Table
@@ -2356,8 +2358,8 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
 ** Clean Up
 */
  cleanup :
- if( hozDistP      != NULL ) { free(hozDistP)      ; hozDistP = NULL      ; }
- if( tempHorLinesP != NULL ) { free(tempHorLinesP) ; tempHorLinesP = NULL ; }
+ if( hozDistP      != nullptr ) { free(hozDistP)      ; hozDistP = nullptr      ; }
+ if( tempHorLinesP != nullptr ) { free(tempHorLinesP) ; tempHorLinesP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -2397,7 +2399,7 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
  long   scan,process,numDrapePts=0 ;
  double dd,dx,dy,dz,x,y,z,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
  DPoint3d    radial[2] ;
- DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=NULL ;
+ DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
 /*
 ** Initialise
 */ 
@@ -2779,11 +2781,11 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
  long  p1,p2,p3,clPtr,voidFlag,startPnt,refineFlag,numStringPts,numPoints  ;
  long  trgNumber,dtmFeature,numFeatures,numBefore,numEnd,numJoinUserTags ;
- DPoint3d   *p3dP,*stringPtsP=NULL,insertLine[2] ;
+ DPoint3d   *p3dP,*stringPtsP=nullptr,insertLine[2] ;
  DTM_TIN_NODE   *nodeP ;
- BC_DTM_OBJ     *dtmDataP=NULL ;
+ BC_DTM_OBJ     *dtmDataP=nullptr ;
  BC_DTM_FEATURE *dtmFeatureP  ;
- DTM_JOIN_USER_TAGS *joinUserTagsP=NULL ;
+ DTM_JOIN_USER_TAGS *joinUserTagsP=nullptr ;
 /*
 ** Log Entry Message
 */
@@ -2902,7 +2904,7 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
                 if( startPnt != dtmP->nullPnt ) bcdtmList_nullTptrListDtmObject(dtmP,startPnt) ;
                }
             }    
-          if( stringPtsP != NULL ) { free(stringPtsP) ; stringPtsP = NULL ; }
+          if( stringPtsP != nullptr ) { free(stringPtsP) ; stringPtsP = nullptr ; }
          }
 /*
 **     Clean DTM Object If More Than 2500 Tin Points Have Been Inserted
@@ -2920,9 +2922,9 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
 ** Clean Up
 */
  cleanup :
- if( dtmDataP      != NULL ) bcdtmObject_destroyDtmObject(&dtmDataP) ;
- if( stringPtsP    != NULL ) free(stringPtsP) ;
- if( joinUserTagsP != NULL ) free(joinUserTagsP) ;
+ if( dtmDataP      != nullptr ) bcdtmObject_destroyDtmObject(&dtmDataP) ;
+ if( stringPtsP    != nullptr ) free(stringPtsP) ;
+ if( joinUserTagsP != nullptr ) free(joinUserTagsP) ;
 /*
 ** Job Completed
 */
@@ -2958,15 +2960,15 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
  long      p1,p2,p3,lp,clc,offset,ofs1,ofs2,voidFlag,visValue,visibility ;
  long      numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double    x,y,sx,sy,area,X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3  ;
- char      cv,nv=(char)-1/*255*/,*cP,*linesP=NULL ;
- DPoint3d       *loadPtsP=NULL ;
+ char      cv,nv=(char)-1/*255*/,*cP,*linesP=nullptr ;
+ DPoint3d       *loadPtsP=nullptr ;
  DTM_TIN_NODE *nodeP ;
 /*
 ** Allocate Memory
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory") ;
  linesP = ( char * ) malloc ( dtmP->cListPtr * sizeof(char)) ;
- if( linesP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
+ if( linesP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
  for( cP = linesP ; cP < linesP + dtmP->cListPtr ; ++cP ) *cP = nv ;
 /*
 ** Scan All Triangle And Set Visibility Attributes 
@@ -2990,18 +2992,18 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
                 if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit  ;
                 if( ! voidFlag ) 
                   {
-	               X1 = pointAddrP(dtmP,p1)->x ; Y1 = pointAddrP(dtmP,p1)->y ; Z1 = pointAddrP(dtmP,p1)->z + 0.00001 ;
-	               X2 = pointAddrP(dtmP,p2)->x ; Y2 = pointAddrP(dtmP,p2)->y ; Z2 = pointAddrP(dtmP,p2)->z + 0.00001 ;
-	               X3 = pointAddrP(dtmP,p3)->x ; Y3 = pointAddrP(dtmP,p3)->y ; Z3 = pointAddrP(dtmP,p3)->z + 0.00001 ;
+                   X1 = pointAddrP(dtmP,p1)->x ; Y1 = pointAddrP(dtmP,p1)->y ; Z1 = pointAddrP(dtmP,p1)->z + 0.00001 ;
+                   X2 = pointAddrP(dtmP,p2)->x ; Y2 = pointAddrP(dtmP,p2)->y ; Z2 = pointAddrP(dtmP,p2)->z + 0.00001 ;
+                   X3 = pointAddrP(dtmP,p3)->x ; Y3 = pointAddrP(dtmP,p3)->y ; Z3 = pointAddrP(dtmP,p3)->z + 0.00001 ;
                    if( bcdtmVisibility_determinePointVisibilityUsingVisibilityTables(horLinesP,numHorLines,horLinesIndexP,numHorLinesIndex,hozIndexListP,Xe,Ye,Ze,(X1+X2+X3)/3.0,(Y1+Y2+Y3)/3.0,(Z1+Z2+Z3)/3.0,&visibility)) goto errexit ;
                    if( visibility ) visValue = 1 ;
                    else             visValue = 2 ; 
-			       if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
-			       *(linesP+offset) = ( char ) visValue ;
-			       if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
-			       *(linesP+offset) = ( char ) visValue  ;
-			       if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p3,p1) ) goto errexit ;
-			       *(linesP+offset) = ( char ) visValue  ;
+                   if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
+                   *(linesP+offset) = ( char ) visValue ;
+                   if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
+                   *(linesP+offset) = ( char ) visValue  ;
+                   if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p3,p1) ) goto errexit ;
+                   *(linesP+offset) = ( char ) visValue  ;
                   }
                }
             } 
@@ -3045,7 +3047,7 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
           lp = p2 ; p2 = p3 ; p3 = lp ;
          } while ( p2 != p1 ) ;
        if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
-	   if( cv == 1 ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit  ; }
+       if( cv == 1 ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit  ; }
        else          { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit  ; }
        numLoadPts = 0 ;
       }
@@ -3065,8 +3067,8 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
        if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p2,p1) ) goto errexit ;
        if( *(linesP+ofs1) != *(linesP+ofs2)  && *(linesP+ofs1) != nv  && bcdtmList_testLineDtmObject(dtmP,p1,clistAddrP(dtmP,clc)->pntNum) && ( nodeAddrP(dtmP,p1)->hPtr != p2 || nodeAddrP(dtmP,p2)->hPtr != p1 ) )
          {         
-	      cv = *(linesP+ofs1) ;
-	      p3 = p1 ;
+          cv = *(linesP+ofs1) ;
+          p3 = p1 ;
 /*
 **        Get Polygon Direction
 */
@@ -3088,8 +3090,8 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
              x = pointAddrP(dtmP,p3)->x - sx ; y = pointAddrP(dtmP,p3)->y - sy  ;
              area = area + ( x * y ) / 2.0 + x * sy ;
              sx = pointAddrP(dtmP,p3)->x ; sy = pointAddrP(dtmP,p3)->y ;
-	         lp = p2 ; p2 = p3 ; p3 = lp ;
-	        } while ( p2 != p1 ) ;
+             lp = p2 ; p2 = p3 ; p3 = lp ;
+            } while ( p2 != p1 ) ;
 /*
 **        If Polygon Is Clockwise Write Polygon
 */
@@ -3103,7 +3105,7 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
 **           Scan Until Back To First Point
 */
              do
-	           {
+               {
                 if( ( p3 = bcdtmList_nextAntDtmObject(dtmP,p2,p3)) < 0 )  goto errexit ;
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs1,p2,p3) )     goto errexit ;
                 if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p3,p2) )     goto errexit ;
@@ -3113,16 +3115,16 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs1,p2,p3) )    goto errexit ;
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p3,p2) )    goto errexit ;
                   }
-	            *(linesP+ofs1)  = nv ;
+                *(linesP+ofs1)  = nv ;
                 if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
-	            lp = p2 ; p2 = p3 ; p3 = lp ;
-	           } while ( p2 != p1 ) ;
+                lp = p2 ; p2 = p3 ; p3 = lp ;
+               } while ( p2 != p1 ) ;
              if( bcdtmLoad_storeFeaturePoint(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p2)->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
-	         if( cv == 1 ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit  ; }
+             if( cv == 1 ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit  ; }
              else          { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit  ; }
              numLoadPts = 0 ;
             }
-	     }
+         }
        clc = clistAddrP(dtmP,clc)->nextPtr ;
       }
    }
@@ -3130,8 +3132,8 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
 ** Clean Up
 */
  cleanup :
- if( linesP   != NULL ) free(linesP) ;
- if( loadPtsP != NULL ) free(loadPtsP) ;
+ if( linesP   != nullptr ) free(linesP) ;
+ if( loadPtsP != nullptr ) free(loadPtsP) ;
 /*
 ** Job Completed
 */
@@ -3770,13 +3772,13 @@ BENTLEYDTM_Private int bcdtmVisibility_buildDistanceIndexFromHorizonTable
 ** Initialise
 */
  *numHorDistP = 0 ;
- if( *hozDistPP != NULL ) { free(*hozDistPP) ; *hozDistPP = NULL ; }
+ if( *hozDistPP != nullptr ) { free(*hozDistPP) ; *hozDistPP = nullptr ; }
 /*
 ** Allocate memory For Horizon Points
 */
  *numHorDistP = numHorLines ;
  *hozDistPP = (DTM_HORIZON_DISTANCE * ) malloc( *numHorDistP * sizeof( DTM_HORIZON_DISTANCE) ) ;
- if( *hozDistPP == NULL ) 
+ if( *hozDistPP == nullptr ) 
    { 
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -3849,7 +3851,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long *activeHorLineListP=NULL,numActiveHorLines=0,memActiveHorLines=0 ;
+ long *activeHorLineListP=nullptr,numActiveHorLines=0,memActiveHorLines=0 ;
  DTM_HORIZON_LINE *hLineP ;
  DTM_HORIZON_LINE_INDEX *hIndexP ;
 
@@ -3872,14 +3874,14 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
 ** Clear Horizon Line Index List
 */
  *numHorLinesIndexListP = *memHorLinesIndexListP = 0 ;
- if( *hozLinesIndexListPP != NULL ) { free(*hozLinesIndexListPP) ; *hozLinesIndexListPP = NULL ; }
+ if( *hozLinesIndexListPP != nullptr ) { free(*hozLinesIndexListPP) ; *hozLinesIndexListPP = nullptr ; }
 /*
 ** Allocate memory For Horizon Points
 */
- if( *horLinesIndexPP != NULL ) { free(*horLinesIndexPP) ; *horLinesIndexPP = NULL ; }
+ if( *horLinesIndexPP != nullptr ) { free(*horLinesIndexPP) ; *horLinesIndexPP = nullptr ; }
  *numHorLinesIndexP = numHorLines * 2 ;
  *horLinesIndexPP = (DTM_HORIZON_LINE_INDEX * ) malloc( *numHorLinesIndexP * sizeof( DTM_HORIZON_LINE_INDEX) ) ;
- if( *horLinesIndexPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
+ if( *horLinesIndexPP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
 /*
 ** Creating Horizon Line Index Table
 */
@@ -3922,7 +3924,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
        if( bcdtmVisibility_addHorizonListEntiesToHorizonIndexList(hozLinesIndexListPP,numHorLinesIndexListP,memHorLinesIndexListP,activeHorLineListP,numActiveHorLines)) 
          { 
           free(*hozLinesIndexListPP) ; 
-          hozLinesIndexListPP = NULL ;
+          hozLinesIndexListPP = nullptr ;
           goto errexit ; 
          }
       } 
@@ -3944,7 +3946,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
 ** Clean Up
 */
  cleanup :
- if( activeHorLineListP != NULL ) free(activeHorLineListP);
+ if( activeHorLineListP != nullptr ) free(activeHorLineListP);
 /*
 ** Job Completed
 */
@@ -3982,9 +3984,9 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonLineToActiveList
  if( *numActiveHorLinesP == *memActiveHorLinesP )
    {
     *memActiveHorLinesP = *memActiveHorLinesP + memInc ;
-    if( *activeHorLinesPP == NULL ) *activeHorLinesPP = (long*)malloc ( *memActiveHorLinesP * sizeof(long)) ;
+    if( *activeHorLinesPP == nullptr ) *activeHorLinesPP = (long*)malloc ( *memActiveHorLinesP * sizeof(long)) ;
     else                            *activeHorLinesPP = (long*)realloc( *activeHorLinesPP, *memActiveHorLinesP * sizeof(long)) ;
-    if( *activeHorLinesPP == NULL ) 
+    if( *activeHorLinesPP == nullptr ) 
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
        goto errexit  ;
@@ -4026,7 +4028,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeHorizonLineFromActiveList
 */
 {
  int  ret=DTM_SUCCESS ;
- long *hLineP,*hLineEntryP=NULL ;
+ long *hLineP,*hLineEntryP=nullptr ;
 /*
 ** Check For Entries
 */
@@ -4038,11 +4040,11 @@ BENTLEYDTM_Private int bcdtmVisibility_removeHorizonLineFromActiveList
 /*
 ** Find Entry
 */
- for( hLineP = activeHorLinesP ; hLineP < activeHorLinesP + *numActiveHorLinesP && hLineEntryP == NULL ; ++hLineP )
+ for( hLineP = activeHorLinesP ; hLineP < activeHorLinesP + *numActiveHorLinesP && hLineEntryP == nullptr ; ++hLineP )
    {
     if( *hLineP == hozLineOffset ) hLineEntryP = hLineP ; 
    }
- if( hLineEntryP == NULL ){ bcdtmWrite_message(1,0,0,"Horizon Line Entry %6ld Not In Active List",hozLineOffset) ; goto errexit  ; } 
+ if( hLineEntryP == nullptr ){ bcdtmWrite_message(1,0,0,"Horizon Line Entry %6ld Not In Active List",hozLineOffset) ; goto errexit  ; } 
 /*
 ** Copy Over Removed Entry
 */
@@ -4096,9 +4098,9 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonListEntiesToHorizonIndexList
  if( *numHorIndexP + numHorList > *memHorIndexP )
    {
     while( *numHorIndexP + numHorList > *memHorIndexP ) *memHorIndexP = *memHorIndexP + memInc ;
-    if( *hozIndexPP == NULL ) *hozIndexPP = (long*)malloc ( *memHorIndexP * sizeof(long)) ;
+    if( *hozIndexPP == nullptr ) *hozIndexPP = (long*)malloc ( *memHorIndexP * sizeof(long)) ;
     else              *hozIndexPP = (long*)realloc( *hozIndexPP, *memHorIndexP * sizeof(long)) ;
-    if( *hozIndexPP == NULL ) 
+    if( *hozIndexPP == nullptr ) 
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit  ; 
@@ -4147,12 +4149,12 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
 /*
 ** Check For Null Horizon Index
 */
- if( hozLineIndexP == NULL )
+ if( hozLineIndexP == nullptr )
    {
     bcdtmWrite_message(0,0,0,"Null Horizon Line Index") ;
     return(1) ;
    }  
- if( hozLineIndexListP == NULL )
+ if( hozLineIndexListP == nullptr )
    {
     bcdtmWrite_message(0,0,0,"Null Horizon Line Index List") ;
     return(1) ;
@@ -4382,7 +4384,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
  DPoint3d    visibilityPts[2] ; 
  DTM_HORIZON_LINE  *dLineP,*hLineP,*tLineP,*hLineLowP,*hLineHighP ;
  DTM_HORIZON_LINE  *tLineOffset1P,*tLineOffset2P,saveHorLine ;
- DTM_HORIZON_LINE  *distHorLinesP=NULL,*tempHorLinesP=NULL  ;
+ DTM_HORIZON_LINE  *distHorLinesP=nullptr,*tempHorLinesP=nullptr  ;
  DTM_HORIZON_LINE_INDEX *hIndexP ;
 /*
 ** Write Entry Message
@@ -4775,8 +4777,8 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
 ** Clean Up
 */
  cleanup :
- if( distHorLinesP != NULL ) { free(distHorLinesP) ; distHorLinesP = NULL ; }
- if( tempHorLinesP != NULL ) { free(tempHorLinesP) ; tempHorLinesP = NULL ; }
+ if( distHorLinesP != nullptr ) { free(distHorLinesP) ; distHorLinesP = nullptr ; }
+ if( tempHorLinesP != nullptr ) { free(tempHorLinesP) ; tempHorLinesP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -4809,9 +4811,9 @@ BENTLEYDTM_Private int bcdtmVisibility_storePointInHorizonTable(DTM_HORIZON_LINE
  if( *numHorLinesP == *memHorLinesP )
    {
     *memHorLinesP = *memHorLinesP + minc ;
-    if( *horLinesPP == NULL )  *horLinesPP = (DTM_HORIZON_LINE *) malloc  ( *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
+    if( *horLinesPP == nullptr )  *horLinesPP = (DTM_HORIZON_LINE *) malloc  ( *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
     else                       *horLinesPP = (DTM_HORIZON_LINE *) realloc ( *horLinesPP, *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;  
-    if( *horLinesPP == NULL ) 
+    if( *horLinesPP == nullptr ) 
       { 
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ; 
@@ -4965,8 +4967,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  long   *lP,scan,process,drapeFlag,numDrapePts=0 ;
  long   numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double x,y,z,dx,dy,dz,dd,Zs,maxangle,eyeangle,lasteyeangle ;
- DPoint3d    *p3dP,radialPts[2],*loadPtsP=NULL ;
- DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P,*drapePtsP=NULL ;
+ DPoint3d    *p3dP,radialPts[2],*loadPtsP=nullptr ;
+ DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
 /*
 ** Write Status Message
 */
@@ -5143,7 +5145,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
    {
     if( bcdtmLoad_storeFeaturePoint(p3dP->x,p3dP->y,p3dP->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
     if( bcdtmLoad_storeFeaturePoint((p3dP+1)->x,(p3dP+1)->y,(p3dP+1)->z,&loadPtsP,&numLoadPts,&memLoadPts,memLoadPtsInc)) goto errexit ;
-	if( *lP ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
+    if( *lP ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     else      { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     numLoadPts = 0 ;
    } 
@@ -5151,7 +5153,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 ** Clean Up
 */
  cleanup :
- if( loadPtsP != NULL ) { free(loadPtsP) ; loadPtsP = NULL ; }
+ if( loadPtsP != nullptr ) { free(loadPtsP) ; loadPtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -5218,7 +5220,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_createVisibilityLatticeDtmObject
 /*
 ** Check Lattice Pointer Id Null
 */
- if( *latticePP != NULL )
+ if( *latticePP != nullptr )
    {
     bcdtmWrite_message(2,0,0,"Method Requires Null Lattice Pointer") ;
     goto errexit ;

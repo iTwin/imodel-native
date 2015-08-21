@@ -2,14 +2,15 @@
 |
 |     $Source: Core/2d/bcdtmMerge.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
 
-static double areaPerimeterRatio=1.0,minImpliedVoidArea=5.0 ;
+thread_local static double areaPerimeterRatio = 1.0;
+thread_local static double minImpliedVoidArea = 5.0;
 /*==============================================================================*//**
 * @memo   Merge Dtm Files
 * @doc    Merge Dtm Files 
@@ -2102,7 +2103,7 @@ BENTLEYDTM_Public int bcdtmMerge_checkAndFixPrecisionForTrianglesDtmObject(BC_DT
  while ( process && loop < 20 )
    {
     nip = 0 ;
-	process = 0 ;
+    process = 0 ;
     for( p1 = 0  ; p1 < dtmP->numPoints ; ++p1 )
       {
        nodeP = nodeAddrP(dtmP,p1) ;
@@ -2114,13 +2115,13 @@ BENTLEYDTM_Public int bcdtmMerge_checkAndFixPrecisionForTrianglesDtmObject(BC_DT
             {
              p3  = clistAddrP(dtmP,clPtr)->pntNum ;
              clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-			 if( p2 > p1 && p3 > p1 && nodeAddrP(dtmP,p1)->hPtr != p2 )
-			   {
-			    sd1 = bcdtmMath_pointSideOfDtmObject(dtmP,p1,p2,p3) ;
-				sd2 = bcdtmMath_pointSideOfDtmObject(dtmP,p2,p3,p1) ;
-				sd3 = bcdtmMath_pointSideOfDtmObject(dtmP,p3,p1,p2) ;
-				if( sd1 >= 0 || sd2 >= 0 || sd3 >= 0 )
-				  {
+             if( p2 > p1 && p3 > p1 && nodeAddrP(dtmP,p1)->hPtr != p2 )
+               {
+                sd1 = bcdtmMath_pointSideOfDtmObject(dtmP,p1,p2,p3) ;
+                sd2 = bcdtmMath_pointSideOfDtmObject(dtmP,p2,p3,p1) ;
+                sd3 = bcdtmMath_pointSideOfDtmObject(dtmP,p3,p1,p2) ;
+                if( sd1 >= 0 || sd2 >= 0 || sd3 >= 0 )
+                  {
                    if( dbg ) bcdtmWrite_message(0,0,0,"Precision Error ** Triangle [%6ld,%6ld,%6ld] ** sd1 = %2ld sd2 = %2ld sd3 = %2ld",p1,p2,p3,sd1,sd2,sd3) ;
                    d12 = bcdtmMath_pointDistanceDtmObject(dtmP,p1,p2) ;
                    d13 = bcdtmMath_pointDistanceDtmObject(dtmP,p1,p3) ;

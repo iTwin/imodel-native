@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmClip1.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -75,11 +75,11 @@ BENTLEYDTM_Public int bcdtmClip_internalToTptrPolygonDtmObject(BC_DTM_OBJ *dtmP,
       {
        clPtr = nodeAddrP(dtmP,sp)->cPtr ;
        while ( clPtr != dtmP->nullPtr )
-	     {
-	      cp  = clistAddrP(dtmP,clPtr)->pntNum ;
-	      clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-	      if( bcdtmList_deleteLineDtmObject(dtmP,sp,cp) ) goto errexit  ;
-	     }
+         {
+          cp  = clistAddrP(dtmP,clPtr)->pntNum ;
+          clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
+          if( bcdtmList_deleteLineDtmObject(dtmP,sp,cp) ) goto errexit  ;
+         }
        nodeP = nodeAddrP(dtmP,sp)  ;
        nodeP->hPtr = dtmP->nullPnt ;
        nodeP->tPtr = dtmP->nullPnt ;

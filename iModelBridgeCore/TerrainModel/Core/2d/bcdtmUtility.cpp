@@ -597,8 +597,8 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureTypeToPolygonObjectDtmObject
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-	if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == dtmFeatureType )
-	  {
+    if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == dtmFeatureType )
+      {
        if( bcdtmUtility_copyTinDtmFeatureToPolygonObjectDtmObject(dtmP,polyP,dtmFeature,userTag)) goto errexit ;
       } 
    }
@@ -643,7 +643,7 @@ BENTLEYDTM_Public int bcdtmUtility_copyTinDtmFeatureToPolygonObjectDtmObject(BC_
  if( dtmFeature < 0 || dtmFeature >= dtmP->numFeatures ) 
    { 
     bcdtmWrite_message(2,0,0,"Dtm Feature Range Error") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Copy Feature To Tptr Polygon

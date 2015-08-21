@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmFnd.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -47,8 +47,8 @@ BENTLEYDTM_EXPORT int bcdtmFind_triangleForPointDtmObject(BC_DTM_OBJ *dtmP,doubl
 **  Point Coincident With Existing dtmP Point 
 */
     if( *fndTypeP == 1 ) *ZP = pointAddrP(dtmP,*pnt1P)->z ;
-	else
-	  {
+    else
+      {
 /*
 **     Set Find Type To Triangle
 */
@@ -299,10 +299,10 @@ BENTLEYDTM_EXPORT int bcdtmFind_triangleDtmObject(BC_DTM_OBJ *dtmP,double x,doub
 **  Find Closest Tin Point to p(x,y)
 */
     if( bcdtmFind_closestPointDtmObject(dtmP,x,y,&closestPnt) == 1 ) 
-	  { 
-	   *pnt1P = closestPnt ; 
-	   *fndTypeP = 1 ; 
-	  }
+      { 
+       *pnt1P = closestPnt ; 
+       *fndTypeP = 1 ; 
+      }
 /*
 ** Scan Tin Structure For Point
 */
@@ -363,12 +363,12 @@ BENTLEYDTM_Public int bcdtmFind_triangleForPointFromPointDtmObject(BC_DTM_OBJ *d
        if( nodeAddrP(dtmP,p1)->hPtr != p2 )
          {
           if( sdof1 <= 0 && sdof2 >= 0 )
-	        {
+            {
 /*
 **           Test For Point In Triangle
 */
-	         if( bcdtmMath_linePointSideOfDtmObject(dtmP,p2,p3,x,y) <= 0 )
-	           {
+             if( bcdtmMath_linePointSideOfDtmObject(dtmP,p2,p3,x,y) <= 0 )
+               {
                 if( x == pointAddrP(dtmP,p1)->x && y == pointAddrP(dtmP,p1)->y ) { *pnt1P = p1 ; *pntTypeP = 1 ; goto cleanup ; }    
                 if( x == pointAddrP(dtmP,p2)->x && y == pointAddrP(dtmP,p2)->y ) { *pnt1P = p2 ; *pntTypeP = 1 ; goto cleanup ; }    
                 if( x == pointAddrP(dtmP,p3)->x && y == pointAddrP(dtmP,p3)->y ) { *pnt1P = p3 ; *pntTypeP = 1 ; goto cleanup ; }    
@@ -376,17 +376,17 @@ BENTLEYDTM_Public int bcdtmFind_triangleForPointFromPointDtmObject(BC_DTM_OBJ *d
                 *pnt2P = p2 ; 
                 *pnt3P = p3 ; 
                 *pntTypeP = 2 ; 
-				scan = 0 ;
+                scan = 0 ;
                 goto cleanup ; 
                }
 /*
 **           Test For Point Going External From Hull Line pnt3P-pnt2P
 */
-	         if( nodeAddrP(dtmP,p3)->hPtr == p2 )
-	           {
-	            if( bcdtmFind_hullIntersectionDtmObject(dtmP,&hullIntFnd,p1,x,y,&p0,&p2,&p3) ) goto errexit ;
+             if( nodeAddrP(dtmP,p3)->hPtr == p2 )
+               {
+                if( bcdtmFind_hullIntersectionDtmObject(dtmP,&hullIntFnd,p1,x,y,&p0,&p2,&p3) ) goto errexit ;
                 if( ! hullIntFnd ) goto cleanup ;
-	           }
+               }
 /*
 **           Get Next Point To Scan
 */
@@ -405,7 +405,7 @@ BENTLEYDTM_Public int bcdtmFind_triangleForPointFromPointDtmObject(BC_DTM_OBJ *d
 */
     if( p1 == p0 ) 
       {
-	   if( bcdtmFind_hullIntersectionDtmObject(dtmP,&hullIntFnd,p1,x,y,&p0,&p2,&p3) ) goto errexit ;
+       if( bcdtmFind_hullIntersectionDtmObject(dtmP,&hullIntFnd,p1,x,y,&p0,&p2,&p3) ) goto errexit ;
        if( ! hullIntFnd ) goto cleanup ;
       } 
    }
@@ -473,17 +473,17 @@ BENTLEYDTM_Private int bcdtmFind_hullIntersectionDtmObject(BC_DTM_OBJ *dtmP,long
              if( sd1 != sd2 )
                {
                 bcdtmMath_normalIntersectCordLines(x,y,pointAddrP(dtmP,point)->x,pointAddrP(dtmP,point)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,&xInt,&yInt) ;
-	            dd = bcdtmMath_distance(xInt,yInt,x,y) ;
-	            if( isw || dd < dist )
-	              {
-	               *pnt1P = p1 ;
+                dd = bcdtmMath_distance(xInt,yInt,x,y) ;
+                if( isw || dd < dist )
+                  {
+                   *pnt1P = p1 ;
                    *pnt2P = p2 ;
-	               if(( *pnt3P = bcdtmList_nextAntDtmObject(dtmP,p1,p2) ) < 0 ) goto errexit ;
-	               *intFoundP = 1 ;
+                   if(( *pnt3P = bcdtmList_nextAntDtmObject(dtmP,p1,p2) ) < 0 ) goto errexit ;
+                   *intFoundP = 1 ;
                   }
-	           }
-	        }
-	     }
+               }
+            }
+         }
       }
     p1 = p2 ; p2 = nodeAddrP(dtmP,p1)->hPtr ;
    } while ( p1 != fp ) ;
@@ -555,10 +555,10 @@ BENTLEYDTM_EXPORT int bcdtmFind_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,do
           goto errexit ;
          }
        if( fabs(pointAddrP(dtmP,pnt1)->x-pointAddrP(dtmP,closePnt)->x) <= tolerance && fabs(pointAddrP(dtmP,pnt1)->y-pointAddrP(dtmP,closePnt)->y ) <= tolerance )
-	     {
-	      dist = bcdtmMath_distance(pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,x,y) ;
-	      if( dist < tolerance ) { closePnt = *hullPnt1P = pnt1 ; *fndTypeP = 1 ; tolerance = dist ; }
-	     }
+         {
+          dist = bcdtmMath_distance(pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,x,y) ;
+          if( dist < tolerance ) { closePnt = *hullPnt1P = pnt1 ; *fndTypeP = 1 ; tolerance = dist ; }
+         }
        pnt1 = nodeAddrP(dtmP,pnt1)->hPtr ;
       } while ( pnt1 != dtmP->hullPoint ) ;
    }
@@ -578,12 +578,12 @@ BENTLEYDTM_EXPORT int bcdtmFind_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,do
       {
        dist = bcdtmMath_distanceOfPointFromLine(&onLine,pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,pointAddrP(dtmP,pnt2)->x,pointAddrP(dtmP,pnt2)->y,x,y,&xi,&yi) ;
        if( onLine && ( dist < tolerance ) )
-	     {
-	      tolerance  = dist ;
-	      *hullPnt1P = pnt1 ;
+         {
+          tolerance  = dist ;
+          *hullPnt1P = pnt1 ;
           *hullPnt2P = pnt2 ;
-	      *fndTypeP  = 2 ;
-	     }
+          *fndTypeP  = 2 ;
+         }
       }
     pnt1 = pnt2 ;
    } while ( pnt1 != dtmP->hullPoint ) ;

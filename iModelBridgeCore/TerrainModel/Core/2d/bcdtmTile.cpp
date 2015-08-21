@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmTile.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -10,7 +10,7 @@
 #include "bcdtminlines.h" 
 #include <thread>
 
-static unsigned long TileRandomSeed=0 ;
+thread_local static unsigned long TileRandomSeed = 0;
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -79,10 +79,17 @@ BENTLEYDTM_EXPORT int bcdtmTile_pointsDtmObject
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long   n,startTime ;
- long   numThreadPoints=0,numThreadArrayPoints[DTM_MAX_PROCESSORS] ;
- std::thread thread[DTM_MAX_PROCESSORS] ;
- DTM_MULTI_THREAD_TILE multiThread[DTM_MAX_PROCESSORS] ;
+ long   numThreadPoints = 0;
+ bvector<long> numThreadArrayPoints;
+ std::vector<std::thread> thread ;
+ bvector<DTM_MULTI_THREAD_TILE> multiThread;
  DTM_POINT_TILE *tileP,*tile1P ;
+
+ /*
+ ** Resize arrays
+ */ numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);
+ thread.resize (DTM_NUM_PROCESSORS);;
+ multiThread.resize (DTM_NUM_PROCESSORS);
 /*
 ** Write Entry Message
 */
@@ -453,38 +460,38 @@ BENTLEYDTM_Private void bcdtmTile_medianSortPointsDtmObject(BC_DTM_OBJ *dtmP,lon
     left = -1;
     right = numPoints;
     while (left < right) 
-	  {
+      {
 /* 
 **     Search for a point whose coordinate is too large for the left. 
 */
        do 
          {
           ++left ;
-	       scan = FALSE ;
+           scan = FALSE ;
            p1P = pointAddrP(dtmP,startPoint+left) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = TRUE ;
          } while( left <= right && scan == TRUE ) ;
 /* 
 **    Search for a point whose coordinate is too small for the right. 
 */
        do 
-	     {
+         {
           --right ;
-	       scan = FALSE ;
+           scan = FALSE ;
            p1P = pointAddrP(dtmP,startPoint+right) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
-	       if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = TRUE ;
+           if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = TRUE ;
          } while( left <= right &&  scan == TRUE ) ;
 /* 
 **     Swap the left and right points 
 */
        if( left < right ) 
-	     {
+         {
           p1P = pointAddrP(dtmP,startPoint+left) ;
           p2P = pointAddrP(dtmP,startPoint+right) ;
           temp = *p1P ;
@@ -726,7 +733,7 @@ BENTLEYDTM_Private void bcdtmTile_medianSortTaggedPointsDtmObject(BC_DTM_OBJ *dt
     left = -1;
     right = numPoints;
     while (left < right) 
-	  {
+      {
 /* 
 **     Search for a point whose coordinate is too large for the left. 
 */
@@ -738,8 +745,8 @@ BENTLEYDTM_Private void bcdtmTile_medianSortTaggedPointsDtmObject(BC_DTM_OBJ *dt
                {
                p1P = pointAddrP(dtmP,startPoint+left) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = true ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x < pivot1 || ( x == pivot1 && y < pivot2 ))) scan = true ;
            else if( axis == DTM_Y_AXIS && ( y < pivot1 || ( y == pivot1 && x < pivot2 ))) scan = true ;
                }
          } while( scan == true ) ;
@@ -748,14 +755,14 @@ BENTLEYDTM_Private void bcdtmTile_medianSortTaggedPointsDtmObject(BC_DTM_OBJ *dt
 */
                scan = false ;
        do 
-	     {
+         {
           --right ;
            if (left <= right)
                {
                p1P = pointAddrP(dtmP,startPoint+right) ;
            x = p1P->x ; 
-	       y = p1P->y ; 
-	       if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = true ;
+           y = p1P->y ; 
+           if( axis == DTM_X_AXIS && ( x > pivot1 || ( x == pivot1 && y > pivot2 ))) scan = true ;
            else if( axis == DTM_Y_AXIS && ( y > pivot1 || ( y == pivot1 && x > pivot2 ))) scan = true;
                }
          } while( scan == true ) ;
@@ -763,7 +770,7 @@ BENTLEYDTM_Private void bcdtmTile_medianSortTaggedPointsDtmObject(BC_DTM_OBJ *dt
 **     Swap the left and right points 
 */
        if( left < right ) 
-	     {
+         {
           p1P = pointAddrP(dtmP,startPoint+left) ;
           p2P = pointAddrP(dtmP,startPoint+right) ;
           temp = *p1P ;
@@ -859,11 +866,19 @@ BENTLEYDTM_EXPORT int bcdtmMedianTile_pointsDtmObject
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long   n,axis,startTime ;
  long   startSortPoint,numSortPoints,medianSortPoint ;
- long   numThreadPoints=0,numThreadArrayPoints[DTM_MAX_PROCESSORS] ;
+ long   numThreadPoints = 0;
+ bvector<long> numThreadArrayPoints;
  double xRange,yRange,zRange ;
- std::thread thread[DTM_MAX_PROCESSORS] ;
- DTM_MULTI_THREAD_TILE multiThread[DTM_MAX_PROCESSORS] ;
+ std::vector<std::thread> thread;
+ bvector<DTM_MULTI_THREAD_TILE> multiThread;
  DTM_POINT_TILE *tileP,*tile1P ;
+ /*
+ ** Resize arrays
+ */
+ numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);
+ thread.resize (DTM_NUM_PROCESSORS);;
+ multiThread.resize (DTM_NUM_PROCESSORS);
+
 /*
 ** Write Entry Message
 */
@@ -1510,13 +1525,19 @@ BENTLEYDTM_EXPORT int bcdtmQuadTreeTile_pointsDtmObject
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   n,pnt,axis,startTime ;
  long   startSortPoint,numSortPoints,medianSortPoint ;
- long   numThreadPoints=0,numThreadArrayPoints[DTM_MAX_PROCESSORS] ;
+ long   numThreadPoints = 0;
+ bvector <long> numThreadArrayPoints;
  double xRange,yRange,zRange ;
- std::thread thread[DTM_MAX_PROCESSORS] ;
- DTM_MULTI_THREAD_QUAD_TREE_TILE multiThread[DTM_MAX_PROCESSORS] ;
+ std::vector<std::thread> thread;
+ bvector<DTM_MULTI_THREAD_QUAD_TREE_TILE> multiThread ;
  DTM_QUAD_TREE_TILE *tileP,*tile1P ;
  DTM_TIN_POINT *pntP ;
-/*
+ /*
+ ** Resize arrays
+ */ numThreadArrayPoints.resize (DTM_NUM_PROCESSORS);
+ thread.resize (DTM_NUM_PROCESSORS);;
+ multiThread.resize (DTM_NUM_PROCESSORS);
+ /*
 ** Write Entry Message
 */
  if( dbg ) 
