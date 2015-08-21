@@ -1105,9 +1105,7 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
     ASSERT_TRUE (stat == SUCCESS);
 
     //Verifying that the class is not mapped to any table other than the Existing Table.
-    BeSQLite::Statement stmt;
-    ASSERT_EQ (DbResult::BE_SQLITE_ERROR, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM TestTable")) << "No table exists by the name 'Class'";
-    stmt.Finalize ();
+    ASSERT_FALSE (ecdb.TableExists ("t_Class"));
     }
 
 //---------------------------------------------------------------------------------------
