@@ -211,13 +211,13 @@ struct DgpInstanceExpressionTests : DgpExpressionTests
 protected:
     ECSchemaPtr         m_schema;
 public:
-    virtual WString     GetTestSchemaXMLString () = 0;
+    virtual Utf8String GetTestSchemaXMLString() = 0;
 
     ECSchemaR           GetSchema()
         {
         if (m_schema.IsNull())
             {
-            WString schemaXMLString = GetTestSchemaXMLString ();
+            Utf8String schemaXMLString = GetTestSchemaXMLString();
             ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
             EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXMLString.c_str(), *schemaContext));  
             }
@@ -241,16 +241,16 @@ public:
 struct DgpLiteralExpressionTests : DgpInstanceExpressionTests
     {
 public:
-    virtual WString GetTestSchemaXMLString() override
+    virtual Utf8String GetTestSchemaXMLString() override
         {
         return
-            L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-            L"    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
-            L"        <ECProperty propertyName=\"d\" typeName=\"double\" />"
-            L"        <ECProperty propertyName=\"s\" typeName=\"string\" />"
-            L"    </ECClass>"
-            L"</ECSchema>";
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
+            "        <ECProperty propertyName=\"d\" typeName=\"double\" />"
+            "        <ECProperty propertyName=\"s\" typeName=\"string\" />"
+            "    </ECClass>"
+            "</ECSchema>";
         }
 
     IECInstancePtr  CreateInstance (double d)
@@ -425,24 +425,22 @@ TEST_F (DgpLiteralExpressionTests, DgnMiscSymbols)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgpFullyQualifiedExpressionTests : DgpInstanceExpressionTests
     {
-    virtual WString GetTestSchemaXMLString() override
+    virtual Utf8String GetTestSchemaXMLString() override
         {
-        wchar_t fmt[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                        L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                        L"    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
-                        L"        <ECProperty propertyName=\"p\" typeName=\"int\" />"
-                        L"    </ECClass>"
-                        L"    <ECClass typeName=\"ClassB\" displayLabel=\"Class B\" isDomainClass=\"True\">"
-                        L"        <ECProperty propertyName=\"p\" typeName=\"int\" />"
-                        L"        <ECProperty propertyName=\"b\" typeName=\"int\" />"
-                        L"    </ECClass>"
-                        L"    <ECClass typeName=\"DerivesFromA\" displayLabel=\"Derives From A\" isDomainClass=\"True\">"
-                        L"        <BaseClass>ClassA</BaseClass>"
-                        L"        <ECProperty propertyName=\"p2\" typeName=\"int\" />"
-                        L"    </ECClass>"
-                        L"</ECSchema>";
-
-        return fmt;
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                        "    <ECClass typeName=\"ClassA\" displayLabel=\"Class A\" isDomainClass=\"True\">"
+                        "        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+                        "    </ECClass>"
+                        "    <ECClass typeName=\"ClassB\" displayLabel=\"Class B\" isDomainClass=\"True\">"
+                        "        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+                        "        <ECProperty propertyName=\"b\" typeName=\"int\" />"
+                        "    </ECClass>"
+                        "    <ECClass typeName=\"DerivesFromA\" displayLabel=\"Derives From A\" isDomainClass=\"True\">"
+                        "        <BaseClass>ClassA</BaseClass>"
+                        "        <ECProperty propertyName=\"p2\" typeName=\"int\" />"
+                        "    </ECClass>"
+                        "</ECSchema>";
         }
     };
 
@@ -479,30 +477,30 @@ TEST_F (DgpFullyQualifiedExpressionTests, DgnFullyQualifiedAccessors)
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgpInstanceListExpressionTests : DgpInstanceExpressionTests
     {
-    virtual WString GetTestSchemaXMLString() override
+    virtual Utf8String GetTestSchemaXMLString() override
         {
-        return      L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                    L"    <ECClass typeName=\"Struct1\" isStruct=\"True\">"
-                    L"        <ECArrayProperty propertyName=\"Ints\" typeName=\"int\" />"
-                    L"        <ECProperty propertyName=\"Int\" typeName=\"int\" />"
-                    L"    </ECClass>"
-                    L"    <ECClass typeName=\"Struct2\" isStruct=\"True\">"
-                    L"        <ECArrayProperty propertyName=\"Structs\" typeName=\"Struct1\" isStruct=\"True\" />"
-                    L"        <ECStructProperty propertyName=\"Struct\" typeName=\"Struct1\" />"
-                    L"    </ECClass>"
-                    L"    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
-                    L"        <ECStructProperty propertyName=\"Struct\" typeName=\"Struct2\" />"
-                    L"        <ECArrayProperty propertyName=\"Structs\" typeName=\"Struct2\" isStruct=\"True\" />"
-                    L"        <ECProperty propertyName=\"Int\" typeName=\"int\" />"
-                    L"        <ECArrayProperty propertyName=\"Ints\" typeName=\"int\" />"
-                    L"        <ECProperty propertyName=\"String\" typeName=\"string\" />"
-                    L"    </ECClass>"
-                    L"    <ECClass typeName=\"DerivedA\" isDomainClass=\"True\">"
-                    L"        <BaseClass>ClassA</BaseClass>"
-                    L"        <ECProperty propertyName=\"DerivedInt\" typeName=\"int\" />"
-                    L"    </ECClass>"
-                    L"</ECSchema>";
+        return      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    "    <ECClass typeName=\"Struct1\" isStruct=\"True\">"
+                    "        <ECArrayProperty propertyName=\"Ints\" typeName=\"int\" />"
+                    "        <ECProperty propertyName=\"Int\" typeName=\"int\" />"
+                    "    </ECClass>"
+                    "    <ECClass typeName=\"Struct2\" isStruct=\"True\">"
+                    "        <ECArrayProperty propertyName=\"Structs\" typeName=\"Struct1\" isStruct=\"True\" />"
+                    "        <ECStructProperty propertyName=\"Struct\" typeName=\"Struct1\" />"
+                    "    </ECClass>"
+                    "    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
+                    "        <ECStructProperty propertyName=\"Struct\" typeName=\"Struct2\" />"
+                    "        <ECArrayProperty propertyName=\"Structs\" typeName=\"Struct2\" isStruct=\"True\" />"
+                    "        <ECProperty propertyName=\"Int\" typeName=\"int\" />"
+                    "        <ECArrayProperty propertyName=\"Ints\" typeName=\"int\" />"
+                    "        <ECProperty propertyName=\"String\" typeName=\"string\" />"
+                    "    </ECClass>"
+                    "    <ECClass typeName=\"DerivedA\" isDomainClass=\"True\">"
+                    "        <BaseClass>ClassA</BaseClass>"
+                    "        <ECProperty propertyName=\"DerivedInt\" typeName=\"int\" />"
+                    "    </ECClass>"
+                    "</ECSchema>";
         }
 
     void    AddArrayElement (IECInstanceR instance, Utf8CP accessString, ECValueCR entryVal)
