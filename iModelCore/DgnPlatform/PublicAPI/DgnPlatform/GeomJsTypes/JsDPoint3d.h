@@ -31,6 +31,12 @@ public:
     void SetX(double v) {m_data.x = v;}
     void SetY(double v) {m_data.y = v;}
     void SetZ(double v) {m_data.z = v;}
+    JsDPoint3dP Interpolate(JsDPoint3dP left, double fraction, JsDPoint3dP right); 
+    JsDPoint3dP AddPointAndVector(JsDPoint3dP point, JsDVector3dP vector);
+    JsDPoint3dP SubtractPointAndVector(JsDPoint3dP point, JsDVector3dP vector);
+    JsDPoint3dP AddPointAndScaledVector(JsDPoint3dP point, JsDVector3dP vector,double scalar);
+    JsDPoint3dP AddPointAndTwoScaledVectors(JsDPoint3dP point, JsDVector3dP vectorA, double scalarA,  JsDVector3dP vectorB, double scalarB);
+    JsDPoint3dP AddPointAndThreeScaledVectors(JsDPoint3dP point, JsDVector3dP vectorA, double scalarA,  JsDVector3dP vectorB, double scalarB, JsDVector3dP vectorC, double scalarC);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -53,12 +53,12 @@ JSSTRUCT(JsDoubleArray)
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
+#include <DgnPlatform/GeomJsTypes/JsAngle.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDVector3d.h>
 #include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3dDVector3dDVector3d.h>
-#include <DgnPlatform/GeomJsTypes/JsAngle.h>
 #include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
 #include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
