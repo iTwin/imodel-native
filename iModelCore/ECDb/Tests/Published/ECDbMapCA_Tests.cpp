@@ -1077,10 +1077,10 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
     ASSERT_TRUE (schemaCache != nullptr);
 
     BentleyStatus status = ecdb.Schemas ().ImportECSchemas (*schemaCache);
-    EXPECT_TRUE (status == 0);
+    ASSERT_TRUE (status == 0);
 
     ECN::ECSchemaCP schema = ecdb.Schemas ().GetECSchema ("TestSchema");
-    EXPECT_TRUE (schema != nullptr);
+    ASSERT_TRUE (schema != nullptr);
 
     ECClassCP Class = schema->GetClassCP ("Class");
     ASSERT_TRUE (Class != nullptr) << "Couldn't locate class Base from schema";
@@ -1106,7 +1106,7 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
 
     //Verifying that the class is not mapped to any table other than the Existing Table.
     BeSQLite::Statement stmt;
-    EXPECT_EQ (DbResult::BE_SQLITE_ERROR, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM Class")) << "No table exists by the name 'Class'";
+    ASSERT_EQ (DbResult::BE_SQLITE_ERROR, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM TestTable")) << "No table exists by the name 'Class'";
     stmt.Finalize ();
     }
 
