@@ -1004,6 +1004,32 @@ TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
     stmt.Finalize ();
     }
 
+//WIP uncomment the test once Affan is done with Polymorphic Update.
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+//TEST_F (ECSqlTestFixture, PolymorphicUpdateTest)
+//    {
+//    // Create and populate a sample project
+//    ECDbR ecdb = SetUp ("PolymorphicDeleteTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), 0);
+//
+//    PopulateTestDb (ecdb);
+//
+//    //Updates the instances of ClassA all the Derived Classes Properties values should also be changed. 
+//    ECSqlStatement stmt;
+//    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE nsat.ClassA SET T='UpdatedValue', I=2"));
+//    ASSERT_EQ (ECSqlStepStatus::Done, stmt.Step ());
+//    stmt.Finalize ();
+//
+//    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT I,T FROM nsat.ClassA"));
+//    while (stmt.Step () != ECSqlStepStatus::Done)
+//        {
+//        EXPECT_EQ (2, stmt.GetValueInt (0)) << "The values don't match.";
+//        EXPECT_EQ ("UpdatedValue", (Utf8String)stmt.GetValueText (1)) << "The values don't match.";
+//        }
+//    stmt.Finalize ();
+//    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
