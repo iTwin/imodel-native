@@ -361,26 +361,26 @@ void DgnElement::_OnReversedAdd() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_InsertInDb()
+DgnDbStatus DgnElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
     {
-    enum Column : int { ElementId = 1, ECClassId = 2, ModelId = 3, CategoryId = 4, Label = 5, Code = 6, ParentId = 7, LastMod = 8 };
-    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
-
-    stmt->BindId(Column::ElementId, m_elementId);
-    stmt->BindId(Column::ECClassId, m_classId);
-    stmt->BindId(Column::ModelId, m_modelId);
-    stmt->BindId(Column::CategoryId, m_categoryId);
+    statement.BindId(statement.GetParameterIndex("ECInstanceId"), m_elementId);
+    statement.BindId(statement.GetParameterIndex("ModelId"), m_modelId);
+    statement.BindId(statement.GetParameterIndex("CategoryId"), m_categoryId);
 
     if (!m_label.empty())
-        stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
-
+        statement.BindText(statement.GetParameterIndex("Label"), m_label.c_str(), IECSqlBinder::MakeCopy::No);
     if (m_code.IsValid()) // needs work - should not allow null
-        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+        statement.BindText(statement.GetParameterIndex("Code"), m_code.GetValueCP(), IECSqlBinder::MakeCopy::No);
 
-    stmt->BindId(Column::ParentId, m_parentId);
-    stmt->BindDouble(Column::LastMod, m_lastModTime);
-
-    return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    statement.BindId(statement.GetParameterIndex("ParentId"), m_parentId);
+    
+    DateTimeInfo info;
+    ECPropertyCP lastModProp = GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)->GetClassCP(DGN_CLASSNAME_Element)->GetPropertyP("LastMod");
+    ECN::StandardCustomAttributeHelper::GetDateTimeInfo(info, *lastModProp);
+    DateTime dt;
+    DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
+    statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
+    return statement.Step() != ECSqlStepStatus::Done ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -451,9 +451,9 @@ DgnDbStatus GeometricElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement::_InsertInDb()
+DgnDbStatus GeometricElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
     {
-    DgnDbStatus stat = T_Super::_InsertInDb();
+    DgnDbStatus stat = T_Super::_InsertInDb(statement);
     if (DgnDbStatus::Success != stat)
         return stat;
 

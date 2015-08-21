@@ -175,6 +175,9 @@
     <ClCompile Include="Published\DgnModel_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ComponentModelTest.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

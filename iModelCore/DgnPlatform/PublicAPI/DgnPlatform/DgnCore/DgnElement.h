@@ -586,8 +586,10 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
     //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
-    //! @note If you override this method, you @em must call T_Super::_InsertInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
+    //! @note If you override this method, you will need to bind your specific subclass properties
+    //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
+    //! Then you @em must call T_Super::_InsertInDb, returning its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement& statement);
 
     //! Called after a DgnElement was successfully inserted into the database.
     //! @note If you override this method, you @em must call T_Super::_OnInserted.
@@ -951,10 +953,6 @@ public:
     //! @return DgnElementIdSet containing the DgnElementIds of all child elements of this DgnElement. Will be empty if no children.
     DGNPLATFORM_EXPORT DgnElementIdSet QueryChildren() const;
 
-    //! Create a new instance of a DgnElement using the specified CreateParams.
-    //! @note This is a static method that only creates instances of the DgnElement class. To create instances of subclasses,
-    //! use a static method on the subclass.
-    static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
 };
 
 //=======================================================================================
@@ -1107,7 +1105,7 @@ protected:
     GeomStream m_geom;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb(BeSQLite::EC::ECSqlStatement&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;

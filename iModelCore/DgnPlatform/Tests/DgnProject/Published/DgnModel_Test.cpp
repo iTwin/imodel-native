@@ -468,12 +468,12 @@ TEST_F(DgnModelTests, ImportGroups)
             }
 
         //  Add a member
-        DgnElementCPtr member;
         if (true)
             {
-            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
+            DgnClassId mclassid = DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
             DgnCategoryId mcatid = db->Categories().QueryHighestId();
-            member = DgnElement::Create(DgnElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, "member"))->Insert();
+            auto member = PhysicalElement::Create(PhysicalElement::CreateParams(*db, model1->GetModelId(), mclassid, mcatid, Placement3d(), "member"))->Insert();
+            //auto member = PhysicalElement::Create(*model1, mcatid)->Insert();
             ASSERT_TRUE( member.IsValid() );
             ASSERT_EQ( DgnDbStatus::Success , group->InsertMember(*member) );
             }

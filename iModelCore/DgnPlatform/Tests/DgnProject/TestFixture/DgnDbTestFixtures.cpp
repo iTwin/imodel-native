@@ -57,9 +57,9 @@ TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElement::_InsertInDb()
+DgnDbStatus TestElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
 {
-    DgnDbStatus status = T_Super::_InsertInDb();
+    DgnDbStatus status = T_Super::_InsertInDb(statement);
     if (DgnDbStatus::Success != status)
         return status;
 
