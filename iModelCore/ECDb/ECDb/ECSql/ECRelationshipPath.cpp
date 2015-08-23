@@ -34,7 +34,7 @@ ECRelatedClassSpecifier::ECRelatedClassSpecifier (ECN::ECRelationshipClassCR rel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelatedClassSpecifier::InitFromString (Utf8StringCR relatedSpecifierString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema)
+BentleyStatus ECRelatedClassSpecifier::InitFromString (Utf8StringCR relatedSpecifierString, ECDbCR ecDb, ECN::ECSchemaCP defaultSchema)
     {
     // [SchemaName:]RelationshipClassName:ForwardOrBackwardInt:[[SchemaName:]RelatedClassName]
     // TODO: Need to work with schema version numbers eventually. Hopefully regular expressions will be available on all platforms by then. 
@@ -128,13 +128,20 @@ bool ECRelationshipPath::IsEmpty() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Ramanujam.Raman                 01/2014
+* @bsimethod                                    Ramanujam.Raman                 08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECRelationshipPath::GetLength() const
+BentleyStatus ECRelationshipPath::TrimLeafEnd(size_t relatedClassSpecifierIndex)
     {
-    return m_relatedClassSpecifiers.size();
+    if (relatedClassSpecifierIndex >= m_relatedClassSpecifiers.size())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    m_relatedClassSpecifiers.erase(m_relatedClassSpecifiers.begin() + relatedClassSpecifierIndex, m_relatedClassSpecifiers.end());
+    return SUCCESS;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -196,7 +203,7 @@ void ECRelationshipPath::SetupAliases() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelationshipPath::GenerateECSql 
+BentleyStatus ECRelationshipPath::GenerateECSql
 (
 Utf8StringR fromClause, 
 Utf8StringR joinClause,
@@ -416,7 +423,7 @@ void ECRelationshipPath::Reverse (ECRelationshipPath& reversedPath) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelationshipPath::InitFromString (Utf8StringCR relationshipPath, ECDbCR ecDb, ECSchemaCP defaultSchema)
+BentleyStatus ECRelationshipPath::InitFromString(Utf8StringCR relationshipPath, ECDbCR ecDb, ECSchemaCP defaultSchema)
     {
     Clear();
 
@@ -476,7 +483,7 @@ void ECRelationshipPath::SetEndClass (ECN::ECClassCR endClass, End end)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelationshipPath::ReplaceAnyClassAtEnd (ECClassCR replacementClass, End end)
+BentleyStatus ECRelationshipPath::ReplaceAnyClassAtEnd(ECClassCR replacementClass, End end)
     {
     PRECONDITION (IsAnyClassAtEnd (end) && "Can only replace AnyClass at the end", ERROR);
     SetEndClass (replacementClass, end);
@@ -504,7 +511,7 @@ bvector<ECRelatedClassSpecifier>::const_iterator ECRelationshipPath::FindLastRel
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRelationshipPath::Combine (ECRelationshipPath const& pathToCombine)
+BentleyStatus ECRelationshipPath::Combine(ECRelationshipPath const& pathToCombine)
     {
     /* 
     Identify any loops in the combined path. These can be safely eliminated. 
