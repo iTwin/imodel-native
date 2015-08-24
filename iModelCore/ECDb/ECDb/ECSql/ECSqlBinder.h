@@ -23,7 +23,7 @@ struct ECSqlStatementBase;
 struct ECSqlBinder : IECSqlBinder
     {
 private:
-    std::function<void (BeRepositoryBasedId const& bindValue)> m_onBindRepositoyBasedIdEventHandler;
+    std::function<void (ECInstanceId const& bindValue)> m_onBindRepositoyBasedIdEventHandler;
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlTypeInfo m_typeInfo;
     int m_mappedSqlParameterCount;
@@ -49,7 +49,7 @@ protected:
     ECSqlStatus ResetStatus () const;
     ECSqlStatementBase& GetECSqlStatementR () const { return m_ecsqlStatement; }
 
-    std::function<void (BeRepositoryBasedId const& bindValue)> GetOnBindRepositoryBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
+    std::function<void (ECInstanceId const& bindValue)> GetOnBindRepositoryBasedIdEventHandler () const { return m_onBindRepositoyBasedIdEventHandler; }
     static NoopECSqlBinder& GetNoopBinder (ECSqlStatus status);
     IECSqlBinder* GetOnBindEventHandler () { return m_onBindEventHandler; }
 
@@ -67,7 +67,7 @@ public:
     ECSqlStatus OnBeforeStep ();
     void OnClearBindings ();
     void SetOnBindEventHandler (IECSqlBinder& binder) { BeAssert (m_onBindEventHandler == nullptr); m_onBindEventHandler = &binder; }
-    void SetOnBindRepositoryBasedIdEventHandler (std::function<void (BeRepositoryBasedId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
+    void SetOnBindRepositoryBasedIdEventHandler (std::function<void (ECInstanceId const& bindValue)> eventHandler) { BeAssert (m_onBindRepositoyBasedIdEventHandler == nullptr); m_onBindRepositoyBasedIdEventHandler = eventHandler; }
     };
 
 //=======================================================================================

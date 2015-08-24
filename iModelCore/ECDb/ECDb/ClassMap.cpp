@@ -88,7 +88,7 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 StorageDescription const& IClassMap::GetStorageDescription () const
     {
-    return GetECDbMap ().GetLightWeightMapCache ().GetStorageDescription (GetClass ().GetId ());
+    return GetECDbMap ().GetLightweightCache ().GetStorageDescription (*this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIs
 MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     {
     ECDbMapStrategy const& mapStrategy = GetMapStrategy ();
-    IClassMap const* effectiveParentClassMap = mapStrategy.IsPolymorphicSharedTable() ? mapInfo.GetParentClassMap () : nullptr;
+    IClassMap const* effectiveParentClassMap = (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses ()) ? mapInfo.GetParentClassMap () : nullptr;
 
     auto stat = _InitializePart1 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
@@ -295,6 +295,70 @@ MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     return _OnInitialized ();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ClassMap::_EvaluateDMLPolicy ()
+    {
+    DMLPolicy::Target selectTarget = DMLPolicy::Target::View;
+    DMLPolicy::Target insertTarget = DMLPolicy::Target::View;
+    DMLPolicy::Target updateTarget = DMLPolicy::Target::View;
+    DMLPolicy::Target deleteTarget = DMLPolicy::Target::View;
+ /*   auto& storagePartitions = GetStorageDescription ();
+    auto& noneVirtualPartitions = storagePartitions.GetNonVirtualHorizontalPartitionIndices ();
+    auto isPersisted = GetTable ().GetPersistenceType () == PersistenceType::Persisted;
+
+
+
+    if (!isPersisted || GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
+        {
+        selectTarget = DMLPolicy::Target::View;
+        insertTarget = DMLPolicy::Target::None;
+        updateTarget = DMLPolicy::Target::None;
+        deleteTarget = DMLPolicy::Target::None;
+        }
+    else
+        {
+        if (noneVirtualPartitions.size () == 0)
+            {
+            selectTarget = DMLPolicy::Target::View;
+            }
+        else if (noneVirtualPartitions.size () == 1)
+            {
+            HorizontalPartition const* partition = GetStorageDescription ().GetHorizontalPartition (noneVirtualPartitions[0]);
+            BeAssert (partition != nullptr);
+            if (partition->GetClassIds ().size () == 1)
+                {
+                selectTarget = DMLPolicy::Target::Table;
+                insertTarget = DMLPolicy::Target::Table;
+                updateTarget = DMLPolicy::Target::Table;
+                deleteTarget = DMLPolicy::Target::Table;
+                }
+            else
+                {
+                insertTarget = DMLPolicy::Target::Table;
+                selectTarget = DMLPolicy::Target::View;
+                updateTarget = DMLPolicy::Target::View;
+                deleteTarget = DMLPolicy::Target::View;
+                }
+            }
+        else
+            {
+            insertTarget = DMLPolicy::Target::Table;
+            selectTarget = DMLPolicy::Target::View;
+            updateTarget = DMLPolicy::Target::View;
+            deleteTarget = DMLPolicy::Target::View;
+            }
+        }*/
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Select, selectTarget);
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Insert, insertTarget);
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Update, updateTarget);
+    GetDMLPolicyR ().Set (DMLPolicy::Operation::Delete, deleteTarget);
+
+    return BentleyStatus::SUCCESS;
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
@@ -345,7 +409,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap con
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
-    auto stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
+    MapStatus stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
         return stat;
     if (mapInfo.GetClassHasCurrentTimeStampProperty() != NULL)
@@ -353,9 +417,9 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
         PropertyMapCP propertyMap = GetPropertyMap(mapInfo.GetClassHasCurrentTimeStampProperty()->GetName().c_str());
         if (propertyMap != NULL)
             {
-            auto column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
+            ECDbSqlColumn* column = const_cast<ECDbSqlColumn*>(propertyMap->GetFirstColumn());
             BeAssert(column != nullptr && "TimeStamp column cannot be null");
-            if (column)
+            if (column != nullptr)
                 {
                 //! TODO: Handle this case for shared column strategy;
                 BeAssert(column->GetType() == ECDbSqlColumn::Type::DateTime);
@@ -472,8 +536,7 @@ BentleyStatus ClassMap::ProcessStandardKeySpecifications(ClassMapInfo const& map
         std::vector<ECDbSqlColumn const*> columns;
         propertyMap->GetColumns(columns);
 
-        auto index = m_table->CreateIndex(nullptr);
-        index->SetIsUnique(false);
+        ECDbSqlIndex* index = m_table->CreateIndex(nullptr, false, GetClass().GetId());
         for (auto column : columns)
             index->Add(column->GetName().c_str());
 
@@ -498,15 +561,12 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
     for (ClassIndexInfoPtr indexInfo : classMapInfo.GetIndexInfo())
         {
         i++;
-        auto index = m_table->CreateIndex(indexInfo->GetName());
+        auto index = m_table->CreateIndex(indexInfo->GetName(), indexInfo->GetIsUnique(), GetClass().GetId());
         if (index == nullptr)
             return ERROR;
 
-        index->SetIsUnique(indexInfo->GetIsUnique());
-
         Utf8String whereExpression;
         bool error = false;
-
         for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties())
             {
             Utf8String resolvePropertyName;
@@ -652,12 +712,21 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
                     switch (indexInfo->GetWhere())
                         {
                             case EC::ClassIndexInfo::WhereConstraint::NotNull:
-                                if (whereExpression.length() != 0)
-                                    whereExpression.append(" AND");
-                                whereExpression.append(" [");
+                                {
+                                //if column is not nullable, no need to add IS NOT NULL expression to where clause of index
+                                if (column->GetConstraint().IsNotNull())
+                                    break;
+
+                                if (!whereExpression.empty())
+                                    whereExpression.append(" AND ");
+
+                                whereExpression.append("[");
                                 whereExpression.append(column->GetName().c_str());
                                 whereExpression.append("]");
                                 whereExpression.append(" IS NOT NULL");
+
+                                break;
+                                }
 
                             default:
                                 break;
@@ -665,17 +734,11 @@ BentleyStatus ClassMap::CreateUserProvidedIndices(ClassMapInfo const& classMapIn
                     }
                 }
             }
-        index->SetWhereExpression(whereExpression.c_str());
+        index->SetAdditionalWhereExpression(whereExpression.c_str());
         if (error || !index->IsValid())
             {
             index->Drop();
             return ERROR;
-            }
-        else
-            {
-            //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-            GetECDbMap().AssertIfIsNotImportingSchema();
-            GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
             }
         }
 
@@ -707,7 +770,7 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,Clas
         generateColumnNameOpts, 
         requestedColumnName, 
         requestedColumnType, 
-        ECDbDataColumn, 
+        ECDbKnownColumns::DataColumn, 
         PersistenceType::Persisted, 
         accessStringPrefix, 
         !nullable, 
@@ -801,7 +864,7 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
+        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, GetDMLPolicy().ToInt(), baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps ())
             {
             if (baseProperties.find (propertyMap) != baseProperties.end())
@@ -830,6 +893,7 @@ BentleyStatus ClassMap::_Load (std::set<ClassMap const*>& loadGraph, ECDbClassMa
     else
         SetTable (const_cast<ECDbSqlTable*>(&(pm.front ()->GetColumn ().GetTable ())));
 
+    this->m_crudPolicy = DMLPolicy::FromInt (mapInfo.GetDMLPolicy ());
 
     if (GetECInstanceIdPropertyMap () != nullptr)
         return BentleyStatus::ERROR;
@@ -899,18 +963,19 @@ BentleyStatus MappedTable::FinishTableDefinition ()
     if (m_table.GetOwnerType () == OwnerType::ECDb)
         {
         int nOwners = 0;
-        bool polymorphicSharedTable = false;
+        bool sharedTableWithAppliesToSubclasses = false;
         for (auto classMap : m_classMaps)
             {
             if (!classMap->GetMapStrategy().IsNotMapped() && classMap->GetClassMapType () != ClassMap::Type::RelationshipEndTable)
                 {
                 nOwners++;
-                if (classMap->GetMapStrategy ().IsPolymorphicSharedTable())
-                    polymorphicSharedTable = true;
+                ECDbMapStrategy const& mapStrategy = classMap->GetMapStrategy();
+                if (mapStrategy.GetStrategy() == ECDbMapStrategy::Strategy::SharedTable && mapStrategy.AppliesToSubclasses())
+                    sharedTableWithAppliesToSubclasses = true;
                 }
             }
 
-        if (polymorphicSharedTable || nOwners > 1)
+        if (sharedTableWithAppliesToSubclasses || nOwners > 1)
             {
             if (!m_generatedClassIdColumn)
                 {
@@ -918,7 +983,7 @@ BentleyStatus MappedTable::FinishTableDefinition ()
                 if (ecClassIdColumn == nullptr)
                     {
                     const size_t insertPosition = 1;
-                    ecClassIdColumn = m_table.CreateColumn (ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbSystemColumnECClassId, PersistenceType::Persisted);
+                    ecClassIdColumn = m_table.CreateColumn (ECDB_COL_ECClassId, ECDbSqlColumn::Type::Long, insertPosition, ECDbKnownColumns::ECClassId, PersistenceType::Persisted);
                     if (ecClassIdColumn == nullptr)
                         return ERROR;
                     }
@@ -964,7 +1029,7 @@ ColumnFactory::Specification::Specification (
     Specification::GenerateColumnNameOptions generateColumnNameOptions,
     Utf8CP columnName,
     ECDbSqlColumn::Type columnType,
-    uint32_t columnUserData,
+    ECDbKnownColumns knownColumnId,
     PersistenceType persistenceType,
     Utf8CP accessStringPrefix,
     bool isNotNull,
@@ -972,7 +1037,7 @@ ColumnFactory::Specification::Specification (
     ECDbSqlColumn::Constraint::Collation collation)
     : m_propertyMap (propertyMap), m_requestedColumnName (columnName), m_columnType (columnType), m_isNotNull (isNotNull),
     m_isUnique(isUnique), m_collation(collation), m_generateColumnNameOptions(generateColumnNameOptions),
-    m_columnUserData (columnUserData), m_persistenceType (persistenceType), m_strategy (strategy)
+    m_knownColumnId (knownColumnId), m_persistenceType (persistenceType), m_strategy (strategy)
     {
     m_accessString = propertyMap.GetPropertyAccessString ();
     if (!Utf8String::IsNullOrEmpty (accessStringPrefix))
@@ -993,7 +1058,7 @@ ColumnFactory::Specification::Specification (
         // Shared column does not support NOT NULL constraint
         BeAssert (isNotNull == false && "Shared column cannot enforce NOT NULL constraint.");
         BeAssert (persistenceType == PersistenceType::Persisted);
-        BeAssert (columnUserData == ECDbDataColumn);
+        BeAssert (knownColumnId == ECDbKnownColumns::DataColumn);
         m_generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnPropertyNameAndPropertyId;
         m_requestedColumnName.clear ();
         m_columnType = ECDbSqlColumn::Type::Any;
@@ -1112,7 +1177,7 @@ bool ColumnFactory::FindReusableSharedDataColumns (std::vector<ECDbSqlColumn con
     {
     for (auto column : table.GetColumns ())
         {
-        if (column->GetUserFlags() == ECDbDataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
+        if (column->GetKnownColumnId() == ECDbKnownColumns::DataColumn && column->GetType() == ECDbSqlColumn::Type::Any && collation == column->GetConstraint().GetCollation())
             {
             if (IsColumnInUse (*column) == false)
                 columns.push_back (column);
@@ -1189,7 +1254,7 @@ BentleyStatus ColumnFactory::ResolveColumnName (Utf8StringR resolvedColumName, C
                 }
                 break;
             case Specification::GenerateColumnNameOptions::NameBasedOnClassAndPropertyName:
-                resolvedColumName = Utf8String (specifications.GetPropertyMap ().GetProperty ().GetClass ().GetName ().c_str ());
+                resolvedColumName = specifications.GetPropertyMap ().GetProperty ().GetClass ().GetName ().c_str ();
                 resolvedColumName.append ("_").append (specifications.GetColumnName ());
                 break;
             case Specification::GenerateColumnNameOptions::NeverGenerate:
@@ -1231,7 +1296,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateStrategy (ColumnFactory::Specification 
     if (!canEdit)
         targetTable.GetEditHandleR ().BeginEdit ();
 
-    auto newColumn = targetTable.CreateColumn (resolvedColumnName.c_str (), specifications.GetColumnType (), specifications.GetColumnUserDate (), specifications.GetColumnPersistenceType ());
+    auto newColumn = targetTable.CreateColumn (resolvedColumnName.c_str (), specifications.GetColumnType (), specifications.GetKnownColumnId (), specifications.GetColumnPersistenceType ());
     if (newColumn == nullptr)
         {
         BeAssert (false && "Failed to create column");
@@ -1257,7 +1322,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseStrategy (Specification const& s
     auto existingColumn = specifications.GetColumnName ().empty () ? nullptr : targetTable.FindColumnP (specifications.GetColumnName ().c_str ());
     if (existingColumn != nullptr && !IsColumnInUse (*existingColumn))
         {
-        if (ECDbSqlHelper::IsCompatiable (existingColumn->GetType (), specifications.GetColumnType ()))
+        if (ECDbSqlHelper::IsCompatible (existingColumn->GetType (), specifications.GetColumnType ()))
             {
             if (GetTable ().GetOwnerType () == OwnerType::ECDb)
                 {
@@ -1294,7 +1359,7 @@ ECDbSqlColumn* ColumnFactory::ApplyCreateOrReuseSharedColumnStrategy (Specificat
         return sharedColumn;
         }
 
-    auto newColumn = targetTable.CreateColumn (nullptr, ECDbSqlColumn::Type::Any, specifications.GetColumnUserDate (), specifications.GetColumnPersistenceType ());
+    auto newColumn = targetTable.CreateColumn (nullptr, ECDbSqlColumn::Type::Any, specifications.GetKnownColumnId (), specifications.GetColumnPersistenceType ());
     if (newColumn == nullptr)
         {
         BeAssert (false && "Failed to create column");
@@ -1367,7 +1432,7 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications, EC
             outColumn = ApplyCreateOrReuseSharedColumnStrategy (specifications, targetTable, persistenceClassId); break;
         }
 
-    Utf8String className = Utf8String (m_classMap.GetClass ().GetName ().c_str ());
+    Utf8String const& className = m_classMap.GetClass ().GetName ();
     if (outColumn)
         LOG.tracev ("Property -> '%s:%s' mapped to '%s'", className.c_str(), specifications.GetAccessString ().c_str (), outColumn->GetName ().c_str ());
     else
@@ -1389,327 +1454,6 @@ ECDbSqlColumn* ColumnFactory::Configure (Specification const& specifications)
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 ECDbSqlTable& ColumnFactory::GetTable ()  { return m_classMap.GetTable (); }
-
-
-//****************************************************************************************
-// StorageDescription
-//****************************************************************************************
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription::StorageDescription(StorageDescription&& rhs)
-    : m_classId (std::move(rhs.m_classId)), m_horizontalPartitions(std::move(rhs.m_horizontalPartitions)), 
-    m_nonVirtualHorizontalPartitionIndices(std::move(rhs.m_nonVirtualHorizontalPartitionIndices)),
-    m_rootHorizontalPartitionIndex(std::move(rhs.m_rootHorizontalPartitionIndex))
-    {}
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_classId = std::move(rhs.m_classId);
-        m_horizontalPartitions = std::move(rhs.m_horizontalPartitions);
-        m_nonVirtualHorizontalPartitionIndices = std::move(rhs.m_nonVirtualHorizontalPartitionIndices);
-        m_rootHorizontalPartitionIndex = std::move(rhs.m_rootHorizontalPartitionIndex);
-        }
-
-    return *this;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static
-//std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
-//    {
-//    Utf8CP const findClassesMappedToPartitionSql =
-//        "WITH RECURSIVE "
-//        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
-//        "   AS ("
-//        "       VALUES (?1, ?1, ?1) "
-//        "   UNION "
-//        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
-//        "           FROM DerivedClassList DCL "
-//        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
-//        "   ),"
-//        "   TableMapInfo "
-//        "   AS ("
-//        "   SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
-//        "   FROM ec_PropertyMap "
-//        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
-//        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-//        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-//        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-//        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-//        "   WHERE ec_ClassMap.MapStrategy NOT IN( 0x2000, 0x4000)"
-//        "   ) "
-//        "SELECT DCL.DerivedClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
-//        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId "
-//        "   WHERE DCL.CurrentClassId IS NOT NULL AND DCL.RootClassId = ?1";
-//
-//    Utf8CP const findAllClassesMappedToTableSql =
-//        "SELECT DISTINCT ec_Class.Id "
-//        "FROM ec_PropertyMap "
-//        "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
-//        "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-//        "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-//        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-//        "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-//        "WHERE ec_ClassMap.MapStrategy NOT IN(0x2000, 0x4000) AND ec_Table.Name = ? ORDER BY ec_Class.Id";
-//
-//    auto& ecdb = classMap.GetECDbMap().GetECDbR();
-//    ECClassId classId = classMap.GetClass().GetId();
-//    auto const& dbSchema = classMap.GetECDbMap ().GetSQLManager ().GetDbSchema ();
-//
-//    CachedStatementPtr classesMappedToPartitionStmt = nullptr;
-//    ecdb.GetCachedStatement(classesMappedToPartitionStmt, findClassesMappedToPartitionSql);
-//    classesMappedToPartitionStmt->BindInt64(1, classId);
-//
-//    CachedStatementPtr allClassesMappedToTableStmt = nullptr;
-//    ecdb.GetCachedStatement(allClassesMappedToTableStmt, findAllClassesMappedToTableSql);
-//
-//    if (classesMappedToPartitionStmt == nullptr || allClassesMappedToTableStmt == nullptr)
-//        {
-//        BeAssert(false && "Preparation of the StorageDescription SQL failed.");
-//        return nullptr;
-//        }
-//
-//    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-//
-//    bmap<ECDbTableId, bpair<size_t, std::vector<ECClassId>>> cache;
-//    while (classesMappedToPartitionStmt->Step() == BE_SQLITE_ROW)
-//        {
-//        ECClassId derivedECClassId = classesMappedToPartitionStmt->GetValueInt64(0);
-//        ECDbTableId tableId = classesMappedToPartitionStmt->GetValueInt64(1);
-//
-//        size_t horizPartitionIndex = 0;
-//        auto it = cache.find(tableId);
-//        if (it != cache.end())
-//            horizPartitionIndex = it->second.first;
-//        else
-//            {
-//            Utf8CP tableName = classesMappedToPartitionStmt->GetValueText(2);
-//            ECDbSqlTable const* table = dbSchema.FindTable(tableName);
-//            BeAssert(table != nullptr);
-//
-//            const bool isRootPartition = derivedECClassId == classId;
-//            horizPartitionIndex = storageDescription->AddHorizontalPartition(*table, isRootPartition);
-//
-//
-//            bpair<size_t, std::vector<ECClassId>>& cacheElement = cache[table->GetId()];
-//            cacheElement.first = horizPartitionIndex;
-//            allClassesMappedToTableStmt->BindText(1, table->GetName(), Statement::MakeCopy::No);
-//
-//            while (allClassesMappedToTableStmt->Step() == BE_SQLITE_ROW)
-//                {
-//                cacheElement.second.push_back(allClassesMappedToTableStmt->GetValueInt64(0));
-//                }
-//
-//            allClassesMappedToTableStmt->Reset();
-//            allClassesMappedToTableStmt->ClearBindings();
-//            }
-//
-//        HorizontalPartition* horizPartition = storageDescription->GetHorizontalPartitionP(horizPartitionIndex);
-//        BeAssert(horizPartition != nullptr);
-//        horizPartition->AddClassId(derivedECClassId);
-//        }
-//    
-//    for (auto const& kvPair : cache)
-//        {
-//        size_t partitionIx = kvPair.second.first;
-//        std::vector<ECClassId> const& allClassesMappedToTable = kvPair.second.second;
-//        HorizontalPartition* horizPartition = storageDescription->GetHorizontalPartitionP(partitionIx);
-//        BeAssert(horizPartition != nullptr);
-//        horizPartition->GenerateClassIdFilter(allClassesMappedToTable);
-//        }
-//
-//    return std::move(storageDescription);
-//    }
-    
-std::unique_ptr<StorageDescription> StorageDescription::Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc)
-    {
-    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-    for (auto& kp : lwmc.GetTablesMapToClass(classId))
-        {
-        auto table = kp.first;
-
-        auto& deriveClassList = kp.second;
-        if (deriveClassList.empty ())
-            continue;
-
-        auto id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
-        auto hp = storageDescription->GetHorizontalPartitionP (id);
-        for (auto ecClassId : deriveClassList)
-            {
-            hp->AddClassId (ecClassId);
-            }
-
-        hp->GenerateClassIdFilter (lwmc.GetClassesMapToTable (*table));
-        }
-
-    return std::move (storageDescription);
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-HorizontalPartition const* StorageDescription::GetHorizontalPartition(size_t index) const
-    {
-    if (index >= m_horizontalPartitions.size())
-        {
-        BeAssert(false && "Index out of range");
-        return nullptr;
-        }
-
-    return &m_horizontalPartitions[index];
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-HorizontalPartition* StorageDescription::GetHorizontalPartitionP(size_t index)
-    {
-    if (index >= m_horizontalPartitions.size())
-        {
-        BeAssert(false && "Index out of range");
-        return nullptr;
-        }
-
-    return &m_horizontalPartitions[index];
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-size_t StorageDescription::AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition)
-    {
-    const bool isVirtual = table.GetPersistenceType() == PersistenceType::Virtual;
-    m_horizontalPartitions.push_back(HorizontalPartition(table));
-    
-    const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
-    if (!isVirtual)
-        m_nonVirtualHorizontalPartitionIndices.push_back(indexOfAddedPartition);
-
-    if (isRootPartition)
-        m_rootHorizontalPartitionIndex = indexOfAddedPartition;
-
-    return indexOfAddedPartition;
-    }
-
-
-//****************************************************************************************
-// HorizontalPartition
-//****************************************************************************************
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-HorizontalPartition::HorizontalPartition(HorizontalPartition&& rhs) 
-    : m_table(std::move(rhs.m_table)), m_partitionClassIds(std::move(rhs.m_partitionClassIds)), 
-    m_inversedPartitionClassIds(std::move(rhs.m_inversedPartitionClassIds)), m_hasInversedPartitionClassIds(std::move(rhs.m_hasInversedPartitionClassIds))
-    {
-    //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-    //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
-    //this method is safe.
-    rhs.m_table = nullptr;
-    }
-
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-HorizontalPartition& HorizontalPartition::operator=(HorizontalPartition&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_table = std::move(rhs.m_table);
-        m_partitionClassIds = std::move(rhs.m_partitionClassIds);
-        m_inversedPartitionClassIds = std::move(rhs.m_inversedPartitionClassIds);
-        m_hasInversedPartitionClassIds = std::move(rhs.m_hasInversedPartitionClassIds);
-
-        //nulling out the RHS m_table pointer is defensive, even if the destructor doesn't
-        //free the table (as it is now owned by HorizontalPartition). If the ownership ever changes,
-        //this method is safe.
-        rhs.m_table = nullptr;
-        }
-
-    return *this;
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds)
-    {
-    BeAssert(!m_partitionClassIds.empty());
-    m_hasInversedPartitionClassIds = m_partitionClassIds.size() > tableClassIds.size() / 2;
-    if (m_partitionClassIds.size() == tableClassIds.size())
-        return;
-    
-    //tableClassIds list is already sorted
-    std::sort(m_partitionClassIds.begin(), m_partitionClassIds.end());
-
-    auto partitionClassIdsIt = m_partitionClassIds.begin();
-    for (ECClassId candidateClassId : tableClassIds)
-        {
-        if (partitionClassIdsIt == m_partitionClassIds.end() || candidateClassId < *partitionClassIdsIt)
-            m_inversedPartitionClassIds.push_back(candidateClassId);
-        else
-            ++partitionClassIdsIt;
-        }
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    05 / 2015
-//------------------------------------------------------------------------------------------
-bool HorizontalPartition::NeedsClassIdFilter() const
-    {
-    BeAssert(!m_partitionClassIds.empty()); 
-    //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.
-    //if class ids are inversed, filtering is needed if the inversed list is not empty. If it is empty, it means
-    //don't filter at all -> consider all class ids
-    return !m_inversedPartitionClassIds.empty();
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2015
-//------------------------------------------------------------------------------------------
-void HorizontalPartition::AppendECClassIdFilterSql(NativeSqlBuilder& sqlBuilder) const
-    {
-    BeAssert(!m_partitionClassIds.empty());
-
-    std::vector<ECClassId> const* classIds = nullptr;
-    BooleanSqlOperator inOperator;
-    if (m_hasInversedPartitionClassIds)
-        {
-        classIds = &m_inversedPartitionClassIds;
-        if (classIds->empty())
-            return; //no filter needed, as all class ids should be considered
-
-        inOperator = BooleanSqlOperator::NotIn;
-        }
-    else
-        {
-        classIds = &m_partitionClassIds;
-        inOperator = BooleanSqlOperator::In;
-        }
-
-    sqlBuilder.Append(inOperator);
-    sqlBuilder.AppendParenLeft();
-    bool isFirstItem = true;
-    for (ECClassId const& classId : *classIds)
-        {
-        if (!isFirstItem)
-            sqlBuilder.AppendComma();
-
-        sqlBuilder.Append(classId);
-
-        isFirstItem = false;
-        }
-
-    sqlBuilder.AppendParenRight();
-    }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

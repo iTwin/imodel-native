@@ -20,19 +20,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct IECSqlPrimitiveBinder
     {
 public:
-    virtual ~IECSqlPrimitiveBinder () {}
+    virtual ~IECSqlPrimitiveBinder() {}
 
-    virtual ECSqlStatus _BindBoolean (bool value) = 0;
-    virtual ECSqlStatus _BindBinary (const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) = 0;
-    virtual ECSqlStatus _BindDateTime (uint64_t julianDayTicksHns, DateTime::Info const* metadata) = 0;
-    virtual ECSqlStatus _BindDouble (double value) = 0;
-    virtual ECSqlStatus _BindGeometryBlob (const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) = 0;
-    virtual ECSqlStatus _BindInt (int value) = 0;
-    virtual ECSqlStatus _BindInt64 (int64_t value) = 0;
+    virtual ECSqlStatus _BindBoolean(bool value) = 0;
+    virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) = 0;
+    virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata) = 0;
+    virtual ECSqlStatus _BindDouble(double value) = 0;
+    virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) = 0;
+    virtual ECSqlStatus _BindInt(int value) = 0;
+    virtual ECSqlStatus _BindInt64(int64_t value) = 0;
     virtual ECSqlStatus _BindPoint2D (DPoint2dCR value) = 0;
     virtual ECSqlStatus _BindPoint3D (DPoint3dCR value) = 0;
-    virtual ECSqlStatus _BindText (Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) = 0;
-    virtual ECSqlStatus _BindId (BeRepositoryBasedId value) = 0;
+    virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) = 0;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -432,7 +432,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableECSchema(Db& db)
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema (Name COLLATE NOCASE);");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Schema_Name ON ec_Schema(Name COLLATE NOCASE);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -463,7 +463,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE INDEX ix_ec_Class_Name ON ec_Class (Name);");
+    return db.ExecuteSql("CREATE INDEX ix_ec_Class_Name ON ec_Class(Name);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -479,18 +479,19 @@ Db& db
         "CREATE Table ec_ClassMap"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "ClassId INTEGER NOT NULL REFERENCES ec_Class (Id) ON DELETE CASCADE,"
-        "ParentId INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
+        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE,"
+        "ParentId INTEGER REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
         //resolved map strategy:
         "MapStrategy INTEGER NOT NULL,"
         "MapStrategyOptions INTEGER,"
-        "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1))"
+        "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1)),"
+        "DMLPolicy INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap (ClassId, ParentId) WHERE ParentId IS NOT NULL;");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap(ClassId, ParentId) WHERE ParentId IS NOT NULL;");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -515,7 +516,7 @@ Db& db
         return stat;
 
     //index needed for fast look-ups of derived classes for a given ECClass
-    return db.ExecuteSql("CREATE INDEX ix_ec_BaseClass_BaseClassId ON ec_BaseClass (BaseClassId);");
+    return db.ExecuteSql("CREATE INDEX ix_ec_BaseClass_BaseClassId ON ec_BaseClass(BaseClassId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -531,7 +532,7 @@ Db& db
         "CREATE Table ec_PropertyPath"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "RootPropertyId INTEGER NOT NULL REFERENCES ec_Property (Id) ON DELETE CASCADE,"
+        "RootPropertyId INTEGER NOT NULL REFERENCES ec_Property(Id) ON DELETE CASCADE,"
         "AccessString TEXT NOT NULL"
         ");");
 
@@ -539,7 +540,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath (RootPropertyId, AccessString);");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath(RootPropertyId, AccessString);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -571,11 +572,11 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = db.ExecuteSql("CREATE INDEX ix_ec_Property_Name ON ec_Property (Name);");
+    stat = db.ExecuteSql("CREATE INDEX ix_ec_Property_Name ON ec_Property(Name);");
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE INDEX ix_ec_Property_ClassId ON ec_Property (ClassId);");
+    return db.ExecuteSql("CREATE INDEX ix_ec_Property_ClassId ON ec_Property(ClassId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -590,9 +591,9 @@ Db& db
     return db.ExecuteSql(
         "CREATE Table ec_PropertyMap"
         "("
-        "ClassMapId INTEGER NOT NULL REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
-        "PropertyPathId INTEGER NOT NULL REFERENCES ec_PropertyPath (Id) ON DELETE CASCADE,"
-        "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "ClassMapId INTEGER NOT NULL REFERENCES ec_ClassMap(Id) ON DELETE CASCADE,"
+        "PropertyPathId INTEGER NOT NULL REFERENCES ec_PropertyPath(Id) ON DELETE CASCADE,"
+        "ColumnId INTEGER NOT NULL REFERENCES ec_Column(Id) ON DELETE CASCADE,"
         "PRIMARY KEY (ClassMapId, PropertyPathId, ColumnId)"
         ");");
 
@@ -730,7 +731,7 @@ Db& db
         "CREATE TABLE ec_Column"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
         "Name TEXT NOT NULL COLLATE NOCASE,"
         "Type INTEGER NOT NULL,"
         "IsVirtual BOOLEAN NOT NULL,"
@@ -741,13 +742,13 @@ Db& db
         "DefaultConstraint TEXT,"
         "CollationConstraint INTEGER,"
         "OrdinalInPrimaryKey INTEGER,"
-        "UserData INTEGER"
+        "KnownColumn INTEGER"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE INDEX ix_ec_Column_TableId ON ec_Column (TableId);");
+    return db.ExecuteSql("CREATE INDEX ix_ec_Column_TableId ON ec_Column(TableId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -764,15 +765,16 @@ Db& db
         "("
         "Id INTEGER PRIMARY KEY,"
         "Name TEXT NOT NULL COLLATE NOCASE,"
-        "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
         "IsUnique BOOLEAN NOT NULL,"
-        "WhereClause TEXT"
+        "ClassId INTEGER REFERENCES ec_Class(Id),"
+        "AdditionalWhereExpression TEXT"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Index_TableId_Name ON ec_Index (TableId, Name);");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_Index_TableId_Name ON ec_Index(TableId, Name);");
     }
 
 //-----------------------------------------------------------------------------------------

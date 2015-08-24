@@ -157,6 +157,14 @@ ECSqlStatus ECSqlStatement::BindInt64 (int parameterIndex, int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle     07/2013
 //---------------------------------------------------------------------------------------
+ECSqlStatus ECSqlStatement::BindId(int parameterIndex, BeInt64Id value)
+    {
+    return GetBinder(parameterIndex).BindId(value);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle     07/2013
+//---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlStatement::BindPoint2D (int parameterIndex, DPoint2dCR value)
     {
     return GetBinder (parameterIndex).BindPoint2D (value);
@@ -176,14 +184,6 @@ ECSqlStatus ECSqlStatement::BindPoint3D (int parameterIndex, DPoint3dCR value)
 ECSqlStatus ECSqlStatement::BindText (int parameterIndex, Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     return GetBinder (parameterIndex).BindText (value, makeCopy, byteCount);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle     04/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::BindId (int parameterIndex, BeRepositoryBasedId value)
-    {
-    return GetBinder (parameterIndex).BindId (value);
     }
 
 //---------------------------------------------------------------------------------------

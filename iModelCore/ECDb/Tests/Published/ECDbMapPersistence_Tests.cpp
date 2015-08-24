@@ -380,7 +380,7 @@ void ECDbMapPersistenceTests::GetSchemaObjectById (ECDbR db, rapidjson::Document
 void ECDbMapPersistenceTests::GetColumnsPerTable (ECDbR db, rapidjson::Document & doc, rapidjson::Value& columnArray, int TableId)
     {
     BeSQLite::Statement sqlStatement;
-    auto status = sqlStatement.Prepare (db, "SELECT ec_Column.[Id], ec_Column.[Name], ec_Column.[Type], ec_Column.UserData FROM ec_Column WHERE ec_Column.TableId = ? ");
+    auto status = sqlStatement.Prepare (db, "SELECT ec_Column.[Id], ec_Column.[Name], ec_Column.[Type], ec_Column.KnownColumn FROM ec_Column WHERE ec_Column.TableId = ? ");
     ASSERT_EQ (status, DbResult::BE_SQLITE_OK);
     sqlStatement.BindInt (1, TableId);
 
@@ -515,28 +515,6 @@ TEST_F (ECDbMapPersistenceTests, DGNSchemaStructureMapPersistence)
             WriteJsonDocumentToFile (buffer, newjson.GetName ());
             }
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     Muhammad Hassan                  03/2015
-//---------------------------------------------------------------------------------------
-TEST_F (ECDbMapPersistenceTests, MappingStrategyTest)
-    {
-    ECDbTestProject::Initialize ();
-    ECDb ECDbMapPersistence;
-    auto stat = ECDbTestUtility::CreateECDb (ECDbMapPersistence, NULL, L"MappingStrategyDb.ecdb");
-    ASSERT_EQ (stat, BE_SQLITE_OK);
-
-    ECSchemaPtr ecSchema = nullptr;
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
-    ECSchemaReadContextPtr schemaContext = nullptr;
-    ECDbTestUtility::ReadECSchemaFromDisk (ecSchema, schemaContext, L"TablePerHierarchyPrecedence.01.00.ecschema.xml", nullptr);
-
-    ASSERT_TRUE (ecSchema != nullptr);
-    ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
-    ASSERT_EQ (SUCCESS, ECDbMapPersistence.Schemas ().ImportECSchemas (*schemaCache, ECDbSchemaManager::ImportOptions (false, false))) << "Schema import Failed \n";
-    ECSchemaCP tablePerHierarchySchema = ECDbMapPersistence.Schemas ().GetECSchema ("dgn");
-    ASSERT_TRUE (tablePerHierarchySchema != NULL);
     }
 
 //---------------------------------------------------------------------------------------

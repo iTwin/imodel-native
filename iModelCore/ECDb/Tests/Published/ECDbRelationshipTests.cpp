@@ -394,90 +394,7 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
 
     db.SaveChanges();
     }
-	//-------------------------------------------------------------------------------------
-// @bsimethod                                   Umer Sufyan                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-    
-TEST(ECDbRelationships, RelationshipProperties)
-{
-    const auto perClassRowCount = 0;
-    ECDbTestProject testProj;
-    auto& ecdb = testProj.Create("ecdbRelationshipProperties.ecdb", L"Computers.01.00.ecschema.xml", perClassRowCount);
-    ECSqlStatement stmt;
 
-    ECClassCP laptopClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("Laptop");
-    IECInstancePtr laptopInstance = laptopClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*laptopInstance, "OS", "Linux");
-    InsertInstance(ecdb, *laptopClass, *laptopInstance);
-    IECInstancePtr laptopInstance2 = laptopClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*laptopInstance2, "OS", "Windows");
-    InsertInstance(ecdb, *laptopClass, *laptopInstance2);
-    ECClassCP ramClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("RAM");
-    IECInstancePtr ramInstance = ramClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*ramInstance, "Size", "4");
-    InsertInstance(ecdb, *ramClass, *ramInstance);
-    IECInstancePtr ramInstance2 = ramClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*ramInstance2, "Size", "2");
-    InsertInstance(ecdb, *ramClass, *ramInstance2);
-
-    ECRelationshipClassP laptopHasRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("LaptopHasRam")->GetRelationshipClassP();//1-1
-    IECRelationshipInstancePtr rel1;
-    rel1 = CreateRelationshipWithProperty(*laptopHasRam, *laptopInstance, *ramInstance);
-    InsertInstance(ecdb, *laptopHasRam, *rel1);
-
-   auto statusOfInsert = ecdb.SaveChanges();
-   EXPECT_EQ(statusOfInsert, DbResult::BE_SQLITE_OK);
-
-    ECRelationshipClassP laptopHaveRams = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("LaptopHaveManyRams")->GetRelationshipClassP();//1-many
-
-    rel1 = CreateRelationship(*laptopHaveRams, *laptopInstance2, *ramInstance);
-    InsertInstance(ecdb, *laptopHaveRams, *rel1);
-    IECRelationshipInstancePtr rel2;
-    rel2 = CreateRelationship(*laptopHaveRams, *laptopInstance2, *ramInstance2);
-    InsertInstance(ecdb, *laptopHaveRams, *rel2);
-
-    ECRelationshipClassP manyLaptopHaveManyRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("ManyLaptopsHaveManyRams")->GetRelationshipClassP();//many-many
-    rel1 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance2, *ramInstance);
-    InsertInstance(ecdb, *manyLaptopHaveManyRam, *rel1);
-    rel2 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance, *ramInstance);
-    InsertInstance(ecdb, *manyLaptopHaveManyRam, *rel2);
-    IECRelationshipInstancePtr rel3;
-    rel3 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance, *ramInstance2);
-    InsertInstance(ecdb, *manyLaptopHaveManyRam, *rel3);
-    IECRelationshipInstancePtr rel4;
-    rel4 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance2, *ramInstance2);
-    InsertInstance(ecdb, *manyLaptopHaveManyRam, *rel4);
-
-    auto stat = stmt.Prepare(ecdb, "SELECT * FROM TR.LaptopHasRam");
-    ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    auto stepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
-    int columncount = stmt.GetColumnCount();
-    EXPECT_EQ(columncount, 5);
-    Utf8StringCR prop = stmt.GetColumnInfo(4).GetProperty()->GetName();
-    Utf8String a;
-    a.assign(prop.begin(), prop.end());
-    EXPECT_STREQ("price", a.c_str());
-    stmt.Finalize();
-    stat = stmt.Prepare(ecdb, "SELECT * FROM TR.LaptopHaveManyRams");
-    ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    stepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
-    Utf8StringCR prop2 = stmt.GetColumnInfo(5).GetProperty()->GetName();
-    Utf8String b;
-    b.assign(prop2.begin(), prop2.end());
-    EXPECT_STREQ("price", b.c_str());
-    stmt.Finalize();
-    stat = stmt.Prepare(ecdb, "SELECT * FROM TR.ManyLaptopsHaveManyRams");
-    ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
-    stepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
-    Utf8StringCR prop3 = stmt.GetColumnInfo(5).GetProperty()->GetName();
-    a.assign(prop3.begin(), prop3.end());
-    EXPECT_STREQ("price", a.c_str());
-    stmt.Finalize();
-    ecdb.CloseDb();
-}
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Umer Sufyan                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -537,19 +454,8 @@ TEST(ECDbRelationships, JoinTests)
 
     //test for right outer join
     //still not working support for right outer join work in progress
-  
     auto prepareStat = stmt.Prepare(ecdb, "SELECT a.Size FROM TR.Laptop a RIGHT JOIN TR.LaptopHasRam b ON a.ECInstanceId=b.SourceECInstanceId RIGHT JOIN TR.RAM c ON c.ECInstanceId=b.TargetECInstanceId");
-    ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (prepareStat));
-    auto joinStepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (joinStepStat));
-    Utf8String joinVal = stmt.GetValue(0).GetText();
-    //string v = val.c_str();
-    ASSERT_EQ(joinVal, "4");
-    joinStepStat = stmt.Step();
-    ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (joinStepStat));
-    joinVal = stmt.GetValue(0).GetText();
-    //v = val.c_str();
-    ASSERT_EQ(joinVal, "2");
+    ASSERT_EQ(static_cast<int> (ECSqlStatus::InvalidECSql), static_cast<int> (prepareStat));
     stmt.Finalize();
     ecdb.CloseDb();
     }
@@ -620,7 +526,7 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     ecsql = "INSERT INTO ecsqltestKeys.PSA (I) VALUES(?)";
     stat = statement.Prepare(ecdb, ecsql);
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stat) << "Preparation of '" << ecsql << "' failed: " << statement.GetLastStatusMessage();
-    statement.BindInt64(1, instanceKey.GetECInstanceId().m_id);
+    statement.BindId(1, instanceKey.GetECInstanceId());
 
     stepStatus = statement.Step();
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage();

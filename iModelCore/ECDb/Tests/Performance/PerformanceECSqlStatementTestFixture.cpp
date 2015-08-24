@@ -13,6 +13,12 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+// *** WIP_STUB_FOR_MISSING_CLASS_PerformanceResultRecorder
+struct PerformanceResultRecorder
+{
+static void LogToDb(Utf8String,Utf8String,double,Utf8String,int optional=0) {;}
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Krischan.Eberle          09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -132,13 +138,12 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (GetValueAs
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov ("Total Time: %.4lf ms for %d instances. Test Property: %s::%s.",
+    LOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
                totalStopWatch.GetElapsedSeconds () * 1000,
                TESTCLASS_INSTANCE_COUNT,
                TestSchemaHelper::TESTCLASS_NAME,
                asserter.GetPropertyName ());
-    PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb (totalStopWatch, testDetails, "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    LOGTODB(TEST_DETAILS, totalStopWatch.GetElapsedSeconds(), "RunGetValueWithIsNullTest for the ECSQLStatement Preformance for TESTCLASS_INSTANCE_COUNT = ", TESTCLASS_INSTANCE_COUNT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -171,13 +176,12 @@ void PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (GetValu
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov ("Total Time: %.4lf ms for %d instances. Test Property: %s::%s.",
+    LOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
                totalStopWatch.GetElapsedSeconds () * 1000,
                TESTCLASS_INSTANCE_COUNT,
                TestSchemaHelper::TESTCLASS_NAME,
                asserter.GetPropertyName ());
-    PerformanceTestingFrameWork performanceObj;
-    performanceObj.writeTodb (totalStopWatch, testDetails, "RunGetValueWithoutIsNullTest for the ECSQLStatement Preformance  TESTCLASS_INSTANCE_COUNT = " + TESTCLASS_INSTANCE_COUNT_String);
+    LOGTODB(TEST_DETAILS, totalStopWatch.GetElapsedSeconds(), "RunGetValueWithoutIsNullTest for the ECSQLStatement Preformance  TESTCLASS_INSTANCE_COUNT", TESTCLASS_INSTANCE_COUNT);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -17,22 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @see @ref ECInstanceIdInECDb, ECInstanceIdHelper
 //! @ingroup ECDbGroup
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceId : BeRepositoryBasedId
-    {
-public:
-    //! Constructs an empty, i.e. invalid ECInstanceId.
-    ECInstanceId() : BeRepositoryBasedId() {}
-
-    //! Constructs an ECInstanceId from a 64 bit value.
-    //! @param[in] id Numeric value of the ECInstanceId, that must be composed of the RepositoryId and the local id.
-    //! (see overload ECInstanceId::ECInstanceId(BeRepositoryId,UInt32) )
-    explicit ECInstanceId(int64_t id) : BeRepositoryBasedId(id) {}
-    
-    //! Constructs an ECInstanceId from a RepositoryId value and an id.
-    //! @param[in] repositoryId RepositoryId
-    //! @param[in] id Id locally unique for the given @p repositoryId
-    ECInstanceId(BeRepositoryId repositoryId, uint32_t id) : BeRepositoryBasedId(repositoryId, id) {}
-    };
+typedef BeInt64Id ECInstanceId;
 
 //=======================================================================================
 //! An ECInstanceKey of an ECInstance is made up of the ECInstance's ECInstanceId and the ECN::ECClassId 

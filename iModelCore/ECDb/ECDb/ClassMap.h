@@ -38,6 +38,142 @@ public:
     };
 
 //=======================================================================================
+//! Describe ECSql CRUD policy
+// @bsiclass                                               Affan.Khan          07/2015
+//+===============+===============+===============+===============+===============+======
+struct DMLPolicy
+    {
+    enum class Target
+        {
+        View = 2,
+        Table = 1,
+        None = 0,
+        };
+    enum class Operation
+        {
+        Select = 1,
+        Insert = 2,
+        Update = 3,
+        Delete = 4
+        };
+    private:
+        std::map<Operation, Target> m_ops;
+        Utf8CP ToString (Operation op) const
+            {
+            switch (op) 
+                { 
+                case Operation::Select: return "SELECT";
+                case Operation::Insert: return "INSERT";
+                case Operation::Update: return "UPDATE";
+                case Operation::Delete: return "DELETE";
+                }
+
+            return nullptr;
+            }
+        Utf8CP ToString (Target op) const
+            {
+            switch (op)
+                {
+                case Target::Table: return "TABLE";
+                case Target::View: return "VIEW";
+                case Target::None: return "NONE";
+                }
+
+            return nullptr;
+            }
+
+    public:
+        DMLPolicy ()
+            {
+            Clear (Target::None);
+            }
+
+        DMLPolicy (DMLPolicy const& rhs)
+            :m_ops (rhs.m_ops)
+            {
+            }
+        ~DMLPolicy ()
+            {}
+        void Clear (Target defaultTarget)
+            {
+            m_ops.clear ();
+            m_ops[Operation::Insert] = defaultTarget;
+            m_ops[Operation::Update] = defaultTarget;
+            m_ops[Operation::Delete] = defaultTarget;
+            m_ops[Operation::Select] = defaultTarget;
+            }
+        void Set (Operation op, Target target)
+            {
+            this->operator[](op) = target;
+            }
+        Target Get (Operation op) const
+            {
+            return this->operator[](op);
+            }
+        bool SupportsOperation (Operation op) const { return Get (op) != Target::None; }
+        bool SupporstAnyOperation () const
+            {
+            return SupportsOperation (Operation::Delete) || SupportsOperation (Operation::Insert) || SupportsOperation (Operation::Select) || SupportsOperation (Operation::Update);
+            }
+        bool operator == (DMLPolicy const& rhs) const
+            {
+            for (auto const& pair : m_ops)
+                if (pair.second != rhs[pair.first])
+                    return false;
+
+            return true;
+            }
+        DMLPolicy& operator = (DMLPolicy const& rhs)
+            {
+            m_ops.clear ();
+            m_ops = rhs.m_ops;
+            return *this;
+            }
+        Target operator [](Operation op) const
+            {
+            return m_ops.find (op)->second;
+            }
+        Target& operator [](Operation op)
+            {
+            return m_ops[op];
+            }
+        uint16_t ToInt () const
+            {
+            //SSIIUUDD            
+            uint16_t out = 0;
+            out = out | (((uint16_t)Get (Operation::Select)) << 0);
+            out = out | (((uint16_t)Get (Operation::Insert)) << 2);
+            out = out | (((uint16_t)Get (Operation::Update)) << 4);
+            out = out | (((uint16_t)Get (Operation::Delete)) << 6);            
+            return out;
+            }
+        static DMLPolicy FromInt (uint16_t raw)
+            {
+            DMLPolicy out;
+            uint16_t mask = 0x2 | 0x1;
+            out.Set (Operation::Select, (Target)((raw & mask << 0) >> 0));
+            out.Set (Operation::Insert, (Target)((raw & mask << 2) >> 2));
+            out.Set (Operation::Update, (Target)((raw & mask << 4) >> 4));
+            out.Set (Operation::Delete, (Target)((raw & mask << 6) >> 6));
+            return out;
+            }
+
+        const Utf8String ToString () const
+            {
+            Utf8String outString;
+            int idx = 0;
+            for (auto const& pair : m_ops)
+                {
+                idx = idx + 1;
+                outString.append (Utf8PrintfString ("%s -> %s", ToString (pair.first), ToString (pair.second)).c_str ());
+                if (idx != m_ops.size ())
+                    outString.append (", ");
+                }
+
+            return outString;
+            }
+    };
+//=======================================================================================
 //! Maps an ECClass to a DbTable
 //! @remarks This is the base interface for querying information for a class mapping.
 //! Populating a class map is not part of this, as that is limited to initialization code 
@@ -80,7 +216,8 @@ private:
     virtual ECDbMapStrategy const& _GetMapStrategy () const = 0;
     virtual ECDbMapCR _GetECDbMap () const = 0;
     virtual ClassDbView const& _GetDbView () const = 0;
-
+    virtual DMLPolicy const& _GetDMLPolicy () const = 0;
+    virtual DMLPolicy&  _GetDMLPolicyR () = 0;
 public:
     virtual ~IClassMap () {}
 
@@ -136,7 +273,8 @@ public:
 
         return secondaryTables;
         }
-
+    DMLPolicy const& GetDMLPolicy () const { return _GetDMLPolicy (); }
+    DMLPolicy&  GetDMLPolicyR () {return _GetDMLPolicyR ();}
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);
     static bool IsAnyClass (ECN::ECClassCR ecClass);
@@ -180,7 +318,7 @@ struct ColumnFactory : NonCopyableClass
             Utf8String m_accessString;
             Utf8String m_requestedColumnName;
             Strategy m_strategy;
-            uint32_t m_columnUserData;
+            ECDbKnownColumns m_knownColumnId;
             bool m_isNotNull;
             bool m_isUnique;
 
@@ -191,7 +329,7 @@ struct ColumnFactory : NonCopyableClass
                 GenerateColumnNameOptions generateColumnNameOptions = GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence,
                 Utf8CP columnName = nullptr,
                 ECDbSqlColumn::Type columnType = ECDbSqlColumn::Type::Any,
-                uint32_t columnUserData = ECDbDataColumn,
+                ECDbKnownColumns columnUserData = ECDbKnownColumns::DataColumn,
                 PersistenceType persistenceType = PersistenceType::Persisted,
                 Utf8CP accessStringPrefix = nullptr,
                 bool isNotNull = false,
@@ -206,7 +344,7 @@ struct ColumnFactory : NonCopyableClass
             bool IsUnique () const { return m_isUnique; }
             GenerateColumnNameOptions GetGenerateColumnNameOptions () const { return m_generateColumnNameOptions; }
             Strategy GetStrategy () const { return m_strategy; }
-            uint32_t GetColumnUserDate () const { return m_columnUserData; }
+            ECDbKnownColumns GetKnownColumnId () const { return m_knownColumnId; }
             PersistenceType GetColumnPersistenceType () const { return m_persistenceType; }
             ECDbSqlColumn::Constraint::Collation GetCollation () const { return m_collation; }
         };
@@ -252,7 +390,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECDbMapStrategy             m_mapStrategy;
         bool                        m_isDirty;
         ECDbClassMapId              m_id;
-
+        DMLPolicy             m_crudPolicy;
     protected:
         ECN::ECClassCR              m_ecClass;
         ECN::ECClassId              m_parentMapClassId;
@@ -273,9 +411,9 @@ struct ClassMap : public IClassMap, RefCountedBase
 
         virtual MapStatus _InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
         virtual MapStatus _InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
-        virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
-        virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
+        virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph); virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
+        virtual BentleyStatus _EvaluateDMLPolicy ();
         MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
         void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
         virtual PropertyMapCollection const& _GetPropertyMaps () const;
@@ -286,6 +424,8 @@ struct ClassMap : public IClassMap, RefCountedBase
         virtual ECN::ECClassId _GetParentMapClassId () const override { return m_parentMapClassId; }
         virtual IClassMap const& _GetView (View classView) const override { return *this; };
         virtual ClassDbView const& _GetDbView () const override { return *m_dbView; }
+        virtual DMLPolicy const& _GetDMLPolicy ()  const override { return m_crudPolicy; }
+        virtual DMLPolicy&  _GetDMLPolicyR () override{ return m_crudPolicy; }
         PropertyMapCollection& GetPropertyMapsR ();
 
         ECDbSchemaManagerCR Schemas () const;
@@ -322,8 +462,10 @@ struct ClassMap : public IClassMap, RefCountedBase
     BentleyStatus Save (std::set<ClassMap const*>& savedGraph) { return _Save (savedGraph); }
     BentleyStatus Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const*  parentClassMap) { return _Load (loadGraph, mapInfo, parentClassMap); }
 
+
     ColumnFactory const& GetColumnFactory () const { return m_columnFactory; }
     ColumnFactory& GetColumnFactoryR () { return m_columnFactory; }
+    BentleyStatus EvaluateDMLPolicy () { return  _EvaluateDMLPolicy (); }
     };
 
 

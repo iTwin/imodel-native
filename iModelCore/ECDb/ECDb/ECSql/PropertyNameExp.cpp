@@ -97,13 +97,6 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
     if (m_isSystemProperty)
         m_systemProperty = systemPropKind;
 
-    auto policy = ECDbPolicyManager::GetPropertyPolicy (GetPropertyMap (), IsValidInECSqlPolicyAssertion::Get ());
-    if (!policy.IsSupported ())
-        {
-        ctx.SetError (ECSqlStatus::InvalidECSql, "Expression '%s' refers to an ECProperty not supported by ECSQL: %s", ToECSql ().c_str (), policy.GetNotSupportedMessage ());
-        return FinalizeParseStatus::Error;
-        }
-
     return FinalizeParseStatus::Completed;
     }
 

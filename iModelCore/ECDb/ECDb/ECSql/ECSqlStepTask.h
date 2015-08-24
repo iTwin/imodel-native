@@ -250,47 +250,6 @@ private:
     };
 
 //=======================================================================================
-//! DeleteRelatedInstancesECSqlStepTask delete relationship instances
-//! @bsiclass                                                Affan.Khan      02/2014
-//+===============+===============+===============+===============+===============+======
-struct DeleteRelatedInstancesECSqlStepTask : public ECSqlStepTask
-    {
-private:
-    //! Catches events from nested ECSQL DELETE and propagates them to the top-level statement's event handlers
- 
-
-    static const int MAX_PARAMETER_COUNT = 30;
-
-    ECDbR m_ecdb;
-    mutable ECInstanceFinder m_orphanInstanceFinder;
-    ECClassId m_ecClassId;
-  
-
-    mutable std::map<ECN::ECClassId, std::unique_ptr<ECSqlStatement>> m_statementCache;
-
-
-    DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, Utf8CP name, ECClassId classId);
-
-    BentleyStatus FindOrphanedInstances (ECInstanceKeyMultiMap& orphanedRelationshipInstances, ECInstanceKeyMultiMap& orphanedInstances,
-                                         ECDbR ecdb, ECClassId seedClassId, ECInstanceId seedInstanceId) const;
-
-    BentleyStatus DeleteDependentInstances (ECInstanceId const& seedInstanceId) const;
-
-    BentleyStatus DeleteInstances (ECDbR ecDb, ECInstanceKeyMultiMap const & candidateKeyMap) const;
-    BentleyStatus DeleteInstances (ECDbR ecDb, ECN::ECClassId classId, std::vector<ECInstanceKey> const& keyList) const;
-
-    virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) override;
-
-    ECSqlStatement* GetDeleteStatement (ECN::ECClassCR ecClass) const;
-
-public:
-    ~DeleteRelatedInstancesECSqlStepTask (){}
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlPrepareContext& preparedContext, IClassMap const& classMap);
-    };
-
-
-
-//=======================================================================================
 //! UpdateStructArrayECSqlStepTask Update struct array element
 //! @bsiclass                                                Affan.Khan      02/2014
 //+===============+===============+===============+===============+===============+=====

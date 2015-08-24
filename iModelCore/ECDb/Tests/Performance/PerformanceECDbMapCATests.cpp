@@ -14,7 +14,6 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
     {
-    int instanceId = 1;
     //printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer(true);
     for (auto const& kvPair : m_sqlTestItems)
@@ -26,7 +25,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << selectSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, instanceId++));
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, (int) (i+1)));
             ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step()) << "step failed for " << selectSql;
             stmt.Reset ();
             stmt.ClearBindings ();
@@ -43,25 +42,26 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
     {
-    int instanceId = 1;
+    //printf("Start profiling and press key tp continue..."); getchar();
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
         Utf8CP deleteSql = kvPair.second.m_deleteECSql.c_str();
 
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, deleteSql);
+        ECSqlStatus stat = stmt.Prepare (ecdb, deleteSql);
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation Failed for " << deleteSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            ASSERT_EQ(stmt.BindInt(1, instanceId++), ECSqlStatus::Success);
-            ASSERT_EQ(stmt.Step(), ECSqlStepStatus::Done) << "step failed for " << deleteSql;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(1, (int) (i + 1)));
+            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << deleteSql;
             stmt.Reset ();
             stmt.ClearBindings ();
             }
         }
     timer.Stop ();
-    m_deleteTime = timer.GetElapsedSeconds ();
+    //printf("Stop profiling and press key to continue..."); getchar();
+    m_deleteTime = timer.GetElapsedSeconds();
     LOG.infov("ECSQL DELETE %d instances each from %d classes took %.4f s.", m_instancesPerClass, m_sqlTestItems.size(), m_deleteTime);
     }
 
@@ -79,7 +79,7 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
         const int propertyCount = (int)testClass->GetPropertyCount (true);
 
         ECSqlStatement stmt;
-        auto stat = stmt.Prepare (ecdb, updateSql);
+        ECSqlStatus stat = stmt.Prepare(ecdb, updateSql);
         ASSERT_EQ(ECSqlStatus::Success, stat) << "preparation failed for " << updateSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
@@ -116,12 +116,14 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql;
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
+            ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, (int64_t) (i + 1)));
+
+            for (int parameterIndex = 2; parameterIndex <= (propertyCount+1); parameterIndex++)
                 {
-                ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, ("Init Value"), IECSqlBinder::MakeCopy::No));
+                ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex, "Init Value", IECSqlBinder::MakeCopy::No));
                 }
 
-            ASSERT_EQ(stmt.Step(), ECSqlStepStatus::Done) << "Step failed for " << insertSql;
+            ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "Step failed for " << insertSql;
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -147,40 +149,35 @@ void PerformanceECDbMapCATestFixture::GenerateECSqlCRUDTestStatements(ECSchemaR 
         Utf8String className = ECSqlBuilder::ToECSqlSnippet(*testClass);
 
         insertSql = Utf8String("INSERT INTO ");
-        insertSql.append(className).append(" (");
-        Utf8String insertValuesSql(") VALUES (");
+        insertSql.append(className).append(" (ECInstanceId");
+        Utf8String insertValuesSql(") VALUES (?");
 
         selectSql = Utf8String("SELECT * FROM ONLY ");
-        selectSql.append(className).append(" WHERE ECInstanceId = ?");
+        selectSql.append(className).append(" WHERE ECInstanceId=?");
 
         updateSql = Utf8String("UPDATE ONLY ");
         updateSql.append(className).append(" SET ");
 
         deleteSql = Utf8String("DELETE FROM ONLY ");
-        deleteSql.append(className).append(" WHERE ECInstanceId = ?");
+        deleteSql.append(className).append(" WHERE ECInstanceId=?");
 
         bool isFirstItem = true;
         for (auto prop : testClass->GetProperties(true))
             {
             if (!isFirstItem)
-                {
-                insertSql.append(", ");
-                insertValuesSql.append(", ");
+                updateSql.append(",");
 
-                updateSql.append(", ");
-                }
-
-            insertSql.append(prop->GetName());
-            insertValuesSql.append("?");
+            insertSql.append(",").append(prop->GetName());
+            insertValuesSql.append(",").append("?");
 
             updateSql.append(prop->GetName());
-            updateSql.append(" = ? ");
+            updateSql.append("=? ");
 
             isFirstItem = false;
             }
 
         insertSql.append(insertValuesSql).append(")");
-        updateSql.append("WHERE ECInstanceId = ?");
+        updateSql.append("WHERE ECInstanceId=?");
         }
     }
 
@@ -261,7 +258,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorAppliesToSubclassesphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
@@ -272,11 +269,10 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     UpdateInstances (ecdb);
     DeleteInstances (ecdb);
 
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_insertTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Insert time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_selectTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "SELECT time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_updateTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Update time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_deleteTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Delete time"));
+    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time");
     }
 
 //---------------------------------------------------------------------------------------
@@ -314,7 +310,7 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
     ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.AppliesToSubclasses", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
@@ -325,11 +321,10 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     UpdateInstances (ecdb);
     DeleteInstances (ecdb);
 
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_insertTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Insert time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_selectTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "SELECT time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_updateTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Update time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_deleteTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Delete time"));
+    LOGTODB(TEST_DETAILS, m_insertTime, "Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, "Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, "Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, "Delete time");
     }
 
 //---------------------------------------------------------------------------------------
@@ -349,7 +344,8 @@ void PerformanceECDbMapCATestFixture::GenerateSqlCRUDTestStatements (ECSchemaR e
     selectSql = Utf8String ("SELECT * FROM ts_");
     selectSql.append (className).append (" WHERE ECInstanceId = ? ");
 
-    deleteSql = Utf8String ("DELETE FROM ts_");
+    //use view here to make sure referential integrity is ensured. Otherwise it is not comparable to ECSQL.
+    deleteSql = Utf8String ("DELETE FROM VC_ts_");
     deleteSql.append (className).append (" WHERE ECInstanceId = ? ");
 
     bool isFirstItem = true;
@@ -409,11 +405,10 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
 
     ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
 
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_insertTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "ECSql Insert Time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_selectTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "ECSql Select Time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_updateTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "ECSql Update Time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_deleteTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "ECSql Delete Time"));
+    LOGTODB(TEST_DETAILS, m_insertTime, "ECSql Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, "ECSql Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, "ECSql Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, "ECSql Delete time");
 
     //CRUD Performance using Sql statements.
     m_insertTime = m_updateTime = m_selectTime = m_deleteTime = 0.0;
@@ -442,7 +437,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     timer.Stop ();
     stmt.Finalize ();
     m_insertTime = timer.GetElapsedSeconds ();
-    LOG.infov ("Scenario - INSERT INTO- 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, timer.GetElapsedSeconds ());
+    LOG.infov("Scenario - INSERT INTO- 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_insertTime);
 
     //Update Instance using Sql Query.
     timer.Start ();
@@ -465,7 +460,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     timer.Stop ();
     stmt.Finalize ();
     m_updateTime = timer.GetElapsedSeconds ();
-    LOG.infov ("Scenario - UPDATE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, timer.GetElapsedSeconds ());
+    LOG.infov("Scenario - UPDATE - 1 class [%d properties each] , %d instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_updateTime);
 
     //Read Instance using Sql Query.
     instanceCount = 1;
@@ -482,7 +477,7 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
     timer.Stop ();
     m_selectTime = timer.GetElapsedSeconds ();
     stmt.Finalize ();
-    LOG.infov ("Scenario - Read - 1 class [%d properties each] , %d Instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, timer.GetElapsedSeconds ());
+    LOG.infov("Scenario - Read - 1 class [%d properties each] , %d Instances per class took %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_selectTime);
 
     //Delete Instance using Sql Query.
     instanceCount = 1;
@@ -493,18 +488,17 @@ TEST_F (PerformanceECDbMapCATestFixture, CRUDPerformanceSqlVsECSql)
         ASSERT_EQ (DbResult::BE_SQLITE_OK, stmt.BindInt (1, instanceCount));
         instanceCount++;
         ASSERT_EQ (DbResult::BE_SQLITE_DONE, stmt.Step ()) << "step failed for " << deleteSql.c_str ();
-        ASSERT_EQ(1, ecdb.GetModifiedRowCount());
         stmt.Reset ();
         stmt.ClearBindings ();
         }
     timer.Stop ();
     m_deleteTime = timer.GetElapsedSeconds ();
-    LOG.infov ("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, timer.GetElapsedSeconds ());
+    LOG.infov("Scenario - DELETE - 1 class [%d properties each] , %d instances per class took - %.4f s.", m_propertiesPerClass, m_instancesPerClass, m_deleteTime);
 
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_insertTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "SQl Insert Time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_selectTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "SQl SELECT Time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_updateTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "SQl Update Time"));
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_deleteTime, "PerformanceECDbMapCATestFixture.CRUDPerformanceSqlVsECSql", "SQl Delete Time"));
+    LOGTODB(TEST_DETAILS, m_insertTime, "Sql Insert time");
+    LOGTODB(TEST_DETAILS, m_selectTime, "Sql Select time");
+    LOGTODB(TEST_DETAILS, m_updateTime, "Sql Update time");
+    LOGTODB(TEST_DETAILS, m_deleteTime, "Sql Delete time");
     }
 
 END_ECDBUNITTESTS_NAMESPACE
