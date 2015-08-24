@@ -186,7 +186,7 @@ struct ChangeSummary : NonCopyableClass
     private:
         ECDbCP m_ecdb = nullptr;
         ECN::ECClassId m_classId = -1;
-        ECInstanceId m_instanceId = -1;
+        ECInstanceId m_instanceId;
         DbOpcode m_dbOpcode;
         int m_indirect;
         mutable CachedStatementPtr m_valuesTableSelect;
