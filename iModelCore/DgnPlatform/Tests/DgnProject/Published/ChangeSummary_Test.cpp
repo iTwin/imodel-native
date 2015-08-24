@@ -23,7 +23,10 @@ protected:
     DgnCategoryId m_testCategoryId;
     DgnElementId m_testElementId;
 
-    void CreateProject();
+    void CreateDgnDb();
+    void OpenDgnDb();
+    void CloseDgnDb();
+
     void InsertModel();
     void InsertCategory();
     void InsertElement();
@@ -62,7 +65,7 @@ struct SqlChangeSet : BeSQLite::ChangeSet
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeSummaryTestFixture::CreateProject()
+void ChangeSummaryTestFixture::CreateDgnDb()
     {
     CreateDgnDbParams createProjectParams;
     createProjectParams.SetOverwriteExisting(true);
@@ -73,6 +76,29 @@ void ChangeSummaryTestFixture::CreateProject()
     DbResult createStatus;
     m_testDb = DgnDb::CreateDgnDb(&createStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"), createProjectParams);
     ASSERT_TRUE(m_testDb.IsValid()) << "Could not create test project";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeSummaryTestFixture::OpenDgnDb()
+    {
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(L"ChangeSummaryTest.dgndb"), openParams);
+    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
+
+    DgnModelId modelId = m_testDb->Models().QueryFirstModelId();
+    m_testModel = m_testDb->Models().GetModel(modelId).get();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    06/2015
+//---------------------------------------------------------------------------------------
+void ChangeSummaryTestFixture::CloseDgnDb()
+    {
+    m_testDb->CloseDb();
+    m_testModel = nullptr;
+    m_testDb = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -296,7 +322,7 @@ void ChangeSummaryTestFixture::GetChangeSummaryFromSavedTransactions(ChangeSumma
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     {
-    CreateProject();
+    CreateDgnDb();
     m_testDb->Txns().EnableTracking(true);
 
     ChangeSummary changeSummary(*m_testDb);
@@ -426,7 +452,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     {
-    CreateProject();
+    CreateDgnDb();
     m_testDb->Txns().EnableTracking(true);
     
     ChangeSummary changeSummary(*m_testDb);
@@ -594,7 +620,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
     {
-    CreateProject();
+    CreateDgnDb();
     m_testDb->Txns().EnableTracking(true);
 
     InsertModel();
@@ -625,7 +651,7 @@ extern IECInstancePtr CreateStartupCompanyInstance(ECSchemaCR startupSchema);
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
     {
-    CreateProject();
+    CreateDgnDb();
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
@@ -767,7 +793,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
     {
-    CreateProject();
+    CreateDgnDb();
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
@@ -915,7 +941,7 @@ TEST_F(ChangeSummaryTestFixture, StructArrayChangesFromSavedTransactions)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
-    CreateProject();
+    CreateDgnDb();
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
@@ -1118,7 +1144,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
     {
-    CreateProject();
+    CreateDgnDb();
 
     BeFileName schemaPathname;
     BeTest::GetHost().GetDocumentsRoot(schemaPathname);
@@ -1353,7 +1379,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromSavedTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     {
-    CreateProject();
+    CreateDgnDb();
     m_testDb->Txns().EnableTracking(true);
 
     InsertModel();
@@ -1376,8 +1402,6 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ChangeSummary changeSummary(*m_testDb);
     GetChangeSummaryFromCurrentTransaction(changeSummary);
     
-    DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
-
     /*
     DumpChangeSummary(changeSummary, "ChangeSummary after setting ParentId");
 
@@ -1441,9 +1465,9 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, QueryInstances)
+TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
     {
-    CreateProject();
+    CreateDgnDb();
     m_testDb->Txns().EnableTracking(true);
 
     ChangeSummary changeSummary(*m_testDb);
@@ -1502,4 +1526,51 @@ TEST_F(ChangeSummaryTestFixture, QueryInstances)
         changedElements.insert(DgnElementId(iter->first.GetValueUnchecked()));
         }
     ASSERT_EQ(insertedElements, changedElements);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
+    {
+    CreateDgnDb();
+    InsertModel();
+    InsertCategory();
+    m_testDb->SaveChanges();
+    CloseDgnDb();
+
+    int nSessions = 5;
+    int nTransactionsPerSession = 5;
+    for (int ii = 0; ii < nSessions; ii++)
+        {
+        OpenDgnDb();
+        m_testDb->Txns().EnableTracking(true);
+
+        for (int jj = 0; jj < nTransactionsPerSession; jj++)
+            {
+            InsertElement();
+            m_testDb->SaveChanges();
+            }
+
+        CloseDgnDb();
+        }
+
+    OpenDgnDb();
+
+    TxnManager::TxnId startTxnId(TxnManager::SessionId(1), 0); // First session, First transaction
+    ChangeSummary changeSummary(*m_testDb);
+    DgnDbStatus status = m_testDb->Txns().GetChangeSummary(changeSummary, startTxnId);
+    ASSERT_TRUE(status == DgnDbStatus::Success);
+
+    ECSqlStatement stmt;
+    Utf8CP ecsql = "SELECT COUNT(*) FROM dgn.Element el WHERE IsChangedInstance(el.GetECClassId(), el.ECInstanceId)";
+    ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecsql);
+    ASSERT_TRUE(ecSqlStatus == ECSqlStatus::Success);
+
+    ECSqlStepStatus ecSqlStepStatus = stmt.Step();
+    ASSERT_TRUE(ecSqlStepStatus == ECSqlStepStatus::HasRow);
+
+    int actualChangeCount = stmt.GetValueInt(0);
+    int expectedChangeCount = nSessions * nTransactionsPerSession;
+    ASSERT_EQ(expectedChangeCount, actualChangeCount);
     }
