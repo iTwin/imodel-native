@@ -88,6 +88,9 @@ ECPropertyId ECProperty::GetId () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetName (WStringCR name)
     {        
+    if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECOBJECTS_STATUS_InvalidName;
+
     m_validatedName.SetName (name.c_str());
     return ECOBJECTS_STATUS_Success;
     }

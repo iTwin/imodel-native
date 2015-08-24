@@ -2261,15 +2261,20 @@ struct DisplayLabelTester : ECNameValidationTest::ITester
 
     virtual void Preprocess (ECSchemaR schema) const override
         {
-        schema.SetName (m_name);
+        // This test used to rely on SetName() automatically encoding a non-EC name.
+        // We removed that behavior because it diverges from managed EC (which throws an "invalid name" exception instead)
+        // So now we must explicitly encode the name first.
+        WString encodedName;
+        EXPECT_EQ (!ECNameValidation::IsValidName (m_name.c_str()), ECNameValidation::EncodeToValidName (encodedName, m_name));
+        schema.SetName (encodedName);
         Compare (schema);
 
         ECClassP ecclass;
-        schema.CreateClass (ecclass, m_name);
+        schema.CreateClass (ecclass, encodedName);
         Compare (*ecclass);
 
         PrimitiveECPropertyP ecprop;
-        ecclass->CreatePrimitiveProperty (ecprop, m_name, PRIMITIVETYPE_String);
+        ecclass->CreatePrimitiveProperty (ecprop, encodedName, PRIMITIVETYPE_String);
         Compare (*ecprop);
         }
 

@@ -85,6 +85,9 @@ WCharCP ECClass::GetFullName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::SetName (WStringCR name)
     {
+    if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECOBJECTS_STATUS_InvalidName;
+
     m_validatedName.SetName (name.c_str());
     m_fullName = GetSchema().GetName() + L":" + GetName();
     

@@ -144,6 +144,16 @@ bool ECNameValidation::EncodeToValidName (WStringR encoded, WStringCR name)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString ECNameValidation::EncodeToValidName (WStringCR name)
+    {
+    WString encoded;
+    EncodeToValidName (encoded, name);
+    return encoded;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ECValidatedName::GetDisplayLabel() const
@@ -248,7 +258,10 @@ WStringCR ECSchema::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECSchema::SetName (WStringCR name)
     {        
-    if (m_immutable) return ECOBJECTS_STATUS_SchemaIsImmutable;
+    if (m_immutable)
+        return ECOBJECTS_STATUS_SchemaIsImmutable;
+    else if (!ECNameValidation::IsValidName (name.c_str()))
+        return ECOBJECTS_STATUS_InvalidName;
 
     ECNameValidation::EncodeToValidName (m_key.m_schemaName, name);
     if (!m_hasExplicitDisplayLabel)

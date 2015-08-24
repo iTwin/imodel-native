@@ -92,6 +92,8 @@ struct ECNameValidation
 private:
 /*__PUBLISH_SECTION_END__*/
     static void AppendEncodedCharacter (WStringR encoded, WChar c);
+public:
+    ECOBJECTS_EXPORT static WString             EncodeToValidName (WStringCR name);
 /*__PUBLISH_SECTION_START__*/
 public:
 
