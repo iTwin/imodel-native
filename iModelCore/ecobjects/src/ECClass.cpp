@@ -752,7 +752,7 @@ ECObjectsStatus ECClass::RemoveProperty (WStringCR name)
     PropertyMap::iterator  propertyIterator = m_propertyMap.find (name.c_str());
     
     if ( propertyIterator == m_propertyMap.end() )
-        return ECOBJECTS_STATUS_ClassNotFound;
+        return ECOBJECTS_STATUS_PropertyNotFound;
         
     ECPropertyP ecProperty = propertyIterator->second;
     return DeleteProperty (*ecProperty);
