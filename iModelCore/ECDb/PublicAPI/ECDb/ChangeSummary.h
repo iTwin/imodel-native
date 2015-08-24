@@ -264,7 +264,7 @@ struct ChangeSummary : NonCopyableClass
                 DbOpcode GetDbOpcode() const { return (DbOpcode) m_sql->GetValueInt(2); }
 
                 //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
-                int GetIndirect() const { m_sql->GetValueInt(3); }
+                int GetIndirect() const { return m_sql->GetValueInt(3); }
                 
                 //! Get the entire instance representing the current change.
                 ECDB_EXPORT Instance GetInstance() const;
