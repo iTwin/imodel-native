@@ -44,6 +44,7 @@
 #define DGN_CLASSNAME_Style                 "Style"
 #define DGN_CLASSNAME_SubCategory           "SubCategory"
 #define DGN_CLASSNAME_View                  "View"
+#define DGN_CLASSNAME_CameraView            "CameraView"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
