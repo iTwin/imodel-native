@@ -78,7 +78,7 @@ worry about uniqueness.
 within a BeRepository to 2^32 (4 billion). Of course it permits 4 billion different BeRepositories. It is often the best
 compromise of performance and flexibility for tables with lots of activity.
 
-    -# Use #BeServerIssuedId. A BeServerIssuedId is a 4-byte number that is unique because it is issued by a
+    -# Use #BeServerIssuedId. A BeServerIssuedId is an 8-byte number that is unique because it is issued by a
 synchronized id-administration server, enforced outside of the scope of BeSQLite. BeServerIssuedIds therefore cannot be
 created locally and require a connection to the (one, globally administered) server to obtain a new value. Generally
 they are useful for "rarely changed but often used" ids such as styles and fonts, etc.
@@ -261,12 +261,14 @@ struct BeRepositoryId
 // Base class for 2-part 64 bit Ids. Subclasses must supply Validate and Invalidate methods.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-template <typename Derived> struct BeInt64Id
+struct BeInt64Id
 {
+protected:
     int64_t m_id;
 
+public:
     //! Construct an invalid BeInt64Id
-    BeInt64Id() {static_cast<Derived*>(this)->Invalidate();}
+    BeInt64Id() {Invalidate();}
 
     //! Construct a BeInt64Id from a 64 bit value.
     explicit BeInt64Id(int64_t u) : m_id(u) {}
@@ -277,10 +279,9 @@ template <typename Derived> struct BeInt64Id
     //! Construct a copy.
     BeInt64Id(BeInt64Id const& rhs) {m_id = rhs.m_id;}
 
-    //! Construct a BeInt64Id from a RepositoryId value and an id.
-    BeInt64Id(BeRepositoryId repositoryId, uint32_t id) : m_id((((int64_t) repositoryId.GetValue()) << 32 | id)) {}
+    BeInt64Id& operator=(BeInt64Id const& rhs) {m_id = rhs.m_id; return *this;}
 
-    bool IsValid() const {return static_cast<Derived const*>(this)->Validate();}
+    bool IsValid() const {return Validate();}
 
     //! Compare two BeInt64Id for equality
     bool operator==(BeInt64Id const& rhs) const {return rhs.m_id==m_id;}
@@ -302,48 +303,59 @@ template <typename Derived> struct BeInt64Id
 
     //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
     int64_t GetValueUnchecked() const {return m_id;}
+
+    //! Test to see whether this BeInt64Id is valid. 0 and -1 are not valid ids.
+    bool Validate() const {return m_id!=0 && m_id!=-1;}
+
+    //! Set this BeInt64Id to an invalid value (-1).
+    void Invalidate() {m_id = -1;}
 };
+
+#define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
+    classname() {Invalidate();}\
+    explicit classname(int64_t v) : superclass(v) {} \
+    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
+    classname(classname const& rhs) : superclass(rhs) {} \
+    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
+    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */
 
 //=======================================================================================
 //! A 8-byte value that is locally unique within a BeRepository. Since BeRepositoryId's are forced to be unique externally, a BeRepositoryBasedId
 //! can be assumed to be globally unique. This provides a more efficient strategy for id values than using true 128-bit GUIDs.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct BeRepositoryBasedId : BeInt64Id<BeRepositoryBasedId>
+struct BeRepositoryBasedId : BeInt64Id
 {
-    BeRepositoryBasedId() {Invalidate();}
+    BEINT64_ID_DECLARE_MEMBERS(BeRepositoryBasedId,BeInt64Id)
 
-    //! Construct a BeRepositoryBasedId from a 64 bit value.
-    explicit BeRepositoryBasedId(int64_t val) : BeInt64Id(val) {}
+public:
+    //! Construct a BeInt64Id from a RepositoryId value and an id.
+    BeRepositoryBasedId(BeRepositoryId repositoryId, uint32_t id) { m_id = ((((int64_t) repositoryId.GetValue()) << 32 | id)); }
 
-    //! Move constructor.
-    BeRepositoryBasedId(BeRepositoryBasedId&& rhs) : BeInt64Id<BeRepositoryBasedId> (std::move(rhs)) {}
+    BeRepositoryId GetRepositoryId() const {return BeRepositoryId(m_id >> 32);}
 
-    //! Constructs a copy.
-    BeRepositoryBasedId(BeRepositoryBasedId const& rhs) : BeInt64Id<BeRepositoryBasedId>(rhs) {}
-
-    //! Copies values from another instance.
-    BeRepositoryBasedId& operator=(BeRepositoryBasedId const& rhs) {m_id = rhs.m_id; return *this;}
-
-    //! Construct a BeRepositoryBasedId from a RepositoryId value and an id.
-    BeRepositoryBasedId(BeRepositoryId repositoryId, uint32_t id) : BeInt64Id(repositoryId,id) {}
-
-    //! Test to see whether this BeRepositoryBasedId is valid. 0 and -1 are not valid ids.
-    bool Validate() const {return m_id!=0 && m_id!=-1;}
-
-    //! Set this BeRepositoryBasedId to an invalid value (-1).
-    void Invalidate() {m_id = -1;}
+    //! @private
+    BE_SQLITE_EXPORT void CreateRandom(BeRepositoryId);
 };
 
-#define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass {classname() : superclass() {}  \
-    classname(classname&& rhs) : superclass(std::move(rhs)) {} \
-    classname(classname const& rhs) : superclass(rhs) {} \
-    classname& operator=(classname const& rhs) {m_id = rhs.m_id; return *this;} \
-    explicit classname(int64_t v) : superclass(v) {} \
+
+#define BEREPOSITORYBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
     classname(BeRepositoryId repositoryId, uint32_t id) : superclass(repositoryId,id){} \
-    private: explicit classname(int32_t v) : superclass() {} /* private to catch int vs. Id issues */ };
+    BEINT64_ID_DECLARE_MEMBERS(classname,superclass) };
 
 #define BEREPOSITORYBASED_ID_CLASS(classname) BEREPOSITORYBASED_ID_SUBCLASS(classname,BeRepositoryBasedId)
+
+//=======================================================================================
+//! An 8-byte Id value that must be requested from an external authority that enforces uniqueness.
+// @bsiclass                                                    Keith.Bentley   02/13
+//=======================================================================================
+struct BeServerIssuedId : BeInt64Id
+{
+    BEINT64_ID_DECLARE_MEMBERS(BeServerIssuedId,BeInt64Id)
+};
+
+#define BESERVER_ISSUED_ID_SUBCLASS(classname,superclass) struct classname : superclass {BEINT64_ID_DECLARE_MEMBERS(classname,superclass)};
+#define BESERVER_ISSUED_ID_CLASS(classname) BESERVER_ISSUED_ID_SUBCLASS(classname,BeServerIssuedId)
 
 //=======================================================================================
 // Base class for 32 bit Ids. Subclasses must supply GetInvalidValue.
@@ -384,69 +396,6 @@ template <typename Derived, uint32_t s_invalidValue> struct BeUInt32Id
 
     //! only for internal callers that understand the semantics of invalid IDs.
     uint32_t GetValueUnchecked() const {return m_id;}
-};
-
-//=======================================================================================
-//! A 4-byte Id value that must be requested from an external authority that enforces uniqueness.
-// @bsiclass                                                    Keith.Bentley   02/13
-//=======================================================================================
-struct BeServerIssuedId : BeUInt32Id<BeServerIssuedId,0xffffffff>
-{
-    //! Construct an invalid BeServerIssuedId
-    BeServerIssuedId() {Invalidate();}
-
-    //! Construct a BeServerIssuedId from a 32 bit value.
-    explicit BeServerIssuedId(uint32_t u) : BeUInt32Id(u) {}
-
-    void CheckValue() const {BeAssert(IsValid());}
-};
-
-#define BESERVER_ISSUED_ID_CLASS(classname) struct classname : BeServerIssuedId {classname() : BeServerIssuedId() {} explicit classname(uint32_t u) : BeServerIssuedId(u) {}};
-
-//=======================================================================================
-//! An 8-byte "Locally Unique" Id. A value of all zeros means invalid. Generally, this type is used for Ids whose values are
-//! maintained on a per-file basis (hence, "local" means "within this file").
-// @bsiclass                                                    Keith.Bentley   02/11
-//=======================================================================================
-struct BeLuid
-{
-    union{int64_t u; int32_t i[2]; int16_t s[4]; char b[8];} m_luid;
-
-    //! Construct an invalid BeLuid
-    BeLuid() {Invalidate();}
-
-    //! Construct a BeLuid from a 64 bit value.
-    explicit BeLuid(int64_t u) {Init(u);}
-
-    //! Construct a BeLuid from two 32 bit values.
-    BeLuid(int32_t i1, int32_t i0) {Init(i1,i0);}
-
-    //! Initialize this BeLuid from a 64 bit value.
-    void Init(int64_t u){m_luid.u=u;}
-
-    //! Initialize this BeLuid from two 32 bit values.
-    void Init(int32_t i1, int32_t i0){m_luid.i[0]=i0; m_luid.i[1]=i1;}
-
-    //! Initialize this BeLuid from four 16 bit values.
-    void Init(int16_t s3, int16_t s2, int16_t s1, int16_t s0){m_luid.s[0]=s0; m_luid.s[1]=s1; m_luid.s[2]=s2; m_luid.s[3]=s3;}
-
-    //! Compare two BeLuids for equality
-    bool operator==(BeLuid const& rhs) const {return rhs.m_luid.u==m_luid.u;}
-
-    //! Compare two BeLuids for inequality
-    bool operator!=(BeLuid const& rhs) const {return !(*this==rhs);}
-
-    //! Set this BeLuid to the invalid id value (all zeros).
-    void Invalidate() {m_luid.u = 0;}
-
-    //! Test to see whether this BeLuid is non-zero
-    bool IsValid() const {return 0!=m_luid.u;}
-
-    // Get the 64 bit value of this BeLuid
-    int64_t GetValue() const {BeAssert(IsValid()); return  m_luid.u;}
-
-    //! Assign a new random id for this BeLuid. Old value is overwritten.
-    BE_SQLITE_EXPORT void CreateRandom();
 };
 
 END_BENTLEY_NAMESPACE
@@ -786,17 +735,7 @@ public:
     //! Bind a BeRepositoryBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
     //! @param[in] paramNum the SQL parameter number to bind.
     //! @param[in] value the value to bind.
-    template <class T_Id> DbResult BindId(int paramNum, BeInt64Id<T_Id> value) {return value.IsValid() ? BindInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
-
-    //! Bind a BeRepositoryBasedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
-    //! @param[in] paramNum the SQL parameter number to bind.
-    //! @param[in] value the value to bind.
-    DbResult BindId(int paramNum, BeRepositoryBasedId value) {return value.IsValid() ? BindInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
-
-    //! Bind a BeServerIssuedId value to a parameter of this (previously prepared) Statement. Binds NULL if the id is not valid.
-    //! @param[in] paramNum the SQL parameter number to bind.
-    //! @param[in] value the value to bind.
-    DbResult BindId(int paramNum, BeServerIssuedId value) {return value.IsValid() ? BindInt(paramNum,value.GetValue()) : BindNull(paramNum);}
+    DbResult BindId(int paramNum, BeInt64Id value) {return value.IsValid() ? BindInt64(paramNum,value.GetValue()) : BindNull(paramNum);}
 
     //! Bind a double value to a parameter of this (previously prepared) Statement
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -824,12 +763,6 @@ public:
     //! @param[in] value the value to bind.
     //! @note BeGuids are saved as a 16-byte blob in the database.
     BE_SQLITE_EXPORT DbResult BindGuid(int paramNum, BeGuidCR value);
-
-    //! Bind a BeLuid to a parameter of this (previously prepared) Statement
-    //! @param[in] paramNum the SQL parameter number to bind.
-    //! @param[in] value the value to bind.
-    //! @see sqlite3_bind_int64
-    BE_SQLITE_EXPORT DbResult BindLuid(int paramNum, BeLuid value);
 
     //! Bind a zero-blob of the specified size to a parameter of this (previously prepared) Statement
     //! @param[in] paramNum the SQL parameter number to bind.
@@ -911,11 +844,6 @@ public:
     //! @param[in] col The column of interest
     //! @see sqlite3_column_double
     BE_SQLITE_EXPORT double GetValueDouble(int col);
-
-    //! Get a BeLuid value from a column returned from Step
-    //! @param[in] col The column of interest
-    //! @see sqlite3_column_int64
-    BeLuid GetValueLuid(int col) {return BeLuid((uint64_t) GetValueInt64(col));}
 
     //! Get a BeRepositoryBasedId value from a column returned from Step
     //! @param[in] col The column of interest
@@ -1019,7 +947,7 @@ protected:
     SqlValueP m_val;
 
 public:
-    DbValue(SqlValueP val) : m_val(val)  {}
+    DbValue(SqlValueP val) : m_val(val) {}
     
     bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
@@ -1033,7 +961,6 @@ public:
     BE_SQLITE_EXPORT int         GetValueInt() const;       //!< see sqlite3_value_int
     BE_SQLITE_EXPORT int64_t     GetValueInt64() const;     //!< see sqlite3_value_int64
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
-    BE_SQLITE_EXPORT BeLuid      GetValueLuid() const;      //!< get the value as a Locally unique id
     BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
     template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueInt64());}
 
@@ -2617,6 +2544,13 @@ public:
     //! @param [in] whereParam optional additional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
     //! parameters to bind.
     BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=nullptr);
+
+    //! Get a new value for a BeServerIssuedId from the server 
+    //! @param [in,out] value the new value of the BeServerIssuedId
+    //! @param [in] tableName the name of the table holding the BeServerIssuedId
+    //! @param [in] columnName the name of the column holding the BeServerIssuedId
+    //! @param [in] json parameters that the server can use to create the new row in the specified table.
+    BE_SQLITE_EXPORT DbResult GetServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, Utf8CP json=nullptr);
 
     //! Determine whether this Db was opened readonly.
     BE_SQLITE_EXPORT bool IsReadonly() const;
