@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <BeSQLite/IModelDb.h>
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
@@ -361,4 +362,3 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
 
     return BE_SQLITE_OK;
     }
-

@@ -32,10 +32,10 @@
 #include <math.h>
 #include <DgnPlatform/Tools/BitMask.h>
 #include <DgnPlatform/VecMath.h>
+#include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCore/DgnCoreAPI.h>
 #include <DgnPlatform/DgnCore/rtypes.r.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
-#include <DgnPlatformInternal/DgnCore/MaterialTokens.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/DgnCore/NullContext.h>
@@ -64,7 +64,6 @@
 #include "DgnCore/JsonUtils.h"
 #include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
 #include <DgnPlatform/DgnHandlers/RegionUtil.h>
-#include <DgnPlatformInternal/DgnHandlers/MultilineStyle.h>
 #include <Mtg/MtgApi.h>
 #include <Regions/regionsAPI.h>
 #include <Regions/rimsbsAPI.h>

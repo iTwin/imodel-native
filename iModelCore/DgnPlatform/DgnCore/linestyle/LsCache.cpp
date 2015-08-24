@@ -345,6 +345,7 @@ void            LsCompoundComponent::CalculateSize(DgnModelP modelRef)
             }
 
         double offset    = fabs (GetOffset (compNum));
+        //  NEEDSWORK_LINESTYLE_UNITS
         double compWidth = GetComponentCP(compNum)->_GetMaxWidth(modelRef);
         double thisWidth = (offset + (compWidth/2.0)) * 2.0;
 
@@ -540,6 +541,20 @@ LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentRea
     return  rasterImage;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+bool LsCompoundComponent::_SupportsConvertToRaster() const
+    {
+    for (size_t compNum = 0; compNum < GetNumComponents(); compNum++)
+        {
+        if (!GetComponentCP (compNum)->_SupportsConvertToRaster ())
+            return  false;
+        }
+
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   08/08
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -658,8 +673,10 @@ LsStrokePatternComponentCP    strokeComp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsDefinition::PostProcessComponentLoad (DgnModelP modelRef)
     {
+#if defined(NEEDSWORK_LINESTYLE_MODELREF)
     if (NULL == modelRef)
         return;    //  defer post-processing until there is a request that supplies a modelRef.
+#endif
 
     if (m_componentLoadPostProcessed)
         return;

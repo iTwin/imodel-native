@@ -122,38 +122,150 @@ Utf8String         LsDefinition::GetStyleName () const
     return Utf8String(retval);
     }
 
+//  Logic to make a line style behave as a raster line style.
+//---------------------------------------------------------------------------------------
+// This color may possibly come from the element, or it may come from the line style.
+// If it comes from the element, do we need a different map for every color?
+//
+// The texture may also have to reflect differences in line style overrides.
+//
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+/* static */  void CreateGeometryMapMaterial(ViewContextR context, IStrokeForCache& stroker, intptr_t textureId)
+    {
+#if defined(WIP_LINESTYLES)
+    // NOTE: Need to setup pattern symbology on cell element and hide 0 length lines used as pattern cell extent markers, etc.
+    PatternHelper::CookPatternSymbology (*params, context);
+    symbCell.ApplyElemDisplayParams (*context.GetCurrentDisplayParams ());
+#endif
+
+    context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
+    return;
+    }
+
+//=======================================================================================
+//! Used to generate a texture based on a line style.
+// @bsiclass                                                    John.Gooding    08/2015
+//=======================================================================================
+struct          ComponentToTextureStroker : Dgn::IStrokeForCache
+{
+private:
+    ViewContextR        m_viewContext;
+    LineStyleSymbR      m_lineStyleSymb;
+    LsDefinitionR       m_lsDef;
+public:
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), m_lsDef(lsDef) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
+    {
+    ElemDisplayParams   savedParams(*context.GetCurrentDisplayParams());
+
+    //  Compute size of one iteration and stroke a line for that size.
+    LsComponentCP    topComponent = m_lsDef.GetComponentCP (nullptr);
+    double length = topComponent->_GetLength();
+    if (length <  mgds_fc_epsilon)
+        length = 1.0;   //  Apparently nothing is length dependent.
+
+    DPoint3d points[2] = { {0,0,0}, {length, 0,0} };
+    topComponent->_StrokeLineString(&context, &m_lineStyleSymb, points, 2, false);
+
+    *context.GetCurrentDisplayParams() = savedParams;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+int32_t _GetQvIndex() const override
+    {
+    return 1;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+QvElemP _GetQvElem(double pixelSize = 0.0) const override
+    {
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+DgnDbR _GetDgnDb() const override { return m_viewContext.GetDgnDb(); }
+};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+intptr_t  LsDefinition::GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb)
+    {
+    //  Assume the caller already knows this is something that must be converted but does not know it can be converted.
+    BeAssert(m_lsComp->GetComponentType() != LsComponentType::RasterImage);
+    ComponentToTextureStroker   stroker(viewContext, lineStyleSymb, *this);
+    
+    viewContext.GetIViewDraw ().DefineQVGeometryMap (intptr_t(this), stroker, NULL, false, viewContext, false);
+    return intptr_t(this);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scale) const
+uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale) 
     {
+    if (!m_lsComp.IsValid())
+        {
+        BeAssert(0 == m_rasterTexture);
+        return m_rasterTexture;
+        }
+
+    if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
+        forceRaster =  true;
+
     if (!m_rasterInitialized)
         {
         m_rasterInitialized = true;
-
-        uint8_t const* image;
-        Point2d     imageSize;
-        uint32_t      flags = 0;
-
-        if (m_lsComp.IsValid() && 
-            SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
+        if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
             {
-            if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
+            uint8_t const* image;
+            Point2d     imageSize;
+            uint32_t      flags = 0;
+
+            if (SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
                 {
-                size_t          imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
-                bool            invert     = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
+                if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
+                    {
+                    size_t          imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
+                    bool            invert     = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
 
-                bvector<uint8_t>   alpha (imageBytes);
+                    bvector<uint8_t>   alpha (imageBytes);
 
-                for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
-                    alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
+                    for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
+                        alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
 
-                DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+                    }
+                else
+                    {
+                    DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
+                    }
                 }
-            else
-                {
-                DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
-                }
+            }
+        else if (forceRaster)
+            {
+            //  Convert this type to raster on the fly if possible
+            m_rasterTexture = GenerateRasterTexture(viewContext, lineStyleSymb);
             }
         }
     

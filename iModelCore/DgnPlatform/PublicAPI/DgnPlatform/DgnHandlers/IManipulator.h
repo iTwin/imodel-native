@@ -63,6 +63,9 @@ virtual bool _DoUpdateSelectedControls (HitDetailCR path) = 0;
 //! @return true if manipulator has controls selected or flashed.
 virtual bool _HasSelectedControls () = 0;
 
+//! Return whether manipulator controls or dynamics should be shown in the supplied view.
+virtual bool _IsDisplayedInView(DgnViewportR vp) = 0;
+
 //! Called to display the manipulator's controls in the supplied viewport.
 //! This is commonly done by drawing sprites, but the manipulator can choose to draw any geometry it wants.
 virtual void _OnDraw (DgnViewportR vp) = 0;

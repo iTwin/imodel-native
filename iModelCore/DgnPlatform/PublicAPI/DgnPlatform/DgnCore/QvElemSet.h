@@ -38,6 +38,7 @@ protected:
     ~QvElemSet() {FreeAll(false);}
 
     DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override {return DropMe::Yes;}
+    DropMe _OnReversedUpdate(DgnElementCR modified, DgnElementCR original) override {return DropMe::Yes;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06

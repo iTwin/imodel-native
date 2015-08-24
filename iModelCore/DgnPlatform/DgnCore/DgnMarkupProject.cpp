@@ -150,11 +150,6 @@ void PhysicalRedlineViewController::SynchWithSubjectViewController()
     m_viewFlags.weights = true;
     m_viewFlags.acs = true;
     m_viewFlags.grid = true;
-
-    // tricky: PhysicalRedlineViewController must seem to override the background color 
-    //         just so that its _GetBackgroundColor will be called by ResolveBGColor, 
-    //         so that it can forward the call to the subject viewcontroller.
-    m_viewFlags.bgColor = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1578,8 +1573,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView(RedlineModelR rdlMode
     auto templateSheet = project->Views().LoadViewController(templateView, DgnViews::FillModels::No);
     if (templateSheet.IsValid())
         {
-        if (templateSheet->GetViewFlags().bgColor)
-            controller->SetBackgroundColor(templateSheet->GetBackgroundColor());
+        controller->SetBackgroundColor(templateSheet->GetBackgroundColor());
         controller->SetDelta(templateSheet->GetDelta());
         controller->SetOrigin(templateSheet->GetOrigin());
         controller->GetViewedCategoriesR() = templateSheet->GetViewedCategories();

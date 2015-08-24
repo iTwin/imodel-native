@@ -60,7 +60,7 @@ TEST_F(PerformanceElementItem, CRUD)
         {
             //First insert the Element
             elementTimer.Start();
-            DgnElementCPtr el = InsertElement(Utf8PrintfString("E%d", i));
+            DgnElementCPtr el = InsertElement(DgnElement::Code(Utf8PrintfString("E%d", i)));
             EXPECT_TRUE(el.IsValid());
             elementTimer.Stop();
             insertTime = insertTime + elementTimer.GetElapsedSeconds();
@@ -117,7 +117,7 @@ protected:
     };
 
 //static
-const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId (BeRepositoryId(1), 123);
+const DgnCategoryId PerformanceElementTestFixture::s_catId = DgnCategoryId((int64_t)123);
 Utf8CP const PerformanceElementTestFixture::s_textVal = "bla bla";
 const double PerformanceElementTestFixture::s_doubleVal = -3.1415;
 

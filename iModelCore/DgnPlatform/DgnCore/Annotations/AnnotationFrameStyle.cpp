@@ -494,7 +494,7 @@ bool DgnAnnotationFrameStyles::ExistsByName(Utf8CP name) const
     query.BindText(1, name, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != query.Step())
-        return nullptr;
+        return false;
 
     return (query.GetValueInt(0) > 0);
     }
@@ -511,7 +511,7 @@ BentleyStatus DgnAnnotationFrameStyles::Insert(AnnotationFrameStyleR style)
     PRECONDITION(SUCCESS == AnnotationFrameStylePersistence::EncodeAsFlatBuf(data, style, AnnotationFrameStylePersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
 
     DgnStyleId nextId;
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(nextId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
+    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetServerIssuedId(nextId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
     
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Descr,Data) VALUES (?," DGN_STYLE_TYPE_AnnotationFrame ",?,?,?)");

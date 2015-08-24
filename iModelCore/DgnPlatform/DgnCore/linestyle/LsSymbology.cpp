@@ -391,7 +391,7 @@ DPoint3dCP          endTangent
 #if defined(LINESTYLES_NEEDSWORK) //   -- unclear what will happen to the magic values.  For now, avoid any collision with them.
     if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
 #else
-    if (styleInfo->GetStyleId().GetValueUnchecked() == 0)
+    if (styleInfo->GetStyleId().GetValueUnchecked() == 0 || styleInfo->GetStyleId().GetValueUnchecked() == -1)
 #endif
           return 0; //  styleNo;
 
@@ -483,9 +483,9 @@ DPoint3dCP          endTangent
         unitDef = 1.0;
 
     // Update unitDef to convert to UORs
-    if (nameRec->IsUnitsMaster ())
+    if (nameRec->IsUnitsMeters ())
         {
-        unitDef *= 1000;
+        //  No additional scaling is needed.
         }
     else if (nameRec->IsUnitsDevice ())
         {
@@ -511,8 +511,6 @@ DPoint3dCP          endTangent
 
     scale *= unitDef;
 
-    m_rasterTexture = nameRec->GetRasterTexture (context, *this, scale);
-
     double  startWidth = tmpLSParams.startWidth;
     double  endWidth   = tmpLSParams.endWidth;
 
@@ -532,7 +530,7 @@ DPoint3dCP          endTangent
     if (nameRec->IsSCScaleIndependent()) // linestyles that are independent of sharedcell's scale.
         {
         BeAssert(nameRec->IsSCScaleIndependent());
-#if defined(NEEDSWORK_LINESTYLES)
+#if defined(NEEDSWORK_LINESTYLES)  //  line styles in shared cells
         Transform       localToFrustum;
 
         // get the scale from the current localToFrustum to the current modelRef's scale, and back that out of the linestyle scale.
@@ -547,6 +545,8 @@ DPoint3dCP          endTangent
         }
 
     SetScale (scale);
+
+    m_rasterTexture = nameRec->GetRasterTexture (context, *this, context.Is3dView(), scale);
 
     return 0;
     }

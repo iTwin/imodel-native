@@ -125,12 +125,12 @@ enum class DrawExpense
 };
 
 
-enum class FillDisplay //!< Whether an element should be drawn with its internal area filled or not
+enum class FillDisplay //!< Whether a closed region should be drawn for wireframe display with its internal area filled or not.
 {
     Never    = 0, //!< don't fill, even if fill attribute is on for the viewport
-    ByView   = 1, //!< fill the element iff the fill attribute is on for the viewport
-    Always   = 2, //!< always fill the element, even if the fill attribute is off for the viewport
-    Blanking = 3, //!< always fill/always behind geometry that follows
+    ByView   = 1, //!< fill if the fill attribute is on for the viewport
+    Always   = 2, //!< always fill, even if the fill attribute is off for the viewport
+    Blanking = 3, //!< always fill, fill will always be behind subsequent geometry
 };
 
 enum class DgnGeometryClass
@@ -403,6 +403,7 @@ private:
         bool m_style:1;
         bool m_material:1;
         bool m_fill:1; // If not set, fill is an opaque fill that matches sub-category appearance color...
+        bool m_bgFill:1; // When set, fill is an opaque fill that matches current view background color...
         };
 
     // NOTE: Constructor uses memset (this, 0, offsetof (ElemDisplayParams, m_material));
@@ -429,39 +430,42 @@ private:
     PlotInfoPtr         m_plotInfo;
 
 public:
-    DGNPLATFORM_EXPORT ElemDisplayParams();
+    ElemDisplayParams() {Init();}
     DGNPLATFORM_EXPORT explicit ElemDisplayParams(ElemDisplayParamsCR rhs);
 
-    DGNPLATFORM_EXPORT void     Init();
-    DGNPLATFORM_EXPORT void     ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
-    DGNPLATFORM_EXPORT void     Resolve(ViewContextR); // Resolve effective values
-    DGNPLATFORM_EXPORT void     SetCategoryId(DgnCategoryId); // Setting the Category Id also sets the SubCategory to the default.
-    DGNPLATFORM_EXPORT void     SetSubCategoryId(DgnSubCategoryId);
-    DGNPLATFORM_EXPORT void     SetWeight(uint32_t weight);
-    DGNPLATFORM_EXPORT void     SetLineStyle(LineStyleInfoP styleInfo);
-    DGNPLATFORM_EXPORT void     SetLineColor(ColorDef color);
-    DGNPLATFORM_EXPORT void     SetFillDisplay(FillDisplay display);
-    DGNPLATFORM_EXPORT void     SetFillColor(ColorDef color);
-    DGNPLATFORM_EXPORT void     SetGradient(GradientSymbP gradient);
-    DGNPLATFORM_EXPORT void     SetGeometryClass(DgnGeometryClass);
-    DGNPLATFORM_EXPORT void     SetTransparency(double transparency); // NOTE: Sets BOTH element and fill transparency...
-    DGNPLATFORM_EXPORT void     SetFillTransparency(double transparency);
-    DGNPLATFORM_EXPORT void     SetDisplayPriority(int32_t priority); // Set display priority (2d only).
-    DGNPLATFORM_EXPORT void     SetMaterial(DgnMaterialId material);
-    DGNPLATFORM_EXPORT void     SetPatternParams(PatternParamsP patternParams);
+    DGNPLATFORM_EXPORT void Init();
+    DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
+    DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values
+
+    void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategories::DefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
+    void SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
+    void SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
+    void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
+    void SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
+    void SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
+    void SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_appearanceOverrides.m_bgFill = false; m_fillColor = color;}
+    void SetFillColorToViewBackground() {m_appearanceOverrides.m_fill = false; m_appearanceOverrides.m_bgFill = true;} // FillDisplay::Blanking creates an opaque view background fill...
+    void SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
+    void SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
+    void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;} // NOTE: Sets BOTH element and fill transparency...
+    void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;} 
+    void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;} // Set display priority (2d only).
+    void SetMaterial(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
+    void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
-    DGNPLATFORM_EXPORT double   GetNetTransparency() const;
-    DGNPLATFORM_EXPORT double   GetNetFillTransparency() const;
+    double GetNetTransparency() const {BeAssert(m_resolved); return m_netElmTransparency;}
+    double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
-    DGNPLATFORM_EXPORT int32_t  GetNetDisplayPriority() const; // Get net display priority (2d only).
-    DGNPLATFORM_EXPORT void     SetNetDisplayPriority(int32_t priority); // RASTER USE ONLY!!!
+    int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
+    void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
-    DGNPLATFORM_EXPORT bool     IsLineColorFromSubCategoryAppearance() const;
-    DGNPLATFORM_EXPORT bool     IsWeightFromSubCategoryAppearance() const;
-    DGNPLATFORM_EXPORT bool     IsLineStyleFromSubCategoryAppearance() const;
-    DGNPLATFORM_EXPORT bool     IsMaterialFromSubCategoryAppearance() const;
-    DGNPLATFORM_EXPORT bool     IsFillColorFromSubCategoryAppearance() const;
+    bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
+    bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
+    bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}
+    bool IsMaterialFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_material;}
+    bool IsFillColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_fill && !m_appearanceOverrides.m_bgFill;}
+    bool IsFillColorFromViewBackground() const {return m_appearanceOverrides.m_bgFill;}
     //! @endcond
 
     //! Compare two ElemDisplayParam.
@@ -471,46 +475,46 @@ public:
     DGNPLATFORM_EXPORT ElemDisplayParamsR operator=(ElemDisplayParamsCR rhs);
 
     //! Get element category
-    DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const;
+    DgnCategoryId GetCategoryId() const {return m_categoryId;}
 
     //! Get element sub-category
-    DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId() const;
+    DgnSubCategoryId GetSubCategoryId() const {return m_subCategoryId;}
 
     //! Get element color
-    DGNPLATFORM_EXPORT ColorDef GetLineColor() const;
+    ColorDef GetLineColor() const {BeAssert(m_appearanceOverrides.m_color || m_resolved); return m_lineColor;}
 
     //! Get element fill color
-    DGNPLATFORM_EXPORT ColorDef GetFillColor() const;
+    ColorDef GetFillColor() const {BeAssert(m_appearanceOverrides.m_fill || m_resolved); return m_fillColor;}
 
-    //! Get fill display setting.
-    DGNPLATFORM_EXPORT FillDisplay GetFillDisplay() const;
+    //! Get fill display setting
+    FillDisplay GetFillDisplay() const {return m_fillDisplay;}
 
     //! Get gradient fill information. Valid when FillDisplay::Never != GetFillDisplay() and not nullptr.
-    DGNPLATFORM_EXPORT GradientSymbCP GetGradient() const;
-
-    //! Get the geometry class.
-    DGNPLATFORM_EXPORT DgnGeometryClass GetGeometryClass() const;
+    GradientSymbCP GetGradient() const {return m_gradient.get();}
 
     //! Get the area pattern params.
-    DGNPLATFORM_EXPORT PatternParamsCP GetPatternParams() const;
+    PatternParamsCP GetPatternParams() const {return m_pattern.get();}
+
+    //! Get the geometry class.
+    DgnGeometryClass GetGeometryClass() const {return m_geometryClass;}
 
     //! Get line style information.
-    DGNPLATFORM_EXPORT LineStyleInfoCP GetLineStyle() const;
+    LineStyleInfoCP GetLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return m_styleInfo.get();}
 
     //! Get element weight.
-    DGNPLATFORM_EXPORT uint32_t GetWeight() const;
+    uint32_t GetWeight() const {BeAssert(m_appearanceOverrides.m_weight || m_resolved); return m_weight;}
 
     //! Get element transparency.
-    DGNPLATFORM_EXPORT double GetTransparency() const;
+    double GetTransparency() const {return m_elmTransparency;}
 
     //! Get fill/gradient transparency.
-    DGNPLATFORM_EXPORT double GetFillTransparency() const;
+    double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DGNPLATFORM_EXPORT DgnMaterialId GetMaterial() const;
+    DgnMaterialId GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material;}
 
     //! Get element display priority (2d only).
-    DGNPLATFORM_EXPORT int32_t GetDisplayPriority() const;
+    int32_t GetDisplayPriority() const {return m_elmPriority;}
 }; // ElemDisplayParams
 
 //=======================================================================================
@@ -920,14 +924,6 @@ struct IStrokeForCache
     //! wireframe geometry cache and output it when their _Draw method is called for the purpose of picking.
     virtual bool _WantLocateByQvElem() const {return !_WantLocateByStroker();}
 
-    //! (2D ONLY) The stroker is required to supply the "net" display priority for the QvElem when it is initially created.
-    //! A QvElem has a single display priority for all it's geometry. It is expected that this method returns the same value that will be supplied to 
-    //! every 2d ICachedDraw call used in creating the QvElem. Even though the priority value supplied to the 2d ICachedDraw methods is not what is 
-    //! used for display, it is still important to callers of _StrokeForCache that it's set consistently.
-    //! @note The net display priority is a combination of the geometry and sub-category display priority.
-    //! @see ViewContext::ResolveNetDisplayPriority
-    virtual double _GetDisplayPriority(ViewContextR context) const {return 0.0;}
-
     //! Return geometry range for the purpose of calculating pixelSize for creating a size dependent cache representation.
     //! @note A valid range is required only if _GetSizeDependentGeometryPossible returns true.
     virtual DRange3d _GetRange() const {return DRange3d::NullRange();}
@@ -1229,7 +1225,7 @@ protected:
     virtual void _ClearZ () = 0;
 
     virtual uintptr_t _DefineQVTexture(WCharCP textureName, DgnDbP) {return 0;}
-    virtual void _DefineQVGeometryMap(MaterialCR material, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
+    virtual void _DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern) {}
 
     virtual bool _IsOutputQuickVision() const = 0;
     virtual bool _ApplyMonochromeOverrides(ViewFlagsCR) const = 0;
@@ -1301,7 +1297,7 @@ public:
 
     DGNPLATFORM_EXPORT void ClearZ ();
     DGNPLATFORM_EXPORT uintptr_t DefineQVTexture(WCharCP textureName, DgnDbP dgnFile);
-    DGNPLATFORM_EXPORT void DefineQVGeometryMap(MaterialCR material, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
+    DGNPLATFORM_EXPORT void DefineQVGeometryMap(uintptr_t textureId, IStrokeForCache&, DPoint2dCP spacing, bool useCellColors, ViewContextR seedContext, bool forAreaPattern = false);
     DGNPLATFORM_EXPORT bool IsOutputQuickVision() const;
     bool ApplyMonochromeOverrides(ViewFlagsCR) const;
 }; // IViewDraw
@@ -1317,12 +1313,12 @@ private:
     virtual void    _SetCacheElement(QvElem*) = 0;
 
 protected:
-    virtual void    _BeginCacheElement(QvCache*, bool is3d, double zDepth, uintptr_t elementId) = 0;
+    virtual void    _BeginCacheElement(QvCache*) = 0;
     virtual QvElem* _EndCacheElement() = 0;
     virtual void    _AssignElementToView(QvView*, QvElem*, int viewMode) = 0;
 
 public:
-    DGNPLATFORM_EXPORT void    BeginCacheElement(QvCache*, bool is3d = true, double zDepth = 0.0, uintptr_t elementId = 0);
+    DGNPLATFORM_EXPORT void    BeginCacheElement(QvCache*);
     DGNPLATFORM_EXPORT QvElem* EndCacheElement();
     DGNPLATFORM_EXPORT void    AssignElementToView(QvView*, QvElem*, int viewMode = 0);
 
