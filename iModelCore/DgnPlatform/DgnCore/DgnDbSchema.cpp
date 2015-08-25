@@ -72,7 +72,7 @@ DbResult DgnDb::CreateDgnDbTables()
 
     // Every DgnDb has a "local" authority for element codes
         {
-        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name) VALUES (1,'DgnDb')"); // WIP: use Authority API when it exists
+        Statement statement(*this, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Authority) " (Id,Name) VALUES (1,'Local')"); // WIP: use Authority API when it exists
         DbResult result = statement.Step();
         BeAssert(BE_SQLITE_DONE == result);
         UNUSED_VARIABLE(result);
