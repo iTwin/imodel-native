@@ -20,7 +20,7 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#define DGN_CLASSNAME_ComponentSolution "ComponentSolution"
+#define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -48,11 +48,11 @@
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain        DGN_TABLE("Domain")
-#define DGN_TABLE_Font          DGN_TABLE("Font")
-#define DGN_TABLE_Handler       DGN_TABLE("Handler")
-#define DGN_TABLE_Txns          DGN_TABLE("Txns")
-#define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain   DGN_TABLE("Domain")
+#define DGN_TABLE_Font     DGN_TABLE("Font")
+#define DGN_TABLE_Handler  DGN_TABLE("Handler")
+#define DGN_TABLE_Txns     DGN_TABLE("Txns")
+#define DGN_VTABLE_RTree3d DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
@@ -881,9 +881,8 @@ public:
 //! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
 //! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
 //! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
-//! However, if a book name is supplied, there may not be two entries with the same name.
+//! However, for a given book name, there may not be two entries with the same name.
 //! @see DgnDb::Colors
-//! @ingroup DgnColorGroup
 //=======================================================================================
 struct DgnColors : DgnDbTable
 {
@@ -912,16 +911,16 @@ public:
         Utf8StringCR GetBook() const {return m_book;}
     };
 
-    //! Add a new entry to this DgnColors.
+    //! Add a new Color to the table.
     //! @param[in] color    The Color values for the new entry.
     //! @param[out] result  The result of the operation
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
     DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
 
-    //! Find the first DgnTrueColorId that has a given color value.
+    //! Find the first DgnTrueColorId that has a given ColorDef value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
-    //! @note If the table holds more than one entry with the same value, the "first" DgnTrueColorId is returned.
+    //! @note If the table holds more than one entry with the same value, it is undefined which DgnTrueColorId is returned.
     DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
 
     //! Get a color by DgnTrueColorId.
