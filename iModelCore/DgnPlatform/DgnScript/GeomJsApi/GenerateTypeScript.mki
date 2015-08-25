@@ -51,6 +51,8 @@ $(dgnScriptGen)GeomJsApiCallbacks.cpp : $(geomJsApiTsDir)GeomJsApi.d.ts\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsRotMatrix.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsTransform.h\
                  $(DgnPlatformAPISrc)GeomJsTypes/JsDPoint3dArray.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsPolyfaceMesh.h\
+                 $(DgnPlatformAPISrc)GeomJsTypes/JsPolyfaceVisitor.h\
                  $(DgnPlatformAPISrc)GeomJsApi.h
     $(msg)
     python $(BuildContext)SubParts/BeJavaScriptTools/createJavaScriptNativeProjection.py \

@@ -11,6 +11,17 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
+    //! A wrapper for BentleyApi::DPoint2d
+    class JsDPoint2d implements IDisposable {
+        constructor(x: cxx_double, y: cxx_double);
+        X: cxx_double;
+        Y: cxx_double;
+        _OnDispose(): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
+
+
     type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
 
     //! A wrapper for BentleyApi::DVector3d
@@ -96,7 +107,18 @@ declare module BentleyApi.Dgn {
     }
     type JsAngleP = cxx_pointer<JsAngle>;
 
+    //! A wrapper for BentleyApi::DEllipse3d
+    class JsDRange3d implements IDisposable {
+        //! constructor for empty range.
+        constructor();
 
+        Low: JsDPoint3dP;
+        High: JsDPoint3dP;
+
+        _OnDispose(): void;
+        OnDispose(): void;
+        Dispose(): void;
+    }
 
  
 

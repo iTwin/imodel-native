@@ -31,10 +31,12 @@ NativeType Get () const {return m_data;}
 };
 
 JSSTRUCT(JsDPoint3d);
+JSSTRUCT(JsDPoint2d);
 JSSTRUCT(JsDVector3d);
 JSSTRUCT(JsDEllipse3d);
 JSSTRUCT(JsDSegment3d);
 JSSTRUCT(JsDRay3d);
+JSSTRUCT(JsDRange3d);
 JSSTRUCT(JsDPoint3dDVector3dDVector3d);
 JSSTRUCT(JsCurvePrimitive);
 JSSTRUCT(JsCurveVector);
@@ -51,10 +53,14 @@ JSSTRUCT(JsTransform);
 JSSTRUCT(JsDPoint3dArray)
 JSSTRUCT(JsDoubleArray)
 
+JSSTRUCT(JsPolyfaceMesh)
+JSSTRUCT(JsPolyfaceVisitor)
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #include <DgnPlatform/GeomJsTypes/JsAngle.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
+#include <DgnPlatform/GeomJsTypes/JSDPoint2d.h>
 #include <DgnPlatform/GeomJsTypes/JSDVector3d.h>
 #include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
@@ -66,6 +72,8 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JSTransform.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>
 #include <DgnPlatform/GeomJsTypes/JsCurvePrimitive.h>
+#include <DgnPlatform/GeomJsTypes/JsPolyfaceMesh.h>
+#include <DgnPlatform/GeomJsTypes/JsPolyfaceVisitor.h>
 
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

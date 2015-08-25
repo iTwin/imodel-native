@@ -21,6 +21,7 @@ struct JsDRange3d : JsGeomWrapperBase<DRange3d>
 {
 public:
     JsDRange3d() {m_data.Init ();}
+    JsDRange3d(DRange3dCR data) { m_data = data;}
 
     JsDPoint3dP GetLow() {return new JsDPoint3d (m_data.low);}
     JsDPoint3dP GetHigh() {return new JsDPoint3d (m_data.high);}
