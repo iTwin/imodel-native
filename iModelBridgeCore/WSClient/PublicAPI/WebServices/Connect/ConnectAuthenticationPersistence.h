@@ -34,7 +34,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
 
         mutable SamlTokenPtr m_token;
 
-        bvector<std::function<void()>> m_onUserChangedCallbacks;
+        size_t m_onUserChangedKey;
+        bmap<size_t, std::function<void()>> m_onUserChangedListeners;
 
     private:
         ConnectAuthenticationPersistence
@@ -67,9 +68,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
         WSCLIENT_EXPORT void SetToken(SamlTokenPtr token) override;
         WSCLIENT_EXPORT SamlTokenPtr GetToken() const override;
 
-        //! Chould only be called when app initializes.
-        //! Callback is executed when new user successfully logins thus replacing old user if there was one.
-        WSCLIENT_EXPORT void RegisterUserChangedListener(std::function<void()> onUserChangedCallback);
+        //! @param onUserChangedCallback - is executed when new user successfully logins thus replacing old user if there was one.
+        //! @return key that can be used to unregister listener
+        WSCLIENT_EXPORT size_t RegisterUserChangedListener(std::function<void()> onUserChangedCallback);
+
+        //! @param key - unregister listener that was registered with given key
+        WSCLIENT_EXPORT void UnregisterUserChangedListener(size_t key);
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

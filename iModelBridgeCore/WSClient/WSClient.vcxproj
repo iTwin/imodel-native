@@ -36,7 +36,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__WSCLIENT_DLL_BUILD__;_DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI WebServicesCache-Library WebServicesCache-PublishedAPI -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesCache b</NMakeReBuildCommandLine>
