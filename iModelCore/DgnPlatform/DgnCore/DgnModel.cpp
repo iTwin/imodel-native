@@ -1605,6 +1605,15 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_GetSolverOptions(Json::Value& json)
+    {
+    json["elementClass"] = m_elementECClassName.c_str();
+    json["category"] = m_elementCategoryName.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
 bool ComponentModel::IsValid() const
     {
     if (m_elementCategoryName.empty() || !GetDgnDb().Categories().QueryCategoryId(m_elementCategoryName.c_str()).IsValid())
