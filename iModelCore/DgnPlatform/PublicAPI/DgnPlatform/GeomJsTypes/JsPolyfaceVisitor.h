@@ -21,7 +21,7 @@ struct JsPolyfaceVisitor: JsGeomWrapperBase<PolyfaceVisitorPtr>
 {
     JsPolyfaceVisitor (PolyfaceVisitorPtr &data) {m_data = data;}
 public:
-
+    JsPolyfaceVisitor (){}  // umm.. really should not happen -- visitor without client is disaster
     JsPolyfaceVisitorP CreateVisitor (JsPolyfaceMeshP mesh, double aNumWrap)
         {
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh->Get (), true);

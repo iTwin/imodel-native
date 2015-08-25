@@ -23,7 +23,7 @@ declare module BentleyApi.Dgn {
 
 
     type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
-
+    type JsDPoint2dP = cxx_pointer<JsDPoint2d>;
     //! A wrapper for BentleyApi::DVector3d
     class JsDVector3d implements IDisposable {
         constructor(x: cxx_double, y: cxx_double, z: cxx_double);
@@ -120,7 +120,7 @@ declare module BentleyApi.Dgn {
         Dispose(): void;
     }
 
- 
+    type JsDRange3dP = cxx_pointer<JsDRange3d>;
 
 
     //! A wrapper for BentleyApi::DEllipse3d
@@ -365,5 +365,76 @@ declare module BentleyApi.Dgn {
     type JsCurvePrimitiveP = cxx_pointer<JsCurvePrimitive>;
 
 
+    //! A wrapper for a polyface mesh !!!
+    class JsPolyfaceMesh implements IDisposable {
+
+    GetTwoSided () : cxx_bool;
+
+    static CreateVariableSizeIndexed() : JsPolyfaceMeshP;
+    
+    static CreateFixedIndexed(aNumPerFace : cxx_double) : JsPolyfaceMeshP;
+
+    static CreateQuadGrid(numPerRow : cxx_double) : JsPolyfaceMeshP;
+
+    static CreateTriangleGrid(numPerRow : cxx_double) : JsPolyfaceMeshP;
+
+    static CreateCoordinateTriangleMesh() : JsPolyfaceMeshP;
+
+    static CreateCoordinateQuadMesh() : JsPolyfaceMeshP;
+
+    PolyfaceMeshStyle() : cxx_double;
+
+    // Single-value AddXxx methods -- note that Append method on blocked arrays SetActive () : does !!!
+    AddPoint(data : JsDPoint3dP) : void;
+
+    AddNormal(data : JsDVector3dP) : void;
+    AddParam(data : JsDPoint2dP) : void;
+    AddIntColor(aColor : cxx_double) : void;
+
+    AddPointIndex(aData : cxx_double) : void;
+    AddNormalIndex(aData : cxx_double) : void;
+    AddParamndex(aData : cxx_double) : void;
+    AddColorIndex(aData : cxx_double) : void;
+ 
+    InspectFaces() : Bentley_BeJsObject<Object>;
+
+    GetRange() : JsDRange3dP;
+
+    GetTightTolerance() : cxx_double;
+    GetMediumTolerance() : cxx_double;
+    IsClosedByEdgePairing() : cxx_bool;
+    HasFacets() : cxx_bool;
+    HasConvexFacets() : cxx_bool;
+    GetNumFacet() : cxx_double;
+    GetLargestCoordinate() : cxx_double;
+
+    _OnDispose(): void;
+    OnDispose(): void;
+    Dispose(): void;
+    }
+    type JsPolyfaceMeshP = cxx_pointer<JsPolyfaceMesh>;
+
+
+    //! A wrapper for a polyface visitor
+    class JsPolyfaceVisitor implements IDisposable {
+
+
+    CreateVisitor(mesh : JsPolyfaceMeshP, aNumWrap : cxx_double) : JsPolyfaceVisitorP;
+
+    Reset() : void;
+
+    AdvanceToNextFacet() : cxx_bool;
+
+    GetPoint(aIndex : cxx_double) : JsDPoint3dP;
+
+    GetParam(aIndex : cxx_double) : JsDPoint2dP;
+
+    GetNormal(aIndex : cxx_double) : JsDVector3dP;
+
+    _OnDispose(): void;
+    OnDispose(): void;
+    Dispose(): void;
+}
+type JsPolyfaceVisitorP = cxx_pointer<JsPolyfaceVisitor>;
 
 }

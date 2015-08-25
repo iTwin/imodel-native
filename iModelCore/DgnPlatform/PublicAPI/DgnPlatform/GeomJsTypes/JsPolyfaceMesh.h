@@ -21,9 +21,12 @@ struct JsPolyfaceMesh: JsGeomWrapperBase<PolyfaceHeaderPtr>
 {
 public:
     JsPolyfaceMesh (PolyfaceHeaderPtr &header) { m_data = header;}
-
+    JsPolyfaceMesh ()
+        {
+        m_data = PolyfaceHeader::CreateVariableSizeIndexed ();
+        }
     //void SetTwoSided (bool value} { m_data->SetTwoSided (value);}
-    bool GetTwoSided () const {return m_data->GetTwoSided ();}
+    bool GetTwoSided () {return m_data->GetTwoSided ();}
 
     static JsPolyfaceMeshP CreateVariableSizeIndexed ()
         {
@@ -87,8 +90,9 @@ public:
 
         auto beJsObj = BeJsObject::New (context);
         beJsObj.SetNumberProperty ("numLoop", (int32_t)numLoop);
-        auto myPoint = new JsDPoint3d (1,2,3);
-        beJsObj.SetProperty ("myPoint", context.ObtainProjectedClassInstancePointer (&myPoint));
+
+//        auto myPoint = new JsDPoint3d (1,2,3);
+//        beJsObj.SetProperty ("myPoint", context.ObtainProjectedClassInstancePointer (&myPoint));
 
         return beJsObj;
         }
