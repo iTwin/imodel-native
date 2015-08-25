@@ -101,6 +101,7 @@ namespace pcloud
 
 		// returns distance from seek pnt
 		double findNearestPoint(const pt::vector3d &seek_pnt, pt::vector3d &nearest, pt::CoordinateSpace cs) const;
+		const Voxel* findContainingVoxel(const pt::vector3d &seek_pnt, pt::CoordinateSpace cs) const;
 		
 		// returns distance along ray ie t
 		double findIntersectingPoint(const pt::Rayf &ray, pt::vector3d &nearest, float tolerance, pt::CoordinateSpace cs) const;

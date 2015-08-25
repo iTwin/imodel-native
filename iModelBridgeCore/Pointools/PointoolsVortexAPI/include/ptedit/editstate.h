@@ -44,12 +44,14 @@ struct GlobalState
 
 	inline bool						inScope( const pcloud::PointCloud *cloud ) const
 	{
+		if (!cloud || !cloud->displayInfo().visible()) 
+			return false;		
 
-		if (!cloud || !cloud->displayInfo().visible()) return false;		
-
-		if (execSceneScope && cloud->scene() != execSceneScope) return false;
+		if (execSceneScope && cloud->scene() != execSceneScope) 
+			return false;
 		
-		if (!scope) return true;
+		if (!scope) 
+			return true;
 
 		return	scopeIsScene ? inScope( cloud->scene() ) : 
 				((scope && 
@@ -57,21 +59,32 @@ struct GlobalState
 				cloud->scene()->getInstanceIndex() == scopeInstance 
 				) ? true : false);
 	}
+	// in scope check
 	inline bool						inScope( const pcloud::Scene *scene ) const
 	{
-		if (!scene || !scene->displayInfo().visible()) return false;		
+		if (!scene || !scene->displayInfo().visible()) 
+			return false;		
 
-		if (execSceneScope && execSceneScope != scene) return false;
+		if (execSceneScope && execSceneScope != scene) 
+			return false;
 
-		if (!scope) return true;
+		if (!scope) 
+			return true;
 
-		if (!scopeIsScene) return true;	/* will get dismissed later on cloud check */ 
+		if (!scopeIsScene) 
+			return true;	/* will get dismissed later on cloud check */ 
 
 		return	(scope && scopeIsScene && 
 			scene->cloud(0)->guid() == scope &&
 			scene->getInstanceIndex() == scopeInstance 
 			) ? true : false;
 	}
+	// exclusion is stronger than scope, ie. operations that do not respect scope still must respect exclusion
+	inline bool						isSceneExcluded( const pcloud::Scene *scene ) const
+	{
+		return (execSceneScope && execSceneScope != scene) ? true : false;
+	}
+
 	void setExecutionScope( pcloud::Scene *scene )
 	{
 		execSceneScope = scene;

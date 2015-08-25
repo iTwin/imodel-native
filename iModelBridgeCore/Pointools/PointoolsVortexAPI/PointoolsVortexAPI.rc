@@ -55,8 +55,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,0,0,220
- PRODUCTVERSION 2,0,0,220
+ FILEVERSION 2,0,0,222
+ PRODUCTVERSION 2,0,0,222
  FILEFLAGSMASK 0x37L
 #ifdef _DEBUG
  FILEFLAGS 0x21L
@@ -73,12 +73,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Bentley Systems, Incorporated"
             VALUE "FileDescription", "Pointools Vortex API"
-            VALUE "FileVersion", "2, 0, 0, 220"
+            VALUE "FileVersion", "2, 0, 0, 222"
             VALUE "InternalName", "Pointools Vortex API"
             VALUE "LegalCopyright", "Copyright (c) 2013 Bentley Systems, Incorporated. All rights reserved."
             VALUE "OriginalFilename", "PointoolsVortexAPI.dll"
             VALUE "ProductName", "Pointools Vortex API"
-            VALUE "ProductVersion", "2, 0, 0, 220"
+            VALUE "ProductVersion", "2, 0, 0, 222"
             VALUE "SpecialBuild", "Bentley build"
         END
     END

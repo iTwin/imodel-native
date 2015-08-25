@@ -278,7 +278,12 @@ namespace pcloud
 			ubyte layerMask=0, float amount=1.0f)
 		{
 			CoordinateSpaceTransform cst(const_cast<PointCloud*>(_pointcloud),  cs);
-			_iterateTransformedPointsRange(R, cst, layerMask, 0, getNumPointsAtLOD(amount));
+			unsigned int num_points = getNumPointsAtLOD(amount);
+			if (layerMask && numPointsEdited())
+			{
+				if (num_points > numPointsEdited()) num_points = numPointsEdited();
+			}
+			_iterateTransformedPointsRange(R, cst, layerMask, 0, num_points);
 		}
 		//---------------------------------------------------------------------
 		/**

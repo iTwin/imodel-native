@@ -32,8 +32,8 @@ if ($removeClash eq 1)
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples.sln", "Clash");
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples_2012.sln", "Clash");
 	
-	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.220.txt", "clash");
-	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.220.txt", "IClashTree");
+	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.222.txt", "clash");
+	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.222.txt", "IClashTree");
 	
 	unlink($vortexAPIDir."\\include\\IClashNode.h") or die "\nFailed to remove file IClashNode.h\n\n";
 	unlink($vortexAPIDir."\\include\\IClashObject.h") or die "\nFailed to remove file IClashObject.h\n\n";
@@ -58,7 +58,7 @@ if ($removeClientServer eq 1)
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples.sln", "ClientServer");
 	removeFromSolutionFile($vortexAPIDir."\\examples\\examples_2012.sln", "ClientServer");
 	
-	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.220.txt", "streaming");
+	removeStringFromFile($distribDir."\\PointoolsVortexAPI-ReleaseNotes-2.0.0.222.txt", "streaming");
 		
 	removeStringFromFile($vortexAPIDir."\\include\\PointoolsVortexAPI_import.h", "ptProcessServerRequestClientID2");		
 	removeStringFromFile($vortexAPIDir."\\include\\PointoolsVortexAPI_import.h", "ptSetViewportPointsBudget");

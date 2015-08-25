@@ -191,27 +191,27 @@ public:
 	//inline const UserTransform& transform() const	{ return m_transform; }
 	//CCLASSES_API commitTransformations();
 
-	inline Transform& registration() 				{ return m_registration; }
-	inline const Transform& registration() const	{ return m_registration; }
+	inline Transform&		registration() 					{ return m_registration; }
+	inline const Transform& registration() const			{ return m_registration; }
 
-	inline DisplayInfo &displayInfo()				{ return m_displayInfo; }
-	inline const DisplayInfo &displayInfo() const	{ return m_displayInfo; }
+	inline DisplayInfo		&displayInfo()					{ return m_displayInfo; }
+	inline const DisplayInfo &displayInfo() const			{ return m_displayInfo; }
 
-	inline const Bounds3D &localBounds() const		{ return m_localBounds; }
-	inline const Bounds3DD &projectBounds() const	{ return m_projectBounds; }
-	inline Bounds3D &localBounds() 					{ return m_localBounds; }
-	inline Bounds3DD &projectBounds() 				{ return m_projectBounds; }
+	inline const Bounds3D	&localBounds() const			{ return m_localBounds; }
+	inline const Bounds3DD	&projectBounds() const			{ return m_projectBounds; }
+	inline Bounds3D			&localBounds() 					{ return m_localBounds; }
+	inline Bounds3DD		&projectBounds() 				{ return m_projectBounds; }
 		
-	void computeBounds()							{	_computeBounds(); };
-	virtual const wchar_t *typeDescriptor() const	{ return L"_Object3D"; }
-	virtual const char *objectClass() const			{ return "Object3D"; }
-	virtual const char *className() const			{ return "Object3D"; }
+	void					computeBounds()					{	_computeBounds(); };
+	virtual const wchar_t	*typeDescriptor() const			{ return L"_Object3D"; }
+	virtual const char		*objectClass() const			{ return "Object3D"; }
+	virtual const char		*className() const				{ return "Object3D"; }
 
-	virtual void drawGL(uint32 drawmode, int millisecs, const ptgl::Viewport *viewport) {};
-	virtual double findNearestPoint(const vector3d &pnt, vector3d &nearest, CoordinateSpace cs) const
+	virtual void			drawGL(uint32 drawmode, int millisecs, const ptgl::Viewport *viewport) {};
+	virtual double			findNearestPoint(const vector3d &pnt, vector3d &nearest, CoordinateSpace cs) const
 	{ return -1; };
 
-	virtual bool isGroup() const				{ return false; }
+	virtual bool isGroup() const							{ return false; }
 	CCLASSES_API virtual bool invoke(wchar_t*command, void*data);	//! Implementation of basic show / hide commands
 	
 	CCLASSES_API virtual void parent(const Object3D *par);
@@ -224,22 +224,22 @@ public:
 	CCLASSES_API virtual int setProperty(const char *id, const Variant &v);
 	CCLASSES_API virtual int getProperty(const char *id, Variant &v);
 	
-	virtual Guid		objectGuid() const			{ return Guid(); }	// Unique persistent identifier of object, not instance (not the same as a PointCloud guid)
+	virtual Guid		objectGuid() const					{ return Guid(); }	// Unique persistent identifier of object, not instance (not the same as a PointCloud guid)
 
 protected:
 	Object3D(const wchar_t *id=0, const Object3D* owner=0);
-	virtual void _computeBounds()=0;
+	virtual void			_computeBounds()=0;
 
 	static	ObjectKey		generateKey(const Object3D *obj);				// new key value
 
-	Transform		m_registration;
+	Transform				m_registration;
 
-	DisplayInfo		m_displayInfo;
+	DisplayInfo				m_displayInfo;
 
-	Bounds3D	m_localBounds;
-	Bounds3DD	m_projectBounds;
+	Bounds3D				m_localBounds;
+	Bounds3DD				m_projectBounds;
 
-	const Object3D	*m_parent;
+	const Object3D			*m_parent;
 };
 //-------------------------------------------------------------------------
 /// Group, a composition of objects
