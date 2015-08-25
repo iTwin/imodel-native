@@ -913,10 +913,11 @@ public:
     };
 
     //! Add a new entry to this DgnColors.
-    //! @param[in] color The Color values for the new entry.
+    //! @param[in] color    The Color values for the new entry.
+    //! @param[out] result  The result of the operation
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color);
+    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
 
     //! Find the first DgnTrueColorId that has a given color value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
@@ -1198,10 +1199,60 @@ private:
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
 public:
-    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
     struct Authority
     {
+    private:
+        friend struct DgnAuthorities;
+
+        DgnAuthorityId  m_id;
+        Utf8String      m_name;
+        Utf8String      m_uri;
+    public:
+        Authority() { }
+        explicit Authority (Utf8CP name, Utf8CP uri = nullptr) : m_name (name), m_uri (uri) { }
+
+        DgnAuthorityId  GetId() const   { return m_id; }
+        Utf8StringCR    GetName() const { return m_name; }
+        Utf8StringCR    GetUri() const  { return m_uri; }
+        bool            IsValid() const { return m_id.IsValid(); }
+
+        void            SetName (Utf8CP val)    { m_name = val; }
+        void            SetUri (Utf8CP val)     { m_uri = val; }
     };
+
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    public:
+        explicit Iterator (DgnDbCR db) : DbTableIterator ((BeSQLite::DbCR)db) { }
+
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) { }
+        public:
+            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const;
+            DGNPLATFORM_EXPORT Utf8CP           GetName() const;
+            DGNPLATFORM_EXPORT Utf8CP           GetUri() const;
+
+            Entry const& operator*() const      { return *this; }
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT size_t   QueryCount() const;
+        DGNPLATFORM_EXPORT Entry    begin() const;
+        Entry                       end() const { return Entry (nullptr, false); }
+    };
+
+    Iterator    MakeIterator() const    { return Iterator (m_dgndb); }
+
+    DGNPLATFORM_EXPORT DgnAuthorityId   Insert (Authority&, DgnDbStatus* result = nullptr);
+    DGNPLATFORM_EXPORT DgnDbStatus      Update (Authority const&) const;
+    DGNPLATFORM_EXPORT Authority        Query (DgnAuthorityId id) const;
+    DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId (Utf8StringCR name) const;
+
+    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
 };
 
 //=======================================================================================
