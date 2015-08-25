@@ -867,6 +867,7 @@ bool allowAdd
     double X, Y;
     DTM_TIN_POINT *firstPt, *lastPt, *P2Pt, *P3Pt;
     double pTolSq = dtmP->ppTol * dtmP->ppTol;
+    long prevInsErrorPt = -1;
     bvector <SwapLines> crossingLines;
 
     /*
@@ -1022,6 +1023,16 @@ bool allowAdd
                             if (sd2 == sd3) goto cleanup;
                             }
                         continue;
+                        }
+                    if (insError && crossingLines.empty())
+                        {
+                        if (prevInsErrorPt == P1)
+                            {
+                            if (dbg)
+                                bcdtmWrite_message (0, 0, 0, "Failed on the same point.");
+                            goto cleanup;
+                            }
+                        prevInsErrorPt = P1;
                         }
                     if (swapLines)
                         bcdtmInsert_swapTinLinesThatIntersectInsertLineHelperDtmObject (dtmP, startPnt, P2, crossingLines);
