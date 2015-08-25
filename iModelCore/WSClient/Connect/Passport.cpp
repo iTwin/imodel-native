@@ -46,7 +46,7 @@ void Passport::Uninintialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Passport::GetServiceUrl()
     {
-    return UrlProvider::GetPassportUrl();
+    return UrlProvider::Urls::Passport.Get();
     }
 
 /*--------------------------------------------------------------------------------------+

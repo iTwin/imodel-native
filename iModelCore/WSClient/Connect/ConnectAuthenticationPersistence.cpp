@@ -55,7 +55,8 @@ ILocalState* customLocalState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
 m_localState(customLocalState ? *customLocalState : MobileDgnCommon::LocalState()),
-m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(&m_localState))
+m_secureStore(customSecureStore ? customSecureStore : std::make_shared<SecureStore>(&m_localState)),
+m_onUserChangedKey(0)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -67,15 +68,15 @@ void ConnectAuthenticationPersistence::SetCredentials(CredentialsCR credentials)
 
     UpgradeIfNeeded();
 
-    if (!m_onUserChangedCallbacks.empty())
+    if (!m_onUserChangedListeners.empty())
         {
         auto oldCreds = GetCredentials();
         if (!oldCreds.GetUsername().empty() &&
             oldCreds.GetUsername() != credentials.GetUsername())
             {
-            for (auto& listener : m_onUserChangedCallbacks)
+            for (auto& keyListener : m_onUserChangedListeners)
                 {
-                listener();
+                keyListener.second();
                 }
             }
         }
@@ -132,10 +133,27 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectAuthenticationPersistence::RegisterUserChangedListener(std::function<void()> onUserChangedCallback)
+size_t ConnectAuthenticationPersistence::RegisterUserChangedListener(std::function<void()> onUserChangedCallback)
     {
     BeMutexHolder lock (m_cs);
-    m_onUserChangedCallbacks.push_back(onUserChangedCallback);
+
+    m_onUserChangedKey++;
+    m_onUserChangedListeners[m_onUserChangedKey] = onUserChangedCallback;
+    return m_onUserChangedKey;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectAuthenticationPersistence::UnregisterUserChangedListener(size_t key)
+    {
+    BeCriticalSectionHolder lock(m_cs);
+
+    auto it = m_onUserChangedListeners.find(key);
+    if (it != m_onUserChangedListeners.end())
+        {
+        m_onUserChangedListeners.erase(it);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+

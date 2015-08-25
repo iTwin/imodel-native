@@ -112,9 +112,14 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         return;
         }
 
-    if (Connect::IsImsLoginRedirect(httpResponse))
+    if (SUCCESS == ParseBody(httpResponse))
         {
-        // Bentley CONNECT login redirect
+        return;
+        }
+
+    if (Connect::IsImsLoginRedirect(httpResponse) ||                // Bentley CONNECT login redirect
+        HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
+        {
         m_message = HttpError::GetHttpDisplayMessage(HttpStatus::Unauthorized);
         m_description.clear();
         m_status = Status::ReceivedError;
@@ -122,10 +127,7 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         return;
         }
 
-    if (SUCCESS != ParseBody(httpResponse))
-        {
-        SetStatusServerNotSupported();
-        }
+    SetStatusServerNotSupported();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -302,7 +304,7 @@ bool IsMemberStringOrNull(JsonValueCR json, Utf8CP name)
         return false;
         }
     JsonValueCR member = json[name];
-    return (member.isString() || member.isNull());
+    return member.isString() || member.isNull();
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -46,7 +46,7 @@ void UsageTracking::Uninintialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UsageTracking::GetServiceUrl()
     {
-    return UrlProvider::GetUsageTrackingUrl();
+    return UrlProvider::Urls::UsageTracking.Get();
     }
 
 /*--------------------------------------------------------------------------------------+
