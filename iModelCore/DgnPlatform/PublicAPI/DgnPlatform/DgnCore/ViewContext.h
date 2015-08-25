@@ -921,7 +921,7 @@ public:
     //! @param[in] stroker An object to use to create cache representation (if necessary).
     //! @note A single displayable may have many saved cached representations. Draw methods can decide which cached representation is appropriate.
     //! in the current context, and can even draw more than one of the cached representations by having the stroker return different cache indices.
-    DGNPLATFORM_EXPORT QvElem* DrawCached(IStrokeForCache& stroker);
+    QvElem* DrawCached(IStrokeForCache& stroker) {return _DrawCached(stroker);}
 
     DGNPLATFORM_EXPORT bool CheckStop();
 }; // ViewContext

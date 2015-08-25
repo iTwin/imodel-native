@@ -216,7 +216,6 @@ DG_INLINE StatusInt ViewContext::VisitElement(GeometricElementCR elem) {return _
 DG_INLINE void ViewContext::AllocateScanCriteria(){_AllocateScanCriteria();}
 DG_INLINE void ViewContext::VisitDgnModel(DgnModelP modelRef) {_VisitDgnModel(modelRef);}
 DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}
-DG_INLINE QvElem* ViewContext::DrawCached(IStrokeForCache& stroker) {return _DrawCached(stroker);}
 DG_INLINE void ViewContext::VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
 DG_INLINE void ViewContext::CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
 DG_INLINE void ViewContext::CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}
