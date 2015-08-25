@@ -107,6 +107,11 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr can
             finalResult->SetError(result.GetError());
             return;
             }
+        else if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
+            {
+            finalResult->SetError(result.GetError());
+            return;
+            }
 
         // WSG R2 - R3.5
         GetInfoFromPage("/v1.2/Info", cancellationToken)->Then([=] (WSInfoHttpResult& result)
@@ -117,6 +122,11 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr can
                 return;
                 }
             else if (result.GetError().GetConnectionStatus() != ConnectionStatus::OK)
+                {
+                finalResult->SetError(result.GetError());
+                return;
+                }
+            else if (result.GetError().GetHttpStatus() == HttpStatus::Unauthorized)
                 {
                 finalResult->SetError(result.GetError());
                 return;

@@ -44,7 +44,7 @@ void ConnectSpaces::Initialize(ClientInfoPtr clientInfo)
     sm_actionMap[CS_MESSAGE_AcceptEula] = AcceptEulaAction;
     sm_actionMap[CS_MESSAGE_SetEulaToken] = SetEulaTokenAction;
 
-    sm_eulaUrlBase = UrlProvider::GetConnectEulaUrl() + "/Agreements/1/Types/EULA";
+    sm_eulaUrlBase = UrlProvider::Urls::ConnectEula.Get() + "/Agreements/1/Types/EULA";
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -182,7 +182,7 @@ void ConnectSpaces::SendStatusToUIThread(StatusAction action, StatusCode statusC
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl, Utf8CP stsUrl)
+BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction action, SamlTokenR token, Utf8CP appliesToUrl)
     {
     SamlToken newToken;
 
@@ -192,7 +192,7 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction 
         m_credentialsCriticalSection.Leave();
         return SUCCESS;
         }
-    StatusInt status = Connect::Login(m_credentials, newToken, appliesToUrl, stsUrl);
+    StatusInt status = Connect::Login(m_credentials, newToken, appliesToUrl);
     m_credentialsCriticalSection.Leave();
 
     if (SUCCESS == status)
@@ -225,10 +225,8 @@ BentleyStatus ConnectSpaces::GetNewTokenIfNeeded(bool getNewToken, StatusAction 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::ResetEula(bool getNewToken)
     {
-    Utf8String eulaUrl = UrlProvider::GetConnectEulaUrl();
-    Utf8String imsUrl = UrlProvider::GetImsStsAuthUrl();
-
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, ResetEulaAction, m_eulaToken, eulaUrl.c_str(), imsUrl.c_str()))
+    Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, ResetEulaAction, m_eulaToken, eulaUrl.c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -288,10 +286,8 @@ void ConnectSpaces::ResetEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::CheckEula(bool getNewToken)
     {
-    Utf8String eulaUrl = UrlProvider::GetConnectEulaUrl();
-    Utf8String imsUrl = UrlProvider::GetImsStsAuthUrl();
-
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, eulaUrl.c_str(), imsUrl.c_str()))
+    Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, eulaUrl.c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;
@@ -389,10 +385,8 @@ void ConnectSpaces::CheckEula(bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     {
-    Utf8String eulaUrl = UrlProvider::GetConnectEulaUrl();
-    Utf8String imsUrl = UrlProvider::GetImsStsAuthUrl();
-
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, eulaUrl.c_str(), imsUrl.c_str()))
+    Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, CheckEulaAction, m_eulaToken, eulaUrl.c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return false;
@@ -463,10 +457,8 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectSpaces::AcceptEula(bool getNewToken)
     {
-    Utf8String eulaUrl = UrlProvider::GetConnectEulaUrl();
-    Utf8String imsUrl = UrlProvider::GetImsStsAuthUrl();
-
-    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, eulaUrl.c_str(), imsUrl.c_str()))
+    Utf8String eulaUrl = UrlProvider::Urls::ConnectEula.Get();
+    if (SUCCESS != GetNewTokenIfNeeded(getNewToken, AcceptEulaAction, m_eulaToken, eulaUrl.c_str()))
         {
         // Note: error sent to UI thread in GetNewTokenIfNeeded().
         return;

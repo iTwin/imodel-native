@@ -134,7 +134,22 @@ Utf8String ClientInfo::GetAcceptLanguage() const
     {
     BeCriticalSectionHolder lock(m_headersCS);
 
+    if (m_languageTag.empty() && m_fallbackLanguageTag.empty())
+        {
+        return ClientInfo::DefaultLanguage;
+        }
+
     if (m_languageTag.EqualsI(m_fallbackLanguageTag))
+        {
+        return m_languageTag;
+        }
+
+    if (m_languageTag.empty())
+        {
+        return m_fallbackLanguageTag;
+        }
+
+    if (m_fallbackLanguageTag.empty())
         {
         return m_languageTag;
         }
