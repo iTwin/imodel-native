@@ -32,7 +32,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedURL_GetsURLFromBuddiWritesTo
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_UrlIsCached_GetsUrlFromLocalState)
@@ -45,8 +45,8 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_UrlIsCached_GetsUrlFromLocalState)
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     UrlProvider::CleanUpUrlCache();
     }
 
@@ -63,7 +63,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_UrlIsCached_GetsURL)
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefaultUrl)
@@ -75,7 +75,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefault
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(""))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_TRUE(!UrlProvider::GetPunchlistWsgUrl().empty());
+    EXPECT_TRUE(!UrlProvider::Urls::ConnectWsgPunchList.Get().empty());
     }
 
 TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
@@ -85,7 +85,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     StubLocalState localState;
 
     bset<Utf8String> urlNames;
-    EXPECT_CALL(*client, GetUrl(_, _)).Times(6).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
+    EXPECT_CALL(*client, GetUrl(_, _)).Times(9).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
         {
         EXPECT_TRUE(urlNames.find(urlName) == urlNames.end());
         urlNames.insert(urlName);
@@ -94,19 +94,25 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectEulaUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetImsStsAuthUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetUsageTrackingUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPassportUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::Passport.Get().c_str());
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectEulaUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetImsStsAuthUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetUsageTrackingUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPassportUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::Passport.Get().c_str());
 
     UrlProvider::CleanUpUrlCache();
     }
@@ -118,30 +124,36 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     StubLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(6)
+        .Times(9)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectWsgUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetConnectEulaUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetImsStsAuthUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetUsageTrackingUrl().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPassportUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgGlobal.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::UsageTracking.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::Passport.Get().c_str());
 
     UrlProvider::CleanUpUrlCache();
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(6)
+        .Times(9)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
-    UrlProvider::GetPunchlistWsgUrl().c_str();
-    UrlProvider::GetConnectWsgUrl().c_str();
-    UrlProvider::GetConnectEulaUrl().c_str();
-    UrlProvider::GetImsStsAuthUrl().c_str();
-    UrlProvider::GetUsageTrackingUrl().c_str();
-    UrlProvider::GetPassportUrl().c_str();
+    UrlProvider::Urls::ConnectWsgPunchList.Get().c_str();
+    UrlProvider::Urls::ConnectWsgPersonalPublishing.Get().c_str();
+    UrlProvider::Urls::ConnectWsgProjectContent.Get().c_str();
+    UrlProvider::Urls::ConnectWsgGlobal.Get().c_str();
+    UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str();
+    UrlProvider::Urls::ConnectEula.Get().c_str();
+    UrlProvider::Urls::ImsStsAuth.Get().c_str();
+    UrlProvider::Urls::UsageTracking.Get().c_str();
+    UrlProvider::Urls::Passport.Get().c_str();
     }
 
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_CleansUpCache)
@@ -157,13 +169,13 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_Cle
     .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlDev))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(urlDev.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(urlDev.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
     UrlProvider::Initialize(UrlProvider::Environment::Qa, &localState, client);
-    EXPECT_STREQ(urlQa.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(urlQa.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(urlDev.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(urlDev.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
 TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotCleanUpCache)
@@ -175,10 +187,10 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
 TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetValidateCertificate)

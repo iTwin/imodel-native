@@ -14,10 +14,15 @@
 #include <MobileDgn/Utils/Http/Credentials.h>
 #include <MobileDgn/Utils/Http/HttpStatus.h>
 #include <MobileDgn/Utils/Http/HttpResponse.h>
+#include <WebServices/Client/WSError.h>
 #include <ostream>
 #include <iostream>
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+
+std::ostream& operator << (std::ostream &o, WSError::Status status);
+std::ostream& operator << (std::ostream &o, WSError::Id errorId);
 
 // TODO: resolve duplicating symbols with MobileDgnUnitTests
 //// Web
