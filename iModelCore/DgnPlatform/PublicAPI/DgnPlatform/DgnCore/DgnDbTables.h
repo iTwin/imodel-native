@@ -32,6 +32,7 @@
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
 #define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
 #define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
@@ -70,7 +71,6 @@
 #include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
-//#include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -889,18 +889,34 @@ struct DgnColors : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    mutable DgnTrueColorId m_nextColorId;
 
     explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
 
 public:
+    struct Color
+    {
+    friend struct DgnColors;
+    private:
+        DgnTrueColorId m_id;
+        ColorDef       m_color;
+        Utf8String     m_name;
+        Utf8String     m_book;
+
+    public:
+        Color(ColorDef color, Utf8CP name, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
+        Color() {}
+        bool IsValid() const {return m_id.IsValid();}
+        DgnTrueColorId GetId() const {return m_id;}
+        ColorDef GetColor() const {return m_color;}
+        Utf8StringCR GetName() const {return m_name;}
+        Utf8StringCR GetBook() const {return m_book;}
+    };
+
     //! Add a new entry to this DgnColors.
-    //! @param[in] color The RGB values for the new entry.
-    //! @param[in] name The name of the color (or nullptr).
-    //! @param[in] bookname The name of the colorbook (or nullptr).
+    //! @param[in] color The Color values for the new entry.
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId Insert(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
+    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color);
 
     //! Find the first DgnTrueColorId that has a given color value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
@@ -908,19 +924,14 @@ public:
     DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
 
     //! Get a color by DgnTrueColorId.
-    //! @param[out] color The RGB value for the color
-    //! @param[out] name The name for the colorId. May be nullptr.
-    //! @param[out] bookname The bookName for the colorId. May be nullptr.
     //! @param[in] colorId the true color id to query
-    //! @return SUCCESS if colorId was found in the table and the values are valid. ERROR otherwise.
-    DGNPLATFORM_EXPORT BentleyStatus QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
+    //! @return Color 
+    DGNPLATFORM_EXPORT Color QueryColor(DgnTrueColorId colorId) const;
 
     //! Get color by name and bookname.
-    //! @param[out] color The RGB value for the color
     //! @param[in] name The name for the colorId.
     //! @param[in] bookname The bookName for the colorId.
-    //! @return SUCCESS if color was found in the table and the RGB value is valid. ERROR otherwise.
-    DGNPLATFORM_EXPORT BentleyStatus QueryColorByName(ColorDef& color, Utf8StringCR name, Utf8StringCR bookname) const;
+    DGNPLATFORM_EXPORT Color QueryColorByName(Utf8CP name, Utf8CP bookname) const;
 
     struct Iterator : BeSQLite::DbTableIterator
     {
@@ -934,9 +945,9 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
-            DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
+            DGNPLATFORM_EXPORT ColorDef GetColor() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetBookName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetBook() const;
             Entry const& operator*() const {return *this;}
         };
 
@@ -1009,7 +1020,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT BentleyStatus Update(DgnFontCR, DgnFontId);
         DGNPLATFORM_EXPORT BentleyStatus Delete(DgnFontId);
         Iterator MakeIterator() const { return Iterator(m_dbFonts); }
-        };
+    };
 
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     03/2015
@@ -1116,23 +1127,30 @@ public:
     private:
         friend struct DgnMaterials;
 
-        DgnMaterialId m_materialId;
+        DgnMaterialId m_id;
+        DgnMaterialId m_parentId;
         Utf8String    m_name;
+        Utf8String    m_descr;
         Utf8String    m_palette;
         Utf8String    m_value;
 
     public:
         Material() {}
-        Material(Utf8CP name, Utf8CP palette, Utf8CP value, DgnMaterialId id=DgnMaterialId()) : m_materialId(id), m_name(name), m_palette(palette), m_value(value) {}
+        Material(Utf8CP name, Utf8CP palette, Utf8CP value, Utf8CP descr=nullptr, DgnMaterialId parentId=DgnMaterialId()) : m_parentId(parentId), m_name(name), m_palette(palette), 
+                            m_descr(descr), m_value(value) {}
 
-        DgnMaterialId GetId() const {return m_materialId;}
-        Utf8CP GetName() const {return m_name.c_str();}
-        Utf8CP GetPalette() const {return m_palette.c_str();}
-        Utf8CP GetValue() const {return m_value.c_str();}
+        DgnMaterialId GetId() const {return m_id;}
+        DgnMaterialId GetParentId() const {return m_parentId;}
+        Utf8StringCR GetName() const {return m_name;}
+        Utf8StringCR GetPalette() const {return m_palette;}
+        Utf8StringCR GetValue() const {return m_value;}
+        Utf8StringCR GetDescr() const {return m_descr;}
         void SetName(Utf8CP val) {m_name = val;}
         void SetPalette(Utf8CP val) {m_palette = val;}
         void SetValue(Utf8CP val) {m_value = val;}
-        bool IsValid() const {return m_materialId.IsValid();}
+        void SetDescr(Utf8CP val) {m_descr= val;}
+        void SetParentId(DgnMaterialId id) {m_parentId=id;}
+        bool IsValid() const {return m_id.IsValid();}
     };
 
     struct Iterator : BeSQLite::DbTableIterator
@@ -1147,9 +1165,11 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
+            DGNPLATFORM_EXPORT DgnMaterialId GetParentId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
             DGNPLATFORM_EXPORT Utf8CP GetValue() const;
+            DGNPLATFORM_EXPORT Utf8CP GetDescr() const;
             Entry const& operator*() const {return *this;}
         };
 
@@ -1162,10 +1182,10 @@ public:
 
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertMaterial(Material& row);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteMaterial(DgnMaterialId materialId);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Material const& row);
-    DGNPLATFORM_EXPORT Material QueryMaterialById(DgnMaterialId id) const;
+    DGNPLATFORM_EXPORT DgnMaterialId Insert(Material&, DgnDbStatus* result=nullptr);
+    DGNPLATFORM_EXPORT DgnDbStatus Update(Material const&) const;
+    DGNPLATFORM_EXPORT Material Query(DgnMaterialId id) const;
+    DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
 };
 
 //=======================================================================================

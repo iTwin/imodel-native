@@ -173,7 +173,7 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     if (length <  mgds_fc_epsilon)
         length = 1.0;   //  Apparently nothing is length dependent.
 
-    DPoint3d points[2] = { 0,0,0, length, 0,0 };
+    DPoint3d points[2] = { {0,0,0}, {length, 0,0} };
     topComponent->_StrokeLineString(&context, &m_lineStyleSymb, points, 2, false);
 
     *context.GetCurrentDisplayParams() = savedParams;
