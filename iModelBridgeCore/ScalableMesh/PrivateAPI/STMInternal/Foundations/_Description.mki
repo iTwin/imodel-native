@@ -1,0 +1,32 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: PrivateAPI/STMInternal/Foundations/_Description.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__FoundationPrivateAPIDescriptionMki__)
+    %return
+%endif
+__FoundationPrivateAPIDescriptionMki__ = 1
+
+FoundationsPrivateAPILocation = $(BuildContext)PrivateAPI/Foundations/
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+FoundationsPrivateAPIListing = \
+    $(FoundationsPrivateAPILocation)PrivateStringTools.h
+
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+FoundationsPrivateAPIRecursiveListing = \
+    $(FoundationsPrivateAPIListing)
+
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+FoundationsPrivateAPIFullListing = \
+    $(FoundationsPrivateAPIRecursiveListing)

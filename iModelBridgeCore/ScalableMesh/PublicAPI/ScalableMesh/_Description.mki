@@ -1,0 +1,76 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: PublicAPI/ScalableMesh/_Description.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__STMPublicAPIDescriptionMki__)
+    %return
+%endif
+__STMPublicAPIDescriptionMki__ = 1
+
+%include $(BuildContext)PublicAPI/Foundations/_Description.mki
+%include $(BuildContext)PublicAPI/Memory/_Description.mki
+%include $(BuildContext)PublicAPI/GeoCoords/_Description.mki
+%include $(BuildContext)PublicAPI/Import/_Description.mki
+
+STMPublicAPILocation = $(BuildContext)PublicAPI/STM/
+STMPluginPublicAPILocation = $(STMPublicAPILocation)Plugin/
+STMTypePublicAPILocation = $(STMPublicAPILocation)Type/
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+STMPublicAPIListing = \
+    $(STMPublicAPILocation)IScalableMesh.h \
+    $(STMPublicAPILocation)IScalableMeshCreator.h \
+    $(STMPublicAPILocation)IScalableMeshDocumentEnv.h \
+    $(STMPublicAPILocation)IScalableMeshMoniker.h \
+    $(STMPublicAPILocation)IScalableMeshPolicy.h \
+    $(STMPublicAPILocation)IScalableMeshQuery.h \
+    $(STMPublicAPILocation)IScalableMeshSourceCollection.h \
+    $(STMPublicAPILocation)IScalableMeshSourceCollection.hpp \
+    $(STMPublicAPILocation)IScalableMeshSourceDescription.h \
+    $(STMPublicAPILocation)IScalableMeshSourceImportConfig.h \
+    $(STMPublicAPILocation)IScalableMeshSources.h \
+    $(STMPublicAPILocation)IScalableMeshSourceVisitor.h \
+    $(STMPublicAPILocation)IScalableMeshStream.h \
+    $(STMPublicAPILocation)IScalableMeshStream.hpp \
+    $(STMPublicAPILocation)IScalableMeshTime.h \
+    $(STMPublicAPILocation)IScalableMeshURL.h \
+    $(STMPublicAPILocation)ScalableMeshClipContainer.h \
+    $(STMPublicAPILocation)ScalableMeshDefs.h \
+    $(STMInternalIncludesLocation)ScalableMeshUtilityFunctions.h
+
+STMPluginPublicAPIListing = \
+    $(STMPluginPublicAPILocation)IScalableMeshCivilDTMSource.h \
+    $(STMPluginPublicAPILocation)IScalableMeshFileUtilities.h \
+    $(STMPluginPublicAPILocation)IScalableMeshFileUtilities.hpp \
+    $(STMPluginPublicAPILocation)IScalableMeshPolicy.h \
+    $(STMPluginPublicAPILocation)IScalableMeshSTMSource.h
+
+STMTypePublicAPIListing = \
+    $(STMTypePublicAPILocation)IScalableMeshLinear.h \
+    $(STMTypePublicAPILocation)IScalableMeshMesh.h \
+    $(STMTypePublicAPILocation)IScalableMeshPoint.h \
+    $(STMTypePublicAPILocation)IScalableMeshTIN.h
+
+
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+STMPublicAPIRecursiveListing = \
+    $(STMPublicAPIListing) \
+    $(STMPluginPublicAPIListing) \
+    $(STMTypePublicAPIListing)
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+STMPublicAPIFullListing = \
+    $(STMPublicAPIRecursiveListing) \
+    $(ImportPublicAPIRecursiveListing) \
+    $(GeoCoordsPublicAPIRecursiveListing) \
+    $(MemoryPublicAPIRecursiveListing) \
+    $(FoundationsPublicAPIRecursiveListing)

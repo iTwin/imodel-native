@@ -1,0 +1,1378 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: STM/ScalableMeshQuery.h $
+|    $RCSfile: ScalableMeshQuery.h,v $
+|   $Revision: 1.20 $
+|       $Date: 2012/06/27 14:07:12 $
+|     $Author: Chantal.Poulin $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------+
+|                                                                        |
+|    ScalableMeshNewFileCreator.h                              (C) Copyright 2001.        |
+|                                                BCIVIL Corporation.        |
+|                                                All Rights Reserved.    |
+|                                                                       |
++----------------------------------------------------------------------*/
+
+#pragma once
+
+#include <ScalableMesh/GeoCoords/GCS.h>
+#include <ScalableMesh/GeoCoords/Reprojection.h>
+
+#include <ImagePP/all/h/HCPGCoordModel.h>
+
+#include <ScalableMesh/IScalableMeshClipContainer.h>
+#include <ScalableMesh/IScalableMesh.h>
+#include "SMMeshIndex.h"
+#include "./ScalableMesh/ScalableMeshGraph.h"
+#ifdef SCALABLE_MESH_ATP
+#include <ScalableMesh/IScalableMeshATP.h>
+#endif
+#include <hash_map>
+
+//Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
+#pragma warning( push, 0 )
+
+
+BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+struct ScalableMeshViewDependentQueryParams;
+class ScalableMeshViewDependentQuery;
+
+typedef IDTMFile::Extent3d64f YProtPtExtentType;
+typedef HGF3DExtent<double> YProtFeatureExtentType;
+
+struct ScalableMeshExtentQuery;
+typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
+
+
+/*==================================================================*/
+/*        QUERY PARAMETERS IMPLEMENTATION SECTION - START           */
+/*==================================================================*/
+struct ScalableMeshQueryParameters : public virtual IScalableMeshQueryParameters                              
+    {    
+    private: 
+       
+        bool                                m_isReturnedDataTriangulated;
+        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
+        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
+        long                                m_edgeOption;      
+        double                              m_maxSideLength;   
+
+    protected:                  
+        
+        virtual bool _GetTriangulationState() override
+            {
+            return m_isReturnedDataTriangulated;
+            }
+        
+        virtual void _SetTriangulationState(bool pi_isReturnedDataTriangulated) override
+            {
+            m_isReturnedDataTriangulated = pi_isReturnedDataTriangulated;
+            }
+
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+            {
+            return m_sourceGCSPtr;
+            }
+
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+            {
+            return m_targetGCSPtr;
+            }
+
+        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr, 
+                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+            {
+            m_sourceGCSPtr = sourceGCSPtr;
+            m_targetGCSPtr = targetGCSPtr;
+            }
+
+        virtual long _GetEdgeOptionTriangulationParam() override
+            {
+            return m_edgeOption;
+            }
+
+        virtual double _GetMaxSideLengthTriangulationParam() override
+            {
+            return m_maxSideLength;
+            }
+                            
+        virtual void _SetEdgeOptionTriangulationParam(long edgeOption) override
+            {
+            m_edgeOption = edgeOption;
+            }
+
+        virtual void _SetMaxSideLengthTriangulationParam(double maxSideLength) override
+            {
+            m_maxSideLength = maxSideLength;
+            }
+                            
+    public:
+
+        ScalableMeshQueryParameters()
+        : m_isReturnedDataTriangulated(true),
+          m_edgeOption(2),
+          m_maxSideLength(500)
+            {                 
+            }    
+    };
+
+struct ScalableMeshFullResolutionQueryParams :  public virtual ScalableMeshQueryParameters,
+                                         public virtual IScalableMeshFullResolutionQueryParams
+                                        
+    {    
+    private : 
+        bool   m_returnAllPtsForLowestLevel;
+        size_t m_maximumNumberOfPoints;
+
+    protected :
+        
+        virtual size_t _GetMaximumNumberOfPoints() //override
+            {    
+            return m_maximumNumberOfPoints;
+            }
+
+        virtual void _SetMaximumNumberOfPoints(size_t maximumNumberOfPoints) //override
+            {    
+            m_maximumNumberOfPoints = maximumNumberOfPoints;
+            }
+        
+        virtual bool _GetReturnAllPtsForLowestLevel() //override
+            {
+            return m_returnAllPtsForLowestLevel;
+            }
+
+        virtual void _SetReturnAllPtsForLowestLevel(bool returnAllPts) //override
+            {
+            m_returnAllPtsForLowestLevel = returnAllPts;
+            }
+
+    public : 
+
+        ScalableMeshFullResolutionQueryParams()
+            {
+            m_returnAllPtsForLowestLevel = true;
+            m_maximumNumberOfPoints = UINT_MAX;
+            }
+
+        virtual ~ScalableMeshFullResolutionQueryParams() {}
+    };
+
+struct ScalableMeshFullResolutionLinearQueryParams : public virtual IScalableMeshFullResolutionLinearQueryParams,
+                                              public virtual ScalableMeshFullResolutionQueryParams
+    {    
+    private : 
+
+        size_t           m_maximumNumberOfPointsForLinear;
+        bool             m_useDecimation;
+        bool             m_cutLinears;          
+        bool             m_addLinears;
+        std::vector<int> m_filteringFeatureTypes;
+        bool             m_doIncludeFilteringFeatureTypes;        
+                 
+    protected :        
+
+        virtual size_t _GetMaximumNumberOfPointsForLinear() override
+            {
+            return m_maximumNumberOfPointsForLinear;
+            }
+
+        virtual int _SetMaximumNumberOfPointsForLinear(size_t maximumNumberOfPointsForLinear) override
+            {
+            int status;
+
+            if (maximumNumberOfPointsForLinear > 10)
+                {
+                m_maximumNumberOfPointsForLinear = maximumNumberOfPointsForLinear;
+
+                status = SUCCESS;
+                }
+            else
+                {
+                status = ERROR;
+                }
+
+            return status;
+            }
+                
+        virtual void _SetUseDecimation(bool useDecimation) override
+            {
+            m_useDecimation = useDecimation;
+            }
+               
+        virtual bool _GetUseDecimation() override
+            {
+            return m_useDecimation;
+            }
+        
+        virtual void _SetCutLinears(bool cutLinears) override
+            {
+            m_cutLinears = cutLinears;
+            }
+
+        virtual bool _GetCutLinears() override
+            {
+            return m_cutLinears;
+            }
+
+        virtual void _SetAddLinears(const bool addLinears) override
+            {
+            m_addLinears = addLinears;
+            }
+
+        virtual bool _GetAddLinears() override
+            {
+            return m_addLinears;
+            }
+
+        virtual const std::vector<int>& _GetFilteringFeatureTypes(bool& doIncludeFilteringFeatureTypes) override
+            {
+            doIncludeFilteringFeatureTypes = m_doIncludeFilteringFeatureTypes;
+
+            return m_filteringFeatureTypes;
+            }
+          
+        //When no feature type is specified all feature types are returned.
+        virtual int _SetFilteringFeatureTypes(const std::vector<int>& filteringFeatureTypes, bool doIncludeFilteringFeatures) override
+            {
+            m_filteringFeatureTypes.clear();
+
+            if (filteringFeatureTypes.size() > 0)
+                {
+                m_filteringFeatureTypes.insert(m_filteringFeatureTypes.end(), filteringFeatureTypes.begin(), filteringFeatureTypes.end());
+                }    
+
+            m_doIncludeFilteringFeatureTypes = doIncludeFilteringFeatures;
+            return SUCCESS;
+            }
+
+        virtual void _SetIncludeFilteringFeatureTypes(const bool& doIncludeFilteringFeatures) override
+            {
+            m_doIncludeFilteringFeatureTypes = doIncludeFilteringFeatures;
+            }           
+       
+    public : 
+
+        ScalableMeshFullResolutionLinearQueryParams()
+            {
+            m_maximumNumberOfPointsForLinear = UINT64_MAX;
+            m_useDecimation = true;
+            m_cutLinears = false;
+            m_addLinears = true;
+            m_doIncludeFilteringFeatureTypes = false;
+            }
+
+        virtual ~ScalableMeshFullResolutionLinearQueryParams()
+            {
+            }
+    };
+                                                  
+struct SrDTMViewDependentQueryParams : public virtual ISrDTMViewDependentQueryParams, 
+                                       public virtual ScalableMeshQueryParameters
+    {                
+    protected :
+
+        DPoint3d m_viewBox[8];                    
+
+        virtual const DPoint3d* _GetViewBox() const override
+            {
+            return m_viewBox;
+            }        
+
+        virtual void _SetViewBox(const DPoint3d viewBox[]) override
+            {
+            memcpy(m_viewBox, viewBox, sizeof(m_viewBox));
+            }        
+
+    public : 
+                            
+    
+        SrDTMViewDependentQueryParams()
+            {
+            }
+
+        virtual ~SrDTMViewDependentQueryParams()
+            {
+            }
+    };
+
+
+struct ScalableMeshViewDependentQueryParams : public virtual IScalableMeshViewDependentQueryParams, 
+                                       public virtual SrDTMViewDependentQueryParams         
+    {    
+    protected :
+
+        double   m_minScreenPixelsPerPoint;
+        double   m_rootToViewMatrix[4][4];
+
+        //Determine if the same or different resolution method is used when the camera is off
+        bool     m_useSameResolutionWhenCameraIsOff;        
+
+        //Same resolution method's parameters 
+        bool     m_useSplitThresholdForLevelSelection;
+
+        //Different resolution method's parameters
+        bool     m_useSplitThresholdForTileSelection;
+                
+
+        virtual double        _GetMinScreenPixelsPerPoint() const override
+            {
+            return m_minScreenPixelsPerPoint;
+            } 
+
+        virtual bool          _GetUseSameResolutionWhenCameraIsOff() const override
+            {
+            return m_useSameResolutionWhenCameraIsOff;
+            }
+
+        virtual bool          _GetUseSplitThresholdForLevelSelection() const override
+            {
+            return m_useSplitThresholdForLevelSelection;
+            } 
+
+        virtual bool          _GetUseSplitThresholdForTileSelection() const override
+            {
+            return m_useSplitThresholdForTileSelection;
+            }
+
+        virtual const double* _GetRootToViewMatrix() const override
+            {
+            return (double*)m_rootToViewMatrix;
+            }        
+
+        virtual void          _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) override
+            {
+            m_minScreenPixelsPerPoint = minScreenPixelsPerPoint;
+            }
+
+        virtual void          _SetRootToViewMatrix(const double rootToViewMatrix[][4]) override
+            {
+            memcpy(m_rootToViewMatrix, rootToViewMatrix, sizeof(m_rootToViewMatrix));
+            }
+
+        virtual void          _SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) override
+            {
+            m_useSameResolutionWhenCameraIsOff = useSameResolution;
+            }
+
+        virtual void          _SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) override
+            {
+            m_useSplitThresholdForLevelSelection = useSplitThreshold;
+            }
+
+        virtual void          _SetUseSplitThresholdForTileSelection(bool useSplitThreshold) override
+            {
+            m_useSplitThresholdForTileSelection = useSplitThreshold;
+            }          
+               
+    public : 
+
+        ScalableMeshViewDependentQueryParams()
+            {
+            m_useSameResolutionWhenCameraIsOff = false;                
+            m_useSplitThresholdForLevelSelection = true;        
+            m_useSplitThresholdForTileSelection = false;    
+            m_minScreenPixelsPerPoint = 100;                        
+            }
+
+        virtual ~ScalableMeshViewDependentQueryParams()
+            {
+            }
+    };
+
+
+
+template<class POINT> class ScalableMeshFixResolutionViewPointQuery;
+
+
+
+struct ScalableMeshFixResolutionIndexQueryParams : public virtual IScalableMeshFixResolutionIndexQueryParams, 
+                                            public virtual ScalableMeshQueryParameters
+    {
+    
+    protected :
+
+        int      m_resolutionIndex;
+        
+        virtual int  _GetResolutionIndex() const override
+            {
+            return m_resolutionIndex;
+            }
+
+        virtual void _SetResolutionIndex(int resolutionIndex) override
+            {
+            m_resolutionIndex = resolutionIndex;
+            }
+
+    public : 
+
+        ScalableMeshFixResolutionIndexQueryParams()
+            {
+            m_resolutionIndex = 0;            
+            }
+
+        virtual ~ScalableMeshFixResolutionIndexQueryParams()
+            {
+            }        
+    };
+
+struct ScalableMeshFixResolutionMaxPointsQueryParams : public virtual IScalableMeshFixResolutionMaxPointsQueryParams, 
+                                                public virtual ScalableMeshQueryParameters
+    {
+
+    template<class POINT>
+    friend class ScalableMeshFixResolutionViewPointQuery;
+
+    private : 
+    
+    protected :
+
+        __int64 m_maxNumberPoints;
+        
+        virtual __int64 _GetMaxNumberPoints() override 
+            {
+            return m_maxNumberPoints;
+            }
+
+        virtual void    _SetMaximumNumberPoints(__int64 maxNumberPoints) override
+            {
+            m_maxNumberPoints = maxNumberPoints;
+            }
+
+    public :
+
+        ScalableMeshFixResolutionMaxPointsQueryParams()
+            {
+            m_maxNumberPoints = 0;
+            }
+
+        virtual ~ScalableMeshFixResolutionMaxPointsQueryParams()
+            {
+            }
+    };
+
+struct ScalableMeshQueryAllLinearsQueryParams : public virtual IScalableMeshQueryAllLinearsQueryParams,
+                                         public virtual ScalableMeshFullResolutionLinearQueryParams
+    {    
+#ifdef SCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+    private : 
+
+        typedef HFCPtr<HVEDTMLinearFeature> Feature;
+        typedef list<Feature>::iterator FeatureIterator;
+        list<Feature> m_features;
+#endif 
+
+    protected :
+
+        virtual list<IScalableMeshFeaturePtr> _GetFeatures()
+            {
+            // convert to publishable list (does not depend on ImagePP objects)
+            list<IScalableMeshFeaturePtr> newList;
+            for (FeatureIterator it = m_features.begin(); it != m_features.end(); it++)
+                {
+                IScalableMeshFeaturePtr feature = IScalableMeshFeature::Create();
+                if ((*it)->GetFeatureType() != (int)DTMFeatureType::ContourLine)
+                    feature->SetType((*it)->GetFeatureType());
+                else
+                    feature->SetType ((int)DTMFeatureType::Breakline);
+                for (size_t idx = 0; idx < (*it)->GetSize(); idx++)
+                    {
+                    const HGF3DPoint& point = (*it)->GetPoint(idx);
+                    DPoint2d newPoint;
+                    newPoint.x = point.GetX();
+                    newPoint.y = point.GetY();
+                    feature->AppendPoint(newPoint);
+                    }
+                newList.push_back(feature);
+                }
+            return newList;
+            }
+
+        virtual void _SetFeatures (const list<HFCPtr<HVEDTMLinearFeature>>& features)
+            {
+            m_features = features;
+            }
+               
+    public : 
+
+        ScalableMeshQueryAllLinearsQueryParams()
+            {
+            }
+               
+        virtual ~ScalableMeshQueryAllLinearsQueryParams()
+            {
+            }               
+    };
+
+#pragma warning( pop)
+
+/*==================================================================*/
+/*        QUERY PARAMETERS IMPLEMENTATION SECTION - END             */
+/*==================================================================*/ 
+class ScalableMeshQuery : public IScalableMeshQuery
+    {
+                                        
+    protected :
+        IScalableMeshClipContainerPtr m_clips;
+
+
+        HFCPtr<HVEShape> m_clipShapePtr;        
+        
+        ScalableMeshQuery();
+        ~ScalableMeshQuery();
+        
+
+        HFCPtr<HVEShape>  CreateClipShape(DRange3d& spatialIndexRange) const;
+        HFCPtr<HVEShape>  CreateClipShape(HFCPtr<HVEShape> areaShape) const;
+               
+        template <class POINT> int AddPoints(const DTMPtr&          dtmPtr, 
+                                             const list<POINT>&     pointList) const;
+        
+        //Inherited from IScalableMeshQuery
+        virtual int _GetNbClip() const;
+/*
+        virtual int _GetClip(DPoint3d*& clipPointsP,
+                             int&       numberOfPoints, 
+                             bool&      isClipMask,
+                             int        clipInd) const;
+*/
+        virtual int _AddClip(DPoint3d* clipPointsP,
+                             int   numberOfPoints, 
+                             bool  isClipMask);    
+
+        virtual int _RemoveAllClip();    
+
+    public :
+       
+        //NEEDS_WORK_SM - TEMP in public
+        template <class POINT> static int AddPoints(const DTMPtr&          dtmPtr, 
+                                                    const HPMMemoryManagedVector<POINT>& pointList) /*const*/;
+
+        template<class EXTENT> static EXTENT GetExtentFromClipShape(const DPoint3d* pClipShapePts, 
+                                                                   int             nbClipShapePts, 
+                                                                   double          zMin, 
+                                                                   double          zMax) /*const*/;
+        //NEEDS_WORK_SM - TEMP in public END
+
+        static int AddLinears(const DTMPtr&               dtmPtr,
+                       list<HFCPtr<HVEDTMLinearFeature>>& linearList, 
+                       size_t                             maxNumberOfPoints,
+                       bool                               useDecimation);
+
+        static IScalableMeshQueryPtr GetReprojectionQueryInterface(IScalableMeshPtr              scmToQueryPtr,
+                                                            DTMQueryType           queryType, 
+                                                            DTMQueryDataType       queryDataType, 
+                                                            const GeoCoords::GCS&   sourceGCStr,
+                                                            const GeoCoords::GCS&   targetGCStr,
+                                                            const DRange3d&        extentInTargetGCS);
+
+        int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+                   const DPoint3d*                  pClipShapePts, 
+                   int                              nbClipShapePts, 
+                   const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const ;
+
+};
+
+template <class POINT> class ScalableMeshFullResolutionPointQuery : public ScalableMeshQuery
+    {   
+    public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
+        void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+        void*   operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
+    private : 
+                
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        int                                             m_resolutionIndex;
+
+    protected :
+
+        // Inherited from IScalableMeshQuery
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
+                           const DPoint3d*                  pQueryShapePts, 
+                           int                              nbQueryShapePts, 
+                           const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
+                           
+    public :
+        
+        ScalableMeshFullResolutionPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr, 
+                                      int                                              resolutionIndex);
+        
+        virtual ~ScalableMeshFullResolutionPointQuery();     
+    }; 
+
+template <class POINT> class ScalableMeshViewDependentPointQuery : public ScalableMeshQuery
+    {   
+    public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
+        void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+        void*   operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
+    private : 
+                
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        int                                             m_resolutionIndex;
+
+    protected :
+
+        // Inherited from IScalableMeshQuery
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
+                           const DPoint3d*                  pQueryShapePts, 
+                           int                              nbQueryShapePts, 
+                           const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
+                           
+    public :
+
+        ScalableMeshViewDependentPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        
+        virtual ~ScalableMeshViewDependentPointQuery();       
+
+        void SetResolutionIndex(int resolutionIndex);
+    };
+
+
+template <class POINT> class ScalableMeshFixResolutionViewPointQuery : public ScalableMeshQuery 
+    {  
+    public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
+        void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+        void*   operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
+    private : 
+        
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        GeoCoords::GCS                                  m_pointIndexGCS;
+
+    protected :
+
+        // Inherited from IScalableMeshQuery
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
+                           const DPoint3d*                  pQueryShapePts, 
+                           int                              nbQueryShapePts, 
+                           const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
+                           
+    public :
+
+        ScalableMeshFixResolutionViewPointQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr, 
+                                         const GeoCoords::GCS&                                  pointIndexGCS);
+        
+        virtual ~ScalableMeshFixResolutionViewPointQuery();       
+    };
+
+
+class ScalableMeshReprojectionQuery : public ScalableMeshQuery 
+    {
+    public:  // OPERATOR_NEW_KLUDGE  >>> BEIJING_WIP_STM add a static create method
+        void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+        void*   operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
+    private : 
+        
+        IScalableMeshQueryPtr         m_originalQueryPtr;
+
+        GeoCoords::GCS          m_sourceGCS;
+        GeoCoords::GCS          m_targetGCS;
+        GeoCoords::Reprojection m_sourceToTargetReproj;
+        GeoCoords::Reprojection m_targetToSourceReproj;
+        DRange3d                m_extentInTargetGCS;
+                   
+    protected :
+
+        // Inherited from IScalableMeshQuery
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
+                           const DPoint3d*                  pQueryShapePts, 
+                           int                              nbQueryShapePts, 
+                           const IScalableMeshQueryParametersPtr&  scmQueryParamsPtr) const;
+
+        virtual int _AddClip(DPoint3d* clipPointsP,
+                             int   numberOfPoints, 
+                             bool  isClipMask);    
+
+                           
+    public :
+        
+        ScalableMeshReprojectionQuery(IScalableMeshQueryPtr         originalQueryPtr, 
+                               const GeoCoords::GCS&      sourceGCS, 
+                               const GeoCoords::GCS&      targetGCS,
+                               const DRange3d&        extentInTargetGCS);
+
+        
+        virtual ~ScalableMeshReprojectionQuery(); 
+    };
+
+/*==================================================================*/
+/*        3D MESH RELATED CODE - START                              */
+/*==================================================================*/
+class ScalableMeshMesh;
+
+typedef RefCountedPtr<ScalableMeshMesh> ScalableMeshMeshPtr;
+
+class ScalableMeshMesh : public IScalableMeshMesh
+    {
+    friend IScalableMeshMesh; 
+
+    private : 
+        DVec3d m_viewNormal;
+                mutable size_t    m_nbFaceIndexes;
+                int32_t*    m_faceIndexes;
+                size_t    m_normalCount;
+                DVec3d*   m_pNormal;
+                int32_t*    m_pNormalIndex;
+                mutable DVec3d*   m_pNormalAuto;
+
+        mutable PolyfaceQueryCarrier* m_polyfaceQueryCarrier; 
+
+    protected : 
+        DPoint3d* m_points;
+        size_t    m_nbPoints;
+
+        virtual const Bentley::PolyfaceQuery* _GetPolyfaceQuery() const override;
+
+        virtual size_t _GetNbPoints() const override;
+
+        virtual DPoint3d* _EditPoints() override;
+
+        virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const override;
+        virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
+
+        virtual int _ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const override;
+
+        virtual int _ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const override;
+       
+        virtual bool _FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge = -1) const override;
+        virtual bool _FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const override;
+
+        virtual bool _CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const override;
+
+
+        ScalableMeshMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex);
+
+        ScalableMeshMesh(DVec3d viewNormal);
+
+        void CalcNormals () const;
+        virtual ~ScalableMeshMesh();
+
+    public :        
+
+        //NEEDS_WORK_SM - Put in CPP.
+              size_t    GetNbPoints() const {return m_nbPoints;}
+        const DPoint3d* GetPoints() const {return m_points;}
+
+              size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
+        const Int32* GetFaceIndexes() const {return m_faceIndexes;}
+
+        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex);
+
+        static ScalableMeshMeshPtr Create (DVec3d viewNormal);
+        static ScalableMeshMeshPtr Create ();
+    };
+
+class ScalableMeshMeshWithGraph;
+
+typedef RefCountedPtr<ScalableMeshMeshWithGraph> ScalableMeshMeshWithGraphPtr;
+
+class ScalableMeshMeshWithGraph : public ScalableMeshMesh
+    {
+
+    private:
+        MTGGraph* m_graphData;
+        bool m_is3d; //helps with traversal/holes assumptions
+
+    protected:
+        virtual int _ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const override;
+        virtual int _ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const override;
+        virtual bool _FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge = -1) const override;
+        virtual bool _FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const override;
+        virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
+        ScalableMeshMeshWithGraph(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d);
+        ScalableMeshMeshWithGraph(MTGGraph* pGraph, bool is3d);
+
+        virtual ~ScalableMeshMeshWithGraph();
+
+    public:
+
+        static ScalableMeshMeshWithGraphPtr Create(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d);
+        static ScalableMeshMeshWithGraphPtr Create(MTGGraph* pGraph, bool is3d);
+    };
+
+
+struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDependentMeshQueryParams 
+    {    
+    protected :
+
+        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
+        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
+
+        double   m_minScreenPixelsPerPoint;
+        double   m_rootToViewMatrix[4][4];
+
+        //Determine if the same or different resolution method is used when the camera is off
+        bool     m_useSameResolutionWhenCameraIsOff;        
+
+        //Same resolution method's parameters 
+        bool     m_useSplitThresholdForLevelSelection;
+
+        //Different resolution method's parameters
+        bool     m_useSplitThresholdForTileSelection;
+
+        DPoint3d m_viewBox[8];                    
+
+        //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
+        bool                m_gatherQueriedNodeBoundaries;
+        bvector<DSegment3d> m_queriedNodeBoundaries;
+
+
+        ClipVectorPtr m_viewClipVector;
+
+        virtual const DPoint3d* _GetViewBox() const override
+            {
+            return m_viewBox;
+            }        
+
+        virtual void _SetViewBox(const DPoint3d viewBox[]) override
+            {
+            memcpy(m_viewBox, viewBox, sizeof(m_viewBox));
+            }      
+
+        virtual double        _GetMinScreenPixelsPerPoint() const override
+            {
+            return m_minScreenPixelsPerPoint;
+            } 
+
+        virtual bool          _GetUseSameResolutionWhenCameraIsOff() const override
+            {
+            return m_useSameResolutionWhenCameraIsOff;
+            }
+
+        virtual bool          _GetUseSplitThresholdForLevelSelection() const override
+            {
+            return m_useSplitThresholdForLevelSelection;
+            } 
+
+        virtual bool          _GetUseSplitThresholdForTileSelection() const override
+            {
+            return m_useSplitThresholdForTileSelection;
+            }
+
+        virtual const double* _GetRootToViewMatrix() const override
+            {
+            return (double*)m_rootToViewMatrix;
+            }
+
+        virtual const ClipVectorPtr _GetViewClipVector() const override
+            {
+            return m_viewClipVector;
+            }
+
+        virtual void          _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) override
+            {
+            m_minScreenPixelsPerPoint = minScreenPixelsPerPoint;
+            }
+
+        virtual void          _SetRootToViewMatrix(const double rootToViewMatrix[][4]) override
+            {
+            memcpy(m_rootToViewMatrix, rootToViewMatrix, sizeof(m_rootToViewMatrix));
+            }
+
+        virtual void          _SetUseSameResolutionWhenCameraIsOff(bool useSameResolution) override
+            {
+            m_useSameResolutionWhenCameraIsOff = useSameResolution;
+            }
+
+        virtual void          _SetUseSplitThresholdForLevelSelection(bool useSplitThreshold) override
+            {
+            m_useSplitThresholdForLevelSelection = useSplitThreshold;
+            }
+
+        virtual void          _SetUseSplitThresholdForTileSelection(bool useSplitThreshold) override
+            {
+            m_useSplitThresholdForTileSelection = useSplitThreshold;
+            }                          
+
+        virtual void          _SetViewClipVector(ClipVectorPtr& viewClipVector) override
+            {
+            m_viewClipVector = viewClipVector;           
+            }        
+
+          //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
+        virtual bool          _GetGatherQueriedNodeBoundaries() const override
+            {
+            return m_gatherQueriedNodeBoundaries;
+            }
+
+        virtual void          _SetGatherQueriedNodeBoundaries(bool gatherNodeBoundaries) override
+            {
+            m_gatherQueriedNodeBoundaries = gatherNodeBoundaries;
+            }
+
+        virtual bool          _GetQueriedNodeBoundaries(bvector<DSegment3d>& queriedNodeBoundaries) const override
+            {
+            queriedNodeBoundaries = m_queriedNodeBoundaries;
+
+            return true;
+            }
+
+        virtual void          _SetQueriedNodeBoundaries(bvector<DSegment3d>& nodeBoundaries) override
+            {
+            m_queriedNodeBoundaries = nodeBoundaries;
+            }
+
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+            {
+            return m_sourceGCSPtr;
+            }
+
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+            {
+            return m_targetGCSPtr;
+            }
+
+        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
+                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+            {
+            m_sourceGCSPtr = sourceGCSPtr;
+            m_targetGCSPtr = targetGCSPtr;
+            }
+        //NEEDS_WORK_SM : Maybe should be activate only on a specialized define END
+        
+    public : 
+
+        ScalableMeshViewDependentMeshQueryParams()
+            {
+            m_useSameResolutionWhenCameraIsOff = false;                
+            m_useSplitThresholdForLevelSelection = true;        
+            m_useSplitThresholdForTileSelection = false;    
+            m_minScreenPixelsPerPoint = 100;          
+
+            //NEEDS_WORK_SM : Maybe should be activate only on a specialized define
+            m_gatherQueriedNodeBoundaries = false;
+            }
+
+        virtual ~ScalableMeshViewDependentMeshQueryParams()
+            {
+            }
+    };
+
+struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
+    {
+    protected:
+        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
+        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+            {
+            return m_sourceGCSPtr;
+            }
+
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+            {
+            return m_targetGCSPtr;
+            }
+
+        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
+                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+            {
+            m_sourceGCSPtr = sourceGCSPtr;
+            m_targetGCSPtr = targetGCSPtr;
+            }
+    public:
+
+        ScalableMeshMeshQueryParams()
+            {
+            }
+
+        virtual ~ScalableMeshMeshQueryParams()
+            {}
+    };
+
+int draw(DTMFeatureType dtmFeatureType,int numTriangles, int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP);
+
+template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScalableMeshMeshQuery
+    {   
+    public:  
+        void*   operator new(size_t size) { return bentleyAllocator_allocateRefCounted (size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted (rawMemory, size); }
+        void*   operator new [](size_t size) { return bentleyAllocator_allocateArrayRefCounted (size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted (rawMemory, size); }
+
+    private : 
+                
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+        
+    protected :
+
+        // Inherited from IScalableMeshMeshQuery
+        virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
+                           const DPoint3d*                               pQueryExtentPts, 
+                           int                                           nbQueryExtentPts, 
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+                           
+    public :
+
+        ScalableMeshFullResolutionMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+        
+        virtual ~ScalableMeshFullResolutionMeshQuery();
+    };
+
+
+template <class POINT> class ScalableMeshViewDependentMeshQuery : public IScalableMeshMeshQuery
+    {
+    public:
+        void*   operator new(size_t size){ return bentleyAllocator_allocateRefCounted(size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted(rawMemory, size); }
+        void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
+
+    private:
+
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+
+    protected:
+
+        // Inherited from IScalableMeshMeshQuery
+        virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+    public:
+
+        ScalableMeshViewDependentMeshQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+
+        virtual ~ScalableMeshViewDependentMeshQuery();
+    };
+
+template <class POINT> class ScalableMeshReprojectionMeshQuery : public IScalableMeshMeshQuery
+    {
+    public: 
+        void*   operator new(size_t size){ return bentleyAllocator_allocateRefCounted(size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted(rawMemory, size); }
+        void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
+
+    private:
+
+        IScalableMeshMeshQueryPtr         m_originalQueryPtr;
+        HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+
+        GeoCoords::GCS          m_sourceGCS;
+        GeoCoords::GCS          m_targetGCS;
+        GeoCoords::Reprojection m_sourceToTargetReproj;
+        GeoCoords::Reprojection m_targetToSourceReproj;
+        DRange3d                m_extentInTargetGCS;
+
+    protected:
+
+        // Inherited from IScalableMeshMeshQuery
+        virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodes,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+
+    public:
+
+        ScalableMeshReprojectionMeshQuery(IScalableMeshMeshQueryPtr         originalQueryPtr,
+                                   const HFCPtr<SMMeshIndex<POINT, YProtPtExtentType>>& indexPtr,
+                               const GeoCoords::GCS&      sourceGCS,
+                               const GeoCoords::GCS&      targetGCS,
+                               const DRange3d&        extentInTargetGCS);
+
+
+        virtual ~ScalableMeshReprojectionMeshQuery() {};
+    };
+
+struct ScalableMeshNodeRayQueryParams : public IScalableMeshNodeQueryParams
+    {
+    protected:
+        DVec3d m_rayDirection;
+        double m_depth;
+        bool m_is2d;
+
+        virtual void _SetDirection(DVec3d direction) override
+            {
+            m_rayDirection = direction;
+            }
+        virtual DVec3d _GetDirection() const override
+            {
+            return m_rayDirection;
+            }
+        virtual void _SetDepth(double depth) override
+            {
+            m_depth = depth;
+            }
+        virtual double _GetDepth() const override
+            {
+            return m_depth;
+            }
+
+        virtual void _Set2d(bool is2d) override
+            {
+            m_is2d = is2d;
+            }
+        virtual bool _Get2d() const override
+            {
+            return m_is2d;
+            }
+    public:
+        static const double INFINITE_DEPTH;
+        ScalableMeshNodeRayQueryParams()
+            {
+            m_rayDirection = DVec3d::From(0, 0, -1);
+            m_depth = INFINITE_DEPTH; 
+            m_is2d = false;
+            }
+
+        virtual ~ScalableMeshNodeRayQueryParams()
+            {}
+    };
+
+template <class POINT> class ScalableMeshNodeRayQuery : public IScalableMeshNodeRayQuery
+    {
+    public:
+        void*   operator new(size_t size){ return bentleyAllocator_allocateRefCounted(size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted(rawMemory, size); }
+        void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
+
+    private:
+
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+
+    protected:
+
+        // Inherited from IScalableMeshNodeRayQuery
+        virtual int _Query(IScalableMeshNodePtr&                                nodePtr,
+                           const DPoint3d*                               pTestPt,
+                           const DPoint3d*                               pClipShapePts,
+                           int                                           nbClipShapePts,
+                           const IScalableMeshNodeQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+    public:
+
+        ScalableMeshNodeRayQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+
+        virtual ~ScalableMeshNodeRayQuery();
+    };
+
+
+struct ScalableMeshNodePlaneQueryParams : public IScalableMeshNodePlaneQueryParams
+    {
+    protected:
+        DPlane3d m_plane;
+        double m_depth;
+
+        virtual void _SetPlane(DPlane3d plane) override
+            {
+            m_plane = plane;
+            }
+        virtual DPlane3d _GetPlane() const override
+            {
+            return m_plane;
+            }
+        virtual void _SetDepth(double depth) override
+            {
+            m_depth = depth;
+            }
+        virtual double _GetDepth() const override
+            {
+            return m_depth;
+            }
+        Bentley::GeoCoordinates::BaseGCSPtr m_sourceGCSPtr;
+        Bentley::GeoCoordinates::BaseGCSPtr m_targetGCSPtr;
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetSourceGCS() override
+            {
+            return m_sourceGCSPtr;
+            }
+
+        virtual Bentley::GeoCoordinates::BaseGCSPtr _GetTargetGCS() override
+            {
+            return m_targetGCSPtr;
+            }
+
+        virtual void _SetGCS(Bentley::GeoCoordinates::BaseGCSPtr& sourceGCSPtr,
+                             Bentley::GeoCoordinates::BaseGCSPtr& targetGCSPtr) override
+            {
+            m_sourceGCSPtr = sourceGCSPtr;
+            m_targetGCSPtr = targetGCSPtr;
+            }
+    public:
+        static const double INFINITE_DEPTH;
+        ScalableMeshNodePlaneQueryParams()
+            {
+            m_depth = INFINITE_DEPTH;
+            }
+
+        virtual ~ScalableMeshNodePlaneQueryParams()
+            {}
+    };
+
+template <class POINT> class ScalableMeshNodePlaneQuery : public IScalableMeshMeshQuery
+    {
+    public:
+        void*   operator new(size_t size){ return bentleyAllocator_allocateRefCounted(size); }
+        void    operator delete(void* rawMemory, size_t size) { bentleyAllocator_deleteRefCounted(rawMemory, size); }
+        void*   operator new [] (size_t size) { return bentleyAllocator_allocateArrayRefCounted(size); }
+        void    operator delete [] (void* rawMemory, size_t size) { bentleyAllocator_deleteArrayRefCounted(rawMemory, size); }
+
+    private:
+
+        HFCPtr<SMPointIndex<POINT, YProtPtExtentType>> m_scmPointIndexPtr;
+
+    protected:
+
+        virtual int _Query(IScalableMeshMeshPtr&                                meshPtr,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+        virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodesPtr,
+                           const DPoint3d*                               pQueryExtentPts,
+                           int                                           nbQueryExtentPts,
+                           const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const override;
+
+    public:
+
+        ScalableMeshNodePlaneQuery(const HFCPtr<SMPointIndex<POINT, YProtPtExtentType>>& pointIndexPtr);
+
+        virtual ~ScalableMeshNodePlaneQuery();
+    };
+
+template<class POINT> class ScalableMeshNode : public IScalableMeshNode
+
+    {
+
+    protected:
+        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;
+
+        virtual bool    _ArePoints3d() const override;
+
+        virtual bool    _ArePointsFullResolution() const override;
+
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const override;
+
+        virtual bvector<IScalableMeshNodePtr> _GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const override;
+
+        virtual DRange3d _GetNodeExtent() const override;
+
+        virtual DRange3d _GetContentExtent() const override;
+
+        virtual __int64 _GetNodeId() const override;
+
+        virtual size_t _GetLevel() const override;
+
+        virtual size_t _GetPointCount() const override;                
+
+        virtual bool _IsHeaderLoaded() const override;
+
+        virtual bool _IsMeshLoaded() const override;
+
+        virtual void _LoadHeader() const override;
+
+        
+    public:         
+        ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
+        ScalableMeshNode() {};
+
+        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> GetNodePtr()
+            {
+            return m_node;
+            }
+
+    };
+
+//NEEDS_WORK_SM : Should inherit from ScalableMeshNode instead
+template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit
+
+    {
+    protected:
+
+    protected:
+        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> m_node;
+
+        virtual bool    _ArePoints3d() const override;
+
+        virtual bool    _ArePointsFullResolution() const override;
+
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const override;
+
+        virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const override;
+
+        virtual DRange3d _GetNodeExtent() const override;
+
+        virtual DRange3d _GetContentExtent() const override;
+
+        virtual __int64 _GetNodeId() const override;
+
+        virtual size_t _GetLevel() const override;
+
+        virtual size_t _GetPointCount() const override;
+
+        virtual StatusInt _AddMesh(DPoint3d* vertices, size_t nVertices, int32_t* indices, size_t nIndices) override;
+
+        virtual StatusInt _SetNodeExtent(DRange3d& extent) override;
+
+        virtual StatusInt _SetContentExtent(DRange3d& extent) override;
+
+        virtual bool _IsHeaderLoaded() const override;
+
+        virtual bool _IsMeshLoaded() const override;
+
+        virtual void _LoadHeader() const override;
+
+    public:
+        ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr);
+        ScalableMeshNodeEdit() {};
+
+        HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>> GetNodePtr()
+            {
+            return m_node;
+            }
+
+    };
+
+
+template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMeshNode<POINT>
+
+    {
+    private:
+        GeoCoords::Reprojection  m_reprojectFunction;
+    protected:
+        virtual IScalableMeshMeshPtr _GetMesh(bool loadGraph) const override;
+    public:
+        ScalableMeshNodeWithReprojection(IScalableMeshNodePtr nodeInfo, const GeoCoords::Reprojection& reproject);
+        ScalableMeshNodeWithReprojection(HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>& nodePtr, const GeoCoords::Reprojection& reproject);
+    };
+
+/*==================================================================*/
+/*        3D MESH RELATED CODE - END                                */
+/*==================================================================*/
+
+
+#include "ScalableMeshQuery.hpp"
+
+END_BENTLEY_SCALABLEMESH_NAMESPACE

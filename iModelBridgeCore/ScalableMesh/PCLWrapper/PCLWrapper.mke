@@ -1,0 +1,125 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PCLWrapper/PCLWrapper.mke $
+#
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+# Lots of problems in a third-party library that we aren't going to fix. 
+HAVE_PERMISSION_TO_COMPILE_AT_W3=1
+BUILD_USING_VS2012=1
+
+appName = PCLWrapper
+moduleName = PCLWrapper
+
+PolicyFile = $(SrcRoot)ScalableMesh\PCLWrapper\mki\AssertPCLWrapperPolicy.mki
+
+%include mdl.mki
+
+publicApiDir  = $(baseDir)PublicAPI/
+
+AppConfigurationMKI = $(baseDir)PCLWrapper.mki
+%include $(AppConfigurationMKI)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/PCLWrapper=$(publicApiDir)"
+
+#----------------------------------------------------------------------
+#     Compile precompiled header
+#----------------------------------------------------------------------
+CCPchOpts = -Yc"PCLWrapperPch.h" -Zm800 -Fp$(o)PCLWrapperPch.pch
+$(o)PCLWrapperPch$(oext)                : $(baseDir)PCLWrapperPch.cpp $(MultiCompileDepends)
+
+
+#----------------------------------------------------------------------
+#     Multi Compile
+#----------------------------------------------------------------------
+%include MultiCppCompileRule.mki
+
+$(o)NormalCalculator$(oext)           : $(baseDir)NormalCalculator.cpp  \
+                                        $(publicApiDir)INormalCalculator.h \
+                                        ${MultiCompileDepends}
+
+$(o)RansacUtility$(oext)           : $(baseDir)RansacUtility.cpp  \
+                                        $(publicApiDir)IRansacUtility.h \
+                                        ${MultiCompileDepends}
+
+$(o)Status$(oext)                     : $(baseDir)Status.cpp  \
+                                        $(baseDir)Status.h  \
+                                        $(publicApiDir)IStatus.h \
+                                        ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+
+#----------------------------------------------------------------------
+# Define macros for files included in our link
+#----------------------------------------------------------------------
+nonUniformObjs = \
+    $(PCHHeaderObject)
+    
+linkLibs = \
+    $(ContextSubpartsLibs)pclCommon$(libext) \
+    $(ContextSubpartsLibs)pclOctree$(libext) \
+    $(ContextSubpartsLibs)pclSampleConsensus$(libext) \
+    $(ContextSubpartsLibs)pclKdtree$(libext) \
+    $(ContextSubpartsLibs)pclSearch$(libext) \
+    $(ContextSubpartsLibs)pclFilters$(libext) \
+    $(ContextSubpartsLibs)pclSegmentation$(libext) \
+    $(ContextSubpartsLibs)pclFeatures$(libext) \
+    $(ContextSubpartsLibs)pclSurface$(libext) \
+    $(ContextSubpartsLibs)pclRegistration$(libext) \
+    $(ContextSubpartsLibs)pclKeypoints$(libext) \
+    $(ContextSubpartsLibs)pclTracking$(libext) \
+    $(ContextSubpartsLibs)libboost_atomic-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_chrono-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_context-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_coroutine-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_date_time-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_exception-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_filesystem-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_graph-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_iostreams-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_locale-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_log_setup-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_log-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_math_c99-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_math_c99f-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_math_c99l-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_math_tr1-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_math_tr1f-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_math_tr1l-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_prg_exec_monitor-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_program_options-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_random-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_regex-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_serialization-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_signals-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_system-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_test_exec_monitor-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_timer-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_unit_test_framework-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_wave-vc110-mt-s-1_55$(libext) \
+    $(ContextSubpartsLibs)libboost_wserialization-vc110-mt-s-1_55$(libext) \
+
+
+#----------------------------------------------------------------------
+#   DLM definition
+#----------------------------------------------------------------------
+DLM_NAME                = $(appName)
+DLM_OBJECT_FILES        = $(MultiCompileObjectList)
+DLM_OBJECT_PCH          = $(o)PCLWrapperPCH$(oext)
+
+LINKER_LIBRARIES        = $(linkLibs)
+
+%include $(sharedMki)LinkLibrary.mki

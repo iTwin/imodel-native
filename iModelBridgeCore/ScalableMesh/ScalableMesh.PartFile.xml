@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+
+        <Part Name="PCLWrapper" BMakeFile="PCLWrapper\PCLWrapper.mke">
+      <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
+      <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>
+      <SubPart PartName="pcl"      PartFile="pcl"      Repository="Libsrc-Pcl"/>      
+      <Bindings>                              
+        <Libs>Delivery\PCLWrapper.lib</Libs>        
+        <PublicAPI Domain="PCLWrapper" />
+        <Files ProductDirectoryName="ScalableMeshAssemblies" >Delivery\$(shlibprefix)PCLWrapper$(shlibext)</Files>                
+      </Bindings>
+    </Part>
+    
+        <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
+        <SubPart PartName="PCLWrapper" />
+        <SubPart PartName="Eigen"           PartFile="pcl"                                  Repository="Libsrc-Pcl"/>        
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
+        <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>          
+        <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <!-- For Importer-->
+        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
+        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  
+         <SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+            <PublicAPI Domain="ScalableMesh" />
+        </Bindings>
+    </Part>
+    
+    
+        <ProductDirectoryList ListName="ScalableMeshSDK">
+        <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
+         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="DgnPlatformData" Path="Dlls"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="AcisAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="PointoolsAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="PointCloudCoreAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="LoggingNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="PCLAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="AdobeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="PdfLibinitNativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
+        <ProductDirectory Name="AdobeResource" Deliver="false"/>
+        <ProductDirectory Name="CSMapMergeModules" Deliver="false"/>
+        <ProductDirectory Name="GeoCoordData" Deliver="false"/>
+        <ProductDirectory Name="GdalData" Deliver="false"/>
+       <ProductDirectory Name="Libs"  Deliver="false" LibType="static" />
+       <ProductDirectory Name="Libs"  Deliver="false"/>
+       <ProductDirectory Name="ScalableMeshLibs"  Path="Libs" Deliver="true"/>
+       <ProductDirectory Name="PowerPlatformSdkLibs"  Path="Libs" Deliver="true"/>
+         <ProductDirectory Name="PSolidLibs" Path="Libs"/>
+          <ProductDirectory Name="PointCloudSdkLibs" Path="Libs"/>
+          <ProductDirectory Name="RasterSdkLibs" Path="Libs"/>
+        <ProductDirectory Name="SmartSolidAssemblies" Path="Dlls"/>         
+       <ProductDirectory Name="TerrainModelNativeCoreLibs"  Path="Libs" Deliver="true"/>
+       <ProductDirectory Name="DgnViewLibs"  Path="Libs" Deliver="true"/>
+       <ProductDirectory Name="TerrainModelElementHandler" Path="Dlls" />
+    </ProductDirectoryList>
+    
+      <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMeshSDK" SaveProduct="true" >    
+    <SubPart PartName="ScalableMesh"/>  
+        <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />          
+    <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
+    <Directories DirectoryListName="ScalableMeshSDK" />
+  </Product>
+  
+  </BuildContext>

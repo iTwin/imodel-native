@@ -1,0 +1,14 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PCLWrapper/mki/AssertPCLWrapperPolicy.mki $
+#    $RCSfile: AssertDTMPolicy.mki,v $
+#   $Revision: 1.23 $
+#       $Date: 2012/11/13 14:02:19 $
+#     $Author: Daryl.Holmwood $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki=$(SrcRoot)ScalableMesh\PCLWrapper\mki\PCLWrapperPolicy.mki

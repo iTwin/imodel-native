@@ -1,0 +1,85 @@
+#----------------------------------------------------------------------
+#     $Source: PCLWrapper/PCLWrapper.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------
+
+#----------------------------------------------------------------------
+#       Compiler options
+#----------------------------------------------------------------------
+nameToDefine = BENTLEY_MODIFICATIONS
+%include cdefapnd.mki
+
+nameToDefine = __PCLWRAPPER_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = BOOST_NO_RVALUE_REFERENCES
+%include cdefapnd.mki
+
+nameToDefine = BOOST_ALL_NO_LIB
+%include cdefapnd.mki
+
+# Ensure that any code in the Eigen library licensed under LGPL is not included in our .dll
+nameToDefine = EIGEN_MPL2_ONLY
+%include cdefapnd.mki
+
+CCompOpts + -openmp
+
+# C4005: macro redefinition
+CCompOpts + -wd4005
+
+# C4101: unreferenced local variable
+CCompOpts + -wd4101
+
+# C4800: forcing value to bool 'true' or 'false' (performance warning)
+CCompOpts + -wd4800
+
+#---------------------------------------------
+#       PointCloudLibrary
+#---------------------------------------------
+
+pclVendorAPIDir = $(OutputRootDir)BuildContexts/pcl/VendorAPI/
+
+dirToSearch=$(pclVendorAPIDir)
+%include cincapnd.mki
+
+dirToSearch=$(pclVendorAPIDir)eigen\
+%include cincapnd.mki
+
+dirToSearch=$(pclVendorAPIDir)flann\
+%include cincapnd.mki
+
+dirToSearch=$(pclVendorAPIDir)vtk\
+%include cincapnd.mki
+
+vendorAPIDir = $(BuildContext)\VendorAPI\\
+
+dirToSearch=$(vendorAPIDir)pcl\pclInclude\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclCommon\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclFilters\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclSearch\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclKdtree\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclOctree\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclFeatures\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclSampleConsensus\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclSegmentation\include\
+%include cincapnd.mki
+
+dirToSearch=$(vendorAPIDir)pcl\pclSurface\include\
+%include cincapnd.mki

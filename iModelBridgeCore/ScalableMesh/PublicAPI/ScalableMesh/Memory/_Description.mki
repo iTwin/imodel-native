@@ -1,0 +1,39 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: PublicAPI/ScalableMesh/Memory/_Description.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__MemoryPublicAPIDescriptionMki__)
+    %return
+%endif
+__MemoryPublicAPIDescriptionMki__ = 1
+
+%include $(BuildContext)PublicAPI/Foundations/_Description.mki
+
+MemoryPublicAPILocation = $(BuildContext)PublicAPI/Memory/
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+MemoryPublicAPIListing = \
+    $(MemoryPublicAPILocation)Allocation.h \
+    $(MemoryPublicAPILocation)Definitions.h \
+    $(MemoryPublicAPILocation)Exceptions.h \
+    $(MemoryPublicAPILocation)Packet.h \
+    $(MemoryPublicAPILocation)PacketAccess.h \
+    $(MemoryPublicAPILocation)PacketAccess.hpp
+
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+MemoryPublicAPIRecursiveListing = \
+    $(MemoryPublicAPIListing)
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+MemoryPublicAPIFullListing = \
+    $(MemoryPublicAPIRecursiveListing) \
+    $(FoundationsPublicAPIRecursiveListing)
