@@ -441,6 +441,7 @@ public:
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
+    virtual bool        _SupportsConvertToRaster() const { return true; }
     virtual double      _CalcRepetitions (LineStyleSymbCP) const;
 
     virtual bool        _IsContinuous           () const override  {return false;}
@@ -757,6 +758,7 @@ public:
     virtual bool    _IsAffectedByWidth           (bool currentStatusOnly) const override;
     virtual bool    _IsBySegment                 () const override;
     virtual bool    _HasLineCodes                () const override;
+    virtual bool    _SupportsConvertToRaster    () const override;
     virtual bool    _ContainsComponent           (LsComponentP other) const override;
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
@@ -986,6 +988,7 @@ public:
 
 
     size_t          GetStrokeCount          () const {return  m_nStrokes;}
+    virtual bool    _SupportsConvertToRaster () const override;
     double          _CalcRepetitions         (LineStyleSymbCP) const;
     LsStrokeP       InsertStroke            (LsStrokeCR stroke);
     void            InsertStroke            (double length, bool isDash);
@@ -1094,6 +1097,7 @@ public:
     static LsPointComponentPtr      Create                  (LsLocation&location) { LsPointComponentP retval = new LsPointComponent (&location); retval->m_isDirty = true; return retval; }
     virtual double                  _GetMaxWidth             (DgnModelP modelRef)  const override;
     //  T_SymbolsCollectionConstIter    GetSymbols ()           const   {return m_symbols.begin ();}
+    virtual bool                    _SupportsConvertToRaster    () const override;
     virtual bool                    _ContainsComponent       (LsComponentP other) const override;
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
@@ -1177,9 +1181,10 @@ typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 //!  @ingroup LineStyleManagerModule
 enum class LsUnit
 {
-    Master      = 0,        //!< Master Units
+    //  Master      = 0,    //!< Master Units -- not supported in DgnDb
     Uor         = 1,        //!< Internal Units (UORS)
-    Device      = 2         //!< Pixel units
+    Device      = 2,        //!< Pixel units
+    Meters      = 3,        //!< Meters
 };
 
 //=======================================================================================
@@ -1213,6 +1218,7 @@ private:
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
+    intptr_t            GenerateRasterTexture(ViewContextR viewContext, LineStyleSymbR lineStyleSymb);
 
 public:
     DGNPLATFORM_EXPORT static double GetUnitDef (Json::Value& lsDefinition);
@@ -1244,7 +1250,7 @@ public:
     DgnStyleId GetStyleId () { return m_styleId; }
 
     // Raster Images...
-    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scale) const;
+    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, bool forceRaster, double scale);
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
@@ -1269,11 +1275,11 @@ public:
     DGNPLATFORM_EXPORT void SetUnitsDefinition (double newValue);
     DGNPLATFORM_EXPORT void SetUnitsType (LsUnit unitsType);
     DGNPLATFORM_EXPORT LsUnit GetUnitsType () const;
-    //!  This is equivalent to "LSATTR_UNITUOR == GetUnits()"
+    //!  This is equivalent to "LsUnit::Uor == GetUnits()"
     DGNPLATFORM_EXPORT bool IsUnitsUOR () const;
-    //!  This is equivalent to "LSATTR_UNITMASTER == GetUnits()"
-    DGNPLATFORM_EXPORT bool IsUnitsMaster () const;
-    //!  This is equivalent to "LSATTR_UNITDEV == GetUnits()"
+    //!  This is equivalent to "LsUnit::Meters == GetUnits()"
+    DGNPLATFORM_EXPORT bool IsUnitsMeters () const;
+    //!  This is equivalent to "LsUnit::Device == GetUnits()"
     DGNPLATFORM_EXPORT bool IsUnitsDevice () const;
     //! Returns true if line styles are physical and should be scaled as such.  This only applies to styles in
     //! dgnlibs, not resources.

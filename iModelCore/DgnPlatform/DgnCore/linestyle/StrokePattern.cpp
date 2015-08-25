@@ -1262,6 +1262,14 @@ bool            LsStrokePatternComponent::_IsContinuousOrSingleDash () const
             (m_nStrokes == 1 && m_strokes[0].IsDash() ));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+bool LsStrokePatternComponent::_SupportsConvertToRaster () const
+    {
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   04/03
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -274,9 +274,9 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Shoudl not exist before insert
-        ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().ExistsById(testStyle->GetId()));
+        // Cannot pass an invalid ID to ExistsById... ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().ExistsById(testStyle->GetId()));
         ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().ExistsByName(testStyle->GetName().c_str()));
-        ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().QueryById(testStyle->GetId()).IsValid());
+        // Cannot pass an invalid ID to QueryById... ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().QueryById(testStyle->GetId()).IsValid());
         ASSERT_TRUE(false == project.Styles().AnnotationFrameStyles().QueryByName(testStyle->GetName().c_str()).IsValid());
 
         ASSERT_TRUE(SUCCESS == project.Styles().AnnotationFrameStyles().Insert(*testStyle));
@@ -309,9 +309,9 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Query Invalid
-        EXPECT_FALSE(project.Styles().AnnotationFrameStyles().ExistsById(INVALIDSTYLEID));
+        // Cannot pass an invalid ID to ExistsById... EXPECT_FALSE(project.Styles().AnnotationFrameStyles().ExistsById(INVALIDSTYLEID));
         EXPECT_FALSE(project.Styles().AnnotationFrameStyles().ExistsByName("InvalidName"));
-        EXPECT_FALSE(project.Styles().AnnotationFrameStyles().QueryById(INVALIDSTYLEID).IsValid());
+        // Cannot pass an invalid ID to QueryById... EXPECT_FALSE(project.Styles().AnnotationFrameStyles().QueryById(INVALIDSTYLEID).IsValid());
         EXPECT_FALSE(project.Styles().AnnotationFrameStyles().QueryByName("InvalideName").IsValid());
 
         //.............................................................................................
@@ -342,7 +342,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
         AnnotationFrameStylePtr secondMutatedStyle = fileStyle->Clone();
         secondMutatedStyle->SetName("DifferentName");
         secondMutatedStyle->SetId(INVALIDSTYLEID);
-        ASSERT_TRUE(ERROR == project.Styles().AnnotationFrameStyles().Update(*secondMutatedStyle));
+        // Cannot pass an invalid ID to Update... ASSERT_TRUE(ERROR == project.Styles().AnnotationFrameStyles().Update(*secondMutatedStyle));
 
         //.............................................................................................
         // Iterate
@@ -385,7 +385,7 @@ TEST_F(AnnotationFrameStyleTest, InvalidOperations)
 
         //.............................................................................................
         // Delete by Invalid id 
-        ASSERT_TRUE(ERROR == project.Styles().AnnotationFrameStyles().Delete(INVALIDSTYLEID));
+        // Cannot pass an invalid ID to Delete... ASSERT_TRUE(ERROR == project.Styles().AnnotationFrameStyles().Delete(INVALIDSTYLEID));
 
         //.............................................................................................
         // Delete

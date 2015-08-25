@@ -24,29 +24,3 @@
 #include "TextAnnotation.h"
 #include "TextAnnotationDraw.h"
 #include "TextAnnotationSeed.h"
-
-//__PUBLISH_SECTION_END__
-
-BEGIN_BENTLEY_DGN_NAMESPACE
-
-//=======================================================================================
-//! Utility class to call a parameterless void callback when destructed; particularly useful with lambdas.
-// @bsiclass                                                    Jeff.Marker     07/2014
-//=======================================================================================
-struct CallbackOnDestruct : public NonCopyableClass
-{
-    typedef std::function<void ()> T_Callback;
-
-private:
-    T_Callback m_callback;
-
-    void Call() { if(m_callback) m_callback(); }
-
-public:
-    explicit CallbackOnDestruct(T_Callback const& callback) : m_callback(callback) { }
-    ~CallbackOnDestruct() { Call(); }
-    void CallThenCancel() { Call(); Cancel(); }
-    void Cancel() { m_callback = NULL; }
-};
-
-END_BENTLEY_DGN_NAMESPACE

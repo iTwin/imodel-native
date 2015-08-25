@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnScript/DgnJsApi.cpp $
+|     $Source: DgnScript/DgnJsApi/DgnJsApi.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,7 +12,7 @@
 #include <ECObjects/ECObjectsAPI.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-#include "DgnJsApi.h"
+#include <DgnPlatform/DgnJsApi.h>
 #include <DgnPlatform/DgnJsApiProjection.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -32,7 +32,7 @@ static RefCountedPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf
     PhysicalElementPtr el = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
 
     if (nullptr != code)
-        el->SetCode(code);
+        el->SetCode(DgnElement::Code(code));
 
     return el;
     }
@@ -77,17 +77,17 @@ void JsElementGeometryBuilder::AppendBox(double x, double y, double z)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
-JsElementGeometryBuilder* JsElementGeometryBuilder::Create(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
+JsElementGeometryBuilder::JsElementGeometryBuilder(JsDgnElementP e, JsDPoint3dP o, JsYawPitchRollAnglesP a)
     {
     DgnElement3dP e3d = dynamic_cast<DgnElement3dP>(e->m_el.get());
     if (nullptr != e3d)
-        return new JsElementGeometryBuilder(*e3d, o->m_pt, a->m_angles);
-
-    DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
-    if (nullptr != e2d)
-        return new JsElementGeometryBuilder(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYaw()));
-
-    return nullptr;
+        m_builder = ElementGeometryBuilder::Create(*e3d, o->Get (), a->GetYawPitchRollAngles ());
+    else
+        {
+        DgnElement2dP e2d = dynamic_cast<DgnElement2dP>(e->m_el.get());
+        if (nullptr != e2d)
+            m_builder = ElementGeometryBuilder::Create(*e2d, DPoint2d::From(o->GetX(), o->GetY()), AngleInDegrees::FromDegrees(a->GetYawDegrees ()));
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -134,5 +134,8 @@ DgnJsApi::~DgnJsApi()
 //---------------------------------------------------------------------------------------
 void DgnJsApi::_ImportScriptLibrary(BeJsContextR jsContext, Utf8CP)
     {
+    // TRICKY Unlike most JSApis, DgnJsApi does not have its own bootstrapping source. That is because it is combined with DgnScriptContext's boostrapping 
+    // source, and so it must be evaluated later. See DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext. 
+    // *** NEEDS WORK: See if we can untangle this by building DgnScriptContext and DgnJsApi in different makefiles and thereby generating two different bootstrapping .cpp files.
     jsContext.RegisterProjection<DgnJsApiProjection>();
     }

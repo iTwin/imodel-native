@@ -65,8 +65,8 @@ protected:
 
 public:
     TestElement(CreateParams const& params) : T_Super(params) {}
-    static TestElementPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-    static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    static TestElementPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
+    static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
     void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
 };
@@ -93,7 +93,7 @@ private:
     friend struct GTestElement2dHandler;
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
-    static TestElement2dPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    static TestElement2dPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode);
 };
 
 //=======================================================================================
@@ -139,12 +139,12 @@ public:
 
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    DgnElementCPtr InsertElement(Utf8CP elementCode, ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-    DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-    DgnElementKey InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-    DgnElementKey InsertElementUsingGeomPart2d( Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    DgnElementCPtr InsertElement(DgnElement::Code elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    DgnElementCPtr InsertElement(DgnElement::Code elementCode, ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
+    DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
+    DgnElementKey InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
+    DgnElementKey InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
     bool SelectElementItem(DgnElementId id);
 };
 

@@ -97,7 +97,6 @@ public:
     uint32_t    grid:1;             //!< Shows or hides the grid. The grid settings are a design file setting.
     uint32_t    acs:1;              //!< Shows or hides the ACS triad.
     uint32_t    bgImage:1;          //!< Shows or hides the background image. The image is a design file setting, and may be undefined.
-    uint32_t    bgColor:1;          //!< Controls whether the view's custom background color is used. This is typically controlled through a display style.
 
     uint32_t    textures:1;         //!< Controls whether to display texture maps for material assignments. When off only material color is used for display.
     uint32_t    materials:1;        //!< Controls whether materials are used (e.g. control whether geometry with materials draw normally, or as if it has no material).

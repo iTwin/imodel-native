@@ -1108,7 +1108,7 @@ bool                drawName
 
     ICachedDrawP    cached = viewport->GetICachedDraw ();
 
-    cached->BeginCacheElement (T_HOST.GetGraphicsAdmin()._GetTempElementCache(), true);
+    cached->BeginCacheElement (T_HOST.GetGraphicsAdmin()._GetTempElementCache());
 
     cached->PushTransform (transform);
 

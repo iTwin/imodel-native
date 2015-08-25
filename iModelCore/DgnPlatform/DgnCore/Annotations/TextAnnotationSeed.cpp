@@ -425,7 +425,7 @@ bool DgnTextAnnotationSeeds::ExistsByName(Utf8CP name) const
     query.BindText(1, name, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != query.Step())
-        return nullptr;
+        return false;
 
     return (query.GetValueInt(0) > 0);
     }
@@ -442,7 +442,7 @@ BentleyStatus DgnTextAnnotationSeeds::Insert(TextAnnotationSeedR style)
     PRECONDITION(SUCCESS == TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, style, TextAnnotationSeedPersistence::FlatBufEncodeOptions::ExcludeNonPropertyData), ERROR);
 
     DgnStyleId nextId;
-    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(nextId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
+    PRECONDITION(BE_SQLITE_OK == m_dgndb.GetServerIssuedId(nextId, DGN_TABLE(DGN_CLASSNAME_Style), "Id"), ERROR);
     
     Statement insert;
     insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Style) " (Id,Type,Name,Descr,Data) VALUES (?," DGN_STYLE_TYPE_TextAnnotationSeed ",?,?,?)");

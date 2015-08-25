@@ -1007,7 +1007,6 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20)
     {
-    m_listeners = nullptr;
     m_tree = new ElemIdTree(dgndb);
     }
 
@@ -1079,6 +1078,9 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 
     if (makePersistent)
         {
+        if (m_selectionSet.Contains(el->GetElementId()))
+            el->SetInSelectionSet(true);
+
         el->GetModel()->_OnLoadedElement(*el);
         AddToPool(*el);
         }
@@ -1103,10 +1105,11 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
                     stmt->GetValueText(Column::Label), 
-                    stmt->GetValueText(Column::Code), 
+                    DgnElement::Code(stmt->GetValueText(Column::Code)), 
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId),
-                    stmt->GetValueDouble(Column::LastMod)), makePersistent);
+                    stmt->GetValueDouble(Column::LastMod)),
+                    makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1145,33 +1148,9 @@ bool DgnElements::IsElementIdUsed(DgnElementId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId DgnElements::GetHighestElementId()
-    {
-    if (!m_highestElementId.IsValid())
-        {
-        BeLuid nextRepo(m_dgndb.GetRepositoryId().GetNextRepositoryId().GetValue(),0);
-        Statement stmt(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id<?");
-        stmt.BindInt64(1,nextRepo.GetValue());
-
-        DbResult result = stmt.Step();
-        UNUSED_VARIABLE(result);
-        BeAssert(result == BE_SQLITE_ROW);
-
-        int64_t currMax = stmt.GetValueInt64(0);
-
-        BeRepositoryBasedId firstId(m_dgndb.GetRepositoryId(), 0);
-        m_highestElementId.m_id =(currMax < firstId.m_id) ? firstId.m_id : currMax;
-        }
-
-    return m_highestElementId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
  DgnElementIds are 64 bits, divided into two 32 bit parts {high:low}. The high 32 bits are reserved for the
  repositoryId of the creator and the low 32 bits hold the identifier of the element. This scheme is
- designed to allow multiple users on differnt computers to create new elements without
+ designed to allow multiple users on different computers to create new elements without
  generating conflicting ids, since the repositoryId is intended to be unqiue for every copy of the project.
  We are allowed to make DgnElementIds in the range of [{repositoryid:1},{repositoryid+1:0}). So, find the highest currently
  used id in that range and add 1. If none, use the first id. If the highest possible id is already in use, search for an
@@ -1180,26 +1159,22 @@ DgnElementId DgnElements::GetHighestElementId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementId DgnElements::MakeNewElementId()
     {
-    GetHighestElementId();
+    m_dgndb.GetNextRepositoryBasedId(m_highestElementId, DGN_TABLE(DGN_CLASSNAME_Element), "Id");
 
     // see if the next id is the highest possible Id for our repositoryId. If not, use it. Otherwise try random ids until we find one that's
     // not currently in use.
     BeRepositoryBasedId lastId(m_dgndb.GetRepositoryId().GetNextRepositoryId(), 0);
-    if (m_highestElementId.m_id < lastId.m_id-100) // reserve a few ids for special meaning
-        {
-        m_highestElementId.UseNext();
+    if (m_highestElementId.GetValueUnchecked() < lastId.GetValueUnchecked()-100) // reserve a few ids for special meaning
         return m_highestElementId;
-        }
 
     // highest id already used, try looking for a random available id
-    BeLuid val;
+    DgnElementId val;
     do
         {
-        val.CreateRandom();
-        val.m_luid.i[1] = m_dgndb.GetRepositoryId().GetValue();
-        } while (IsElementIdUsed(DgnElementId(val.m_luid.u)));
+        val.CreateRandom(m_dgndb.GetRepositoryId());
+        } while (IsElementIdUsed(val));
 
-    return DgnElementId(val.m_luid.u);
+    return val;
     }
 
 
@@ -1399,9 +1374,9 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryElementIdByCode(Utf8CP code) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
     CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
-    statement->BindText(1, code, Statement::MakeCopy::No);
+    statement->BindText(1, code.GetValue(), Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

@@ -1307,7 +1307,7 @@ QvElem* ViewContext::CreateCacheElem(IStrokeForCache& stroker, QvCache* qvCache,
         qvCache = T_HOST.GetGraphicsAdmin()._GetTempElementCache();
 
     BeAssert(qvCache);
-    cachedDraw->BeginCacheElement(qvCache, m_is3dView, m_is3dView ? 0.0 : stroker._GetDisplayPriority(*this));
+    cachedDraw->BeginCacheElement(qvCache);
 
     AutoRestore<IDrawGeomP> saveDrawGeom(&m_IDrawGeom, cachedDraw);
     AutoRestore<Byte> savefilter(&m_filterLOD, FILTER_LOD_Off);
@@ -2118,11 +2118,6 @@ void  OvrMatSymb::SetLineStyle(int32_t styleNo, DgnModelR modelRef, DgnModelR st
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  02/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElemDisplayParams::ElemDisplayParams() {Init();}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    PaulChater  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElemDisplayParams::ElemDisplayParams(ElemDisplayParamsCR rhs)
@@ -2189,19 +2184,15 @@ void ElemDisplayParams::Init()
     m_plotInfo  = nullptr;
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------
 void ElemDisplayParams::ResetAppearance()
     {
-    DgnCategoryId categoryId = m_categoryId;
-    DgnSubCategoryId subCategoryId = m_subCategoryId;
-    
+    AutoRestore<DgnCategoryId> saveCategory(&m_categoryId);
+    AutoRestore<DgnSubCategoryId> saveSubCategory(&m_subCategoryId);
+
     Init();
-    
-    SetCategoryId(categoryId);
-    SetSubCategoryId(subCategoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2274,8 +2265,18 @@ void ElemDisplayParams::Resolve(ViewContextR context)
     if (!m_appearanceOverrides.m_color)
         m_lineColor = appearance.GetColor();
 
-    if (!m_appearanceOverrides.m_fill)
+    if (m_appearanceOverrides.m_bgFill)
+        {
+        m_fillColor = (nullptr != context.GetViewport() ? context.GetViewport()->GetBackgroundColor() : ColorDef::Black());
+
+        // NEEDSWORK_ASK_QVIS_FOLKS: Problem with white-on-white reversal...don't want this to apply to the background fill... :(
+        if (ColorDef::White() == m_fillColor)
+            m_fillColor.SetRed(254);
+        }
+    else if (!m_appearanceOverrides.m_fill)
+        {
         m_fillColor = appearance.GetColor();
+        }
 
     if (!m_appearanceOverrides.m_weight)
         m_weight = appearance.GetWeight();

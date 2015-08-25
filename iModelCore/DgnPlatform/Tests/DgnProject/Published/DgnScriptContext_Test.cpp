@@ -114,7 +114,7 @@ TEST(DgnScriptTest, Test1)
     jsProg.m_jsProgramText =
 "(function () { \
     function testEga(element, origin, angles, params) { \
-        var builder = BentleyApi.Dgn.JsElementGeometryBuilder.Create(element, origin, angles); \
+        var builder = new BentleyApi.Dgn.JsElementGeometryBuilder(element, origin, angles); \
         builder.AppendBox(params[\"X\"], params[\"Y\"], params[\"Z\"]); \
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
@@ -189,19 +189,19 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnScriptTest, Test2)
+TEST(DgnScriptTest, RunScripts)
     {
     ScopedDgnHost  autoDgnHost;
 
     T_HOST.GetScriptAdmin().RegisterScriptErrorHandler(*new DetectJsErrors);
 
     BeFileName jsFileName;
-    BeTest::GetHost().GetDocumentsRoot (jsFileName);
-    jsFileName.AppendToPath(L"DgnDb/DgnScriptTest.js");
-
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(jsFileName);
+    jsFileName.AppendToPath(L"Script/DgnScriptTest.js");
+    printf ("Hello world\n");
     Utf8String jsProgram;
     DgnScriptLibrary::ReadText(jsProgram, jsFileName);
-
+    //printf ("The JS program izzz .....\n%s\n", jsProgram.c_str ());
     T_HOST.GetScriptAdmin().EvaluateScript(jsProgram.c_str());
     }
 

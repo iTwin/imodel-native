@@ -417,7 +417,6 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
 
-    //.............................................................................................
     if (nullptr == text.m_style.m_font)
         return ERROR;
 
@@ -428,7 +427,11 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     FB::TextStringStyleBuilder fbStyle(encoder);
     fbStyle.add_majorVersion(CURRENT_STYLE_MAJOR_VERSION);
     fbStyle.add_minorVersion(CURRENT_STYLE_MINOR_VERSION);
-    fbStyle.add_fontId(fontId.GetValue());
+
+    // we're going to store the fontid as a 32 bit value, even though in memory we have a 64bit value. Make sure the high bits are 0.
+    BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue())); 
+    fbStyle.add_fontId((uint32_t)fontId.GetValue());
+
     fbStyle.add_isBold(text.m_style.m_isBold);
     fbStyle.add_isItalic(text.m_style.m_isItalic);
     fbStyle.add_isUnderlined(text.m_style.m_isUnderlined);
@@ -437,7 +440,6 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
 
     Offset<FB::TextStringStyle> fbStyleOffset = fbStyle.Finish();
 
-    //.............................................................................................
     Offset<Vector<uint32_t>> glypIdsOffset;
     Offset<Vector<FB::TextStringGlyphOrigin const*>> glypOriginsOffset;
     if (isEnumFlagSet(FlatBufEncodeOptions::IncludeGlyphLayoutData, options))
@@ -535,7 +537,7 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     FB::TextStringStyle const& fbStyle = *fbText.style();
     TextStringStyle& style = text.m_style;
 
-    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId(fbStyle.fontId()));
+    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId((int64_t)fbStyle.fontId()));
     style.SetFont(T_HOST.GetFontAdmin().ResolveFont(dbFont));
     if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
     if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());

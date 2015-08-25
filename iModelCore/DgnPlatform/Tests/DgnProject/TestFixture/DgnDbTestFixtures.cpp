@@ -25,7 +25,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
@@ -41,7 +41,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin    06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
@@ -125,7 +125,7 @@ DgnDbStatus TestElement::_DeleteInDb() const
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId)
+DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, DgnModelId mid, DgnCategoryId categoryId)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -141,7 +141,7 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mi
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId)
+DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -204,7 +204,7 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
     DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), nullptr, elementCode));
     if (!testElement.IsValid())
@@ -221,7 +221,7 @@ TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElement2d( DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+DgnElementKey DgnDbTestFixture::InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -237,7 +237,7 @@ DgnElementKey DgnDbTestFixture::InsertElement2d( DgnModelId mid, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -267,7 +267,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -296,7 +296,7 @@ DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnMod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;

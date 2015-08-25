@@ -30,6 +30,8 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 dimensionDir    = $(DgnHandlersDir)Dimension/
 
 dgnScriptDir = $(_MakeFilePath)DgnScript/
+dgnJsApiDir = $(dgnScriptDir)DgnJsApi/
+geomJsApiDir = $(dgnScriptDir)GeomJsApi/
 
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
                     $(DgnCoreAPISrc)IViewOutput.h \
@@ -91,9 +93,11 @@ o = $(coreObjs)
 
 #----------------------------------------------------------------------
 # Generate the TypeScript portion of the DgnScript.
-# This also generates $(dgnScriptGen)DgnScriptBootstrap.cpp, which we compile below.
+# This also generates $(dgnScriptGen)DgnJsApiBootstrap.cpp, which we compile below.
 #----------------------------------------------------------------------
-%include $(dgnScriptDir)GenerateTypeScript.mki
+%include $(geomJsApiDir)GenerateTypeScript.mki
+
+%include $(dgnJsApiDir)GenerateTypeScript.mki
 
 %ifdef dgnScriptGen
 cIncs + -I$(dgnScriptGen)
@@ -245,10 +249,6 @@ $(coreObjs)DgnShxFont$(oext): $(DgnCoreDir)DgnShxFont.cpp $(DgnCoreAPISrc)DgnFon
 
 $(coreObjs)DgnShxFontData$(oext): $(DgnCoreDir)DgnShxFontData.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
 
-$(coreObjs)MaterialSettings$(oext): $(DgnCoreDir)MaterialSettings.cpp $(DgnCoreAPISrc)Material.h $(DgnCoreAPISrc)MaterialSettings.h ${MultiCompileDepends}
-
-$(coreObjs)MaterialTokens$(oext): $(DgnCoreDir)MaterialTokens.cpp $(DgnPlatformInternalApiSrc)DgnCore/MaterialTokens.h ${MultiCompileDepends}
-
 $(coreObjs)Sprites$(oext): $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
 $(coreObjs)ImageUtilities$(oext): $(DgnCoreDir)ImageUtilities.cpp $(DgnCoreAPISrc)ImageUtilities.h ${MultiCompileDepends}
@@ -268,6 +268,8 @@ $(coreObjs)DgnIModel$(oext) : $(DgnCoreDir)DgnIModel.cpp $(DgnCoreAPISrc)DgnDb.h
 $(coreObjs)DgnUnits$(oext) : $(DgnCoreDir)DgnUnits.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)SatelliteChangeSets$(oext) : $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnCoreAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
@@ -301,7 +303,10 @@ $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAP
 
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
-$(coreObjs)FileMoniker$(oext): $(DgnCoreDir)FileMoniker.cpp $(DgnCoreAPISrc)FileMoniker.h ${MultiCompileDepends} 
+
+$(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
+
+$(o)ModelSolverDef$(oext) : $(DgnCoreDir)ModelSolverDef.cpp $(DgnCoreAPISrc)ModelSolverDef.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord
@@ -323,11 +328,19 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 
 $(o)DgnScript$(oext) : $(dgnScriptDir)DgnScript.cpp $(DgnCoreAPISrc)DgnScript.h ${MultiCompileDepends}
 
-$(o)DgnJsApi$(oext) : $(dgnScriptDir)DgnJsApi.cpp $(dgnScriptDir)DgnJsApi.h ${MultiCompileDepends}
+#   Core Dgn JS Api
+$(o)DgnJsApi$(oext) : $(dgnJsApiDir)DgnJsApi.cpp $(DgnPlatformAPISrc)DgnJsApi.h ${MultiCompileDepends}
 
-$(o)DgnScriptBootstrap$(oext) : $(dgnScriptGen)DgnScriptBootstrap.cpp ${MultiCompileDepends}
+$(o)DgnJsApiBootstrap$(oext) : $(dgnScriptGen)DgnJsApiBootstrap.cpp ${MultiCompileDepends}
 
 $(o)DgnJsApiCallbacks$(oext) : $(dgnScriptGen)DgnJsApiCallbacks.cpp $(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h ${MultiCompileDepends}
+
+#   Geom JS Api
+$(o)GeomJsApi$(oext) : $(geomJsApiDir)GeomJsApi.cpp $(DgnPlatformAPISrc)GeomJsApi.h ${MultiCompileDepends}
+
+$(o)GeomJsApiBootstrap$(oext) : $(dgnScriptGen)GeomJsApiBootstrap.cpp ${MultiCompileDepends}
+
+$(o)GeomJsApiCallbacks$(oext) : $(dgnScriptGen)GeomJsApiCallbacks.cpp $(dgnScriptGen)DgnPlatform/GeomJsApiProjection.h ${MultiCompileDepends}
 
 %else
 

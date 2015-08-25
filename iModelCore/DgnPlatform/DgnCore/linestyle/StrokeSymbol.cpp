@@ -303,7 +303,8 @@ void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
         }
     else
         {
-        double muDef = 1.0/modelRef->GetProperties().GetMillimetersPerMaster();
+        //  NEEDSWORK_LINESTYLE_UNITS
+        double muDef = 1.0;  //  /modelRef->GetProperties().GetMillimetersPerMaster();
 
         SetMuDef (muDef);
         }

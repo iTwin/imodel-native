@@ -7,44 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-#if defined(NOTNOW)
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Ray.Bentley     02/2015
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusInt   LsRasterImageComponent::_SaveToResourceFile ()
-        {
-        StatusInt   status;
-    
-        if (BSISUCCESS != (status = EnsureRscIDAssigned ()))
-            return status;
-    
-        //  Generate the resource data
-        size_t                  resourceSize = RL_RSCSIZE (GetImageBufferSize());
-        RasterLineStyleRsc*     resource = (RasterLineStyleRsc*)_alloca (resourceSize);
-    
-        SaveToResource (resource, m_size.x, m_size.y, m_flags, m_trueWidth, &m_image.front(), m_image.size());
-        m_isDirty = false;
-        return WriteToResourceFile (resource, resourceSize);
-        }
-
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                                    Ray.Bentley     02/2015
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    void        LsRasterImageComponent::SaveToResource (RasterLineStyleRsc* resource, uint32_t width, uint32_t height, uint32_t flags, double trueWidth, uint8_t const* imageData, size_t imageDataSize)
-        {
-        BeAssert (4 * width * height == imageDataSize);
-
-        memset (resource, 0, sizeof (RasterLineStyleRsc));
-        resource->m_size.x  = width;
-        resource->m_size.y  = height;
-        resource->m_flags   = flags;
-        resource->m_trueWidth = trueWidth;
-        resource->m_nImageBytes = (uint32_t) imageDataSize;
-        memcpy (resource->m_imageData, imageData, imageDataSize);
-        }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/

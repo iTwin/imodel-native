@@ -28,12 +28,12 @@ struct RobotElement : PhysicalElement
 private:
     friend struct RobotElementHandler;
     RobotElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode);
+    RobotElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Code elementCode);
 public:
     //! Factory method that creates an instance of a RobotElement
     //! @param[in] model Create the RobotElement in this PhysicalModel
     //! @param[in] categoryId specifies the category for the RobotElement.
-    static RefCountedPtr<RobotElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
+    static RefCountedPtr<RobotElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
         {return new RobotElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Robot ECClass in the specified DgnDb.
@@ -50,12 +50,12 @@ struct ObstacleElement : PhysicalElement
 private:
     friend struct ObstacleElementHandler;
     ObstacleElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
-    ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode);
+    ObstacleElement(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode);
 public:
     //! Factory method that creates an instance of a ObstacleElement
     //! @param[in] model Create the ObstacleElement in this PhysicalModel
     //! @param[in] categoryId specifies the category for the ObstacleElement.
-    static RefCountedPtr<ObstacleElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, Utf8CP elementCode)
+    static RefCountedPtr<ObstacleElement> Create(PhysicalModelR model, DgnCategoryId categoryId, DPoint3dCR origin, double yaw, DgnElement::Code elementCode)
         {return new ObstacleElement(model, categoryId, origin, yaw, elementCode);}
 
     //! Query the DgnClassId for the Obstacle ECClass in the specified DgnDb.

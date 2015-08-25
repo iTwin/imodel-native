@@ -16,7 +16,6 @@
 #include "ClipPrimitive.h"
 #include "ClipVector.h"
 #include "ColorUtil.h"
-#include "Material.h"
 #include "ElementHandler.h"
 #include "ElementGeometry.h"
 #include "ElementGraphics.h"

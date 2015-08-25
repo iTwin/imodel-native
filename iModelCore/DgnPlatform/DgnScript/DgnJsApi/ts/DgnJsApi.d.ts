@@ -1,5 +1,13 @@
 declare module BentleyApi.Dgn {
 
+    /*** BEGIN_FORWARD_DECLARATIONS ***/
+    class JsDPoint3d { }
+    class JsYawPitchRollAngles { }
+    /*** END_FORWARD_DECLARATIONS ***/
+
+    type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
+    type JsYawPitchRollAnglesP = cxx_pointer<JsYawPitchRollAngles>;
+
     //! Utilities
     class JsUtils implements BeJsProjection_SuppressConstructor {
         //! Make sure that a script library is loaded
@@ -8,32 +16,6 @@ declare module BentleyApi.Dgn {
         //! Report an error
         static ReportError(description: Bentley_Utf8String): void;
     }
-
-    //! A wrapper for BentleyApi::DPoint3d
-    class JsDPoint3d implements IDisposable, BeJsProjection_RefCounted {
-        static Create(x: cxx_double, y: cxx_double, z: cxx_double): cxx_pointer<JsDPoint3d>;
-        X: cxx_double;
-        Y: cxx_double;
-        Z: cxx_double;
-        _OnDispose(): void;
-        OnDispose(): void;
-        Dispose(): void;
-    }
-
-    type JsDPoint3dP = cxx_pointer<JsDPoint3d>;
-
-    //! A wrapper for BentleyApi::YawPitchRollAngles
-    class JsYawPitchRollAngles implements IDisposable, BeJsProjection_RefCounted {
-        static Create(yaw: cxx_double, pitch: cxx_double, roll: cxx_double): cxx_pointer<JsYawPitchRollAngles>;
-        Yaw: cxx_double;
-        Pitch: cxx_double;
-        Roll: cxx_double;
-        _OnDispose(): void;
-        OnDispose(): void;
-        Dispose(): void;
-    }
-
-    type JsYawPitchRollAnglesP = cxx_pointer<JsYawPitchRollAngles>;
 
     //! A wrapper for BentleyApi::Dgn::DgnElement.
     class JsDgnElement implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
@@ -60,7 +42,7 @@ declare module BentleyApi.Dgn {
 
     //! A wrapper for BentleyApi::Dgn::DgnElement. There is no constructor. The user must call the Create method to create a new one.
     class JsElementGeometryBuilder implements IDisposable, BeJsProjection_RefCounted, BeJsProjection_SuppressConstructor {
-        static Create(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP): cxx_pointer<JsElementGeometryBuilder>;
+        constructor(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         SetGeomStreamAndPlacement(element: JsDgnElementP): cxx_double;
         _OnDispose(): void;

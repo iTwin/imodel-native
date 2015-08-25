@@ -66,3 +66,11 @@ DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, D
     {
     return DgnDbStatus::NotEnabled;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
+    {
+    delete this;
+    }

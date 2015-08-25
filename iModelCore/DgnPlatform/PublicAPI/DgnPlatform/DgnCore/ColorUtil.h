@@ -13,20 +13,33 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/15
+//=======================================================================================
+struct HsvColorDef
+{
+int32_t  hue;           /* red=0, yellow, green, cyan, blue, magenta */
+int32_t  saturation;    /* 0=white, 100=no white, tints */
+int32_t  value;         /* 0=black, 100=no black, shades */
+};
+
+//=======================================================================================
 // @bsiclass                                                     Brien.Bastings  05/09
 //=======================================================================================
 struct ColorUtil
 {
-DGNPLATFORM_EXPORT static void AdjustValueAndSaturation (ColorDef* colorArray, uint32_t numColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed);
-DGNPLATFORM_EXPORT static void ConvertRgbToHsv (HsvColorDef* hsv, ColorDef const* rgb);
-DGNPLATFORM_EXPORT static void ConvertHsvToRgb (ColorDef* rgb, HsvColorDef const* hsv);
-DGNPLATFORM_EXPORT static void ConvertIntToRGBFactor (RgbFactor &rgbFactor, ColorDef intColor);
-DGNPLATFORM_EXPORT static void ConvertRGBFactorToInt (ColorDef &intColor, RgbFactor &rgbFactor);
-DGNPLATFORM_EXPORT static void ConvertIntToFloatRgb (FPoint3dR rgb, ColorDef intColor);
-DGNPLATFORM_EXPORT static void ConvertFloatRgbToInt (ColorDef &intColor, FPoint3dR rgb);
-DGNPLATFORM_EXPORT static void ConvertRgbFactorToColorDef (ColorDefR colorDef, RgbFactorCR rgbFactor);
-DGNPLATFORM_EXPORT static void ConvertColorDefToRgbFactor (RgbFactorR rgbFactpr, ColorDef colorDef);
-DGNPLATFORM_EXPORT static void InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor);
-};
+DGNPLATFORM_EXPORT static RgbFactor     ToRgbFactor(ColorDef);
+DGNPLATFORM_EXPORT static ColorDef      FromRgbFactor(RgbFactor);
+
+DGNPLATFORM_EXPORT static FPoint3d      ToFloatRgb(ColorDef);
+DGNPLATFORM_EXPORT static ColorDef      FromFloatRgb(FPoint3d);
+
+DGNPLATFORM_EXPORT static HsvColorDef   ToHSV(ColorDef);
+DGNPLATFORM_EXPORT static ColorDef      FromHSV(HsvColorDef);
+
+DGNPLATFORM_EXPORT static ColorDef      AdjustForContrast(ColorDef color, ColorDef againstColor, ColorDef bgColor);
+DGNPLATFORM_EXPORT static void          AdjustValueAndSaturation (ColorDefP colors, size_t nColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed);
+DGNPLATFORM_EXPORT static void          Interpolate(ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor);
+
+}; // ColorUtil
 
 END_BENTLEY_DGN_NAMESPACE
