@@ -1361,7 +1361,6 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
  buffer[2] = 0 ;
  buffer[3] = 0 ;
 
- #ifndef _M_IX86
 /*
 ** Read Header Except Pointers
 */
@@ -1382,20 +1381,8 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Set Pointer Values
 */
- dataP->featureCodeP = ( DTM_FEATURE_CODE *) buffer[0] ;
- dataP->userTagP     = ( DTMUserTag * ) buffer[1] ;
- dataP->pointsP      = ( DTM_DATA_POINT * ) buffer[2] ;
- dataP->guidP        = ( DTM_GUID *) buffer[3] ;
- #else
-/*
-** Read Header Except Pointers
-*/
- if( bcdtmStream_fread(dataP,headerSize,1,dtmStreamP) != 1 ) 
-   { 
-    bcdtmWrite_message(1,0,0,"Error Reading Data Object") ;
-    goto errexit  ;
-   }
- #endif
+ bool HasUserTagP     = buffer[1] != 0;
+ bool HasGuidP        = buffer[3] != 0;
 /*
 ** Write Header Pointer Arrays
 */
@@ -1465,7 +1452,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Read User Tag Array
 */
-   if( dataP->userTagP != NULL )
+   if( HasUserTagP )
      { 
       if( dbg ) bcdtmWrite_message(0,0,0,"Reading User Tag Array") ;
       dataP->userTagP = (DTMUserTag *) malloc( fndp * sizeof(DTMUserTag)) ;
@@ -1483,7 +1470,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionVer502DataObject(DTM_DAT_OBJ
 /*
 ** Read Guid Array
 */
-   if( dataP->guidP != NULL )
+   if( HasGuidP )
      { 
       if( dbg ) bcdtmWrite_message(0,0,0,"Reading Guid Array") ;
       dataP->guidP = (DTM_GUID *) malloc( fndp * sizeof(DTM_GUID)) ;
