@@ -898,7 +898,7 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 	}
 	else
 	{
-		TraverseScene::withVisitor(&statev);
+		TraverseScene::withVisitor(&statev, false);
 	}
 	g_editApplyMode =  EditIntentRefresh | EditIntentFlagged | EditIncludeOOC;
 	m_currentEdit.execute(false);
@@ -914,7 +914,7 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 	}
 	else 
 	{
-		TraverseScene::withVisitor(&sep, true);
+		TraverseScene::withVisitor(&sep, false);
 	}
 	
 	g_editApplyMode = EditNormal;
@@ -927,7 +927,7 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 	}
 	else
 	{
-		TraverseScene::withVisitor(&statev, true);
+		TraverseScene::withVisitor(&statev, false);
 	}
 
 	//ClearFilterVisitor v;

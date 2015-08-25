@@ -722,6 +722,10 @@ void PointsRenderer::renderDiagnostics()
 			{
 				vox->flag( pcloud::DebugShowGreen, false, false );		
 			}
+			if (vox->flag( pcloud::DebugShowPurple))
+			{
+				RenderVoxelDiagnosticInfo::renderVoxelOutline( vox );
+			}
 		}
 		++i;
 	}	

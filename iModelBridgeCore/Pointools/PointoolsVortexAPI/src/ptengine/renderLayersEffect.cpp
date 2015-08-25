@@ -213,5 +213,7 @@ GLuint	RenderLayersEffectGL::generateLayerTexture( const RenderContext *context,
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	delete [] layerTexture;
+
 	return texID;
 }

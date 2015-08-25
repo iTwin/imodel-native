@@ -454,7 +454,7 @@ namespace querydetail
 			}
 
 			///!ToDo: Work out the right version of the point count to send to the condition (we should be passing the same number that we will eventually send into the in/out per point test).
-			vox->iterateTransformedPoints(*this, cs, true, lod_amount);
+			vox->iterateTransformedPoints(*this, cs, 255, lod_amount);
 
 			if (spatialGridFailure)
 			{
@@ -1093,8 +1093,10 @@ namespace querydetail
 				amount = 1.0f;
 			}
 
-			vox->iterateTransformedPoints(*this, cs, layerMask, amount);
-
+			if ( layerMask == 0 || ((vox->layers(0) | vox->layers(1)) & layerMask) )
+			{
+				vox->iterateTransformedPoints(*this, cs, layerMask, amount);
+			}
 			return amount;
 		}
 
@@ -1589,7 +1591,8 @@ namespace querydetail
 			{
 				pcloud::Voxel *v = gather.voxels[i];
 
-				if (C.processWhole( v ))	// high level dismiss already done by gather voxels
+				// need to handle layer masks here and condition dismissal
+				if ( C.processWhole( v ) && v->layers(0) & layerMask )
 				{
 					switch (density)
 					{
@@ -1609,14 +1612,17 @@ namespace querydetail
 				}
 				else 	// per point, expensive
 				{
-					CountPoints<Condition> counter( &C );
-				
-					boost::mutex::scoped_lock lock(v->mutex());
+					if ( (v->layers(1) | v->layers(0)) & layerMask)
+					{
+						CountPoints<Condition> counter( &C );
+					
+						boost::mutex::scoped_lock lock(v->mutex());
 
-					// need to load to make this evaluation
-					pointsengine::VoxelLoader load( v, densityCoeff, false, false);
-					v->iterateTransformedPoints( counter, pt::ProjectSpace );
-					count += counter.count;
+						// need to load to make this evaluation
+						pointsengine::VoxelLoader load( v, densityCoeff, false, false);
+						v->iterateTransformedPoints( counter, pt::ProjectSpace, layerMask );
+						count += counter.count;
+					}
 				}
 			}
 			return count;
@@ -3663,7 +3669,7 @@ public:
 				// NOTE: SHOULD A LOAD EVER BE NECESSARY ???
 //				pointsengine::VoxelLoader load( doload ? vox : 0, amount, false, false);
 
-				vox->iterateTransformedPoints(*this, pt::ProjectSpace, 0, amount); 
+				vox->iterateTransformedPoints(*this, pt::ProjectSpace, 255, amount); 
 			}
 		}
 
@@ -5077,7 +5083,12 @@ bool computePntLimitDensity( querydetail::Query *query )
 
 	float densityCoeff = (numPointsInQuery > 0) ? (float)numPointsRequired / numPointsInQuery : 0;
 
-	if (!numPointsInQuery) return false;
+	if (!numPointsInQuery) 
+		return false;
+
+	// cap
+	if (densityCoeff > 1.0f) 
+		densityCoeff = 1.0f;
 
 	query->setDensity( PT_QUERY_DENSITY_LIMIT, densityCoeff );
 	query->resetQuery();

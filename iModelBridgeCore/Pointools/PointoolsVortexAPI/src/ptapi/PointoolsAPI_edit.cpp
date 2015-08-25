@@ -370,7 +370,14 @@ PTvoid	PTAPI ptRefreshEdit()
 {
 	PTTRACE_FUNC
 
-	PointEditManager::instance()->regenEditQuick();
+	if (PointEditManager::instance()->workingMode() == EditWorkOnAll)
+	{
+		PointEditManager::instance()->regenOOCComplete();	
+	}
+	else
+	{
+		PointEditManager::instance()->regenEditQuick();
+	}
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptClearEdit()

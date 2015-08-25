@@ -79,6 +79,12 @@ bool MoveToLayerVisitor::visitNode( const pcloud::Node *n )
 
 		node->flag( pcloud::WholeHidden, false, true );
 		node->flag( pcloud::PartHidden, false, true );
+
+		if (node->isLeaf())
+		{
+			_currentVoxel = static_cast<pcloud::Voxel*>(node);
+			_currentVoxel->destroyEditChannel();
+		}
 	}
 
 	return true;

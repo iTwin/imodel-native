@@ -18,6 +18,8 @@ if exist %PointoolsVortex%\bin\vc8\PointoolsVortexAPI.dll (xcopy %PointoolsVorte
 if exist %PointoolsVortex%\bin\vc8\PointoolsVortexAPId.dll (xcopy %PointoolsVortex%\bin\vc8\PointoolsVortexAPId.dll %PointoolsVortex%\support\QVortex\Debug\ /Y /Q)
 if exist %PointoolsVortex%\bin\vc8\PointoolsVortexAPId.dll (xcopy %PointoolsVortex%\bin\vc8\PointoolsVortexAPId.dll %PointoolsVortex%\support\QVortex\Release\ /Y /Q)
 
+if exist %PointoolsVortex%\bin\vc8\PointoolsVortexAPId.dll (xcopy %PointoolsVortex%\bin\vc8\PointoolsVortexAPId.dll "C:\Program Files\Tecnomatix_12.1.1\eMPower\PointoolsVortexAPI.dll" /Y /Q)
+
 xcopy %PointoolsVortex%\include\ptapi\PointoolsVortexAPI_import.h %PointoolsVortex%\support\QVortex\QVortex\PointTools\inc\ /Y /Q
 xcopy %PointoolsVortex%\src\ptapi\PointoolsVortexAPI_import.cpp %PointoolsVortex%\support\QVortex\QVortex\PointTools\src\ /Y /Q
 

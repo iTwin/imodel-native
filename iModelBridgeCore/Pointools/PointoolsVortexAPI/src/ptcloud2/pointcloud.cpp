@@ -91,6 +91,48 @@ void PointCloud::setRoot(Node*n)
 	_memused += sizeof(Node) * nodes;
 	_memused += (sizeof(Voxel) + sizeof(void*) ) * _voxels.size();
 }
+//
+const Voxel* PointCloud::findContainingVoxel(const pt::vector3d &seek_pnt, pt::CoordinateSpace cs) const
+{
+#ifndef POINTOOLS_POD_API
+	mmatrix4d m;
+	m_registration.compileMatrix(m, pt::ProjectSpace);
+	m >>= _userTransform.matrix();
+
+	pt::vector3d pnt(seek_pnt);
+
+	if (cs == pt::ProjectSpace)
+	{
+		m.invert();
+		m.vec3_multiply_mat4(seek_pnt, pnt);
+	}	
+
+	int  point_index;
+	const Voxel* vox=0;
+	double mindist = -1;
+	double d;
+	pt::vector3d check, nr;
+
+	/*check world space bounds*/ 
+	pt::BoundingBoxD bndsd(m_localBounds.bounds().ux(), m_localBounds.bounds().lx(), 
+		m_localBounds.bounds().uy(), m_localBounds.bounds().ly(), 
+		m_localBounds.bounds().uz(), m_localBounds.bounds().lz());
+
+	if (!bndsd.inBounds(pnt))
+	{
+		return 0;
+	}
+
+	const Node *leaf = root()->findContainingLeaf(pnt);
+
+	if (leaf)
+	{
+		return static_cast<const Voxel*>(leaf);;
+	}
+#endif
+	return 0;
+		
+}
 //---------------------------------------------------------------
 // compute Bounds
 //---------------------------------------------------------------

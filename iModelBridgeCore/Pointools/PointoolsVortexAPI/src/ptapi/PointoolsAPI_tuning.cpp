@@ -12,6 +12,7 @@
 #include <ptengine/engine.h>
 
 #include <ptcloud2/pod.h>
+#include <pt/project.h>
 
 #include <ptl/branch.h>
 #include <ptl/project.h>
@@ -101,6 +102,11 @@ PTres	PTAPI ptGetTuningParameterfv( PTenum param, PTfloat *values )
 
 	return setLastErrorCode( PTV_SUCCESS );;
 }
+
+extern pcloud::Scene *		sceneFromHandle(PThandle handle);
+extern pcloud::PointCloud*	cloudFromHandle(PThandle cloud);
+extern PTdouble					g_unitScale;
+
 //-----------------------------------------------------------------------------
 PTres	PTAPI _ptDiagnostic( PTvoid *data )
 {
@@ -108,10 +114,53 @@ PTres	PTAPI _ptDiagnostic( PTvoid *data )
 
 	if (d)
 	{
+		assert( d->size == sizeof( DiagnosticData ) );
+
 		switch(d->in_cmd)
 		{
-			
-		
+		case GetVoxelData:
+			// expects a point cloud handle and point to specify voxel
+			{
+				if (d->in_handles[0])
+				{
+					// find pod
+					pcloud::Scene *sc = sceneFromHandle( d->in_handles[0] );
+
+					if (sc)
+					{
+						pcloud::PointCloud *cloud = cloudFromHandle( d->in_handles[1] );
+
+						if (!cloud)
+						{
+							cloud = sc->cloud(0);
+						}
+						
+						pt::vector3d basePoint = pt::vector3d(pt::Project3D::project().registration().matrix()(3,0), 
+								pt::Project3D::project().registration().matrix()(3,1), 
+								pt::Project3D::project().registration().matrix()(3,2));
+
+						d->in_pnts[0] /= g_unitScale;
+						//d->in_pnts[0] -= basePoint;
+
+						pcloud::Voxel *voxel = const_cast<pcloud::Voxel*>(cloud->findContainingVoxel( d->in_pnts[0], pt::ProjectSpace ));
+
+						memset( &d->voxel_data, 0, sizeof(VoxelData));
+
+						if (voxel)
+						{
+							voxel->flag( pcloud::DebugShowPurple, true );
+							d->voxel_data.id = voxel->indexInCloud();
+							d->voxel_data.editChannel = voxel->channel( pcloud::PCloud_Filter ) ? true : false;
+							d->voxel_data.editPoint = voxel->numPointsEdited();
+							d->voxel_data.fullLayers = voxel->layers(0);
+							d->voxel_data.partLayers = voxel->layers(1);
+							d->voxel_data.wholeSelected = voxel->flag( pcloud::WholeSelected );
+							d->voxel_data.partSelected = voxel->flag( pcloud::PartSelected );
+							d->voxel_data.lod = voxel->getRequestLOD();
+						}
+					}
+				}
+			}
 		}
 	}
 	else return PTV_INVALID_PARAMETER;
