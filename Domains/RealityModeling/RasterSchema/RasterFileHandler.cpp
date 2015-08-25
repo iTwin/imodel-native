@@ -43,9 +43,7 @@ static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
 //----------------------------------------------------------------------------------------
 RasterFileProperties::RasterFileProperties()
     {
-#if 0
     m_fileMonikerPtr = FileMoniker::Create("", "");
-#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -71,9 +69,7 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
-#if 0
     m_fileMonikerPtr->ToJson(v["fileMoniker"]);
-#endif
     DRange2dToJson(v["bbox"], m_boundingBox);
     }
 
@@ -82,9 +78,7 @@ void RasterFileProperties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
-#if 0
     m_fileMonikerPtr->FromJson(v["fileMoniker"]);
-#endif
     DRange2dFromJson(m_boundingBox, v["bbox"]);
     }
 
@@ -104,9 +98,7 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerP
     BeFileName basePath(db.GetDbFileName());
     Utf8String basePathUtf8(basePath);
     Utf8String resolvedName;
-#if 0
     fileMoniker->ResolveFileName(resolvedName, basePathUtf8);
-#endif
 
     // Create model name (just use the file name without extension)
     BeFileName fileName(resolvedName);
@@ -259,9 +251,7 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     BeFileName basePath(GetDgnDb().GetDbFileName());
     Utf8String basePathUtf8(basePath);
     Utf8String resolvedName;
-#if 0
     m_fileProperties.m_fileMonikerPtr->ResolveFileName(resolvedName, basePathUtf8);
-#endif
 
     // Create RasterQuadTree
     RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
@@ -297,3 +287,74 @@ void RasterFileModel::_FromPropertiesJson(Json::Value const& v)
     m_fileProperties.FromJson(v);
     }
 
+
+
+// POINTCLOUD_WIP_GR06 - Temporary location for FileMoniker (until we decide how to handle local file names)
+
+//----------------------------------------------------------------------------------------
+//------------------------------------  FileMoniker  -------------------------------------
+//----------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+FileMoniker::FileMoniker (Utf8StringCR fullPath, Utf8StringCR basePath)
+    {
+    m_fullPath = fullPath;
+    m_basePath = basePath;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+FileMonikerPtr FileMoniker::Create (Utf8StringCR fullPath, Utf8StringCR basePath)
+    {
+    return new FileMoniker(fullPath, basePath);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+BentleyStatus FileMoniker::ResolveFileName (Utf8StringR resolvedName, Utf8StringCR basePath) const
+    {
+    BeFileName fullPath(m_fullPath);
+    BeFileName basePathWhenCreated(m_basePath);
+    WString relativePath;
+
+    // Find relative path according to the creation paths.
+    // E.g. if fullPath == "d:\dir1\dir2\file.jpg" and basePathWhenCreated == "d:\dir1\"
+    //      then relativePath will be equal to "dir2\file.jpg"
+    BeFileName::FindRelativePath(relativePath, fullPath.c_str(), basePathWhenCreated.c_str());
+
+    // Find full path relatively to current base path. Current base path is a directory and may contain a file name (probably the name of the dgndb).
+    // E.g. if relativePath == "dir2\file.jpg" and currentBasePath == "d:\dir5\dir6\myDgnDb.dgndb"
+    //      then relativePath will be equal to "d:\dir5\dir6\dir2\file.jpg"
+    WString resolvedNameW;
+    BeFileName currentBasePath(basePath);
+    BentleyStatus status = BeFileName::ResolveRelativePath(resolvedNameW, relativePath.c_str(), currentBasePath.c_str());
+    if (status == SUCCESS)
+        {
+        Utf8String resolvedNameUtf8(resolvedNameW);
+        resolvedName = resolvedNameUtf8;
+        }
+
+    return status;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+void FileMoniker::ToJson (JsonValueR outValue) const
+    {
+    outValue["fullPath"] = m_fullPath.c_str();
+    outValue["basePath"] = m_basePath.c_str();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+void FileMoniker::FromJson (JsonValueCR inValue)
+    {
+    m_fullPath = inValue["fullPath"].asString();
+    m_basePath = inValue["basePath"].asString();
+    }
