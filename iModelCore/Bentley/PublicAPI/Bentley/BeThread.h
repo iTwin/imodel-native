@@ -21,8 +21,18 @@ BEGIN_BENTLEY_NAMESPACE
 // Must avoid including std headers here for CLR reasons
 //=======================================================================================
 #if defined (_WIN32)
-    #define BEMUTEX_DATA_ARRAY_LENGTH 1
-    #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 2
+    #if (_MSC_VER >= 1900)
+        #if defined(_M_X64)
+            #define BEMUTEX_DATA_ARRAY_LENGTH (80 / sizeof(void*))
+            #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH (88 / sizeof(void*))
+        #else
+            #define BEMUTEX_DATA_ARRAY_LENGTH (48 / sizeof(void*))
+            #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH (48 / sizeof(void*))
+        #endif
+    #else
+        #define BEMUTEX_DATA_ARRAY_LENGTH 1
+        #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH 2
+    #endif
 #elif defined (ANDROID)
     #define BEMUTEX_DATA_ARRAY_LENGTH (4 / sizeof(void*))
     #define BECONDITIONVARIABLE_DATA_ARRAY_LENGTH (12 / sizeof(void*))
