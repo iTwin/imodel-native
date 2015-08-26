@@ -1555,7 +1555,7 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
 
     ECSchemaCP schemap = ecdbr. Schemas ().GetECSchema ("TestSchema", true);
     ASSERT_TRUE(schemap != nullptr);
-    wprintf(L"%s\n", schemap->GetName().c_str());
+    printf("%s\n", schemap->GetName().c_str());
     ASSERT_EQ(4, schemap->GetClassCount()) << "Class count doesn't match the original number of classes";
 
     ECClassCP ecclass = ecdbr. Schemas ().GetECClass ("TestSchema", "DerivedTestClass");
