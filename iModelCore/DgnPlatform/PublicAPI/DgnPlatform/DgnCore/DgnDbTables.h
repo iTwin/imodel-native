@@ -1123,9 +1123,13 @@ struct DgnMaterials : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db), m_nextQvMaterialId (0) {}
+
+    mutable uintptr_t                           m_nextQvMaterialId;
+    mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
 
 public:
+
     //=======================================================================================
     //! Holds a material's data in memory.
     //=======================================================================================
@@ -1165,6 +1169,7 @@ public:
         void SetDescr(Utf8CP val) {m_descr= val;} //!< Sets the description of this material.
         void SetParentId(DgnMaterialId id) {m_parentId=id;} //!< Sets the parent material ID.
         bool IsValid() const {return m_id.IsValid();} //!< Test if the Material is valid.
+        
     };
 
     //! An iterator over the materials in a DgnDb
@@ -1220,6 +1225,10 @@ public:
     //! @param[in]      palette The palette name
     //! @return The ID of the specified material, or an invalid ID if no such material exists.
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
+
+    DGNPLATFORM_EXPORT uintptr_t   GetQvMaterialId (DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t   AddQvMaterialId (DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
 };
 
 //=======================================================================================
