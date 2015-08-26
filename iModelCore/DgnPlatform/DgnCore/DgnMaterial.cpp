@@ -102,6 +102,18 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t   DgnMaterials::AddQvMaterialId (DgnMaterialId materialId) const        { return (m_qvMaterialIds[materialId] = ++m_nextQvMaterialId); }
+uintptr_t   DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
+    {
+    auto const&   found = m_qvMaterialIds.find(materialId);
+
+    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
@@ -119,6 +131,8 @@ DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
 
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
+
+
 
 DgnMaterialId DgnMaterials::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnMaterialId>(0);}
 Utf8CP DgnMaterials::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
