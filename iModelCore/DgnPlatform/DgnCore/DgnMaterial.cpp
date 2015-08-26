@@ -112,6 +112,35 @@ uintptr_t   DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
     return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnMaterials::Material::GetAsset (JsonValueR value, char const* keyWord) const
+    {
+    Json::Value root;
+
+    if (!Json::Reader::Parse (GetValue(), root) ||
+        (value = root[keyWord]).isNull())
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void  DgnMaterials::Material::SetAsset (JsonValueCR value, char const* keyWord)
+    {
+    Json::Value root;
+
+    if (!Json::Reader::Parse (GetValue(), root))
+        root = Json::Value (Json::ValueType::objectValue);
+
+    root[keyWord] = value;
+
+
+    SetValue (Json::FastWriter::ToString (root).c_str());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10

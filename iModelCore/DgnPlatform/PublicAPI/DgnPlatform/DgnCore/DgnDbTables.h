@@ -1169,6 +1169,15 @@ public:
         void SetParentId(DgnMaterialId id) {m_parentId=id;} //!< Sets the parent material ID.
         bool IsValid() const {return m_id.IsValid();} //!< Test if the Material is valid.
         
+        //! Get an asset of the material as a Json value.  (Rendering, physical etc.)
+        //! @param[out]     value       The Json value for the asset.
+        //! @param[in]      keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
+        DGNPLATFORM_EXPORT BentleyStatus GetAsset (JsonValueR value, char const* keyWord) const; 
+
+        //! Set an asset of material from a Json value.
+        //! @param[in]     value       The Json value for the asset.
+        //! @param[in]     keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
+        DGNPLATFORM_EXPORT void          SetAsset (JsonValueCR value, char const* keyWord);
     };
 
     //! An iterator over the materials in a DgnDb
