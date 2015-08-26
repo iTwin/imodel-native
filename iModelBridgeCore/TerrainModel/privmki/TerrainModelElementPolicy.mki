@@ -15,7 +15,7 @@ SrcTerrainModel=$(SrcRoot)TerrainModel/
 
 %include $(SharedMki)bsioutputdirs.mki
 %include DefaultToolSet.mki
-%include $(SrcRoot)Util/PowerPlatform/mki/PowerPlatform.mki
+#%include $(SrcRoot)Util/PowerPlatform/mki/PowerPlatform.mki
 
 #-----------------------------------------------------------
 # BuildContext
