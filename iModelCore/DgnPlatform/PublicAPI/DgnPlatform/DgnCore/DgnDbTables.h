@@ -1114,7 +1114,10 @@ public:
 };
 
 //=======================================================================================
-//! @private
+//! The DgnMaterials holds the materials defined for a DgnDb. Each material has a unique
+//! combination of palette and material name, and an optional description and parent
+//! material ID.
+//! @see DgnDb::Materials
 //=======================================================================================
 struct DgnMaterials : DgnDbTable
 {
@@ -1123,6 +1126,9 @@ private:
     explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
 
 public:
+    //=======================================================================================
+    //! Holds a material's data in memory.
+    //=======================================================================================
     struct Material
     {
     private:
@@ -1136,61 +1142,92 @@ public:
         Utf8String    m_value;
 
     public:
+        //! Constructs an empty, invalid Material
         Material() {}
+        //! Constructs a Material for insertion into the materials table.
+        //! @param[in]      name     The material's name. The combination of name and palette must be unique.
+        //! @param[in]      palette  The name of the material's palette. The combination of name and palette must be unique.
+        //! @param[in]      value    JSON representation of the material.
+        //! @param[in]      descr    Optional material description.
+        //! @param[in]      parentId Optional ID of this material's parent material.
         Material(Utf8CP name, Utf8CP palette, Utf8CP value, Utf8CP descr=nullptr, DgnMaterialId parentId=DgnMaterialId()) : m_parentId(parentId), m_name(name), m_palette(palette), 
                             m_descr(descr), m_value(value) {}
 
-        DgnMaterialId GetId() const {return m_id;}
-        DgnMaterialId GetParentId() const {return m_parentId;}
-        Utf8StringCR GetName() const {return m_name;}
-        Utf8StringCR GetPalette() const {return m_palette;}
-        Utf8StringCR GetValue() const {return m_value;}
-        Utf8StringCR GetDescr() const {return m_descr;}
-        void SetName(Utf8CP val) {m_name = val;}
-        void SetPalette(Utf8CP val) {m_palette = val;}
-        void SetValue(Utf8CP val) {m_value = val;}
-        void SetDescr(Utf8CP val) {m_descr= val;}
-        void SetParentId(DgnMaterialId id) {m_parentId=id;}
-        bool IsValid() const {return m_id.IsValid();}
+        DgnMaterialId GetId() const {return m_id;}  //!< The ID of this material.
+        DgnMaterialId GetParentId() const {return m_parentId;}  //!< The ID of this material's parent, or an invalid ID if no parent is defined.
+        Utf8StringCR GetName() const {return m_name;}   //!< The name of this material.
+        Utf8StringCR GetPalette() const {return m_palette;} //!< The name of this material's palette.
+        Utf8StringCR GetValue() const {return m_value;} //!< JSON representation of this material.
+        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.
+        void SetName(Utf8CP val) {m_name = val;} //!< Sets the name of this material.
+        void SetPalette(Utf8CP val) {m_palette = val;} //!< Sets the name of this material's palette.
+        void SetValue(Utf8CP val) {m_value = val;} //!< Sets the JSON representation of this material.
+        void SetDescr(Utf8CP val) {m_descr= val;} //!< Sets the description of this material.
+        void SetParentId(DgnMaterialId id) {m_parentId=id;} //!< Sets the parent material ID.
+        bool IsValid() const {return m_id.IsValid();} //!< Test if the Material is valid.
     };
 
+    //! An iterator over the materials in a DgnDb
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
         explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
 
+        //! An entry in the material table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
-            DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
-            DGNPLATFORM_EXPORT DgnMaterialId GetParentId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
-            DGNPLATFORM_EXPORT Utf8CP GetValue() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDescr() const;
+            DGNPLATFORM_EXPORT DgnMaterialId GetId() const; //!< The material ID.
+            DGNPLATFORM_EXPORT DgnMaterialId GetParentId() const; //!< The parent material ID.
+            DGNPLATFORM_EXPORT Utf8CP GetName() const; //!< The material name.
+            DGNPLATFORM_EXPORT Utf8CP GetPalette() const; //!< The material palette name.
+            DGNPLATFORM_EXPORT Utf8CP GetValue() const; //!< The JSON representation of the material.
+            DGNPLATFORM_EXPORT Utf8CP GetDescr() const; //!< The material description.
             Entry const& operator*() const {return *this;}
         };
 
     typedef Entry const_iterator;
     typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT Entry begin() const;
-    Entry end() const {return Entry(nullptr, false);}
+    DGNPLATFORM_EXPORT size_t QueryCount() const; //!< The number of entries in the material table.
+    DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the table.
+    Entry end() const {return Entry(nullptr, false);} //!< An iterator one beyond the last entry in the table.
     };
 
+    //! Obtain an iterator over the materials in a DgnDb.
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
 
-    DGNPLATFORM_EXPORT DgnMaterialId Insert(Material&, DgnDbStatus* result=nullptr);
-    DGNPLATFORM_EXPORT DgnDbStatus Update(Material const&) const;
+    //! Insert a new material into the DgnDb. The combination of material+palette name must be unique.
+    //! @param[in]      material    The new material
+    //! @param[in]      result      If supplied, holds the result of the insert operation
+    //! @return The DgnMaterialId of the newly created material, or an invalid ID if the material was not created.
+    DGNPLATFORM_EXPORT DgnMaterialId Insert(Material& material, DgnDbStatus* result=nullptr);
+
+    //! Change the properties of the specified material. This method cannot be used to change the material or palette name.
+    //! @param[in]      material The modified material.
+    //! @return Success if the material was updated, or else an error code.
+    DGNPLATFORM_EXPORT DgnDbStatus Update(Material const& material) const;
+
+    //! Look up a material by ID.
+    //! @param[in]      id The ID of the desired material
+    //! @return The material with the specified ID, or an invalid material if no such ID exists.
     DGNPLATFORM_EXPORT Material Query(DgnMaterialId id) const;
+
+    //! Look up the ID of the material with the specifed name and palette name.
+    //! @param[in]      name    The material name
+    //! @param[in]      palette The palette name
+    //! @return The ID of the specified material, or an invalid ID if no such material exists.
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
 };
 
 //=======================================================================================
-//! @private
+//! A DgnElement within a DgnDb can be identified by a "code" which is unique among all
+//! elements in the DgnDb. The meaning of the code is determined by the "authority" by which
+//! the code was assigned. Therefore the code includes the ID of the authority.
+//! DgnAuthorities holds all such authorities associated with a DgnDb. The name of an authority
+//! must be unique. An optional URI can be provided to specify how to contact the authority.
 //=======================================================================================
 struct DgnAuthorities : DgnDbTable
 {
@@ -1199,6 +1236,9 @@ private:
     explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
 
 public:
+    //=======================================================================================
+    //! Holds an authority's data in memory.
+    //=======================================================================================
     struct Authority
     {
     private:
@@ -1208,50 +1248,74 @@ public:
         Utf8String      m_name;
         Utf8String      m_uri;
     public:
+        //! Constructs an empty, invalid Authority
         Authority() { }
+        //! Constructs a new Authority for insertion into the authorities table.
+        //! @param[in]      name The name of the authority. Must be unique.
+        //! @param[in]      uri  The optional Uri of the authority.
         explicit Authority (Utf8CP name, Utf8CP uri = nullptr) : m_name (name), m_uri (uri) { }
 
-        DgnAuthorityId  GetId() const   { return m_id; }
-        Utf8StringCR    GetName() const { return m_name; }
-        Utf8StringCR    GetUri() const  { return m_uri; }
-        bool            IsValid() const { return m_id.IsValid(); }
+        DgnAuthorityId  GetId() const   { return m_id; } //!< This authority's ID.
+        Utf8StringCR    GetName() const { return m_name; } //!< This authority's unique name.
+        Utf8StringCR    GetUri() const  { return m_uri; } //!< This authority's URI.
+        bool            IsValid() const { return m_id.IsValid(); } //!< Test whether this Authority is valid.
 
-        void            SetName (Utf8CP val)    { m_name = val; }
-        void            SetUri (Utf8CP val)     { m_uri = val; }
+        void            SetName (Utf8CP val)    { m_name = val; } //!< Set the name of the authority. Must be unique.
+        void            SetUri (Utf8CP val)     { m_uri = val; } //!< Set the URI of the authority.
     };
 
+    //! An iterator over the Authorities within a DgnDb.
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
         explicit Iterator (DgnDbCR db) : DbTableIterator ((BeSQLite::DbCR)db) { }
 
+        //! An entry in the Authorities table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
             Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) { }
         public:
-            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const;
-            DGNPLATFORM_EXPORT Utf8CP           GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP           GetUri() const;
+            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const; //!< The authority ID.
+            DGNPLATFORM_EXPORT Utf8CP           GetName() const; //!< The authority name.
+            DGNPLATFORM_EXPORT Utf8CP           GetUri() const; //!< The authority URI.
 
             Entry const& operator*() const      { return *this; }
         };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
-        DGNPLATFORM_EXPORT size_t   QueryCount() const;
-        DGNPLATFORM_EXPORT Entry    begin() const;
-        Entry                       end() const { return Entry (nullptr, false); }
+        DGNPLATFORM_EXPORT size_t   QueryCount() const; //!< The number of entries in the table.
+        DGNPLATFORM_EXPORT Entry    begin() const; //!< An iterator to the first entry in the table.
+        Entry                       end() const { return Entry (nullptr, false); } //!< An iterator one beyond the last entry in the table.
     };
 
+    //! Obtain an iterator over the authorities within a DgnDb.
     Iterator    MakeIterator() const    { return Iterator (m_dgndb); }
 
-    DGNPLATFORM_EXPORT DgnAuthorityId   Insert (Authority&, DgnDbStatus* result = nullptr);
-    DGNPLATFORM_EXPORT DgnDbStatus      Update (Authority const&) const;
+    //! Add a new Authority to the table.
+    //! @param[in]      authority   The new entry to add.
+    //! @param[in]      result      The result of the insert operation.
+    //! @return The ID of the newly-created Authority, or an invalid ID if insertion failed.
+    DGNPLATFORM_EXPORT DgnAuthorityId   Insert (Authority& authority, DgnDbStatus* result = nullptr);
+
+    //! Change the properties of an Authority. This method cannot be used to change the authority's name.
+    //! @param[in]      authority The modified Authority.
+    //! @return Success if the update was successful, or else an error code.
+    DGNPLATFORM_EXPORT DgnDbStatus      Update (Authority const& authority) const;
+
+    //! Look up an Authority by ID.
+    //! @param[in]      id The ID of the desired Authority.
+    //! @return The Authority with the specified ID, or an invalid ID if no such Authority exists.
     DGNPLATFORM_EXPORT Authority        Query (DgnAuthorityId id) const;
+
+    //! Look up the ID of the authority with the specified name.
+    //! @param[in]      name The name of the desired Authority.
+    //! @return The ID corresponding to the name, or an invalid ID if no such name exists.
     DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId (Utf8StringCR name) const;
 
+    //! The built-in "local" code-generating authority
     static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
 };
 

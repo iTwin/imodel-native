@@ -50,7 +50,7 @@ DgnDbStatus DgnMaterials::Update(Material const& material) const
     if (!material.IsValid())
         return DgnDbStatus::InvalidId;
 
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId=? WHERE Id=?");
     stmt.BindText(1, material.GetValue(), Statement::MakeCopy::No);
     stmt.BindText(2, material.GetDescr(), Statement::MakeCopy::No);
     stmt.BindId(3, material.GetParentId());

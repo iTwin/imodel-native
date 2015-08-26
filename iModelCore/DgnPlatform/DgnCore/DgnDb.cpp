@@ -40,7 +40,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_colors(*this), m_categories(*this), m_domains(*this), m_styles(*this), m_views(*this),
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
-                 m_materials(*this), m_links(*this), m_ecsqlCache(50, "DgnDb")
+                 m_materials(*this), m_links(*this), m_authorities(*this), m_ecsqlCache(50, "DgnDb")
     {
     }
 

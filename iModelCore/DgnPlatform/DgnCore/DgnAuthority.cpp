@@ -73,8 +73,8 @@ DgnAuthorities::Authority DgnAuthorities::Query (DgnAuthorityId id) const
     if (stmt->Step() == BE_SQLITE_ROW)
         {
         authority.m_id = id;
-        authority.m_name.AssignOrClear (stmt->GetValueText (1));
-        authority.m_uri.AssignOrClear (stmt->GetValueText (2));
+        authority.m_name.AssignOrClear (stmt->GetValueText (0));
+        authority.m_uri.AssignOrClear (stmt->GetValueText (1));
         }
 
     return authority;
