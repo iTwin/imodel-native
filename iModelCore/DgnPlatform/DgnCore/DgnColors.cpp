@@ -454,14 +454,16 @@ DgnColors::Color DgnColors::QueryColorByName(Utf8CP name, Utf8CP book) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnColors::Insert(Color& color)
+DgnTrueColorId DgnColors::Insert(Color& color, DgnDbStatus* outResult)
     {
+    DgnDbStatus ALLOW_NULL_OUTPUT(result, outResult);
     DgnTrueColorId newId;
 
     auto status = m_dgndb.GetServerIssuedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
     if (status != BE_SQLITE_OK)
         {
         BeAssert(false);
+        result = DgnDbStatus::ForeignKeyConstraint;
         return DgnTrueColorId();
         }
 
@@ -473,8 +475,12 @@ DgnTrueColorId DgnColors::Insert(Color& color)
 
     status = stmt.Step();
     if (BE_SQLITE_DONE!=status)
+        {
+        result = DgnDbStatus::DuplicateName;
         return DgnTrueColorId();
+        }
 
+    result = DgnDbStatus::Success;
     color.m_id = newId;
     return newId;
     }
