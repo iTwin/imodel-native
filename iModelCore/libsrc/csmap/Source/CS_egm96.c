@@ -354,7 +354,15 @@ int CScalcEgm96 (struct cs_Egm96_ *__This,double *geoidHgt,const double wgs84 [2
 			CS_erpt (cs_ISER);
 			goto error;
 		}
+#ifdef GEOCOORD_ENHANCEMENT
+        /* CSMAP BUG. The size of the header of the file was not added to the begin position as it was used
+		  in the computation of the fposbegin (location in file of north-west corner of cell). This resulted into
+		  reading the wrong record for the north altitudes and sometimes reading out of the buffer for the south values
+		  when located just west of the 0.0 longitude */
+		__This->bufferBeginPosition = __This->headerCount + (recFirst * __This->recordSize);
+#else
 		__This->bufferBeginPosition = recFirst * __This->recordSize;
+#endif
 		__This->bufferEndPosition = __This->bufferBeginPosition + readCount;
 
 		/* OK, read in the data. */
