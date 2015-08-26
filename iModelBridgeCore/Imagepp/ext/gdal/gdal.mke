@@ -21,7 +21,7 @@ NO_LEAN_AND_MEAN=1
 
 ippGdalDir = $(_MakeFilePath)
 
-%if $(BUILD_TOOLSET) != "VC10" && $(BUILD_TOOLSET) != "VC11" && $(BUILD_TOOLSET) != "VC12" && $(BUILD_TOOLSET) != "VC13"
+%if $(BUILD_TOOLSET) != "VC10" && $(BUILD_TOOLSET) != "VC11" && $(BUILD_TOOLSET) != "VC12" && $(BUILD_TOOLSET) != "VC14"
     %if !defined (DEBUG) && !defined (DEBUG_RUNTIME)    
         gdal_enable_ECW = 1
     %endif
