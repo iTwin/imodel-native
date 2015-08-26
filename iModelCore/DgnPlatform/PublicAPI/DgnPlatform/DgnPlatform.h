@@ -293,6 +293,7 @@ BESERVER_ISSUED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a se
 BESERVER_ISSUED_ID_CLASS(DgnStyleId)         //!< An Id that is assigned to a style. See DgnDb#Styles.
 BESERVER_ISSUED_ID_CLASS(DgnSubCategoryId)   //!< An Id that is assigned to a SubCategory of a DgnCategory. @ingroup DgnCategoryGroup
 BESERVER_ISSUED_ID_CLASS(DgnTrueColorId)     //!< An Id that is assigned to a true color. See DgnDb#Colors.
+BESERVER_ISSUED_ID_CLASS(DgnTextureId)       //!< An Id that is assigned to a texture. See DgnDb#Textures.
 
 namespace dgn_ElementHandler{struct Element;};
 namespace dgn_ModelHandler  {struct Model;};

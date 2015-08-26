@@ -120,6 +120,17 @@ DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t DgnMaterials::Iterator::QueryCount() const
+    {
+    Utf8String sqlString = MakeSqlString ("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Material));
+    Statement sql;
+    sql.Prepare (*m_db, sqlString.c_str());
+    return (BE_SQLITE_ROW == sql.Step()) ? static_cast<size_t>(sql.GetValueInt (0)) : 0;
+    }
+
 DgnMaterialId DgnMaterials::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnMaterialId>(0);}
 Utf8CP DgnMaterials::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
 Utf8CP DgnMaterials::Iterator::Entry::GetPalette() const {Verify(); return m_sql->GetValueText(2);}
