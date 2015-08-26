@@ -2,7 +2,7 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="google_gmock_lib" BentleyBuildMakeFile="gmock.mke" ExcludePlatforms="AndroidARM,AndroidARM7A,AndroidX86,iOSARM,iOSX86,WinRTx86,WinRTx64,WinRTARM">
+    <Part Name="google_gmock_lib" BentleyBuildMakeFile="gmock.mke" ExcludePlatforms="Android*,iOS*,WinRT*">
         <SubPart PartName="google_gmock"/>
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <Bindings>
