@@ -2173,14 +2173,18 @@ ElemDisplayParamsR ElemDisplayParams::operator=(ElemDisplayParamsCR rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemDisplayParams::Init()
+ElemDisplayParams::ElemDisplayParams()
     {
-    memset(this, 0, offsetof(ElemDisplayParams, m_material));
-
-    m_styleInfo = nullptr;
-    m_gradient  = nullptr;
-    m_pattern   = nullptr;
-    m_plotInfo  = nullptr;
+    m_resolved = 0;
+    m_elmPriority = 0;
+    m_netPriority = 0;    
+    m_weight = 0;
+    m_fillDisplay = FillDisplay::Never;
+    m_elmTransparency = 0;             
+    m_netElmTransparency = 0;          
+    m_fillTransparency = 0;            
+    m_netFillTransparency = 0;         
+    m_geometryClass = DgnGeometryClass::Primary; 
     }
 
 //---------------------------------------------------------------------------------------
@@ -2191,7 +2195,7 @@ void ElemDisplayParams::ResetAppearance()
     AutoRestore<DgnCategoryId> saveCategory(&m_categoryId);
     AutoRestore<DgnSubCategoryId> saveSubCategory(&m_subCategoryId);
 
-    Init();
+    *this = ElemDisplayParams();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2430,10 +2434,10 @@ void ViewContext::_DrawAligned(DVec3dCR axis, DPoint3dCR origin, AlignmentMode a
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawTextString(TextStringCR text)
     {
-    text.GetGlyphSymbology(*GetCurrentDisplayParams());
+    text.GetGlyphSymbology(GetCurrentDisplayParams());
     CookDisplayParams();
 
-    double zDepth = GetCurrentDisplayParams()->GetNetDisplayPriority();
+    double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
     GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments(*this);
     }

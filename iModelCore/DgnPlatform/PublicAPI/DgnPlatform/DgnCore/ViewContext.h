@@ -761,7 +761,7 @@ DGNPLATFORM_EXPORT OvrMatSymbP GetOverrideMatSymb();
 
 //! Get the current ElemDisplayParams.
 //! @return the current ElemDisplayParams.
-DGNPLATFORM_EXPORT ElemDisplayParamsP GetCurrentDisplayParams();
+ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
 
 //! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
 //! @note Calls ActivateMatSymb on the output.
