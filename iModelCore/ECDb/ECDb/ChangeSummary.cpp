@@ -532,7 +532,7 @@ bool ChangeSummary::SqlChangeHasUpdatesForClass(SqlChange const& sqlChange, Chan
         if (sqlChange.IsPrimaryKeyColumn(columnIndex))
             continue;
 
-        DbValue dbValue = sqlChange.GetChange().GetValue(columnIndex, Changes::Change::Stage::Old);
+        DbValue dbValue = sqlChange.GetChange().GetValue(columnIndex, Changes::Change::Stage::New);
         if (dbValue.IsValid() && !dbValue.IsNull())
             return true;
         }
@@ -559,44 +559,49 @@ void ChangeSummary::ProcessSqlChangeForForeignKeyMap(SqlChange const& sqlChange,
 
     DbOpcode dbOpcode = sqlChange.GetDbOpcode();
 
-    ECInstanceId otherEndOldId;
-    if (dbOpcode == DbOpcode::Delete || dbOpcode == DbOpcode::Update)
-        {
-        DbValue oldValue = sqlChange.GetChange().GetValue(otherEndIdColumnIndex, Changes::Change::Stage::Old);
-        if (oldValue.IsValid() && !oldValue.IsNull())
-            otherEndOldId = oldValue.GetValueId<ECInstanceId>();
-        }
-
-    ECInstanceId otherEndNewId;
-    if (dbOpcode == DbOpcode::Insert || dbOpcode == DbOpcode::Update)
+    DbOpcode relDbOpcode;
+    if (dbOpcode == DbOpcode::Insert)
         {
         DbValue newValue = sqlChange.GetChange().GetValue(otherEndIdColumnIndex, Changes::Change::Stage::New);
+        if (!newValue.IsValid() || newValue.IsNull())
+            return;
+        relDbOpcode = DbOpcode::Insert;
+        }
+    else if (dbOpcode == DbOpcode::Delete)
+        {
+        DbValue oldValue = sqlChange.GetChange().GetValue(otherEndIdColumnIndex, Changes::Change::Stage::Old);
+        if (!oldValue.IsValid() || oldValue.IsNull())
+            return;
+        relDbOpcode = DbOpcode::Delete;
+        }
+    else /* if (dbOpcode == DbOpcode::Update) */
+        {
+        DbValue oldValue = sqlChange.GetChange().GetValue(otherEndIdColumnIndex, Changes::Change::Stage::Old);
+        DbValue newValue = sqlChange.GetChange().GetValue(otherEndIdColumnIndex, Changes::Change::Stage::New);
+
+        ECInstanceId otherEndOldId;
+        if (oldValue.IsValid() && !oldValue.IsNull())
+            otherEndOldId = oldValue.GetValueId<ECInstanceId>();
+
+        ECInstanceId otherEndNewId;
         if (newValue.IsValid() && !newValue.IsNull())
             otherEndNewId = newValue.GetValueId<ECInstanceId>();
+
+        if (!otherEndOldId.IsValid() && !otherEndNewId.IsValid())
+            return; // No valid FKEY relationship
+        else if (!otherEndOldId.IsValid() && otherEndNewId.IsValid())
+            relDbOpcode = DbOpcode::Insert;
+        else /* if (otherEndOldId.IsValid()) */
+            {
+            if (newValue.IsValid() && newValue.IsNull())
+                relDbOpcode = DbOpcode::Delete;
+            else if (SqlChangeHasUpdatesForClass(sqlChange, classMap))
+                relDbOpcode = DbOpcode::Update;
+            else
+                return; // No changes
+            }
         }
 
-    DbOpcode relDbOpcode;
-    if (!otherEndOldId.IsValid() && otherEndNewId.IsValid())
-        relDbOpcode = DbOpcode::Insert;
-    else if (otherEndOldId.IsValid() && !otherEndNewId.IsValid())
-        relDbOpcode = DbOpcode::Delete;
-    else
-        {
-        // Insert/Delete records would need to have a valid old or new id at the other end to make up for a valid FKEY relationship
-        if (DbOpcode::Update != dbOpcode)
-            return; 
-
-        // Update records would need to have a valid id at the other end to make up for a valid FKEY relationship
-        int64_t otherEndId = GetValueInt64FromTable (classMap.GetTableName(), classMap.GetColumnName(otherEndIdAccessString), classMap.GetColumnName("ECInstanceId"), instanceId);
-        if (otherEndId <= 0)
-            return;
-
-        if (!SqlChangeHasUpdatesForClass(sqlChange, classMap))
-            return;
-
-        relDbOpcode = DbOpcode::Update;
-        }
-        
     ChangeSummary::Instance instance(m_ecdb, classMap.GetClassId(), instanceId, relDbOpcode, sqlChange.GetIndirect());
     RecordInInstancesTable(instance);
     RecordInValuesTable(instance, sqlChange, classMap);
