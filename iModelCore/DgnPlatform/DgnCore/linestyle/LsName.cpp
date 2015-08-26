@@ -22,10 +22,7 @@ static DgnHost::Key s_systemLsFileInfoKey;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsDefinition::SetName
-(
-Utf8CP          name
-)
+void LsDefinition::SetName (Utf8CP name)
     {
     if (m_name.m_key)
         FREE_AND_CLEAR (m_name.m_key);
@@ -178,27 +175,6 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
 
     *context.GetCurrentDisplayParams() = savedParams;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-int32_t _GetQvIndex() const override
-    {
-    return 1;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-QvElemP _GetQvElem(double pixelSize = 0.0) const override
-    {
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    08/2015
-//---------------------------------------------------------------------------------------
-void _SaveQvElem(QvElemP, double pixelSize = 0.0, double sizeDependentRatio = 0.0) const override {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015

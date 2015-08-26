@@ -129,28 +129,6 @@ public:
     //! @}
 };
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-
-template <class _QvKey> struct QvElemSet;
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct QvKey32
-{
-private:
-    uint32_t m_key;
-
-public:
-    inline bool LessThan(QvKey32 const& other) const {return m_key < other.m_key;}
-    inline bool Equal(QvKey32 const& other) const    {return m_key == other.m_key;}
-    void DeleteQvElem(QvElem* qvElem);
-    QvKey32(uint32_t key) {m_key = key;} // allow non-explicit!
-};
-typedef QvElemSet<QvKey32> T_QvElemSet;
-#endif
-
-
 #define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
     private: typedef __superclass__ T_Super;\
     public: static Utf8CP MyECClassName() {return __ECClassName__;}\
@@ -1113,7 +1091,8 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 
 protected:
     GeomStream m_geom;
-    mutable bmap<DgnViewportCP, RefCountedPtr<Render::Graphic>, std::less<DgnViewportCP>, 8> m_graphics;
+    typedef bmap<DgnViewportCP, Render::Graphic const*, std::less<DgnViewportCP>, 8> T_Graphics;
+    mutable T_Graphics m_graphics;
 
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
@@ -1124,14 +1103,14 @@ protected:
     GeometricElementCP _ToGeometricElement() const override {return this;}
     DgnDbStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
-    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
+    uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
 
 public:
-    DGNPLATFORM_EXPORT Render::GraphicPtr FindGraphic(DgnViewportCR) const;
+    DGNPLATFORM_EXPORT Render::GraphicCPtr FindGraphic(DgnViewportCR) const;
     DGNPLATFORM_EXPORT void CacheGraphic(DgnViewportCR, Render::Graphic const&) const;
-    DGNPLATFORM_EXPORT bool DropGraphic(DgnViewportCR) const;
-    DGNPLATFORM_EXPORT bool ClearGraphics() const;
+    DGNPLATFORM_EXPORT void DropGraphic(DgnViewportCR) const;
+    DGNPLATFORM_EXPORT void ClearGraphics() const;
     DGNPLATFORM_EXPORT void SaveGeomStream(GeomStreamCP);
     DGNPLATFORM_EXPORT virtual void _Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT virtual bool _DrawHit(HitDetailCR, ViewContextR) const;
@@ -1259,6 +1238,7 @@ protected:
 
 public:
     explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
+
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 

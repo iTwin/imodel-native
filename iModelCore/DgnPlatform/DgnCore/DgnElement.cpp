@@ -117,46 +117,6 @@ DgnDbStatus DgnElement::_DeleteInDb() const
     return DgnDbStatus::WriteError;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   06/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometricElement::SetQvElem(QvElem* qvElem, uint32_t index)
-    {
-    GetQvElems(true)->Add(index, qvElem);
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QvKey32::DeleteQvElem(QvElem* qvElem)
-    {
-    if (qvElem && qvElem != INVALID_QvElem)
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-T_QvElemSet* GeometricElement::GetQvElems(bool createIfNotPresent) const
-    {
-    static AppData::Key s_qvElemsKey;
-    T_QvElemSet* qvElems = (T_QvElemSet*) FindAppData(s_qvElemsKey);
-    if (qvElems)
-        return  qvElems;
-
-    if (!createIfNotPresent)
-        return  nullptr;
-
-    HeapZone& zone = GetHeapZone();
-    qvElems = new T_QvElemSet(zone);
-
-    AddAppData(s_qvElemsKey, qvElems);
-    return  qvElems;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -645,7 +605,7 @@ DgnDbStatus DgnElement3d::_LoadFromDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " WHERE ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -728,16 +688,55 @@ DgnDbStatus DgnElement2d::_LoadFromDb()
     return DgnDbStatus::Success;
     }
 
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/06
+* @bsimethod                                    Keith.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem* GeometricElement::GetQvElem(uint32_t id) const
+Render::GraphicCPtr GeometricElement::FindGraphic(DgnViewportCR vp) const
     {
-    T_QvElemSet* qvElems = GetQvElems(false);
-    return qvElems ? qvElems->Find(id) : nullptr;
+    T_Graphics::const_iterator graphics = m_graphics.find(&vp);
+    return graphics == m_graphics.end() ? nullptr : graphics->second;
     }
-#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::CacheGraphic(DgnViewportCR vp, Render::Graphic const& newGraphic) const
+    {
+    newGraphic.AddRef();
+    T_Graphics::iterator graphic = m_graphics.find(&vp);
+    if (graphic != m_graphics.end())
+        {
+        graphic->second->Release();    // release old value
+        graphic->second = &newGraphic; // save new value
+        return;
+        }
+
+    m_graphics.Insert(&vp, &newGraphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::DropGraphic(DgnViewportCR vp) const
+    {
+    T_Graphics::iterator graphic = m_graphics.find(&vp);
+    if (graphic == m_graphics.end())
+        return;
+
+    graphic->second->Release();
+    m_graphics.erase(graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::ClearGraphics() const
+    {
+    for (auto& it : m_graphics) // release reference to all members
+        it.second->Release();
+
+    m_graphics.clear();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
@@ -1012,8 +1011,6 @@ void GeomStream::SaveData(uint8_t const* data, uint32_t size)
     if (data)
         memcpy(m_data, data, size);
     }
-
-
 
 BEGIN_UNNAMED_NAMESPACE
 static const double halfMillimeter() {return .5 * DgnUnits::OneMillimeter();}
