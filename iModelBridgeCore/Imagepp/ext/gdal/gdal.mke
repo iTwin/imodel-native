@@ -6,7 +6,7 @@
 #       $Date: 2007/03/07 13:34:13 $
 #     $Author: Bern.McCarty $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ NO_LEAN_AND_MEAN=1
 
 ippGdalDir = $(_MakeFilePath)
 
-%if $(BUILD_TOOLSET) != "VC10" && $(BUILD_TOOLSET) != "VC11" && $(BUILD_TOOLSET) != "VC12"
+%if $(BUILD_TOOLSET) != "VC10" && $(BUILD_TOOLSET) != "VC11" && $(BUILD_TOOLSET) != "VC12" && $(BUILD_TOOLSET) != "VC13"
     %if !defined (DEBUG) && !defined (DEBUG_RUNTIME)    
         gdal_enable_ECW = 1
     %endif
