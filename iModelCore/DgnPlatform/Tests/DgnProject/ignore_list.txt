@@ -11,7 +11,6 @@ DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need thi
 #----------------------------------------------------------------------------------------
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
-ComponentModelTest.SimulateDeveloperAndClient           # Fails after 0505 merge; notified Sam
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
