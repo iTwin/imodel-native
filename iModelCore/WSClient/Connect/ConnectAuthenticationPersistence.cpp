@@ -147,7 +147,7 @@ size_t ConnectAuthenticationPersistence::RegisterUserChangedListener(std::functi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::UnregisterUserChangedListener(size_t key)
     {
-    BeCriticalSectionHolder lock(m_cs);
+    BeMutexHolder lock(m_cs);
 
     auto it = m_onUserChangedListeners.find(key);
     if (it != m_onUserChangedListeners.end())
