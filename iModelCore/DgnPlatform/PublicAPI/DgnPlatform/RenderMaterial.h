@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__PUBLISH_SECTION_START__
 
 
 // JSon keys.
@@ -1278,3 +1279,6 @@
 #define RENDER_MATERIAL_LxoWindyWavesForeAlpha                      "lxo_windy_waves_foreground_alpha"
 #define RENDER_MATERIAL_LxoWindyWavesBackPrev                       "lxo_windy_waves_background_previous"
 #define RENDER_MATERIAL_LxoWindyWavesForePrev                       "lxo_windy_waves_foreground_previous"
+
+
+//__PUBLISH_SECTION_END__
