@@ -57,6 +57,7 @@ struct WebApiV1 : public WebApi
         Utf8String CreatePropertiesQuery(Utf8StringCR propertiesList) const;
         Utf8String CreateParentQuery(ObjectIdCR objectId) const;
         Utf8String CreateWebApiVersionPart(Utf8StringCR webApiVersion) const;
+        Utf8String GetMaxWebApi() const;
 
         HttpRequest CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
 

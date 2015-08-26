@@ -505,7 +505,7 @@ TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1_SendsCorrectUrl)
     GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
     GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
         {
-        EXPECT_STREQ ("https://srv.com/ws/v1.1/DataSources/foo/Objects/class1,class2?$select=testSelect", request.GetUrl ().c_str ());
+        EXPECT_STREQ ("https://srv.com/ws/v1.3/DataSources/foo/Objects/class1,class2?$select=testSelect", request.GetUrl ().c_str ());
         return StubHttpResponse ();
         });
 
@@ -513,6 +513,42 @@ TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV1_SendsCorrectUrl)
     query.SetSelect ("testSelect");
 
     client->SendQueryRequest (query)->Wait ();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV12_SendsCorrectUrlWithMaxWebApi)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi12());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/v1.2/DataSources/foo/Objects/class1,class2?$select=testSelect", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    WSQuery query("testSchema", set<Utf8String> {"class1", "class2"});
+    query.SetSelect("testSelect");
+
+    client->SendQueryRequest(query)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV11_SendsCorrectUrlWithoutWebApi)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
+    GetHandler().ForRequest(2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ("https://srv.com/ws/DataSources/foo/Objects/class1,class2?$select=testSelect", request.GetUrl().c_str());
+        return StubHttpResponse();
+        });
+
+    WSQuery query("testSchema", set<Utf8String> {"class1", "class2"});
+    query.SetSelect("testSelect");
+
+    client->SendQueryRequest(query)->Wait();
     }
 
 TEST_F (WSRepositoryClientTests, SendQueryRequest_WebApiV2_SendsCorrectUrl)
