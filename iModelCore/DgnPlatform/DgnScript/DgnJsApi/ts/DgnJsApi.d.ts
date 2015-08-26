@@ -23,7 +23,6 @@ declare module BentleyApi.Dgn {
         Insert(): cxx_int32_t;
         Update(): cxx_int32_t;
         SetParent(parent: cxx_pointer<JsDgnElement>): void;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -35,7 +34,6 @@ declare module BentleyApi.Dgn {
         GetModelId(): Bentley_Utf8String;
         CreateElement(elType: Bentley_Utf8String, categoryName: Bentley_Utf8String): JsDgnElementP;
         DeleteAllElements(): void;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -45,7 +43,6 @@ declare module BentleyApi.Dgn {
         constructor(el: JsDgnElementP, o: JsDPoint3dP, angles: JsYawPitchRollAnglesP);
         AppendBox(x: cxx_double, y: cxx_double, z: cxx_double): void;
         SetGeomStreamAndPlacement(element: JsDgnElementP): cxx_double;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }

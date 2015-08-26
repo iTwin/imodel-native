@@ -20,7 +20,7 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#define DGN_CLASSNAME_ComponentSolution "ComponentSolution"
+#define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -49,11 +49,11 @@
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain        DGN_TABLE("Domain")
-#define DGN_TABLE_Font          DGN_TABLE("Font")
-#define DGN_TABLE_Handler       DGN_TABLE("Handler")
-#define DGN_TABLE_Txns          DGN_TABLE("Txns")
-#define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain   DGN_TABLE("Domain")
+#define DGN_TABLE_Font     DGN_TABLE("Font")
+#define DGN_TABLE_Handler  DGN_TABLE("Handler")
+#define DGN_TABLE_Txns     DGN_TABLE("Txns")
+#define DGN_VTABLE_RTree3d DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
@@ -882,9 +882,8 @@ public:
 //! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
 //! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
 //! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
-//! However, if a book name is supplied, there may not be two entries with the same name.
+//! However, for a given book name, there may not be two entries with the same name.
 //! @see DgnDb::Colors
-//! @ingroup DgnColorGroup
 //=======================================================================================
 struct DgnColors : DgnDbTable
 {
@@ -913,16 +912,16 @@ public:
         Utf8StringCR GetBook() const {return m_book;}
     };
 
-    //! Add a new entry to this DgnColors.
+    //! Add a new Color to the table.
     //! @param[in] color    The Color values for the new entry.
     //! @param[out] result  The result of the operation
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
     DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
 
-    //! Find the first DgnTrueColorId that has a given color value.
+    //! Find the first DgnTrueColorId that has a given ColorDef value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
-    //! @note If the table holds more than one entry with the same value, the "first" DgnTrueColorId is returned.
+    //! @note If the table holds more than one entry with the same value, it is undefined which DgnTrueColorId is returned.
     DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
 
     //! Get a color by DgnTrueColorId.
@@ -1276,9 +1275,13 @@ struct DgnMaterials : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db), m_nextQvMaterialId (0) {}
+
+    mutable uintptr_t                           m_nextQvMaterialId;
+    mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
 
 public:
+
     //=======================================================================================
     //! Holds a material's data in memory.
     //=======================================================================================
@@ -1318,6 +1321,16 @@ public:
         void SetDescr(Utf8CP val) {m_descr= val;} //!< Sets the description of this material.
         void SetParentId(DgnMaterialId id) {m_parentId=id;} //!< Sets the parent material ID.
         bool IsValid() const {return m_id.IsValid();} //!< Test if the Material is valid.
+        
+        //! Get an asset of the material as a Json value.  (Rendering, physical etc.)
+        //! @param[out]     value       The Json value for the asset.
+        //! @param[in]      keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
+        DGNPLATFORM_EXPORT BentleyStatus GetAsset (JsonValueR value, char const* keyWord) const; 
+
+        //! Set an asset of material from a Json value.
+        //! @param[in]     value       The Json value for the asset.
+        //! @param[in]     keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
+        DGNPLATFORM_EXPORT void          SetAsset (JsonValueCR value, char const* keyWord);
     };
 
     //! An iterator over the materials in a DgnDb
@@ -1373,6 +1386,10 @@ public:
     //! @param[in]      palette The palette name
     //! @return The ID of the specified material, or an invalid ID if no such material exists.
     DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
+
+    DGNPLATFORM_EXPORT uintptr_t   GetQvMaterialId (DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t   AddQvMaterialId (DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
 };
 
 //=======================================================================================
