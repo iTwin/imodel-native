@@ -304,11 +304,11 @@ public:
     //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
     int64_t GetValueUnchecked() const {return m_id;}
 
-    //! Test to see whether this BeInt64Id is valid. 0 and -1 are not valid ids.
-    bool Validate() const {return m_id!=0 && m_id!=-1;}
+    //! Test to see whether this BeInt64Id is valid. 0 is not a valid id.
+    bool Validate() const {return m_id != 0;}
 
-    //! Set this BeInt64Id to an invalid value (-1).
-    void Invalidate() {m_id = -1;}
+    //! Set this BeInt64Id to an invalid value (0).
+    void Invalidate() {m_id = 0;}
 };
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
