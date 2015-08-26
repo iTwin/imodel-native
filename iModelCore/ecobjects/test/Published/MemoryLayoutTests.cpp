@@ -1025,13 +1025,13 @@ static void     dumpPropertyValues (ECValuesCollectionR collection, bool isArray
 
         if (isArray)
             {
-            printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
+            printf ("Array Member [%u] %s (depth=%u) = %s\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
             }
         else
             {
-            printf ("%S (depth=%d)", accessString, accessorDepth);
+            printf ("%s (depth=%u)", accessString, accessorDepth);
             if ( ! v.IsStruct())
-                printf (" = %S", v.ToString().c_str());
+                printf (" = %s", v.ToString().c_str());
 
             printf ("\n");
             }
@@ -1067,13 +1067,13 @@ static void     dumpLoadedPropertyValues (ECValuesCollectionR collection, bool i
 
             if (isArray)
                 {
-                printf ("Array Member [%d] %S (depth=%d) = %S\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
+                printf ("Array Member [%u] %s (depth=%u) = %s\n", arrayIndex++, accessString, accessorDepth, v.ToString().c_str());
                 }
             else
                 {
-                printf ("%S (depth=%d)", accessString, accessorDepth);
+                printf ("%s (depth=%u)", accessString, accessorDepth);
                 if ( ! v.IsStruct())
-                    printf (" = %S", v.ToString().c_str());
+                    printf (" = %s", v.ToString().c_str());
 
                 printf ("\n");
                 }
