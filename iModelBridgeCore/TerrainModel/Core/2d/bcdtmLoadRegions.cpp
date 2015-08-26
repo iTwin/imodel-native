@@ -14,7 +14,7 @@
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmMark_checkForPointOnRegionHullDtmObject(BC_DTM_OBJ* dtmP, long pnt)
+int bcdtmMark_checkForPointOnRegionHullDtmObject(BC_DTM_OBJ* dtmP, long pnt)
 {
  long flistPtr ;
  BC_DTM_FEATURE *dtmFeatureP ;

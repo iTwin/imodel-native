@@ -25,6 +25,7 @@ struct DTMFeatureInfo
     public: BENTLEYDTM_EXPORT DTMFeatureType FeatureType () const;
     public: BENTLEYDTM_EXPORT DTMFeatureId FeatureId () const;
     public: BENTLEYDTM_EXPORT DTMUserTag UserTag () const;
+    public: BENTLEYDTM_EXPORT long FeatureIndex () const;
     };
 
 struct DTMFeatureEnumerator : RefCountedBase
@@ -44,12 +45,12 @@ struct DTMFeatureEnumerator : RefCountedBase
             operator!= (const iterator& other) const
             {
             return m_pos != other.m_pos;
-                }
+            }
 
         // this method must be defined after the definition of IntVector 
         // since it needs to use it 
         BENTLEYDTM_EXPORT DTMFeatureInfo operator* () const;
-
+        BENTLEYDTM_EXPORT DRange3d GetRange3d () const;
         BENTLEYDTM_EXPORT const iterator& operator++ ();
 
         private:
@@ -87,12 +88,9 @@ struct DTMFeatureEnumerator : RefCountedBase
     private: bvector<FeatureTypeFilter> m_featureTypeFilter;
     private: bool m_excludeFeatureTypeByDefault;
 
-    public: BENTLEYDTM_EXPORT DTMFeatureEnumerator (BcDTMR dtm);
+    public: BENTLEYDTM_EXPORT DTMFeatureEnumerator (BcDTMCR dtm);
             //public: void Reset ();
-    public: static BENTLEYDTM_EXPORT DTMFeatureEnumeratorPtr Create (BcDTMR dtm)
-        {
-        return new DTMFeatureEnumerator (dtm);
-        }
+    public: static BENTLEYDTM_EXPORT DTMFeatureEnumeratorPtr Create (BcDTMCR dtm);
 
     public: bool MoveNext (long& m_index, size_t& m_nextSourceFeatureIndex) const;
             //public: void GetFeaturePoints (bvector<DPoint3d>& points) const;
@@ -189,8 +187,15 @@ struct DTMFeatureEnumerator : RefCountedBase
 
     };
 
-struct DTMMeshEnumerator
+struct DTMMeshEnumerator : RefCountedBase
     {
+    public: enum class RegionMode
+        {
+        Normal = 0,
+        NonRegion = 1,
+        RegionUserTag = 2,
+        RegionFeatureId = 3
+        };
     public: struct iterator
         {
         iterator (const DTMMeshEnumerator* p_vec, long pos, long pos2) : m_pos (pos), m_pos2(pos2), m_p_vec (p_vec)
@@ -213,7 +218,7 @@ struct DTMMeshEnumerator
         // this method must be defined after the definition of IntVector 
         // since it needs to use it 
         BENTLEYDTM_EXPORT PolyfaceQueryP operator* () const;
-
+        BENTLEYDTM_EXPORT DRange3d GetRange () const;
         BENTLEYDTM_EXPORT const iterator& operator++ ();
 
         private:
@@ -231,26 +236,71 @@ struct DTMMeshEnumerator
     private: double zAxisFactor;       /* ==> Factor To Exaggerate The z Axis default value 1.0  */
     private: DTMFenceParams m_fence;
 
+    private: mutable long m_pointMark;
     private: mutable bool voidsInDtm;
-    private: mutable long  startPnt, lastPnt, leftMostPnt;
+    private: mutable long startPnt, lastPnt, leftMostPnt;
     private: mutable BlockedVector<int> meshFaces;
     private: mutable BlockedVector<DPoint3d> meshPoints;
     private: mutable BlockedVector<DVec3d> meshNormals;
     private: mutable BcDTMPtr clipDtm;
     private: mutable BC_DTM_OBJ* clipDtmP;
     private: mutable bool m_initialized;
-    private: bool m_noDuplicates;
-//    private: PolyfaceHeaderPtr m_polyface;
-//    private: PolyfaceQueryCarrier m_polyface;
-
+    private: mutable DRange3d m_range;
+    private: mutable bool m_calcRange = false;
+    private: bool m_tilingMode;
+    private: RegionMode m_regionMode = RegionMode::Normal;
+    private: DTMUserTag m_regionUserTag;
+    private: DTMFeatureId m_regionFeatureId;
+    private: mutable std::vector<bool> m_regionPointMask;
     private: DTMStatusInt Initialize () const;
     private: bool MoveNext (long& pnt1, long& pnt2) const;
-    public: BENTLEYDTM_EXPORT DTMMeshEnumerator (BcDTMR dtm);
+    private: void ScanAndMarkRegions () const;
+    private: void ScanAndMarkRegion (long featureId) const;
+
+    protected: BENTLEYDTM_EXPORT DTMMeshEnumerator (BcDTMR dtm);
+    public: BENTLEYDTM_EXPORT static DTMMeshEnumeratorPtr Create (BcDTMR dtm);
     public: BENTLEYDTM_EXPORT virtual ~DTMMeshEnumerator ();
     public: BENTLEYDTM_EXPORT void Reset ();
     public: BENTLEYDTM_EXPORT iterator begin () const;
     public: BENTLEYDTM_EXPORT iterator end () const;
+    public: BENTLEYDTM_EXPORT DRange3d DTMMeshEnumerator::GetRange () const;
 
+    public: void SetFilterRegionByUserTag (DTMUserTag value)
+        {
+        m_regionMode = RegionMode::RegionUserTag;
+        m_regionUserTag = value;
+        }
+
+    public: DTMUserTag GetFilterRegionByUserTag () const
+        {
+        return m_regionUserTag;
+        }
+
+    public: void SetFilterRegionByFeatureId (DTMFeatureId value)
+        {
+        m_regionMode = RegionMode::RegionUserTag;
+        m_regionFeatureId = value;
+        }
+
+    public: DTMFeatureId  GetFilterRegionByFeatureId () const
+        {
+        return m_regionFeatureId;
+        }
+
+    public: void SetExcludeAllRegions ()
+        {
+        m_regionMode = RegionMode::NonRegion;
+        }
+
+    public: bool GetExcludeAllRegions ()
+        {
+        return m_regionMode == RegionMode::NonRegion;
+        }
+
+    public: bool GetExcludeAllRegions () const
+        {
+        return m_regionMode == RegionMode::NonRegion;
+        }
 
     public: void SetFence (DTMFenceParams& fence)
         {
@@ -259,6 +309,10 @@ struct DTMMeshEnumerator
     public: void SetMaxTriangles (int value)
         {
         maxTriangles = value;
+        }
+    public: void SetTilingMode (bool value)
+        {
+        m_tilingMode = value;
         }
 
     };

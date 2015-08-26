@@ -126,9 +126,9 @@ BcDTMPtr TriangulationPreserver::Finish ()
         }
     if (0)
         {
-        DTMMeshEnumerator meshEnum (*m_stmDtm);
+        DTMMeshEnumeratorPtr meshEnum = DTMMeshEnumerator::Create (*m_stmDtm);
 
-        for (auto mesh : meshEnum)
+        for (auto mesh : *meshEnum)
             {
             PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh, false);
 

@@ -390,9 +390,17 @@ struct DTMStrokeForCacheShadedTriangles : IDTMStrokeForCache
                 // Push the transformation matrix to transform the coordinates to UORS.
                 DrawSentinel    sentinel (context, m_drawingInfo);
 
-                if ( context.GetDrawPurpose() == DrawPurpose::Measure )
+                if ( context.GetDrawPurpose() == DrawPurpose::Measure)
                     {
-                    bcdtmInterruptLoad_triangleShadeMeshFromDtmObject (m_tinP, 65000,2,1,&draw, fencePts != nullptr, fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts, &userData);
+                    DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
+                    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*bcDTM);
+                    en->SetFence (fence);
+                    en->SetMaxTriangles (126000 / 3);
+                    for (PolyfaceQueryP info : *en)
+                        {
+                        context.GetIDrawGeom ().DrawPolyface (*info);
+                        m_nbPointsDrawn += (int)info->GetPointCount ();
+                        }
                     }
                 else if (m_doRegions)   //Display all regions
                     {
@@ -402,41 +410,29 @@ struct DTMStrokeForCacheShadedTriangles : IDTMStrokeForCache
                     {
                     if (m_textureRegionFeatureId == m_dtmElement->GetTinHandle()->nullFeatureId)
                         {
-                        if (m_forTiling)
+                        DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
+                        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*bcDTM);
+                        en->SetFence (fence);
+                        en->SetMaxTriangles (126000 / 3);
+                        en->SetTilingMode (m_forTiling);
+                        for (PolyfaceQueryP info : *en)
                             {
-                            //bcdtmInterruptLoad_triangleShadeMeshForQVCacheFromDtmObject (m_tinP, 126000 / 3, 2, 1, &draw, true, fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts, &userData);
-                                {
-                                DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
-                                DTMMeshEnumerator en (*bcDTM);
-                                en.SetFence (fence);
-                                en.SetMaxTriangles (126000 / 3);
-                                for (PolyfaceQueryP info : en)
-                                    {
-                                    context.GetIDrawGeom ().DrawPolyface (*info);
-                                    m_nbPointsDrawn += (int)info->GetPointCount ();
-                                    }
-                                }
+                            context.GetIDrawGeom ().DrawPolyface (*info);
+                            m_nbPointsDrawn += (int)info->GetPointCount ();
                             }
-                        else
-                            bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(m_tinP, 65000,2,1,&draw, fencePts != nullptr, fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts, &userData);
                         }
                     else
                         {
-                        long maxTriangles = 65000;  // Maximum Triangles To Pass Back
-                        long vectorOption = 2;  // Averaged Triangle Surface Normals
-                        double zAxisFactor = 1.0;  // Am\ount To Exaggerate Z Axis
-                        long regionOption = 1;  // Include Internal Regions Until Fully Tested
-                        long indexOption = 2;  // Use Feature Id
-
-                        bcdtmLoad_triangleShadeMeshForRegionDtmObject(m_tinP,
-                                                                      maxTriangles,
-                                                                      vectorOption,
-                                                                      zAxisFactor,
-                                                                      regionOption,
-                                                                      indexOption,
-                                                                      m_textureRegionFeatureId,
-                                                                      &drawForTexturing,
-                                                                      &userData);
+                        DTMFenceParams fence (fenceType, DTMFenceOption::Overlap, (DPoint3d*)fencePts, nbPts);
+                        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create (*bcDTM);
+                        en->SetFence (fence);
+                        en->SetMaxTriangles (126000 / 3);
+                        en->SetFilterRegionByFeatureId (m_textureRegionFeatureId);
+                        for (PolyfaceQueryP info : *en)
+                            {
+                            context.GetIDrawGeom ().DrawPolyface (*info);
+                            m_nbPointsDrawn += (int)info->GetPointCount ();
+                            }
                         }
                     }
                 }
@@ -1407,12 +1403,12 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     virtual bool    Matches (DisplayStyleHandlerKey const& other) const override
         {
-        RegionDisplayHandlerKey const *     otherKey = NULL;
+        RegionDisplayHandlerKey const *     otherKey = nullptr;
 
-        if (GetHandlerId() != otherKey->GetHandlerId() || NULL == (otherKey = dynamic_cast <RegionDisplayHandlerKey const *> (&other)))
+        if (nullptr == (otherKey = dynamic_cast <RegionDisplayHandlerKey const *> (&other)))
             return false;
 
-        return  m_region == otherKey->m_region;
+        return  GetHandlerId () == otherKey->GetHandlerId () && m_region == otherKey->m_region;
         }
 
 public:
