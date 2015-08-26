@@ -23,18 +23,20 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
     return  ROTATE_Relative;
     }
 
-#if defined(NOTNOW)
 //---------------------------------------------------------------------------------------
 // calculate the "maximum offset from the origin" for this XGraphics container
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
-static double getXGraphicsMaxOffset (Byte const*xGraphicsData, int32_t xGraphicsSize, DgnModelR dgnModel, double angle)
+static double getGeomPartMaxOffset (LsSymbolComponentCR symbol, double angle)
     {
+    //  NEEDSWORK_LINESTYLES  It would be better to draw this with the transform instead of transforming the range
     Transform transform;
     transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
     DRange3d        range;
 
-    XGraphicsContainer::CalculateRange(range, xGraphicsData, xGraphicsSize, dgnModel, transform);
+    symbol._GetRange(range);
+    transform.Multiply(range.low);
+    transform.Multiply(range.high);
 
     double      maxWidth = fabs (range.low.y);
     double      test;
@@ -50,75 +52,20 @@ static double getXGraphicsMaxOffset (Byte const*xGraphicsData, int32_t xGraphics
 
     return maxWidth;
     }
-#endif
-    
-#if defined (NEEDSWORK_DGNITEM)
-    /*---------------------------------------------------------------------------------**//**
-    * calculate the "maximum offset from the origin" for this element descriptor chain.
-    * @bsimethod                                                    Keith.Bentley   03/03
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    static double getDescrMaxOffset (DgnElementPtrVec const& elems, DgnModelP model, double angle)
-        {
-        // This is wrong...needs to be based on the curve vector, not the element!
-        double      maxWidth = 0, test;
 
-        Transform transform;
-    transform.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, angle);
 
-        for (auto descr: elems)
-            {
-
-            EditElementHandle  tmpElHandle (descr.get(), false);
-            ElementHandlerR    handler = tmpElHandle.GetElementHandler();
-
-            DRange3d    range;
-
-            if (SUCCESS == handler.CalcElementRange (tmpElHandle, range, &transform))
-                {
-                // only consider the y component of the range for offset
-                if ((test = fabs (range.low.y)) > maxWidth)
-                    maxWidth = test;
-
-                if ((test = fabs (range.high.y)) > maxWidth)
-                    maxWidth = test;
-
-                if ((test = fabs (range.low.z)) > maxWidth)
-                    maxWidth = test;
-
-                if ((test = fabs (range.high.z)) > maxWidth)
-                    maxWidth = test;
-                }
-            }
-
-        return maxWidth;
-        }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
 double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
     {
-#if defined(NOTNOW)
     if (NULL == m_symbol.get ())
         return 0.0;
 
-    MSElementDescrP   elDscr = GetElementDescr ();
-
-    double maxWidth = 0.0;
-    double offset   = m_offset.magnitude ();
-    if (NULL != elDscr)
-        {
-        maxWidth = getDescrMaxOffset (elDscr, dgnModel, m_angle) / m_symbol->GetMuDef();
-        }
-    else if (0 != m_symbol->GetXGraphicsSize ())
-        {
-        maxWidth = getXGraphicsMaxOffset(m_symbol->GetXGraphicsData (), static_cast<int32_t>(m_symbol->GetXGraphicsSize ()), *dgnModel, m_angle);
-        }
+    double offset   = m_offset.Magnitude ();
+    double maxWidth = getGeomPartMaxOffset(*m_symbol, m_angle)/m_symbol->GetMuDef();
 
     return  (offset + maxWidth) * 2.0;
-#endif
-    return 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**

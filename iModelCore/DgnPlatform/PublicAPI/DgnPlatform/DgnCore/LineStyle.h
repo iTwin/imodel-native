@@ -17,7 +17,9 @@
 #include <RmgrTools/Tools/msstrlst.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 
+//  These are both used to try different configurations while testing.  They must both be eliminated
 #define LINESTYLES_ENABLED 0
+#define TRYING_DIRECT_LINESTYLES 0
 
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
