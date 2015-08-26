@@ -162,6 +162,7 @@ Utf8String ModelSolverDef::ToJson() const
     Json::Value json (Json::objectValue);
     json["Type"] = tval;
     json["Name"] = m_name.c_str();
+    json["Version"] = m_version.c_str();
     json["Parameters"] = m_parameters.ToJson();
 
     return Json::FastWriter::ToString(json);
@@ -198,6 +199,7 @@ void ModelSolverDef::FromJson(Utf8CP str)
     
     //  Extract simple properties
     m_name = json["Name"].asCString();
+    m_version = json["Version"].asCString();
     m_parameters = ParameterSet(json["Parameters"]);
     }
 

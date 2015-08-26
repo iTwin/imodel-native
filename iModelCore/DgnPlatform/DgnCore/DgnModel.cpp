@@ -1607,8 +1607,11 @@ ComponentModel::ComponentModel(CreateParams const& params) : T_Super(params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModel::_GetSolverOptions(Json::Value& json)
     {
-    json["elementClass"] = m_elementECClassName.c_str();
     json["category"] = m_elementCategoryName.c_str();
+    Json::Value& instance = json["instance"];
+    instance["elementClass"] = m_elementECClassName.c_str();
+    instance["itemClass"] = m_itemECClassName.c_str();
+    instance["itemBaseClass"] = m_itemECBaseClassName.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
