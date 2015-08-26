@@ -530,7 +530,11 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
             LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
         %endif
     %elif $(TARGET_PLATFORM) == "WinRT"
-        LINKER_LIBRARIES + jsrt.lib
+        %if $(MSVC_VERSION) >= 1900
+            LINKER_LIBRARIES + chakrart.lib
+        %else
+            LINKER_LIBRARIES + jsrt.lib
+        %endif
     %elif $(TARGET_PLATFORM) == "Android"
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a
