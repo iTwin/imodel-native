@@ -119,6 +119,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
     static RefCountedPtr<BeGTestHost> Create (char const* progDir) {return new BeGTestHost (progDir);}
     };
 
+#if defined(BENTLEY_WIN32)
 static wchar_t const* s_configFileName = L"logging.config.xml";
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,12 +147,17 @@ static BentleyStatus getLogConfigurationFilename (BeFileName& configFile, char c
 
     return ERROR;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void initLogging (char const* argv0)
     {
+// The default logging provider on non-Windows Desktop goes to stdout and processes no configuration or filters.
+// As such, it is extremely noisy and CPU-intensive.
+// Therefore, disable it on affected platforms. The better solution would be to implement a better logging provider on these platforms.
+#if defined(BENTLEY_WIN32)
     BeFileName configFile;
     if (SUCCESS == getLogConfigurationFilename(configFile, argv0))
         {
@@ -164,6 +170,7 @@ static void initLogging (char const* argv0)
         NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
         NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_TRACE);
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
