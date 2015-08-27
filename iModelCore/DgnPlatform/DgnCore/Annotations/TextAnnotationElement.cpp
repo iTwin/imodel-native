@@ -89,7 +89,7 @@ BentleyStatus TextAnnotationGraphicsProcessor::_ProcessCurveVector(CurveVectorCR
 //---------------------------------------------------------------------------------------
 void TextAnnotationGraphicsProcessor::_OutputGraphics(ViewContextR context)
     {
-    context.GetCurrentDisplayParams()->SetCategoryId(m_categoryId);
+    context.GetCurrentDisplayParams().SetCategoryId(m_categoryId);
     
     TextAnnotationDraw annotationDraw(m_annotation);
     annotationDraw.Draw(context);

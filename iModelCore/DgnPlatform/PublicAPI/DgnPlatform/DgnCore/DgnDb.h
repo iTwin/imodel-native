@@ -136,6 +136,8 @@ protected:
     DgnGeomParts    m_geomParts;
     DgnMaterials    m_materials;
     DgnLinks        m_links;
+    DgnAuthorities  m_authorities;
+    DgnTextures     m_textures;
     TxnManagerPtr   m_txnManager;
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
@@ -193,6 +195,8 @@ public:
     DgnLinks& Links() const{return const_cast<DgnLinks&>(m_links);}                      //!< The DgnLinks for this DgnDb
     DgnDomains& Domains() const {return const_cast<DgnDomains&>(m_domains);}             //!< The DgnDomains associated with this DgnDb.
     DgnMaterials& Materials() const {return const_cast<DgnMaterials&>(m_materials);}     //!< The materials for this DgnDb
+    DgnTextures& Textures() const { return const_cast<DgnTextures&>(m_textures); }       //!< The textures for this DgnDb.
+    DgnAuthorities& Authorities() const { return const_cast<DgnAuthorities&>(m_authorities); }   //!< The authorities associated with this DgnDb
     DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
 
     //! Gets a cached and prepared ECSqlStatement.

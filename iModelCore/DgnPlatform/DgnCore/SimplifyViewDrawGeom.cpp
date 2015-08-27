@@ -13,7 +13,7 @@
 +===============+===============+===============+===============+===============+======*/
 struct Dgn::SimplifyDrawUnClippedProcessor
     {
-    virtual StatusInt _ProcessUnClipped () { return ERROR; }
+    virtual StatusInt _ProcessUnClipped() { return ERROR; }
 
     }; // SimplifyDrawUnClippedProcessor
 
@@ -34,53 +34,53 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-FacetClipper (SimplifyViewDrawGeom& output, bool filled) : m_output (output), m_filled (filled)
+FacetClipper(SimplifyViewDrawGeom& output, bool filled) : m_output(output), m_filled(filled)
     {
-    m_clip = output.PerformClip () ? output.GetCurrClip () : NULL;
+    m_clip = output.PerformClip() ? output.GetCurrClip() : NULL;
     m_triangulate = output.GetFacetOptions()->GetMaxPerFace() <= 3;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ProcessPolyface (PolyfaceQueryCR polyfaceQuery) 
+StatusInt ProcessPolyface(PolyfaceQueryCR polyfaceQuery) 
     {
     if (NULL != m_clip)
-        return m_clip->ClipPolyface (polyfaceQuery, *this, m_triangulate);
+        return m_clip->ClipPolyface(polyfaceQuery, *this, m_triangulate);
         
-    return OutputPolyface (polyfaceQuery);
+    return OutputPolyface(polyfaceQuery);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ProcessDisposablePolyface (PolyfaceHeaderR polyfaceHeader) 
+StatusInt ProcessDisposablePolyface(PolyfaceHeaderR polyfaceHeader) 
     {
-    return (NULL != m_clip) ? m_clip->ClipPolyface (polyfaceHeader, *this, m_triangulate) : OutputPolyface (polyfaceHeader);
+    return (NULL != m_clip) ? m_clip->ClipPolyface(polyfaceHeader, *this, m_triangulate) : OutputPolyface(polyfaceHeader);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessUnclippedPolyface (PolyfaceQueryCR polyfaceQuery) override 
+virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override 
     {
-    return OutputPolyface (polyfaceQuery);
+    return OutputPolyface(polyfaceQuery);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessClippedPolyface (PolyfaceHeaderR polyfaceHeader) override 
+virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override 
     {
-    return OutputPolyface (polyfaceHeader);
+    return OutputPolyface(polyfaceHeader);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt OutputPolyface (PolyfaceQueryCR polyfaceQuery)
+StatusInt OutputPolyface(PolyfaceQueryCR polyfaceQuery)
     {
-    return m_output.ProcessGeometryMapOrFacetSet (polyfaceQuery, m_filled);
+    return m_output.ProcessGeometryMapOrFacetSet(polyfaceQuery, m_filled);
     }
 
 }; // FacetClipper
@@ -88,30 +88,30 @@ StatusInt OutputPolyface (PolyfaceQueryCR polyfaceQuery)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void setDefaultFacetOptions (IFacetOptionsP options, double chordTolerance, bool addNormals, bool addParams)
+static void setDefaultFacetOptions(IFacetOptionsP options, double chordTolerance, bool addNormals, bool addParams)
     {
-    options->SetMaxPerFace (5000/*MAX_VERTICES*/);
-    options->SetChordTolerance (chordTolerance);
-    options->SetAngleTolerance (0.25 * Angle::Pi ());
-    options->SetNormalsRequired (addNormals);
-    options->SetParamsRequired (addParams);
-    options->SetEdgeChainsRequired (false);
+    options->SetMaxPerFace(5000/*MAX_VERTICES*/);
+    options->SetChordTolerance(chordTolerance);
+    options->SetAngleTolerance(0.25 * Angle::Pi());
+    options->SetNormalsRequired(addNormals);
+    options->SetParamsRequired(addParams);
+    options->SetEdgeChainsRequired(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyViewDrawGeom::SimplifyViewDrawGeom (bool addFacetNormals, bool addFacetParams)
+SimplifyViewDrawGeom::SimplifyViewDrawGeom(bool addFacetNormals, bool addFacetParams)
     {
     m_context = NULL;
 
     m_viewFlags.InitDefaults();
     m_viewFlags.styles = false; // don't want linestyles for range calculation - they're added later.
 
-    m_defaultFacetOptions = IFacetOptions::New ();
-    setDefaultFacetOptions (m_defaultFacetOptions.get (), 0.0, addFacetNormals, addFacetParams);
+    m_defaultFacetOptions = IFacetOptions::New();
+    setDefaultFacetOptions(m_defaultFacetOptions.get(), 0.0, addFacetNormals, addFacetParams);
 
-    m_overrideMatSymb.SetFlags (MATSYMB_OVERRIDE_None);
+    m_overrideMatSymb.SetFlags(MATSYMB_OVERRIDE_None);
 
     m_inPatternDraw   = false;
     m_inSymbolDraw    = false;
@@ -126,18 +126,18 @@ SimplifyViewDrawGeom::SimplifyViewDrawGeom (bool addFacetNormals, bool addFacetP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-SimplifyViewDrawGeom::~SimplifyViewDrawGeom ()
+SimplifyViewDrawGeom::~SimplifyViewDrawGeom()
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorCP SimplifyViewDrawGeom::GetCurrClip () 
+ClipVectorCP SimplifyViewDrawGeom::GetCurrClip() 
     {
     if (NULL == m_context)
         {
-        BeAssert (false);
+        BeAssert(false);
         return NULL;
 
         }
@@ -147,73 +147,73 @@ ClipVectorCP SimplifyViewDrawGeom::GetCurrClip ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   SimplifyViewDrawGeom::ProcessGeometryMapOrFacetSet (PolyfaceQueryCR polyfaceQuery, bool filled)
+StatusInt   SimplifyViewDrawGeom::ProcessGeometryMapOrFacetSet(PolyfaceQueryCR polyfaceQuery, bool filled)
     {
 #ifdef NEEDS_WORK_GEOMETRY_MAPS
-    if (SUCCESS != ProcessGeometryMap (polyfaceQuery) &&
-        SUCCESS == ProcessTextureOutlines (polyfaceQuery))
+    if (SUCCESS != ProcessGeometryMap(polyfaceQuery) &&
+        SUCCESS == ProcessTextureOutlines(polyfaceQuery))
         return SUCCESS;
 #endif
 
-    return ProcessFacetSet (polyfaceQuery, filled);
+    return ProcessFacetSet(polyfaceQuery, filled);
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::PerformClip ()
+bool SimplifyViewDrawGeom::PerformClip()
     {
-    return _DoClipping () && NULL != GetCurrClip ();
+    return _DoClipping() && NULL != GetCurrClip();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-IPolyfaceConstructionPtr SimplifyViewDrawGeom::GetPolyfaceBuilder ()
+IPolyfaceConstructionPtr SimplifyViewDrawGeom::GetPolyfaceBuilder()
     {
-    _GetFacetOptions ()->SetToleranceDistanceScale (1.0 / m_context->GetTransformClipStack().GetTransformScale());
-    return IPolyfaceConstruction::New (*GetFacetOptions ());
+    _GetFacetOptions()->SetToleranceDistanceScale(1.0 / m_context->GetTransformClipStack().GetTransformScale());
+    return IPolyfaceConstruction::New(*GetFacetOptions());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void processCurvePrimitives (SimplifyViewDrawGeom& drawGeom, CurveVectorCR curves, bool filled)
+static void processCurvePrimitives(SimplifyViewDrawGeom& drawGeom, CurveVectorCR curves, bool filled)
     {
-    if (curves.IsUnionRegion () || curves.IsParityRegion ())
+    if (curves.IsUnionRegion() || curves.IsParityRegion())
         {
         for (ICurvePrimitivePtr curve: curves)
             {
-            if (curve.IsNull ())
+            if (curve.IsNull())
                 continue;
 
-            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType ())
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector != curve->GetCurvePrimitiveType())
                 {
-                BeAssert (true && "Unexpected entry in region.");
+                BeAssert(true && "Unexpected entry in region.");
 
                 return; // Each loop must be a child curve bvector (a closed loop or parity region)...
                 }
 
-            processCurvePrimitives (drawGeom, *curve->GetChildCurveVectorCP (), filled && curves.IsUnionRegion ()); // Don't pass filled when spewing parity region loops...
+            processCurvePrimitives(drawGeom, *curve->GetChildCurveVectorCP (), filled && curves.IsUnionRegion()); // Don't pass filled when spewing parity region loops...
             }
         }
     else
         {
-        bool    isSingleEntry = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive ());
-        bool    isClosed = curves.IsClosedPath ();
-        bool    isOpen = curves.IsOpenPath ();
+        bool    isSingleEntry = (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive());
+        bool    isClosed = curves.IsClosedPath();
+        bool    isOpen = curves.IsOpenPath();
         bool    isComplex = ((isClosed || isOpen) && !isSingleEntry);
 
         for (ICurvePrimitivePtr curve: curves)
             {
-            if (!curve.IsValid ())
+            if (!curve.IsValid())
                 continue;
 
-            if (SUCCESS == drawGeom.ProcessCurvePrimitive (*curve, !isComplex && isClosed, !isComplex && filled)) // Don't pass filled when spewing primitives...
+            if (SUCCESS == drawGeom.ProcessCurvePrimitive(*curve, !isComplex && isClosed, !isComplex && filled)) // Don't pass filled when spewing primitives...
                 continue;
 
-            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType ())
-                processCurvePrimitives (drawGeom, *curve->GetChildCurveVectorCP (), filled);
+            if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType())
+                processCurvePrimitives(drawGeom, *curve->GetChildCurveVectorCP (), filled);
             }
         }
     }
@@ -221,11 +221,11 @@ static void processCurvePrimitives (SimplifyViewDrawGeom& drawGeom, CurveVectorC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawMosaic (int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
+void SimplifyViewDrawGeom::_DrawMosaic(int numX, int numY, uintptr_t const* tileIds, DPoint3d const* points)
     {
-    BeAssert (numX==1 && numY==1 && "TBD: march over tiles");
+    BeAssert(numX==1 && numY==1 && "TBD: march over tiles");
 
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = points[0];
@@ -233,36 +233,36 @@ void SimplifyViewDrawGeom::_DrawMosaic (int numX, int numY, uintptr_t const* til
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _DrawShape3d (5, shapePoints, true, NULL);
+    _DrawShape3d(5, shapePoints, true, NULL);
     }
  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SimplifyViewDrawGeom::CurveVectorOutputProcessor (CurveVectorCR curves, bool filled)
+BentleyStatus SimplifyViewDrawGeom::CurveVectorOutputProcessor(CurveVectorCR curves, bool filled)
     {
-    if (1 > curves.size () || SUCCESS == _ProcessCurveVector (curves, filled))
+    if (1 > curves.size() || SUCCESS == _ProcessCurveVector(curves, filled))
         return SUCCESS;
 
-    if (_ProcessAsStrokes (curves.ContainsNonLinearPrimitive ()))
+    if (_ProcessAsStrokes(curves.ContainsNonLinearPrimitive()))
         {
-        if (curves.IsAnyRegionType () && _ProcessAsFacets (false))
+        if (curves.IsAnyRegionType() && _ProcessAsFacets(false))
             {
-            IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder ();
+            IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
 
-            builder->AddRegion (curves);
+            builder->AddRegion(curves);
 
-            return (BentleyStatus) ProcessGeometryMapOrFacetSet (builder->GetClientMeshR (), filled);
+            return (BentleyStatus) ProcessGeometryMapOrFacetSet(builder->GetClientMeshR (), filled);
             }
 
         bvector<DPoint3d>  points;
 
-        curves.AddStrokePoints (points, *_GetFacetOptions ());
+        curves.AddStrokePoints(points, *_GetFacetOptions());
 
-        return (BentleyStatus) _ProcessLinearSegments (&points.front (), points.size (), curves.IsAnyRegionType (), filled);
+        return (BentleyStatus) _ProcessLinearSegments(&points.front(), points.size(), curves.IsAnyRegionType(), filled);
         }
 
-    processCurvePrimitives (*this, curves, filled);
+    processCurvePrimitives(*this, curves, filled);
 
     return SUCCESS;
     }
@@ -276,14 +276,14 @@ struct IntersectLocationDetail
     size_t      m_index;
     double      m_fraction;
 
-    IntersectLocationDetail (size_t index, double fraction) {m_index = index; m_fraction = fraction;}
+    IntersectLocationDetail(size_t index, double fraction) {m_index = index; m_fraction = fraction;}
     };
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int compareCurveIntersections (IntersectLocationDetail const* detail0, IntersectLocationDetail const* detail1)
+static int compareCurveIntersections(IntersectLocationDetail const* detail0, IntersectLocationDetail const* detail1)
     {
     if (detail0->m_index < detail1->m_index)
         {
@@ -307,7 +307,7 @@ static int compareCurveIntersections (IntersectLocationDetail const* detail0, In
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool computeInteriorPoint (DPoint3dR midPoint, CurveVectorCR curves, IntersectLocationDetail& startDetail, IntersectLocationDetail& endDetail)
+static bool computeInteriorPoint(DPoint3dR midPoint, CurveVectorCR curves, IntersectLocationDetail& startDetail, IntersectLocationDetail& endDetail)
     {
     size_t      midIndex;
     double      midFraction;
@@ -328,25 +328,25 @@ static bool computeInteriorPoint (DPoint3dR midPoint, CurveVectorCR curves, Inte
         midFraction = 0.0;
         }
 
-   return curves.at (midIndex)->FractionToPoint (midFraction, midPoint);
+   return curves.at(midIndex)->FractionToPoint(midFraction, midPoint);
    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
+static bool clipAsOpenCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
     {
-    if (1 > curves.size ())
+    if (1 > curves.size())
         return false;
 
-    if (curves.IsUnionRegion () || curves.IsParityRegion ())
+    if (curves.IsUnionRegion() || curves.IsParityRegion())
         {
         bool    clipped = false;
 
         for (ICurvePrimitivePtr curve: curves)
             {
-            if (!curve.IsNull () && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType ())
-                clipped |= clipAsOpenCurveVector (*curve->GetChildCurveVectorCP (), clip, drawGeom);
+            if (!curve.IsNull() && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType())
+                clipped |= clipAsOpenCurveVector(*curve->GetChildCurveVectorCP (), clip, drawGeom);
             }
 
         return clipped;
@@ -354,10 +354,10 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 
     DRange3d  curveRange;
                              
-    if (!curves.GetRange (curveRange))
+    if (!curves.GetRange(curveRange))
         return false;
 
-    curveRange.Extend (1.0); // UORs.   
+    curveRange.Extend(1.0); // UORs.   
 
     bvector<IntersectLocationDetail> intersectDetails;
 
@@ -366,7 +366,7 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
         DRange3d  clipRange;                                                                                             
 
         // Optimization for TR#300934. Don't intersect with planes from clips that are disjoint from the current GPA.
-        if (thisClip->GetRange (clipRange, NULL, true) && !curveRange.IntersectsWith (clipRange))
+        if (thisClip->GetRange(clipRange, NULL, true) && !curveRange.IntersectsWith(clipRange))
             continue;
 
         ClipPlaneSetCP      clipPlaneSet;
@@ -383,34 +383,34 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
                     //       discard them below if insidedness does not change. (RayB TR#244943)
                     bvector<CurveLocationDetailPair> intersections;
                 
-                    curves.AppendCurvePlaneIntersections (plane.GetDPlane3d (), intersections); // NOTE: Method calls clear in output vector!!!
+                    curves.AppendCurvePlaneIntersections(plane.GetDPlane3d(), intersections); // NOTE: Method calls clear in output vector!!!
 
                     // Get curve index for sorting, can disregard 2nd detail in pair as both should be identical...
                     for (CurveLocationDetailPair pair: intersections)
-                        intersectDetails.push_back (IntersectLocationDetail (curves.CurveLocationDetailIndex (pair.detailA), pair.detailA.fraction));
+                        intersectDetails.push_back(IntersectLocationDetail(curves.CurveLocationDetailIndex(pair.detailA), pair.detailA.fraction));
                     }
                 }
             }
         }
 
-    if (0 == intersectDetails.size ())
+    if (0 == intersectDetails.size())
         {
         DPoint3d  testPoint;
 
-        if (!curves.front ()->FractionToPoint (0.5, testPoint))
+        if (!curves.front()->FractionToPoint(0.5, testPoint))
             return false;
 
-        return !clip.PointInside (testPoint, 1.0e-5);
+        return !clip.PointInside(testPoint, 1.0e-5);
         }
 
-    qsort (&intersectDetails.front (), intersectDetails.size (), sizeof (IntersectLocationDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
+    qsort(&intersectDetails.front(), intersectDetails.size(), sizeof (IntersectLocationDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
 
     // Add final point for last curve...
-    intersectDetails.push_back (IntersectLocationDetail (curves.size ()-1, 1.0));
+    intersectDetails.push_back(IntersectLocationDetail(curves.size()-1, 1.0));
 
     bool lastInside = false;
-    IntersectLocationDetail insideStartDetail (0, 0.0);
-    IntersectLocationDetail lastDetail (0, 0.0);
+    IntersectLocationDetail insideStartDetail(0, 0.0);
+    IntersectLocationDetail lastDetail(0, 0.0);
 
     for (IntersectLocationDetail thisDetail: intersectDetails)
         {
@@ -420,8 +420,8 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
         bool        thisInside = false;
         DPoint3d    midPoint;
 
-        if (computeInteriorPoint (midPoint, curves, lastDetail, thisDetail))
-            thisInside = clip.PointInside (midPoint, 1.0e-5);
+        if (computeInteriorPoint(midPoint, curves, lastDetail, thisDetail))
+            thisInside = clip.PointInside(midPoint, 1.0e-5);
 
         if (thisInside)
             {
@@ -432,9 +432,9 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
             {
             if (lastInside)
                 {
-                CurveVectorPtr  partialCurve = curves.CloneBetweenDirectedFractions ((int) insideStartDetail.m_index, insideStartDetail.m_fraction, (int) lastDetail.m_index, lastDetail.m_fraction, false);
+                CurveVectorPtr  partialCurve = curves.CloneBetweenDirectedFractions((int) insideStartDetail.m_index, insideStartDetail.m_fraction, (int) lastDetail.m_index, lastDetail.m_fraction, false);
 
-                drawGeom->CurveVectorOutputProcessor (*partialCurve, false);
+                drawGeom->CurveVectorOutputProcessor(*partialCurve, false);
                 }
             }
 
@@ -444,9 +444,9 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 
     if (lastInside)
         {
-        CurveVectorPtr  partialCurve = curves.CloneBetweenDirectedFractions ((int) insideStartDetail.m_index, insideStartDetail.m_fraction, (int) lastDetail.m_index, lastDetail.m_fraction, false);
+        CurveVectorPtr  partialCurve = curves.CloneBetweenDirectedFractions((int) insideStartDetail.m_index, insideStartDetail.m_fraction, (int) lastDetail.m_index, lastDetail.m_fraction, false);
         
-        drawGeom->CurveVectorOutputProcessor (*partialCurve, false);
+        drawGeom->CurveVectorOutputProcessor(*partialCurve, false);
         }
 
     return true;
@@ -455,26 +455,26 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipPointStringCurvePrimitive (ICurvePrimitiveCR primtive, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
+static bool clipPointStringCurvePrimitive(ICurvePrimitiveCR primtive, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
     {
     bvector<DPoint3d> const* points = primtive.GetPointStringCP ();
     bvector<DPoint3d>        insidePts;
 
-    for (size_t iPt = 0; iPt < points->size (); ++iPt)
+    for (size_t iPt = 0; iPt < points->size(); ++iPt)
         {
-        if (!clip.PointInside (points->at (iPt), 1.0E-5))
+        if (!clip.PointInside(points->at(iPt), 1.0E-5))
             continue;
 
-        insidePts.push_back (points->at (iPt));
+        insidePts.push_back(points->at(iPt));
         }
 
-    if (insidePts.empty () || insidePts.size () == points->size ())
+    if (insidePts.empty() || insidePts.size() == points->size())
         return false;
 
-    CurveVectorPtr  tmpCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    CurveVectorPtr  tmpCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
     
-    tmpCurve->push_back (ICurvePrimitive::CreatePointString (&insidePts.front (), insidePts.size ()));
-    drawGeom->CurveVectorOutputProcessor (*tmpCurve, false);
+    tmpCurve->push_back(ICurvePrimitive::CreatePointString(&insidePts.front(), insidePts.size()));
+    drawGeom->CurveVectorOutputProcessor(*tmpCurve, false);
 
     return true;
     }
@@ -482,35 +482,35 @@ static bool clipPointStringCurvePrimitive (ICurvePrimitiveCR primtive, ClipVecto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool clipUnclassifiedCurveVector (CurveVectorCR curves, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
+static bool clipUnclassifiedCurveVector(CurveVectorCR curves, ClipVectorCR clip, SimplifyViewDrawGeom* drawGeom)
     {
-    if (1 > curves.size ())
+    if (1 > curves.size())
         return false;
 
     bool    clipped = false;
 
     for (ICurvePrimitivePtr curve: curves)
         {
-        if (curve.IsNull ())
+        if (curve.IsNull())
             continue;
 
-        switch (curve->GetCurvePrimitiveType ())
+        switch (curve->GetCurvePrimitiveType())
             {
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_PointString:
                 {
-                clipped |= clipPointStringCurvePrimitive (*curve, clip, drawGeom);
+                clipped |= clipPointStringCurvePrimitive(*curve, clip, drawGeom);
                 break;
                 }
 
             case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
                 {
-                clipped |= clipAsOpenCurveVector (*curve->GetChildCurveVectorCP (), clip, drawGeom);
+                clipped |= clipAsOpenCurveVector(*curve->GetChildCurveVectorCP (), clip, drawGeom);
                 break;
                 }
 
             default:
                 {
-                clipped |= clipAsOpenCurveVector (*CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, curve), clip, drawGeom);
+                clipped |= clipAsOpenCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), clip, drawGeom);
                 break;
                 }
             }
@@ -522,75 +522,75 @@ static bool clipUnclassifiedCurveVector (CurveVectorCR curves, ClipVectorCR clip
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessCurveVector (CurveVectorCR curves, bool filled)
+void SimplifyViewDrawGeom::ClipAndProcessCurveVector(CurveVectorCR curves, bool filled)
     {
-    CurveTopologyId::AddCurveVectorIds (curves, CurvePrimitiveId::Type_CurveVector, CurveTopologyId::FromCurveVector (), nullptr);
+    CurveTopologyId::AddCurveVectorIds(curves, CurvePrimitiveId::Type_CurveVector, CurveTopologyId::FromCurveVector(), nullptr);
 
-    if (!PerformClip ())
+    if (!PerformClip())
         {
-        CurveVectorOutputProcessor (curves, filled);
+        CurveVectorOutputProcessor(curves, filled);
         return;
         }
 
-    if (curves.IsAnyRegionType ())
+    if (curves.IsAnyRegionType())
         {
-        bool        containsCurves = curves.ContainsNonLinearPrimitive ();
+        bool        containsCurves = curves.ContainsNonLinearPrimitive();
 
-        if (_ProcessAsFacets (containsCurves) && _ProcessAsStrokes (containsCurves))
+        if (_ProcessAsFacets(containsCurves) && _ProcessAsStrokes(containsCurves))
             {
-            IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder ();
+            IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
 
-            builder->AddRegion (curves);
-            FacetClipper (*this, filled).ProcessDisposablePolyface (builder->GetClientMeshR ());
+            builder->AddRegion(curves);
+            FacetClipper(*this, filled).ProcessDisposablePolyface(builder->GetClientMeshR ());
             return;
             }
-        else if (_ClipPreservesRegions ())
+        else if (_ClipPreservesRegions())
             {
             bvector<CurveVectorPtr> insideCurves;
 
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector (insideCurves, curves, *GetCurrClip(), m_context->GetCurrLocalToWorldTransformCP()))
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector(insideCurves, curves, *GetCurrClip(), m_context->GetCurrLocalToWorldTransformCP()))
                 {
                 for (CurveVectorPtr tmpCurves: insideCurves)
-                    CurveVectorOutputProcessor (*tmpCurves, filled);
+                    CurveVectorOutputProcessor(*tmpCurves, filled);
 
                 return;
                 }
             }
          }
 
-    if (CurveVector::BOUNDARY_TYPE_None == curves.GetBoundaryType ())
+    if (CurveVector::BOUNDARY_TYPE_None == curves.GetBoundaryType())
         {
-        if (clipUnclassifiedCurveVector (curves, *GetCurrClip (), this))
+        if (clipUnclassifiedCurveVector(curves, *GetCurrClip(), this))
             return;
         }
     else
         {
-        if (clipAsOpenCurveVector (curves, *GetCurrClip (), this))
+        if (clipAsOpenCurveVector(curves, *GetCurrClip(), this))
             return;
         }
 
-    CurveVectorOutputProcessor (curves, filled);
+    CurveVectorOutputProcessor(curves, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessFacetSet (PolyfaceQueryCR facets, bool filled)
+void SimplifyViewDrawGeom::ClipAndProcessFacetSet(PolyfaceQueryCR facets, bool filled)
     {
-    FacetClipper (*this, filled).ProcessPolyface (facets);
+    FacetClipper(*this, filled).ProcessPolyface(facets);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR entity)
+void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets(ISolidKernelEntityCR entity)
     {
     IFacetTopologyTablePtr  facetsPtr;
 
-    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody (facetsPtr, entity, *_GetFacetOptions ()))
+    if (SUCCESS != T_HOST.GetSolidsKernelAdmin()._FacetBody(facetsPtr, entity, *_GetFacetOptions()))
         return;
 
-    T_FaceAttachmentsVec const* faceAttachmentsVec = (_GetFacetOptions ()->GetIgnoreFaceMaterialAttachments () ? nullptr : facetsPtr->_GetFaceAttachmentsVec());
+    T_FaceAttachmentsVec const* faceAttachmentsVec = (_GetFacetOptions()->GetIgnoreFaceMaterialAttachments() ? nullptr : facetsPtr->_GetFaceAttachmentsVec());
 
     if (faceAttachmentsVec)
         {
@@ -619,15 +619,15 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR enti
 
         if (SUCCESS == IFacetTopologyTable::ConvertToPolyfaces(polyfaces, faceToPolyfaces, *facetsPtr, *_GetFacetOptions()))
             {
-            m_context->PushTransform (entity.GetEntityTransform());
+            m_context->PushTransform(entity.GetEntityTransform());
 
             for (size_t i=0; i<polyfaces.size(); i++)
                 {
-                polyfaces[i]->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ());
-                faceAttachmentsVec->at(i).ToElemDisplayParams(*m_context->GetCurrentDisplayParams());
+                polyfaces[i]->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
+                faceAttachmentsVec->at(i).ToElemDisplayParams(m_context->GetCurrentDisplayParams());
                 m_context->CookDisplayParams();
 
-                FacetClipper (*this, false).ProcessDisposablePolyface(*polyfaces[i]);
+                FacetClipper(*this, false).ProcessDisposablePolyface(*polyfaces[i]);
                 }
 
             m_context->PopTransformClip();
@@ -636,50 +636,50 @@ void SimplifyViewDrawGeom::ClipAndProcessBodyAsFacets (ISolidKernelEntityCR enti
         return;
         }
 
-    PolyfaceHeaderPtr polyface = PolyfaceHeader::New ();
+    PolyfaceHeaderPtr polyface = PolyfaceHeader::New();
 
-    if (SUCCESS != IFacetTopologyTable::ConvertToPolyface (*polyface, *facetsPtr, *_GetFacetOptions ()))
+    if (SUCCESS != IFacetTopologyTable::ConvertToPolyface(*polyface, *facetsPtr, *_GetFacetOptions()))
         return;
 
-    polyface->SetTwoSided (ISolidKernelEntity::EntityType_Solid != entity.GetEntityType ());
+    polyface->SetTwoSided(ISolidKernelEntity::EntityType_Solid != entity.GetEntityType());
 
-    m_context->PushTransform (entity.GetEntityTransform ());
-    FacetClipper (*this, false).ProcessDisposablePolyface (*polyface);
-    m_context->PopTransformClip ();
+    m_context->PushTransform(entity.GetEntityTransform());
+    FacetClipper(*this, false).ProcessDisposablePolyface(*polyface);
+    m_context->PopTransformClip();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessBody (ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor)
+void SimplifyViewDrawGeom::ClipAndProcessBody(ISolidKernelEntityCR entity, SimplifyDrawUnClippedProcessor* unclippedOutputProcessor)
     {
-    if (_ProcessAsBody (T_HOST.GetSolidsKernelAdmin()._QueryEntityData (entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge)))
+    if (_ProcessAsBody(T_HOST.GetSolidsKernelAdmin()._QueryEntityData(entity, DgnPlatformLib::Host::SolidsKernelAdmin::EntityQuery_HasCurvedFaceOrEdge)))
         {
-        if (!PerformClip ())
+        if (!PerformClip())
             {
-            _ProcessBody (entity);
+            _ProcessBody(entity);
             }
         else
             {
             bool                           clipped;
             bvector<ISolidKernelEntityPtr> clippedBodies;
 
-            T_HOST.GetSolidsKernelAdmin()._ClipBody (clippedBodies, clipped, entity, *GetCurrClip ());
+            T_HOST.GetSolidsKernelAdmin()._ClipBody(clippedBodies, clipped, entity, *GetCurrClip());
 
-            if (clipped || NULL == unclippedOutputProcessor || SUCCESS != unclippedOutputProcessor->_ProcessUnClipped ())
+            if (clipped || NULL == unclippedOutputProcessor || SUCCESS != unclippedOutputProcessor->_ProcessUnClipped())
                 {
                 for (ISolidKernelEntityPtr entityOut: clippedBodies)
-                    _ProcessBody (*entityOut);
+                    _ProcessBody(*entityOut);
                 }
             }
         }
-    else if (_ProcessAsFacets (false))
+    else if (_ProcessAsFacets(false))
         {
-        ClipAndProcessBodyAsFacets (entity);
+        ClipAndProcessBodyAsFacets(entity);
         }
-    else if (_ProcessAsWireframe ())
+    else if (_ProcessAsWireframe())
         {
-        WireframeGeomUtil::Draw (entity, *m_context);
+        WireframeGeomUtil::Draw(entity, *m_context);
         }    
     }
 
@@ -691,42 +691,42 @@ struct UnClippedSurfaceProcessor : SimplifyDrawUnClippedProcessor
 SimplifyViewDrawGeom*   m_drawGeom;
 MSBsplineSurfaceCR      m_surface;
 
-UnClippedSurfaceProcessor (SimplifyViewDrawGeom* drawGeom, MSBsplineSurfaceCR surface) : m_drawGeom (drawGeom), m_surface (surface) {}
+UnClippedSurfaceProcessor(SimplifyViewDrawGeom* drawGeom, MSBsplineSurfaceCR surface) : m_drawGeom(drawGeom), m_surface(surface) {}
                                                                                                         
-virtual StatusInt _ProcessUnClipped () override {return m_drawGeom->ProcessSurface (m_surface);}
+virtual StatusInt _ProcessUnClipped() override {return m_drawGeom->ProcessSurface(m_surface);}
 
 }; // UnClippedSurfaceProcessor
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSurface (MSBsplineSurfaceCR surface)
+void SimplifyViewDrawGeom::ClipAndProcessSurface(MSBsplineSurfaceCR surface)
     {
     // Give output a chance to handle un-clipped geometry directly...
-    if (!PerformClip () && SUCCESS == _ProcessSurface (surface))
+    if (!PerformClip() && SUCCESS == _ProcessSurface(surface))
         return;
 
     ISolidKernelEntityPtr   entityPtr;
-    bool                    processAsFacets = _ProcessAsFacets (false);
+    bool                    processAsFacets = _ProcessAsFacets(false);
 
     // Parasolid is expensive - if it is planar bilinear, send it through as facets which will represent exactly.
-    if ((!surface.IsPlanarBilinear() || !processAsFacets) && _ProcessAsBody (true) && 
-        SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface (entityPtr, surface))
+    if ((!surface.IsPlanarBilinear() || !processAsFacets) && _ProcessAsBody(true) && 
+        SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromBSurface(entityPtr, surface))
         {
-        UnClippedSurfaceProcessor proc (this, surface);
+        UnClippedSurfaceProcessor proc(this, surface);
 
-        ClipAndProcessBody (*entityPtr.get (), &proc);
+        ClipAndProcessBody(*entityPtr.get(), &proc);
         }
     else if (processAsFacets)
         {
         IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
 
-        builder->Add (surface);
-        FacetClipper (*this, false).ProcessDisposablePolyface (builder->GetClientMeshR ());
+        builder->Add(surface);
+        FacetClipper(*this, false).ProcessDisposablePolyface(builder->GetClientMeshR ());
         }
-    else if (_ProcessAsWireframe ())
+    else if (_ProcessAsWireframe())
         {
-        WireframeGeomUtil::Draw (surface, *m_context);
+        WireframeGeomUtil::Draw(surface, *m_context);
         }
     }
 
@@ -738,57 +738,57 @@ struct UnClippedSolidPrimitiveProcessor : SimplifyDrawUnClippedProcessor
 SimplifyViewDrawGeom&   m_drawGeom;
 ISolidPrimitiveCR       m_primitive;
 
-UnClippedSolidPrimitiveProcessor (SimplifyViewDrawGeom& drawGeom, ISolidPrimitiveCR primitive) : m_drawGeom (drawGeom), m_primitive (primitive) {}
+UnClippedSolidPrimitiveProcessor(SimplifyViewDrawGeom& drawGeom, ISolidPrimitiveCR primitive) : m_drawGeom(drawGeom), m_primitive(primitive) {}
 
-virtual StatusInt _ProcessUnClipped () override {return m_drawGeom.ProcessSolidPrimitive (m_primitive);}
+virtual StatusInt _ProcessUnClipped() override {return m_drawGeom.ProcessSolidPrimitive(m_primitive);}
 
 }; // UnClippedSolidPrimitiveProcessor
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSolidPrimitive (ISolidPrimitiveCR primitive)
+void SimplifyViewDrawGeom::ClipAndProcessSolidPrimitive(ISolidPrimitiveCR primitive)
     {
     // Give output a chance to handle un-clipped geometry directly...
-    if (!PerformClip () && SUCCESS == ProcessSolidPrimitive (primitive))
+    if (!PerformClip() && SUCCESS == ProcessSolidPrimitive(primitive))
         return;
 
     ISolidKernelEntityPtr  entityPtr;
 
-    if (_ProcessAsBody (primitive.HasCurvedFaceOrEdge ()) && SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive (entityPtr, primitive))
+    if (_ProcessAsBody(primitive.HasCurvedFaceOrEdge()) && SUCCESS == T_HOST.GetSolidsKernelAdmin()._CreateBodyFromSolidPrimitive(entityPtr, primitive))
         {
-        UnClippedSolidPrimitiveProcessor  proc (*this, primitive);
+        UnClippedSolidPrimitiveProcessor  proc(*this, primitive);
 
-        ClipAndProcessBody (*entityPtr.get (), &proc);
+        ClipAndProcessBody(*entityPtr.get(), &proc);
         }
-    else if (_ProcessAsFacets (false))
+    else if (_ProcessAsFacets(false))
         {
-        IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder ();
+        IPolyfaceConstructionPtr  builder = GetPolyfaceBuilder();
 
-        builder->AddSolidPrimitive (primitive);
-        FacetClipper (*this, false).ProcessDisposablePolyface (builder->GetClientMeshR ());
+        builder->AddSolidPrimitive(primitive);
+        FacetClipper(*this, false).ProcessDisposablePolyface(builder->GetClientMeshR ());
         }
-    else if (_ProcessAsWireframe ())
+    else if (_ProcessAsWireframe())
         {
-        WireframeGeomUtil::Draw (primitive, *m_context);
+        WireframeGeomUtil::Draw(primitive, *m_context);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool mightHaveHole (GPArrayCP gpa)
+static bool mightHaveHole(GPArrayCP gpa)
     {
     size_t  loopCount = 0;
 
-    for (int loopStart = 0, loopEnd = 0; loopStart < gpa->GetCount (); loopStart = loopEnd+1)
+    for (int loopStart = 0, loopEnd = 0; loopStart < gpa->GetCount(); loopStart = loopEnd+1)
         {
-        GraphicsPoint const* gPt = gpa->GetConstPtr (loopStart);
+        GraphicsPoint const* gPt = gpa->GetConstPtr(loopStart);
 
         if (gPt && (HMASK_RSC_HOLE == (gPt->mask & HMASK_RSC_HOLE))) // NOTE: Mask value weirdness, hole shares bits with line/poly...
             return true;
 
-        loopEnd = jmdlGraphicsPointArray_findMajorBreakAfter (gpa, loopStart);
+        loopEnd = jmdlGraphicsPointArray_findMajorBreakAfter(gpa, loopStart);
         loopCount++;
         }
 
@@ -798,21 +798,21 @@ static bool mightHaveHole (GPArrayCP gpa)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isPhysicallyClosed (ICurvePrimitiveCR primitive)
+static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
     {
-    switch (primitive.GetCurvePrimitiveType ())
+    switch (primitive.GetCurvePrimitiveType())
         {
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            return (primitive.GetLineStringCP ()->size () > 3 && primitive.GetLineStringCP ()->front ().IsEqual (primitive.GetLineStringCP ()->back ()));
+            return (primitive.GetLineStringCP ()->size() > 3 && primitive.GetLineStringCP ()->front().IsEqual(primitive.GetLineStringCP ()->back()));
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-            return primitive.GetArcCP ()->IsFullEllipse ();
+            return primitive.GetArcCP ()->IsFullEllipse();
 
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
         case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-            return (primitive.GetProxyBsplineCurveCP ()->IsClosed ());
+            return (primitive.GetProxyBsplineCurveCP ()->IsClosed());
 
         default:
             return false;
@@ -826,61 +826,61 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
     {
     GPArraySmartP  gpaText;
 
-    if (SUCCESS != glyph.FillGpa (gpaText) || 0 == gpaText->GetCount ())
+    if (SUCCESS != glyph.FillGpa(gpaText) || 0 == gpaText->GetCount())
         return;
 
     Transform   offsetTrans;
 
-    offsetTrans.InitFrom (glyphOffset);
+    offsetTrans.InitFrom(glyphOffset);
 
     DVec3d      zVec;
     DPoint3d    origin;
     Transform   scaledTrans, compoundTrans;
 
-    zVec.Init (0.0, 0.0, 1.0);
-    origin.Init (0.0, 0.0, 0.0);
-    scaledTrans.InitFromOriginAndVectors (origin, m_textAxes[0], m_textAxes[1], zVec);
-    compoundTrans.InitProduct (offsetTrans, scaledTrans);
+    zVec.Init(0.0, 0.0, 1.0);
+    origin.Init(0.0, 0.0, 0.0);
+    scaledTrans.InitFromOriginAndVectors(origin, m_textAxes[0], m_textAxes[1], zVec);
+    compoundTrans.InitProduct(offsetTrans, scaledTrans);
 
-    bool  isFilled = (0 != gpaText->GetArrayMask (HPOINT_ARRAYMASK_FILL));
-    bool  isRscWithPossibleHoles = (isFilled && DgnFontType::Rsc == font.GetType () && mightHaveHole (gpaText));
+    bool  isFilled = (0 != gpaText->GetArrayMask(HPOINT_ARRAYMASK_FILL));
+    bool  isRscWithPossibleHoles = (isFilled && DgnFontType::Rsc == font.GetType() && mightHaveHole(gpaText));
 
-    if (DgnFontType::TrueType == font.GetType () || isRscWithPossibleHoles)
+    if (DgnFontType::TrueType == font.GetType() || isRscWithPossibleHoles)
         {
-        CurveVectorPtr  curves = gpaText->CreateCurveVector ();
+        CurveVectorPtr  curves = gpaText->CreateCurveVector();
 
-        if (!curves.IsValid ())
+        if (!curves.IsValid())
             return;
             
-        curves->ConsolidateAdjacentPrimitives ();
-        curves->FixupXYOuterInner ();
-        curves->TransformInPlace (compoundTrans);
+        curves->ConsolidateAdjacentPrimitives();
+        curves->FixupXYOuterInner();
+        curves->TransformInPlace(compoundTrans);
 
-        ClipAndProcessCurveVector (*curves, isFilled);
+        ClipAndProcessCurveVector(*curves, isFilled);
         return;
         }
 
     // Create curve vector that is just a collection of curves and not an open/closed path or region...
-    gpaText->Transform (&compoundTrans);
+    gpaText->Transform(&compoundTrans);
 
     BentleyStatus            status = SUCCESS;
     bvector<CurveVectorPtr>  glyphCurves;
 
-    for (int i=0, count = gpaText->GetCount (); i < count && SUCCESS == status; )
+    for (int i=0, count = gpaText->GetCount(); i < count && SUCCESS == status; )
         {
-        bool                isPoly = (DgnFontType::Rsc == font.GetType () && 0 != (gpaText->GetConstPtr (i)->mask & HMASK_RSC_POLY));
+        bool                isPoly = (DgnFontType::Rsc == font.GetType() && 0 != (gpaText->GetConstPtr(i)->mask & HMASK_RSC_POLY));
         ICurvePrimitivePtr  primitive;
 
-        switch (gpaText->GetCurveType (i))
+        switch (gpaText->GetCurveType(i))
             {
             case GPCurveType::LineString:
                 {
                 bvector<DPoint3d> points;
 
-                if (SUCCESS != (status = gpaText->GetLineString (&i, points)))
+                if (SUCCESS != (status = gpaText->GetLineString(&i, points)))
                     break;
 
-                primitive = ICurvePrimitive::CreateLineString (points);
+                primitive = ICurvePrimitive::CreateLineString(points);
                 break;
                 }
 
@@ -888,10 +888,10 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
                 {
                 DEllipse3d  ellipse;
 
-                if (SUCCESS != (status = gpaText->GetEllipse (&i, &ellipse)))
+                if (SUCCESS != (status = gpaText->GetEllipse(&i, &ellipse)))
                     break;
 
-                primitive = ICurvePrimitive::CreateArc (ellipse);
+                primitive = ICurvePrimitive::CreateArc(ellipse);
                 break;
                 }
 
@@ -900,11 +900,11 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
                 {
                 MSBsplineCurve  bcurve;
 
-                if (SUCCESS != (status = gpaText->GetBCurve (&i, &bcurve)))
+                if (SUCCESS != (status = gpaText->GetBCurve(&i, &bcurve)))
                     break;
 
-                primitive = ICurvePrimitive::CreateBsplineCurve (bcurve);
-                bcurve.ReleaseMem ();
+                primitive = ICurvePrimitive::CreateBsplineCurve(bcurve);
+                bcurve.ReleaseMem();
                 break;
                 }
 
@@ -915,16 +915,16 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
                 }
             }
 
-        if (!primitive.IsValid ())
+        if (!primitive.IsValid())
             continue;
 
-        CurveVectorPtr  singleCurve = CurveVector::Create ((isPoly && isPhysicallyClosed (*primitive)) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+        CurveVectorPtr  singleCurve = CurveVector::Create((isPoly && isPhysicallyClosed(*primitive)) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
 
-        singleCurve->push_back (primitive);
-        glyphCurves.push_back (singleCurve);
+        singleCurve->push_back(primitive);
+        glyphCurves.push_back(singleCurve);
         }
 
-    size_t  nGlyphCurves = glyphCurves.size ();
+    size_t  nGlyphCurves = glyphCurves.size();
 
     if (0 == nGlyphCurves)
         return; // Empty glyph?!?
@@ -933,7 +933,7 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
 
     if (1 == nGlyphCurves)
         {
-        curves = glyphCurves.front (); // NOTE: Glyph fill flag should be set correctly for this case...
+        curves = glyphCurves.front(); // NOTE: Glyph fill flag should be set correctly for this case...
         }
     else
         {
@@ -941,37 +941,37 @@ void SimplifyViewDrawGeom::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph,
 
         for (CurveVectorPtr singleCurve: glyphCurves)
             {
-            if (singleCurve->IsClosedPath ())
+            if (singleCurve->IsClosedPath())
                 nClosed++;
             else
                 nOpen++;
             }
 
         // NOTE: Create union region if all closed, create none for all open or mix...
-        curves = CurveVector::Create ((nClosed == nGlyphCurves) ? CurveVector::BOUNDARY_TYPE_UnionRegion : CurveVector::BOUNDARY_TYPE_None);
+        curves = CurveVector::Create((nClosed == nGlyphCurves) ? CurveVector::BOUNDARY_TYPE_UnionRegion : CurveVector::BOUNDARY_TYPE_None);
 
         for (CurveVectorPtr singleCurve: glyphCurves)
             {
             if (nOpen == nGlyphCurves)
-                curves->push_back (singleCurve->front ()); // NOTE: Flatten hierarchy, better to not have child vectors for disjoint collection of sticks...
+                curves->push_back(singleCurve->front()); // NOTE: Flatten hierarchy, better to not have child vectors for disjoint collection of sticks...
             else
-                curves->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*singleCurve));
+                curves->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*singleCurve));
             }
 
         if (0 != nClosed && 0 != nOpen)
             isFilled = true; // NOTE: Poly in mixed glyph treated as filled but glyph fill flag isn't set...
         }
 
-    ClipAndProcessCurveVector (*curves, isFilled);
+    ClipAndProcessCurveVector(*curves, isFilled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessText (TextStringCR text, double* zDepth)
+void SimplifyViewDrawGeom::ClipAndProcessText(TextStringCR text, double* zDepth)
     {
     Transform drawTrans = text.ComputeTransform();
-    m_context->PushTransform (drawTrans);
+    m_context->PushTransform(drawTrans);
 
     // NOTE: Need text axes to compute gpa transform in _OnGlyphAnnounced...
     text.ComputeGlyphAxes(m_textAxes[0], m_textAxes[1]);
@@ -984,152 +984,152 @@ void SimplifyViewDrawGeom::ClipAndProcessText (TextStringCR text, double* zDepth
     for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
         ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
 
-    m_context->PopTransformClip ();
+    m_context->PopTransformClip();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessSymbol (IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP, bool ignoreColor, bool ignoreWeight)
+void SimplifyViewDrawGeom::ClipAndProcessSymbol(IDisplaySymbol* symbolDefP, TransformCP transP, ClipPlaneSetP clipPlaneSetP, bool ignoreColor, bool ignoreWeight)
     {
-    if (!_DoSymbolGeometry ())
+    if (!_DoSymbolGeometry())
         return;
 
 #ifdef POTENTIAL_OPTIMIZATION_FROM_SS3
     DRange3d    range;
 
-    DataConvert::ScanRangeToDRange3d (range, edP->el.hdr.dhdr.range);
+    DataConvert::ScanRangeToDRange3d(range, edP->el.hdr.dhdr.range);
 
     // An optimization for patterns. - Any mask that is not in range of the current tile can not
     // effect the clip  - so cull these from the current mask.   We don't need to copy or restore
     // as the clip is popped below.   (TR# 300934).
-    m_clipStack->CullDisjointMasks (range);
+    m_clipStack->CullDisjointMasks(range);
 #endif
 
-    BeAssert (!m_inSymbolDraw); // Can't have nested symbols...
+    BeAssert(!m_inSymbolDraw); // Can't have nested symbols...
 
-    AutoRestore <bool> saveInSymbolDraw (&m_inSymbolDraw, true);
-    AutoRestore <ElemMatSymb> saveOutputElemMatSymb (&m_currentMatSymb);
-    AutoRestore <OvrMatSymb> saveOutputOvrMatSymb (&m_overrideMatSymb);
-    AutoRestore <ElemMatSymb> saveContextElemMatSymb (m_context->GetElemMatSymb ());
-    AutoRestore <OvrMatSymb> saveContextOvrMatSymb (m_context->GetOverrideMatSymb ());
-    AutoRestore <ElemDisplayParams> saveContextDisplayParams (m_context->GetCurrentDisplayParams ());
+    AutoRestore <bool> saveInSymbolDraw(&m_inSymbolDraw, true);
+    AutoRestore <ElemMatSymb> saveOutputElemMatSymb(&m_currentMatSymb);
+    AutoRestore <OvrMatSymb> saveOutputOvrMatSymb(&m_overrideMatSymb);
+    AutoRestore <ElemMatSymb> saveContextElemMatSymb(m_context->GetElemMatSymb());
+    AutoRestore <OvrMatSymb> saveContextOvrMatSymb(m_context->GetOverrideMatSymb());
+    AutoRestore <ElemDisplayParams> saveContextDisplayParams(&m_context->GetCurrentDisplayParams());
 
 #if defined (NEEDS_WORK_DGNITEM)
-    m_context->GetDisplayParamsIgnores ().Set (*m_context->GetCurrentDisplayParams (), true, ignoreColor, ignoreWeight); // NOTE: Symbol level is always inherited from base element...
+    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentDisplayParams(), true, ignoreColor, ignoreWeight); // NOTE: Symbol level is always inherited from base element...
 #endif
 
     if (NULL != clipPlaneSetP)
-        m_context->PushClipPlanes (*clipPlaneSetP);
+        m_context->PushClipPlanes(*clipPlaneSetP);
 
     if (NULL != transP)
-        m_context->PushTransform (*transP);
+        m_context->PushTransform(*transP);
 
-    symbolDefP->_Draw (*m_context);
+    symbolDefP->_Draw(*m_context);
 
     if (NULL != transP)
-        m_context->PopTransformClip ();
+        m_context->PopTransformClip();
 
     if (NULL != clipPlaneSetP)
-        m_context->PopTransformClip ();
+        m_context->PopTransformClip();
 
 #if defined (NEEDS_WORK_DGNITEM)
-    m_context->GetDisplayParamsIgnores ().Clear ();
+    m_context->GetDisplayParamsIgnores().Clear();
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void copy2dTo3d (int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double zDepth)
+static void copy2dTo3d(int numPoints, DPoint3dP pts3d, DPoint2dCP pts2d, double zDepth)
     {
     for (int i=0; i<numPoints; i++, pts3d++, pts2d++)
-        pts3d->Init (pts2d->x, pts2d->y, zDepth);
+        pts3d->Init(pts2d->x, pts2d->y, zDepth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawLineString3d (int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyViewDrawGeom::_DrawLineString3d(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
-    MethodMark      mark (*this);
-    CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    MethodMark      mark(*this);
+    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open);
     
-    curve->push_back (ICurvePrimitive::CreateLineString (points, numPoints));
-    ClipAndProcessCurveVector (*curve, false);
+    curve->push_back(ICurvePrimitive::CreateLineString(points, numPoints));
+    ClipAndProcessCurveVector(*curve, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawLineString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_DrawLineString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark (*this);
-    std::valarray<DPoint3d> localPointsBuf3d (numPoints);
+    MethodMark              mark(*this);
+    std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d (numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawLineString3d (numPoints, &localPointsBuf3d[0], NULL);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    _DrawLineString3d(numPoints, &localPointsBuf3d[0], NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointString3d (int numPoints, DPoint3dCP points, DPoint3dCP range)
+void SimplifyViewDrawGeom::_DrawPointString3d(int numPoints, DPoint3dCP points, DPoint3dCP range)
     {
-    MethodMark      mark (*this);
-    CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    MethodMark      mark(*this);
+    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
 
-    curve->push_back (ICurvePrimitive::CreatePointString (points, numPoints));
-    ClipAndProcessCurveVector (*curve, false);
+    curve->push_back(ICurvePrimitive::CreatePointString(points, numPoints));
+    ClipAndProcessCurveVector(*curve, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointString2d (int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_DrawPointString2d(int numPoints, DPoint2dCP points, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark (*this);
-    std::valarray<DPoint3d> localPointsBuf3d (numPoints);
+    MethodMark              mark(*this);
+    std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d (numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawPointString3d (numPoints, &localPointsBuf3d[0], NULL);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    _DrawPointString3d(numPoints, &localPointsBuf3d[0], NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawShape3d (int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
+void SimplifyViewDrawGeom::_DrawShape3d(int numPoints, DPoint3dCP points, bool filled, DPoint3dCP range)
     {
-    MethodMark      mark (*this);
-    CurveVectorPtr  curve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    MethodMark      mark(*this);
+    CurveVectorPtr  curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer);
 
-    curve->push_back (ICurvePrimitive::CreateLineString (points, numPoints));
-    ClipAndProcessCurveVector (*curve, filled);
+    curve->push_back(ICurvePrimitive::CreateLineString(points, numPoints));
+    ClipAndProcessCurveVector(*curve, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawShape2d (int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_DrawShape2d(int numPoints, DPoint2dCP points, bool filled, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark (*this);
-    std::valarray<DPoint3d> localPointsBuf3d (numPoints);
+    MethodMark              mark(*this);
+    std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d (numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawShape3d (numPoints, &localPointsBuf3d[0], filled, NULL);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    _DrawShape3d(numPoints, &localPointsBuf3d[0], filled, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawTriStrip3d (int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
+void SimplifyViewDrawGeom::_DrawTriStrip3d(int numPoints, DPoint3dCP points, int32_t usageFlags, DPoint3dCP range)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
     if (1 == usageFlags) // represents thickened line...
         {
         int         nPt = 0;
-        DPoint3dP   tmpPtsP = (DPoint3dP) _alloca ((numPoints+1) * sizeof (DPoint3d));
+        DPoint3dP   tmpPtsP = (DPoint3dP) _alloca((numPoints+1) * sizeof (DPoint3d));
 
         for (int iPtS1=0; iPtS1 < numPoints; iPtS1 = iPtS1+2)
             tmpPtsP[nPt++] = points[iPtS1];
@@ -1139,133 +1139,133 @@ void SimplifyViewDrawGeom::_DrawTriStrip3d (int numPoints, DPoint3dCP points, in
 
         tmpPtsP[nPt] = tmpPtsP[0]; // Add closure point...simplifies drop of extrude thickness...
 
-        _DrawShape3d (numPoints+1, tmpPtsP, true, NULL);
+        _DrawShape3d(numPoints+1, tmpPtsP, true, NULL);
         return;
         }
 
     // spew triangles
     for (int iPt=0; iPt < numPoints-2; iPt++)
-        _DrawShape3d (3, &points[iPt], true, NULL);
+        _DrawShape3d(3, &points[iPt], true, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawTriStrip2d (int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_DrawTriStrip2d(int numPoints, DPoint2dCP points, int32_t usageFlags, double zDepth, DPoint2dCP range)
     {
-    MethodMark               mark (*this);
-    std::valarray<DPoint3d>  localPointsBuf3d (numPoints);
+    MethodMark               mark(*this);
+    std::valarray<DPoint3d>  localPointsBuf3d(numPoints);
 
-    copy2dTo3d (numPoints, &localPointsBuf3d[0], points, 0.0);
-    _DrawTriStrip3d (numPoints, &localPointsBuf3d[0], usageFlags, NULL);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    _DrawTriStrip3d(numPoints, &localPointsBuf3d[0], usageFlags, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawArc3d (DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
+void SimplifyViewDrawGeom::_DrawArc3d(DEllipse3dCR ellipse, bool isEllipse, bool filled, DPoint3dCP range)
     {
     // NOTE: QVis closes arc ends and displays them filled (see outputCapArc for linestyle strokes)...
-    MethodMark      mark (*this);
-    CurveVectorPtr  curve = CurveVector::Create ((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+    MethodMark      mark(*this);
+    CurveVectorPtr  curve = CurveVector::Create((isEllipse || filled) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
     
-    curve->push_back (ICurvePrimitive::CreateArc (ellipse));
+    curve->push_back(ICurvePrimitive::CreateArc(ellipse));
 
-    if (filled && !isEllipse && !ellipse.IsFullEllipse ())
+    if (filled && !isEllipse && !ellipse.IsFullEllipse())
         {
         DSegment3d          segment;
         ICurvePrimitivePtr  gapSegment;
 
-        ellipse.EvaluateEndPoints (segment.point[1], segment.point[0]);
-        gapSegment = ICurvePrimitive::CreateLine (segment);
-        gapSegment->SetMarkerBit (ICurvePrimitive::CURVE_PRIMITIVE_BIT_GapCurve, true);
+        ellipse.EvaluateEndPoints(segment.point[1], segment.point[0]);
+        gapSegment = ICurvePrimitive::CreateLine(segment);
+        gapSegment->SetMarkerBit(ICurvePrimitive::CURVE_PRIMITIVE_BIT_GapCurve, true);
 
-        curve->push_back (gapSegment);
+        curve->push_back(gapSegment);
         }
 
-    ClipAndProcessCurveVector (*curve, filled);
+    ClipAndProcessCurveVector(*curve, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawArc2d (DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
+void SimplifyViewDrawGeom::_DrawArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth, DPoint2dCP range)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    _DrawArc3d (ellipse, isEllipse, filled, NULL);
+    _DrawArc3d(ellipse, isEllipse, filled, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawBSplineCurve (MSBsplineCurveCR bcurve, bool filled)
+void SimplifyViewDrawGeom::_DrawBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
     {
-    MethodMark      mark (*this);
-    CurveVectorPtr  curve = CurveVector::Create (bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+    MethodMark      mark(*this);
+    CurveVectorPtr  curve = CurveVector::Create(bcurve.params.closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
 
-    curve->push_back (ICurvePrimitive::CreateBsplineCurve (bcurve));
-    ClipAndProcessCurveVector (*curve, filled);
+    curve->push_back(ICurvePrimitive::CreateBsplineCurve(bcurve));
+    ClipAndProcessCurveVector(*curve, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawBSplineCurve2d (MSBsplineCurveCR bcurve, bool filled, double zDepth)
+void SimplifyViewDrawGeom::_DrawBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    _DrawBSplineCurve (bcurve, filled);
+    _DrawBSplineCurve(bcurve, filled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawCurveVector (CurveVectorCR curves, bool isFilled)
+void SimplifyViewDrawGeom::_DrawCurveVector(CurveVectorCR curves, bool isFilled)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    ClipAndProcessCurveVector (curves, isFilled);
+    ClipAndProcessCurveVector(curves, isFilled);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawCurveVector2d (CurveVectorCR curves, bool isFilled, double zDepth)
+void SimplifyViewDrawGeom::_DrawCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    _DrawCurveVector (curves, isFilled); // Ignore zDepth...
+    _DrawCurveVector(curves, isFilled); // Ignore zDepth...
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawSolidPrimitive (ISolidPrimitiveCR primitive)
+void SimplifyViewDrawGeom::_DrawSolidPrimitive(ISolidPrimitiveCR primitive)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    ClipAndProcessSolidPrimitive (primitive);
+    ClipAndProcessSolidPrimitive(primitive);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawBSplineSurface (MSBsplineSurfaceCR surface)
+void SimplifyViewDrawGeom::_DrawBSplineSurface(MSBsplineSurfaceCR surface)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    ClipAndProcessSurface (surface);
+    ClipAndProcessSurface(surface);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves (PolyfaceQueryCR meshData)
+void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshData)
     {
-    int const*  vertIndex   = meshData.GetPointIndexCP ();
-    size_t      numIndices  = meshData.GetPointIndexCount ();
-    DPoint3dCP  verts       = meshData.GetPointCP ();
+    int const*  vertIndex   = meshData.GetPointIndexCP();
+    size_t      numIndices  = meshData.GetPointIndexCount();
+    DPoint3dCP  verts       = meshData.GetPointCP();
     int         polySize    = meshData.GetNumPerFace();
     int         thisIndex, prevIndex=0, firstIndex=0;
     size_t      thisFaceSize = 0;
@@ -1285,13 +1285,13 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves (PolyfaceQueryCR meshD
             // draw visible edge (prevIndex, thisIndex)
             else if (prevIndex > 0)
                 {
-                int                 closeVertexId = (abs (prevIndex) - 1);
-                int                 segmentVertexId = (abs (thisIndex) - 1);
-                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine (DSegment3d::From (verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create (CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId (CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
+                int                 closeVertexId = (abs(prevIndex) - 1);
+                int                 segmentVertexId = (abs(thisIndex) - 1);
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
 
-                curve->SetId (newId.get());
-                ClipAndProcessCurveVector (*CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, curve), false);
+                curve->SetId(newId.get());
+                ClipAndProcessCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
                 }
 
             prevIndex = thisIndex;
@@ -1304,13 +1304,13 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves (PolyfaceQueryCR meshD
             // draw last visible edge (prevIndex, firstIndex)
             if (prevIndex > 0)
                 {
-                int                 closeVertexId = (abs (prevIndex) - 1);
-                int                 segmentVertexId = (abs (firstIndex) - 1);
-                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine (DSegment3d::From (verts[closeVertexId], verts[segmentVertexId]));
-                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create (CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId (CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
+                int                 closeVertexId = (abs(prevIndex) - 1);
+                int                 segmentVertexId = (abs(firstIndex) - 1);
+                ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine(DSegment3d::From(verts[closeVertexId], verts[segmentVertexId]));
+                CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create(CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId(CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
 
-                curve->SetId (newId.get());
-                ClipAndProcessCurveVector (*CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open, curve), false);
+                curve->SetId(newId.get());
+                ClipAndProcessCurveVector(*CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, curve), false);
                 }
 
             thisFaceSize = 0;
@@ -1321,60 +1321,59 @@ void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves (PolyfaceQueryCR meshD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPolyface (PolyfaceQueryCR meshData, bool filled)
+void SimplifyViewDrawGeom::_DrawPolyface(PolyfaceQueryCR meshData, bool filled)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    if (_ProcessAsFacets (true))
+    if (_ProcessAsFacets(true))
         {
         size_t  maxPerFace;
 
-        if ((GetFacetOptions()->GetNormalsRequired () && 0 == meshData.GetNormalCount ()) ||
-            (GetFacetOptions()->GetParamsRequired () && (0 == meshData.GetParamCount () || 0 == meshData.GetFaceCount())) ||
-            (GetFacetOptions()->GetEdgeChainsRequired () && 0 == meshData.GetEdgeChainCount()) ||
+        if ((GetFacetOptions()->GetNormalsRequired() && 0 == meshData.GetNormalCount()) ||
+            (GetFacetOptions()->GetParamsRequired() && (0 == meshData.GetParamCount() || 0 == meshData.GetFaceCount())) ||
+            (GetFacetOptions()->GetEdgeChainsRequired() && 0 == meshData.GetEdgeChainCount()) ||
             (GetFacetOptions()->GetConvexFacetsRequired() && !meshData.HasConvexFacets()) ||
-            (meshData.GetNumFacet (maxPerFace)  > 0 && (int) maxPerFace > GetFacetOptions()->GetMaxPerFace()))
+            (meshData.GetNumFacet(maxPerFace)  > 0 && (int) maxPerFace > GetFacetOptions()->GetMaxPerFace()))
             {
             IPolyfaceConstructionPtr  builder = PolyfaceConstruction::New(*GetFacetOptions());
 
-            builder->AddPolyface (meshData);
-            FacetClipper (*this, filled).ProcessDisposablePolyface (builder->GetClientMeshR ());
+            builder->AddPolyface(meshData);
+            FacetClipper(*this, filled).ProcessDisposablePolyface(builder->GetClientMeshR ());
             }
         else
             {
-            ClipAndProcessFacetSet (meshData, filled);
+            ClipAndProcessFacetSet(meshData, filled);
             }
 
         return;
         }
 
-    if (!_ProcessAsWireframe ())
+    if (!_ProcessAsWireframe())
         return;
 
-    ClipAndProcessFacetSetAsCurves (meshData);
+    ClipAndProcessFacetSetAsCurves(meshData);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::_DrawBody (ISolidKernelEntityCR entity, double pixelSize)
+StatusInt SimplifyViewDrawGeom::_DrawBody(ISolidKernelEntityCR entity, double pixelSize)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
-    ClipAndProcessBody (entity, NULL);
-
+    ClipAndProcessBody(entity, NULL);
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawTextString (TextStringCR text, double* zDepth)
+void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
     {
-    MethodMark          mark (*this);
-    AutoRestore <bool>  saveInTextDraw (&m_inTextDraw, true);
+    MethodMark          mark(*this);
+    AutoRestore <bool>  saveInTextDraw(&m_inTextDraw, true);
 
-    if (!_DoTextGeometry ())
+    if (!_DoTextGeometry())
         {
         if (text.GetText().empty())
             return;
@@ -1383,29 +1382,19 @@ void SimplifyViewDrawGeom::_DrawTextString (TextStringCR text, double* zDepth)
         text.ComputeBoundingShape(points);
         text.ComputeTransform().Multiply(points, _countof(points));
 
-        _DrawShape3d (5, points, false, NULL);
+        _DrawShape3d(5, points, false, NULL);
         return;
         }
 
-    ClipAndProcessText (text, zDepth);
+    ClipAndProcessText(text, zDepth);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawRaster
-(
-DPoint3d const  points[4],
-int             pitch,
-int             numTexelsX,
-int             numTexelsY,
-int             enableAlpha,
-int             format,
-Byte const*     texels,
-DPoint3dCP      range
-)
+void SimplifyViewDrawGeom::_DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
     DPoint3d    shapePoints[5];
 
     shapePoints[0] = shapePoints[4] = points[0];
@@ -1413,38 +1402,27 @@ DPoint3dCP      range
     shapePoints[2] = points[2];
     shapePoints[3] = points[3];
 
-    _DrawShape3d (5, shapePoints, true, NULL);
+    _DrawShape3d(5, shapePoints, true, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawRaster2d
-(
-DPoint2d const  points[4],
-int             pitch,
-int             numTexelsX,
-int             numTexelsY,
-int             enableAlpha,
-int             format,
-Byte const*     texels,
-double          zDepth,
-DPoint2dCP      range
-)
+void SimplifyViewDrawGeom::_DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
-    MethodMark              mark (*this);
-    std::valarray<DPoint3d> localPointsBuf3d (4);
+    MethodMark              mark(*this);
+    std::valarray<DPoint3d> localPointsBuf3d(4);
 
-    copy2dTo3d (4, &localPointsBuf3d[0], points, 0.0);
-    _DrawRaster (&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
+    copy2dTo3d(4, &localPointsBuf3d[0], points, 0.0);
+    _DrawRaster(&localPointsBuf3d[0], pitch, numTexelsX, numTexelsY, enableAlpha, format, texels, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawDgnOle (IDgnOleDraw* ole)
+void SimplifyViewDrawGeom::_DrawDgnOle(IDgnOleDraw* ole)
     {
-    MethodMark  mark (*this);
+    MethodMark  mark(*this);
 
     // NEEDSWORK...Draw Shape...
     }
@@ -1452,37 +1430,37 @@ void SimplifyViewDrawGeom::_DrawDgnOle (IDgnOleDraw* ole)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    john.gooding                    03/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawPointCloud (IPointCloudDrawParams* drawParams)
+void SimplifyViewDrawGeom::_DrawPointCloud(IPointCloudDrawParams* drawParams)
     {
     enum {MAX_POINTS_PER_BATCH = 300};
 
-    MethodMark      mark (*this);
-    uint32_t        numPoints = drawParams->GetNumPoints ();
+    MethodMark      mark(*this);
+    uint32_t        numPoints = drawParams->GetNumPoints();
 
     if (0 == numPoints)
         return;
 
     DPoint3d    offsets;
 
-    offsets.Init (0, 0, 0);
+    offsets.Init(0, 0, 0);
 
-    bool        haveOffsets = drawParams->GetOrigin (&offsets);
-    DPoint3dCP  dPoints = drawParams->GetDPoints ();
+    bool        haveOffsets = drawParams->GetOrigin(&offsets);
+    DPoint3dCP  dPoints = drawParams->GetDPoints();
 
     if (NULL != dPoints)
         {
         //  QVision does not support DPoint3d with offsets so QvOutput does not support it and there
         //  is no need to support it here.
-        BeAssert (!haveOffsets);
+        BeAssert(!haveOffsets);
 
         while (numPoints > 0)
             {
-            if (m_context->CheckStop ())
+            if (m_context->CheckStop())
                 return;
             
             uint32_t pointsThisIter = numPoints > MAX_POINTS_PER_BATCH ? MAX_POINTS_PER_BATCH: numPoints;
 
-            _DrawPointString3d (pointsThisIter, dPoints, NULL);
+            _DrawPointString3d(pointsThisIter, dPoints, NULL);
             numPoints -= pointsThisIter;
             dPoints   += pointsThisIter;
             }
@@ -1496,15 +1474,15 @@ void SimplifyViewDrawGeom::_DrawPointCloud (IPointCloudDrawParams* drawParams)
     if (numPoints < maxPointsPerIter)
         maxPointsPerIter = numPoints;
 
-    DPoint3dP   pointBuffer = (DPoint3dP)_alloca (maxPointsPerIter * sizeof (*pointBuffer));
+    DPoint3dP   pointBuffer = (DPoint3dP)_alloca(maxPointsPerIter * sizeof (*pointBuffer));
 
     // Convert float points to DPoints and add offset
-    FPoint3dCP fPoints = drawParams->GetFPoints ();
+    FPoint3dCP fPoints = drawParams->GetFPoints();
     FPoint3dCP currIn = fPoints;
 
     while (numPoints > 0)
         {
-        if (m_context->CheckStop ())
+        if (m_context->CheckStop())
             return;
 
         uint32_t pointsThisIter = numPoints > maxPointsPerIter ? maxPointsPerIter : numPoints;
@@ -1516,7 +1494,7 @@ void SimplifyViewDrawGeom::_DrawPointCloud (IPointCloudDrawParams* drawParams)
             curr->z = currIn->z + offsets.z;
             }
 
-        _DrawPointString3d (pointsThisIter, pointBuffer, NULL);
+        _DrawPointString3d(pointsThisIter, pointBuffer, NULL);
         numPoints -= pointsThisIter;
         }
     }
@@ -1524,9 +1502,9 @@ void SimplifyViewDrawGeom::_DrawPointCloud (IPointCloudDrawParams* drawParams)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_ActivateMatSymb (ElemMatSymbCP matSymb)
+void SimplifyViewDrawGeom::_ActivateMatSymb(ElemMatSymbCP matSymb)
     {
-    BeAssert (m_context);
+    BeAssert(m_context);
 
     m_currentMatSymb = *matSymb;
     }
@@ -1534,10 +1512,10 @@ void SimplifyViewDrawGeom::_ActivateMatSymb (ElemMatSymbCP matSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_ActivateOverrideMatSymb (OvrMatSymbCP ovrMatSymb)
+void SimplifyViewDrawGeom::_ActivateOverrideMatSymb(OvrMatSymbCP ovrMatSymb)
     {
     if (NULL == ovrMatSymb)
-        m_overrideMatSymb.SetFlags (MATSYMB_OVERRIDE_None);
+        m_overrideMatSymb.SetFlags(MATSYMB_OVERRIDE_None);
     else
         m_overrideMatSymb = *ovrMatSymb;
     }
@@ -1545,29 +1523,29 @@ void SimplifyViewDrawGeom::_ActivateOverrideMatSymb (OvrMatSymbCP ovrMatSymb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2007
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElemMatSymbR     SimplifyViewDrawGeom::GetCurrentMatSymb (ElemMatSymbR matSymb)
+ElemMatSymbR     SimplifyViewDrawGeom::GetCurrentMatSymb(ElemMatSymbR matSymb)
     {
     matSymb = m_currentMatSymb;
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_Color))
-        matSymb.SetLineColor (ColorDef((m_overrideMatSymb.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_Color))
+        matSymb.SetLineColor(ColorDef((m_overrideMatSymb.GetLineColor().GetValue() & 0xffffff) | (matSymb.GetLineColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_ColorTransparency))
-        matSymb.SetLineColor (ColorDef((matSymb.GetLineColor().GetValue() & 0xffffff) | (m_overrideMatSymb.GetLineColor().GetValue() & 0xff000000)));
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_ColorTransparency))
+        matSymb.SetLineColor(ColorDef((matSymb.GetLineColor().GetValue() & 0xffffff) | (m_overrideMatSymb.GetLineColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_FillColor))
-        matSymb.SetFillColor (ColorDef((m_overrideMatSymb.GetFillColor().GetValue() & 0xffffff) | (matSymb.GetFillColor().GetValue() & 0xff000000)));
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_FillColor))
+        matSymb.SetFillColor(ColorDef((m_overrideMatSymb.GetFillColor().GetValue() & 0xffffff) | (matSymb.GetFillColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_FillColorTransparency))
-        matSymb.SetFillColor (ColorDef((matSymb.GetFillColor().GetValue() & 0xffffff) | (m_overrideMatSymb.GetFillColor().GetValue() & 0xff000000)));
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_FillColorTransparency))
+        matSymb.SetFillColor(ColorDef((matSymb.GetFillColor().GetValue() & 0xffffff) | (m_overrideMatSymb.GetFillColor().GetValue() & 0xff000000)));
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_Style))
-        matSymb.SetRasterPattern (m_overrideMatSymb.GetRasterPattern ());
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_Style))
+        matSymb.SetRasterPattern(m_overrideMatSymb.GetRasterPattern());
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_RastWidth))
-        matSymb.SetWidth (m_overrideMatSymb.GetWidth ());
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RastWidth))
+        matSymb.SetWidth(m_overrideMatSymb.GetWidth());
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_RenderMaterial))
-        matSymb.SetMaterial (m_overrideMatSymb.GetMaterial ());
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RenderMaterial))
+        matSymb.SetMaterial(m_overrideMatSymb.GetMaterial());
 
     return matSymb;
     }
@@ -1575,33 +1553,33 @@ ElemMatSymbR     SimplifyViewDrawGeom::GetCurrentMatSymb (ElemMatSymbR matSymb)
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::IsRangeTotallyInside (DRange3dCR range)
+bool SimplifyViewDrawGeom::IsRangeTotallyInside(DRange3dCR range)
     {
-    return ClipPlaneContainment_StronglyInside == m_context->GetTransformClipStack().ClassifyRange (range);
+    return ClipPlaneContainment_StronglyInside == m_context->GetTransformClipStack().ClassifyRange(range);
     }
 
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::IsRangeTotallyInsideClip (DRange3dCR range)
+bool SimplifyViewDrawGeom::IsRangeTotallyInsideClip(DRange3dCR range)
     { 
     DPoint3d    corners[8];
     
-    range.Get8Corners  (corners);
+    range.Get8Corners(corners);
 
-    return ArePointsTotallyInsideClip (corners, 8);
+    return ArePointsTotallyInsideClip(corners, 8);
     }
 
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::ArePointsTotallyInsideClip (DPoint3dCP points, int nPoints)
+bool SimplifyViewDrawGeom::ArePointsTotallyInsideClip(DPoint3dCP points, int nPoints)
     { 
     if (NULL == GetCurrClip())
         return true;
 
     for (ClipPrimitivePtr const& primitive: *GetCurrClip())
-        if (ClipPlaneContainment_StronglyInside != primitive->ClassifyPointContainment (points, nPoints))
+        if (ClipPlaneContainment_StronglyInside != primitive->ClassifyPointContainment(points, nPoints))
             return false;
 
     return true;
@@ -1610,13 +1588,13 @@ bool SimplifyViewDrawGeom::ArePointsTotallyInsideClip (DPoint3dCP points, int nP
 /*---------------------------------------------------------------------------------**//**  
 * @bsimethod                                                    RayBentley      12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip (DPoint3dCP points, int nPoints)
+bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip(DPoint3dCP points, int nPoints)
     { 
     if (NULL == GetCurrClip())
         return false;
 
     for (ClipPrimitivePtr const& primitive: *GetCurrClip())
-        if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment (points, nPoints))
+        if (ClipPlaneContainment_StronglyOutside == primitive->ClassifyPointContainment(points, nPoints))
             return true;
 
     return false;
@@ -1626,21 +1604,21 @@ bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip (DPoint3dCP points, int n
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial () const
+MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial() const
     {
     if (m_inTextDraw)
         return NULL;
 
-    if (0 != (m_overrideMatSymb.GetFlags () & MATSYMB_OVERRIDE_RenderMaterial))
-        return m_overrideMatSymb.GetMaterial ();
+    if (0 != (m_overrideMatSymb.GetFlags() & MATSYMB_OVERRIDE_RenderMaterial))
+        return m_overrideMatSymb.GetMaterial();
     
-    return m_currentMatSymb.GetMaterial ();
+    return m_currentMatSymb.GetMaterial();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-MaterialMapCP SimplifyViewDrawGeom::GetCurrentGeometryMap () const
+MaterialMapCP SimplifyViewDrawGeom::GetCurrentGeometryMap() const
     {
     MaterialCP      material;
     MaterialMapCP   map;
@@ -1648,10 +1626,10 @@ MaterialMapCP SimplifyViewDrawGeom::GetCurrentGeometryMap () const
     if (! m_processingMaterialGeometryMap  &&
         NULL != m_context->GetViewFlags() &&
         (NULL == m_context->GetCurrentCookedDisplayStyle() || !m_context->GetCurrentCookedDisplayStyle()->m_flags.m_ignoreGeometryMaps) &&
-        NULL != (material = GetCurrentMaterial ()) &&
+        NULL != (material = GetCurrentMaterial()) &&
         NULL != (map = material->GetGeometryMap()) &&
         map->IsEnabled() &&
-        _ProduceMaterialGeometryMaps (*material, *map))
+        _ProduceMaterialGeometryMaps(*material, *map))
         return map;
 
     return NULL;
@@ -1665,15 +1643,15 @@ struct      GeometryMapFacetOptionsMark
     SimplifyViewDrawGeom&       m_drawGeom;
     bool                        m_saveParamsRequired;
 
-    ~GeometryMapFacetOptionsMark () { m_drawGeom.GetFacetOptions()->SetParamsRequired (m_saveParamsRequired); }
+    ~GeometryMapFacetOptionsMark() { m_drawGeom.GetFacetOptions()->SetParamsRequired(m_saveParamsRequired); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryMapFacetOptionsMark (SimplifyViewDrawGeom& drawGeom) : m_drawGeom (drawGeom)
+GeometryMapFacetOptionsMark(SimplifyViewDrawGeom& drawGeom) : m_drawGeom(drawGeom)
     { 
     m_saveParamsRequired = drawGeom.GetFacetOptions()->GetParamsRequired();
-    drawGeom.GetFacetOptions()->SetParamsRequired (true);
+    drawGeom.GetFacetOptions()->SetParamsRequired(true);
     }
 
 };
@@ -1681,15 +1659,15 @@ GeometryMapFacetOptionsMark (SimplifyViewDrawGeom& drawGeom) : m_drawGeom (drawG
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double calculateFacetParamArea (ElementProjectionInfo& projectionInfo, TransformCP currTrans, PolyfaceQueryCR facets, MaterialCR material, MaterialMapLayerCR layer)
+static double calculateFacetParamArea(ElementProjectionInfo& projectionInfo, TransformCP currTrans, PolyfaceQueryCR facets, MaterialCR material, MaterialMapLayerCR layer)
     {
     double                  area = 0.0;
     bvector<DPoint2d>       facetParams;
 
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (facets); visitor->AdvanceToNextFace(); )
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(facets); visitor->AdvanceToNextFace(); )
         {
-        material.ComputeUVParams (facetParams, currTrans, projectionInfo, *visitor, layer);
-        area += fabs (PolygonOps::Area (&facetParams[0], visitor->NumEdgesThisFace()));
+        material.ComputeUVParams(facetParams, currTrans, projectionInfo, *visitor, layer);
+        area += fabs(PolygonOps::Area(&facetParams[0], visitor->NumEdgesThisFace()));
         }
 
     return area;
@@ -1698,13 +1676,13 @@ static double calculateFacetParamArea (ElementProjectionInfo& projectionInfo, Tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::ProcessGeometryMap (PolyfaceQueryCR facets)
+StatusInt SimplifyViewDrawGeom::ProcessGeometryMap(PolyfaceQueryCR facets)
     {
     MaterialCP          material;
     MaterialMapCP       geometryMap;
 
     if (NULL == (material = GetCurrentMaterial()) ||
-        NULL == (geometryMap = GetCurrentGeometryMap ()))
+        NULL == (geometryMap = GetCurrentGeometryMap()))
         return ERROR;
 
     StatusInt               status;
@@ -1712,17 +1690,17 @@ StatusInt SimplifyViewDrawGeom::ProcessGeometryMap (PolyfaceQueryCR facets)
     bool                    useCellColors;
     MaterialMapLayerCR      layer = geometryMap->GetLayers().GetTopLayer();
 
-    if (SUCCESS != (status = material->GetGeometryMapDefinition (definitionEh, useCellColors)))
+    if (SUCCESS != (status = material->GetGeometryMapDefinition(definitionEh, useCellColors)))
         return status;
 
 
     // Set the level same as the parent so the definition children are never eliminated on level/scan criteria.
     ElementPropertiesSetter     levelSetter;
 
-    levelSetter.SetCategory (m_context->GetCurrentDisplayParams()->GetCategory ());
-    levelSetter.SetChangeEntireElement (true);
+    levelSetter.SetCategory(m_context->GetCurrentDisplayParams()->GetCategory());
+    levelSetter.SetChangeEntireElement(true);
 
-    levelSetter.Apply (definitionEh);
+    levelSetter.Apply(definitionEh);
 
     bvector<DPoint2d>       facetParams;
     ElementProjectionInfo   projectionInfo;
@@ -1732,23 +1710,23 @@ StatusInt SimplifyViewDrawGeom::ProcessGeometryMap (PolyfaceQueryCR facets)
     if (useCellColors && colorFromMaterial)
          displayStyle->m_flags.m_hLineMaterialColors = false;         // Else an assigned material may cause material from color to be assigned to geometry map.
         
-    AutoRestore <ViewContext::T_DrawMethod>     saveDrawMethod (&m_context->m_callDrawMethod, &ViewContext::DrawElementNormal);
-    AutoRestore <bool>                          saveNoRangeTestOnComponents (&m_context->m_noRangeTestOnComponents, true);
-    AutoRestore <bool>                          saveProcessingGeometryMap (&m_processingMaterialGeometryMap, true);
-    AutoRestore <ElemMatSymb>                   saveOutputElemMatSymb (&m_currentMatSymb);
-    AutoRestore <OvrMatSymb>                    saveOutputOvrMatSymb (&m_overrideMatSymb);
-    AutoRestore <ElemMatSymb>                   saveContextElemMatSymb (m_context->GetElemMatSymb ());
-    AutoRestore <OvrMatSymb>                    saveContextOvrMatSymb (m_context->GetOverrideMatSymb ());
-    AutoRestore <ElemDisplayParams>             saveContextDisplayParams (m_context->GetCurrentDisplayParams ());
+    AutoRestore <ViewContext::T_DrawMethod>     saveDrawMethod(&m_context->m_callDrawMethod, &ViewContext::DrawElementNormal);
+    AutoRestore <bool>                          saveNoRangeTestOnComponents(&m_context->m_noRangeTestOnComponents, true);
+    AutoRestore <bool>                          saveProcessingGeometryMap(&m_processingMaterialGeometryMap, true);
+    AutoRestore <ElemMatSymb>                   saveOutputElemMatSymb(&m_currentMatSymb);
+    AutoRestore <OvrMatSymb>                    saveOutputOvrMatSymb(&m_overrideMatSymb);
+    AutoRestore <ElemMatSymb>                   saveContextElemMatSymb(m_context->GetElemMatSymb());
+    AutoRestore <OvrMatSymb>                    saveContextOvrMatSymb(m_context->GetOverrideMatSymb());
+    AutoRestore <ElemDisplayParams>             saveContextDisplayParams(m_context->GetCurrentDisplayParams());
     XGraphicsRecorder*                          xGraphicsRecorder = NULL;
     Transform                                   localToElement, elementToRoot;
 
-    m_context->GetDisplayParamsIgnores ().Set (*m_context->GetCurrentDisplayParams (), true, !useCellColors, false); // NOTE: Geometry map level is always inherited from base element...
+    m_context->GetDisplayParamsIgnores().Set(*m_context->GetCurrentDisplayParams(), true, !useCellColors, false); // NOTE: Geometry map level is always inherited from base element...
 
-    projectionInfo.CalculateForElement (GetCurrentElement(), SUCCESS == GetElementToRootTransform (elementToRoot) ? &elementToRoot : NULL, *material, geometryMap);
+    projectionInfo.CalculateForElement(GetCurrentElement(), SUCCESS == GetElementToRootTransform(elementToRoot) ? &elementToRoot : NULL, *material, geometryMap);
 
     // The parameter area is equivalent to the tile count.... 
-    double          paramArea = calculateFacetParamArea (projectionInfo, SUCCESS == GetLocalToElementTransform(localToElement) ? &localToElement : NULL, facets, *material, layer);
+    double          paramArea = calculateFacetParamArea(projectionInfo, SUCCESS == GetLocalToElementTransform(localToElement) ? &localToElement : NULL, facets, *material, layer);
     static double   s_minTileCount = (.01 * .01), s_maxTileCount = (1000.0 * 1000.0);
     
     if (paramArea < s_minTileCount || paramArea > s_maxTileCount)
@@ -1757,18 +1735,18 @@ StatusInt SimplifyViewDrawGeom::ProcessGeometryMap (PolyfaceQueryCR facets)
         return ERROR;
         }
 
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (facets); visitor->AdvanceToNextFace(); )
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(facets); visitor->AdvanceToNextFace(); )
         {
-        if (ClipPlaneContainment_StronglyOutside != m_context->GetTransformClipStack().ClassifyPoints (visitor->GetPointCP(), visitor->NumEdgesThisFace()))
+        if (ClipPlaneContainment_StronglyOutside != m_context->GetTransformClipStack().ClassifyPoints(visitor->GetPointCP(), visitor->NumEdgesThisFace()))
             {
-            material->ComputeUVParams (facetParams, SUCCESS == GetLocalToElementTransform (localToElement) ? &localToElement : NULL, projectionInfo, *visitor, layer);
-            ProcessGeometryMap (visitor->GetPointCP(), &facetParams[0], visitor->NumEdgesThisFace(), definitionEh, xGraphicsRecorder);
+            material->ComputeUVParams(facetParams, SUCCESS == GetLocalToElementTransform(localToElement) ? &localToElement : NULL, projectionInfo, *visitor, layer);
+            ProcessGeometryMap(visitor->GetPointCP(), &facetParams[0], visitor->NumEdgesThisFace(), definitionEh, xGraphicsRecorder);
             }
         }
 
     DELETE_AND_CLEAR (xGraphicsRecorder);
 
-    m_context->GetDisplayParamsIgnores ().Clear ();
+    m_context->GetDisplayParamsIgnores().Clear();
 
     if (useCellColors && colorFromMaterial)
         displayStyle->m_flags.m_hLineMaterialColors = true;            // Restore if changed above.
@@ -1776,7 +1754,7 @@ StatusInt SimplifyViewDrawGeom::ProcessGeometryMap (PolyfaceQueryCR facets)
     return SUCCESS;
     }
 
-#define IS_SIGNIFICANT20(v)     (fabs (v) > 1.0e-20)
+#define IS_SIGNIFICANT20(v)     (fabs(v) > 1.0e-20)
 
 /*---------------------------------------------------------------------------------**//**
 * solves linear system using Gaussian elimination with partial pivoting
@@ -1810,7 +1788,7 @@ int     numrhs          /* =>  number of right hand sides */
             }
 
         /* if we have an illconditioned matrix, quit */
-        if (! IS_SIGNIFICANT20 (temp)) return (1);
+        if (! IS_SIGNIFICANT20(temp)) return (1);
         else if (row != pivotrow)
             {
             /* interchange row and pivotrow of coefficient matrix & rhsides */
@@ -1870,7 +1848,7 @@ int     numrhs          /* =>  number of right hand sides */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params, DPoint3dCP points, size_t nPoints)
+static StatusInt calculateParamToWorld(TransformR transform, DPoint2dCP params, DPoint3dCP points, size_t nPoints)
     {
     StatusInt   status;
     double      aMatrix[3][3];
@@ -1884,18 +1862,18 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
        rhs21 = sumYixi, rhs22 = sumYiyi, rhs24 = sumYi,
        rhs31 = sumZixi, rhs32 = sumZiyi, rhs34 = sumZi */
 
-    memset (aMatrix, 0, sizeof (aMatrix));
-    memset (rhSides, 0, sizeof (rhSides));
+    memset(aMatrix, 0, sizeof (aMatrix));
+    memset(rhSides, 0, sizeof (rhSides));
 
     DRange3d        pointRange;
 
-    pointRange.InitFrom (points, (int) nPoints);
+    pointRange.InitFrom(points, (int) nPoints);
     
     for (size_t i=0; i<nPoints; i++)
         {
         DPoint3d            point;
 
-        point.DifferenceOf (points[i], pointRange.low);
+        point.DifferenceOf(points[i], pointRange.low);
 
         aMatrix[0][0] += params[i].x * params[i].x;
         aMatrix[0][1] += params[i].x * params[i].y;
@@ -1919,7 +1897,7 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
     aMatrix[2][1] = aMatrix[1][2];
     aMatrix[2][2] = (double) nPoints;
 
-    if (SUCCESS == (status = solve_linear_system ((double *)aMatrix, 3, (double *)rhSides, 3)))
+    if (SUCCESS == (status = solve_linear_system((double *)aMatrix, 3, (double *)rhSides, 3)))
         {
         DVec3d      xColumn, yColumn, zColumn;
         RotMatrix   rMatrix;
@@ -1931,11 +1909,11 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
         yColumn.x = rhSides[0][1];
         yColumn.y = rhSides[1][1];
         yColumn.z = rhSides[2][1];
-        zColumn.NormalizedCrossProduct (xColumn, yColumn);
+        zColumn.NormalizedCrossProduct(xColumn, yColumn);
 
-        rMatrix.InitFromColumnVectors (xColumn, yColumn, zColumn);
+        rMatrix.InitFromColumnVectors(xColumn, yColumn, zColumn);
 
-        transform.InitFrom (rMatrix);
+        transform.InitFrom(rMatrix);
         transform.form3d[0][3] = rhSides[0][2] + pointRange.low.x;
         transform.form3d[1][3] = rhSides[1][2] + pointRange.low.y;
         transform.form3d[2][3] = rhSides[2][2] + pointRange.low.z;
@@ -1946,20 +1924,20 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double computePolygonNormal (DVec3dR normal, DPoint3dCP pXYZ, size_t numXYZ)
+static double computePolygonNormal(DVec3dR normal, DPoint3dCP pXYZ, size_t numXYZ)
     {
     DVec3d      uVec, vVec, wVec;
 
-    normal.Zero ();
-    uVec.DifferenceOf (pXYZ[1], pXYZ[0]);
+    normal.Zero();
+    uVec.DifferenceOf(pXYZ[1], pXYZ[0]);
     for (size_t i = 2 ; i < numXYZ; i++)
         {
-        vVec.DifferenceOf (pXYZ[ i], pXYZ[0]);
-        wVec.CrossProduct (uVec, vVec);
-        normal.add (&wVec);
+        vVec.DifferenceOf(pXYZ[ i], pXYZ[0]);
+        wVec.CrossProduct(uVec, vVec);
+        normal.add(&wVec);
         uVec = vVec;
         }
-    return normal.Normalize ();
+    return normal.Normalize();
     }
 
 /*=================================================================================**//**
@@ -1970,18 +1948,18 @@ struct FacetOutlineMeshGatherer : PolyfaceQuery::IClipToPlaneSetOutput
     IPolyfaceConstructionR  m_builder;
     TransformCR             m_transform;
         
-    FacetOutlineMeshGatherer (IPolyfaceConstructionR builder, TransformCR transform) : m_builder (builder), m_transform (transform) { }
+    FacetOutlineMeshGatherer(IPolyfaceConstructionR builder, TransformCR transform) : m_builder(builder), m_transform(transform) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessUnclippedPolyface (PolyfaceQueryCR polyfaceQuery) override
+virtual StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override
     {
     PolyfaceHeaderPtr   tempPolyface = PolyfaceHeader::New();
 
-    tempPolyface->CopyFrom (polyfaceQuery);
-    tempPolyface->Transform (m_transform);
-    m_builder.AddPolyface (*tempPolyface);
+    tempPolyface->CopyFrom(polyfaceQuery);
+    tempPolyface->Transform(m_transform);
+    m_builder.AddPolyface(*tempPolyface);
 
     return SUCCESS;
     }
@@ -1989,10 +1967,10 @@ virtual StatusInt _ProcessUnclippedPolyface (PolyfaceQueryCR polyfaceQuery) over
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual StatusInt _ProcessClippedPolyface (PolyfaceHeaderR polyfaceHeader) override
+virtual StatusInt _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override
     {
-    polyfaceHeader.Transform (m_transform);
-    m_builder.AddPolyface (polyfaceHeader);
+    polyfaceHeader.Transform(m_transform);
+    m_builder.AddPolyface(polyfaceHeader);
 
     return SUCCESS;
     }
@@ -2004,14 +1982,14 @@ static double   s_facetTileAreaMinimum   = (.01 * .01);      // Minimum portion 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructionR builder, DPoint3dCP points, DPoint2dCP params, bool const* edgeVisible, size_t nPoints, bvector<DPoint3d>& outlinePoints, bvector<int32_t>& outlineIndices)
+StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines(IPolyfaceConstructionR builder, DPoint3dCP points, DPoint2dCP params, bool const* edgeVisible, size_t nPoints, bvector<DPoint3d>& outlinePoints, bvector<int32_t>& outlineIndices)
     {
     DRange2d            paramRange;
     DVec2d              paramDelta;
     static double       s_minParamRange = 1.0E-3;
 
-    paramRange.InitFrom (params, (int) nPoints);
-    paramDelta.DifferenceOf (paramRange.high, paramRange.low);
+    paramRange.InitFrom(params, (int) nPoints);
+    paramDelta.DifferenceOf(paramRange.high, paramRange.low);
 
     if (paramDelta.x < s_minParamRange || paramDelta.y < s_minParamRange)
         return ERROR;
@@ -2020,46 +1998,46 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
     DVec3d              normal;
     DRange2d            tileRange;
 
-    computePolygonNormal (normal, points, nPoints);
-    if (PolygonOps::Area (params, (int) nPoints) < s_facetTileAreaMinimum ||
-        SUCCESS != calculateParamToWorld (paramToWorld, params, points, nPoints))
+    computePolygonNormal(normal, points, nPoints);
+    if (PolygonOps::Area(params, (int) nPoints) < s_facetTileAreaMinimum ||
+        SUCCESS != calculateParamToWorld(paramToWorld, params, points, nPoints))
         return ERROR;
 
-    tileRange.InitFrom (floor (paramRange.low.x), floor (paramRange.low.y), ceil (paramRange.high.x), ceil (paramRange.high.y));
+    tileRange.InitFrom(floor(paramRange.low.x), floor(paramRange.low.y), ceil(paramRange.high.x), ceil(paramRange.high.y));
 
     ConvexClipPlaneSet  convexPlanes;
-    bool                clockwise = params[1].crossProductToPoints (&params[0], &params[2]) > 0.0;
+    bool                clockwise = params[1].crossProductToPoints(&params[0], &params[2]) > 0.0;
 
     for (size_t i=0; i<nPoints; i++)
         {
         DVec2d          delta;
-        if (0.0 != delta.NormalizedDifference (params[(i+1) % nPoints], params[i]))
+        if (0.0 != delta.NormalizedDifference(params[(i+1) % nPoints], params[i]))
             {
             DVec3d          normal;
             double          distance;
 
-            normal.Init (clockwise ? delta.y : -delta.y, clockwise ? -delta.x : delta.x, 0.0);
+            normal.Init(clockwise ? delta.y : -delta.y, clockwise ? -delta.x : delta.x, 0.0);
             distance = normal.x * params[i].x + normal.y * params[i].y;
 
-            convexPlanes.push_back (ClipPlane (normal, distance, !edgeVisible[i]));
+            convexPlanes.push_back(ClipPlane(normal, distance, !edgeVisible[i]));
             }
         }
 
-    ClipPlaneSet                clipPlaneSet (convexPlanes);
-    bvector <DPoint3d>          tileOutline (outlinePoints.size());
-    PolyfaceQueryCarrier        tileFacets (0, true, outlineIndices.size(), outlinePoints.size(), &tileOutline[0], &outlineIndices[0]);
-    FacetOutlineMeshGatherer    outputGatherer (builder, paramToWorld);
+    ClipPlaneSet                clipPlaneSet(convexPlanes);
+    bvector <DPoint3d>          tileOutline(outlinePoints.size());
+    PolyfaceQueryCarrier        tileFacets(0, true, outlineIndices.size(), outlinePoints.size(), &tileOutline[0], &outlineIndices[0]);
+    FacetOutlineMeshGatherer    outputGatherer(builder, paramToWorld);
     T_ClipPlaneSets             planeSets;
 
-    planeSets.push_back (clipPlaneSet);
+    planeSets.push_back(clipPlaneSet);
     for (int i = (int) tileRange.low.x; i < (int) tileRange.high.x; i++)
         {
         for (int j = (int) tileRange.low.y; j < (int) tileRange.high.y; j++)  
             {
             for (size_t iPoint = 0; iPoint < outlinePoints.size(); iPoint++)
-                tileOutline[iPoint].Init ((double) i + outlinePoints[iPoint].x, (double) j + outlinePoints[iPoint].y, 0.0);
+                tileOutline[iPoint].Init((double) i + outlinePoints[iPoint].x, (double) j + outlinePoints[iPoint].y, 0.0);
 
-            tileFacets.ClipToPlaneSetIntersection (planeSets, outputGatherer, false);
+            tileFacets.ClipToPlaneSetIntersection(planeSets, outputGatherer, false);
             }
         }
 
@@ -2070,7 +2048,7 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines (PolyfaceQueryCR facets)
+StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines(PolyfaceQueryCR facets)
     {
     MaterialCP              material;
     MaterialMapCP           patternMap;
@@ -2081,45 +2059,45 @@ StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines (PolyfaceQueryCR facets)
         !_ProduceTextureOutlines() ||
         NULL == (material = GetCurrentMaterial()) ||
         NULL == (patternMap = material->GetSettings().GetMaps().GetMapCP (MaterialMap::MAPTYPE_Pattern)) ||
-        SUCCESS != T_HOST.GetGraphicsAdmin()._ExtractTextureOutline (outlinePoints, *material))
+        SUCCESS != T_HOST.GetGraphicsAdmin()._ExtractTextureOutline(outlinePoints, *material))
         return ERROR;
 
     MaterialMapLayerCR      layer = patternMap->GetLayers().GetTopLayer();
     ElementProjectionInfo   projectionInfo;
     Transform               localToElement, elementToRoot;
 
-    projectionInfo.CalculateForElement (GetCurrentElement(), SUCCESS == GetElementToRootTransform (elementToRoot) ? &elementToRoot : NULL, *material, patternMap);
+    projectionInfo.CalculateForElement(GetCurrentElement(), SUCCESS == GetElementToRootTransform(elementToRoot) ? &elementToRoot : NULL, *material, patternMap);
 
-    double          paramArea = calculateFacetParamArea (projectionInfo, SUCCESS == GetLocalToElementTransform(localToElement) ? &localToElement : NULL, facets, *material, layer);
+    double          paramArea = calculateFacetParamArea(projectionInfo, SUCCESS == GetLocalToElementTransform(localToElement) ? &localToElement : NULL, facets, *material, layer);
     double          pointMagnitude = (double) outlinePoints.size() * paramArea * (double) numFacets;
     static double   s_maxPointMagnitude = 1.0E8;
 
     if (pointMagnitude > s_maxPointMagnitude)
         return ERROR;
     
-    PolyfaceHeaderPtr   triangulatedFacets = PolyfaceHeader::New ();
+    PolyfaceHeaderPtr   triangulatedFacets = PolyfaceHeader::New();
     bvector<int32_t>      triangulatedOutlineIndices;
     StatusInt           status;
 
-    triangulatedFacets->CopyFrom (const_cast <PolyfaceQueryR> (facets));
-    triangulatedFacets->Triangulate ();
+    triangulatedFacets->CopyFrom(const_cast <PolyfaceQueryR> (facets));
+    triangulatedFacets->Triangulate();
 
-    if (SUCCESS != (status = vu_triangulateSpacePolygonExt2 (&triangulatedOutlineIndices, NULL, NULL, NULL, NULL, &outlinePoints[0], (int) outlinePoints.size(), 1.0E-6, TRUE)))
+    if (SUCCESS != (status = vu_triangulateSpacePolygonExt2(&triangulatedOutlineIndices, NULL, NULL, NULL, NULL, &outlinePoints[0], (int) outlinePoints.size(), 1.0E-6, TRUE)))
         return status;
 
     bvector<DPoint2d>           facetParams;
-    IPolyfaceConstructionPtr    builder = IPolyfaceConstruction::New (*_GetFacetOptions ());
+    IPolyfaceConstructionPtr    builder = IPolyfaceConstruction::New(*_GetFacetOptions());
 
-    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*triangulatedFacets); visitor->AdvanceToNextFace(); )
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*triangulatedFacets); visitor->AdvanceToNextFace(); )
         {
         size_t  nFacetPoints = visitor->NumEdgesThisFace();
 
-        material->ComputeUVParams (facetParams, m_context->GetCurrLocalToWorldTransformCP(), projectionInfo, *visitor, layer);
-        ProcessFacetTextureOutlines (*builder, visitor->GetPointCP(), &facetParams[0], visitor->GetVisibleCP(), nFacetPoints, outlinePoints, triangulatedOutlineIndices);
+        material->ComputeUVParams(facetParams, m_context->GetCurrLocalToWorldTransformCP(), projectionInfo, *visitor, layer);
+        ProcessFacetTextureOutlines(*builder, visitor->GetPointCP(), &facetParams[0], visitor->GetVisibleCP(), nFacetPoints, outlinePoints, triangulatedOutlineIndices);
         }
 
-    if (builder->GetClientMeshR().HasFacets ())
-        _ProcessFacetSet (builder->GetClientMeshR(), false);
+    if (builder->GetClientMeshR().HasFacets())
+        _ProcessFacetSet(builder->GetClientMeshR(), false);
         
     return SUCCESS;
     }
@@ -2127,16 +2105,16 @@ StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines (PolyfaceQueryCR facets)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    SimplifyViewDrawGeom::StrokeGeometryMap  (CurveVectorCR curves)
+void    SimplifyViewDrawGeom::StrokeGeometryMap(CurveVectorCR curves)
     {
     if (NULL == GetCurrentGeometryMap())
         return;
 
-    GeometryMapFacetOptionsMark     facetOptionsMark (*this);
-    IPolyfaceConstructionPtr        builder = GetPolyfaceBuilder ();
+    GeometryMapFacetOptionsMark     facetOptionsMark(*this);
+    IPolyfaceConstructionPtr        builder = GetPolyfaceBuilder();
 
-    builder->AddRegion (curves);
-    ProcessGeometryMap (builder->GetClientMeshR());
+    builder->AddRegion(curves);
+    ProcessGeometryMap(builder->GetClientMeshR());
     }
 
 #endif //NEEDS_WORK_GEOMETRY_MAPS
@@ -2144,15 +2122,15 @@ void    SimplifyViewDrawGeom::StrokeGeometryMap  (CurveVectorCR curves)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t  SimplifyViewDrawGeom::_GetMethodIndex ()  { return m_methodStateStack.empty() ? 0 : m_methodStateStack.top().GetIndex(); }
-void    SimplifyViewDrawGeom::_PushMethodState () { m_methodStateStack.push (MethodState()); }
-void    SimplifyViewDrawGeom::_PopMethodState ()  { m_methodStateStack.pop(); }
+size_t  SimplifyViewDrawGeom::_GetMethodIndex()  { return m_methodStateStack.empty() ? 0 : m_methodStateStack.top().GetIndex(); }
+void    SimplifyViewDrawGeom::_PushMethodState() { m_methodStateStack.push(MethodState()); }
+void    SimplifyViewDrawGeom::_PopMethodState()  { m_methodStateStack.pop(); }
 
-void    SimplifyViewDrawGeom::PreDrawMethod ()    { if (!m_methodStateStack.empty()) m_methodStateStack.top().PreDraw(); }
-void    SimplifyViewDrawGeom::PostDrawMethod ()   { if (!m_methodStateStack.empty()) m_methodStateStack.top().PostDraw(); }
+void    SimplifyViewDrawGeom::PreDrawMethod()    { if (!m_methodStateStack.empty()) m_methodStateStack.top().PreDraw(); }
+void    SimplifyViewDrawGeom::PostDrawMethod()   { if (!m_methodStateStack.empty()) m_methodStateStack.top().PostDraw(); }
 
-BentleyStatus     SimplifyViewDrawGeom::GetElementToWorldTransform (TransformR transform)   { return m_context->GetTransformClipStack().GetTransformFromIndex (transform, m_elementTransformStackIndex); }
-BentleyStatus     SimplifyViewDrawGeom::GetLocalToElementTransform (TransformR transform)   { return m_context->GetTransformClipStack().GetTransformFromTopToIndex (transform, m_elementTransformStackIndex); }
+BentleyStatus SimplifyViewDrawGeom::GetElementToWorldTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromIndex(transform, m_elementTransformStackIndex); }
+BentleyStatus SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, m_elementTransformStackIndex); }
 
 
 

@@ -271,8 +271,6 @@ void ComponentModelTest::Developer_CreateCMs()
         element2.Insert(); \
         element.SetParent(element2);\
         element.Update();\
-        element.Dispose();\
-        element2.Dispose();\
         return 0;\
     } \
     function gadgetSolver(model, params, options) { \
@@ -284,7 +282,6 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \
-        element.Dispose();\
         return 0;\
     } \
     BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \
