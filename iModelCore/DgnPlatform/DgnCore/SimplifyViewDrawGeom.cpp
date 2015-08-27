@@ -1263,9 +1263,9 @@ void SimplifyViewDrawGeom::_DrawBSplineSurface(MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyViewDrawGeom::ClipAndProcessFacetSetAsCurves(PolyfaceQueryCR meshData)
     {
-    int const*  vertIndex   = meshData.GetPointIndexCP ();
+    int const*  vertIndex   = meshData.GetPointIndexCP();
     size_t      numIndices  = meshData.GetPointIndexCount();
-    DPoint3dCP  verts       = meshData.GetPointCP ();
+    DPoint3dCP  verts       = meshData.GetPointCP();
     int         polySize    = meshData.GetNumPerFace();
     int         thisIndex, prevIndex=0, firstIndex=0;
     size_t      thisFaceSize = 0;
@@ -1362,7 +1362,6 @@ StatusInt SimplifyViewDrawGeom::_DrawBody(ISolidKernelEntityCR entity, double pi
     MethodMark  mark(*this);
 
     ClipAndProcessBody(entity, NULL);
-
     return SUCCESS;
     }
 
@@ -1393,17 +1392,7 @@ void SimplifyViewDrawGeom::_DrawTextString(TextStringCR text, double* zDepth)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawRaster
-(
-DPoint3d const  points[4],
-int             pitch,
-int             numTexelsX,
-int             numTexelsY,
-int             enableAlpha,
-int             format,
-Byte const*     texels,
-DPoint3dCP      range
-)
+void SimplifyViewDrawGeom::_DrawRaster (DPoint3d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, DPoint3dCP range)
     {
     MethodMark  mark(*this);
     DPoint3d    shapePoints[5];
@@ -1419,18 +1408,7 @@ DPoint3dCP      range
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyViewDrawGeom::_DrawRaster2d
-(
-DPoint2d const  points[4],
-int             pitch,
-int             numTexelsX,
-int             numTexelsY,
-int             enableAlpha,
-int             format,
-Byte const*     texels,
-double          zDepth,
-DPoint2dCP      range
-)
+void SimplifyViewDrawGeom::_DrawRaster2d (DPoint2d const points[4], int pitch, int numTexelsX, int numTexelsY, int enableAlpha, int format, Byte const* texels, double zDepth, DPoint2dCP range)
     {
     MethodMark              mark(*this);
     std::valarray<DPoint3d> localPointsBuf3d(4);
@@ -2151,8 +2129,8 @@ void    SimplifyViewDrawGeom::_PopMethodState()  { m_methodStateStack.pop(); }
 void    SimplifyViewDrawGeom::PreDrawMethod()    { if (!m_methodStateStack.empty()) m_methodStateStack.top().PreDraw(); }
 void    SimplifyViewDrawGeom::PostDrawMethod()   { if (!m_methodStateStack.empty()) m_methodStateStack.top().PostDraw(); }
 
-BentleyStatus     SimplifyViewDrawGeom::GetElementToWorldTransform(TransformR transform)   { return m_context->GetTransformClipStack().GetTransformFromIndex(transform, m_elementTransformStackIndex); }
-BentleyStatus     SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform)   { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, m_elementTransformStackIndex); }
+BentleyStatus SimplifyViewDrawGeom::GetElementToWorldTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromIndex(transform, m_elementTransformStackIndex); }
+BentleyStatus SimplifyViewDrawGeom::GetLocalToElementTransform(TransformR transform) { return m_context->GetTransformClipStack().GetTransformFromTopToIndex(transform, m_elementTransformStackIndex); }
 
 
 
