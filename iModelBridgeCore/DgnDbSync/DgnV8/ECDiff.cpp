@@ -2725,7 +2725,7 @@ IECInstancePtr ECSchemaMergeTool::CreateCopyThroughSerialization (IECInstanceR i
     {
     //TODO: if class is from diff schema the xml will have different schema name may be if schema being diff have different names
     BeAssert (instance.GetClass().GetName() == ecClass.GetName());
-    WString ecInstanceXml;
+    Utf8String ecInstanceXml;
     instance.WriteToXmlString(ecInstanceXml, true, false);
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (ecClass.GetSchema());
     IECInstancePtr deserializedInstance;
