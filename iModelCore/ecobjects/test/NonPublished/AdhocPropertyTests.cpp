@@ -68,7 +68,8 @@ struct AdhocPropertyTest : ECTestFixture
     AdhocPropertyTest() : ECTestFixture()
         {
         auto context = ECSchemaReadContext::CreateContext();
-        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
+        Utf8String temp_schema (s_schemaXml);
+        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, temp_schema.c_str(), *context));
         }
     };
 
