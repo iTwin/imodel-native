@@ -14,20 +14,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
 
-    <ECClass typeName="ComponentModelSolution" isDomainClass="True" >
+    <ECClass typeName="ComponentSolution" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <!-- NEEDS WORK: I want the primary key to be (ComponentModelId,Parameters) -->
+                <!-- WIP_COMPONENTS: What I REALLY want is for the primary key to be (ComponentModelId,Parameters) -->
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
-        <ECProperty propertyName="ComponentModelId" typeName="long"/>
-        <ECProperty propertyName="Parameters" typeName="string"/>
+        <ECProperty propertyName="ComponentModelName" typeName="string"/>
+        <ECProperty propertyName="SolutionName" typeName="string"/>
+        <!-- WIP_COMPONENTS: I want (ComponentModelId,Parameters) to be unique and indexed -->
         <ECProperty propertyName="Geom" typeName="binary"/>
         <ECProperty propertyName="Range" typeName="binary"/>
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementInstancesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
+    <!-- WIP_COMPONENTS I need to be able to use (ComponentModelName,SolutionName) as the key to the ComponentSolution table
+    <ECRelationshipClass typeName="ElementUsesSolution" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -38,12 +40,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ComponentModelSolution" />
+            <Class class="ComponentSolution" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
+    -->
+
+    <ECClass typeName="EGASpecifier" description="Specifies an EGA" isDomainClass="False" isCustomAttributeClass="True">
+        <ECProperty propertyName="Type" typeName="string" description="The kind of EGA implementation that must be executed. One of: JavaScript, ... TBD" />
+        <ECProperty propertyName="Name" typeName="string" description="Identifies the script or parametric model within the Db that will be executed. For scripts, this should have the form program_name:function_name" />
+        <ECProperty propertyName="Inputs" typeName="string" description="comma-separated list of input parameter names. These are bound by name to the item's properties." />
+    </ECClass>
 
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>
@@ -68,7 +77,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -123,13 +132,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>
-        <!-- adds the follow properties to Props: 
-        propertyName="RangeLow" typeName="point3d" displayLabel="RangeLow" description="The low point of the range of the external data"
-        propertyName="RangeHigh" typeName="point3d" displayLabel="RangeHigh" description="The hight point of the range of the external data"
-        propertyName="MapService" displayLabel="Map Service" typeName="string"
-        propertyName="MapType" displayLabel="Map Type" typeName="string"
-        propertyName="finerResolution" displayLabel="Finer Resolution" typeName="boolean"
-        -->
     </ECClass>
 
     <ECClass typeName="StreetMapModel" isDomainClass="True" >
@@ -149,7 +151,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
              <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -182,7 +183,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
@@ -271,7 +271,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -317,7 +317,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
@@ -366,7 +366,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
@@ -388,7 +388,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
                     <Strategy>SharedTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <!-- WIP: Uncomment when CodeAuthority support has been added
@@ -510,7 +510,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <!-- Each ElementUniqueAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
                     <!-- Each ElementUniqueAspect subclass should determine its own MapStrategy -->
-                    <IsPolymorphic>False</IsPolymorphic>
+                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
@@ -527,7 +527,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <!-- Each ElementMultiAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
                     <!-- Each ElementMultiAspect subclass should determine its own MapStrategy -->
-                    <IsPolymorphic>False</IsPolymorphic>
+                    <AppliesToSubclasses>False</AppliesToSubclasses>
                 </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
@@ -551,7 +551,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <!-- All subclasses of ElementItem will share the same table -->
                     <Strategy>SharedTable</Strategy>
                     <Options>SharedColumnsForSubclasses</Options>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <AppliesToSubclasses>True</AppliesToSubclasses>
                 </MapStrategy>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
@@ -653,10 +653,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </ECProperty>
     </ECClass>
 
-    <ECClass typeName="PhysicalMaterial" isDomainClass="True" >
+    <ECClass typeName="Material" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Name</string>
+                            <string>Palette</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
             </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" displayLabel="Material" typeName="string" description="Name of material" >
@@ -664,11 +676,89 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
-                    <IsUnique>True</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Palette" displayLabel="" typeName="string" description="Name of Book" >
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Value" displayLabel="" typeName="string" />
+        <ECProperty propertyName="ParentId" typeName="long">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>True</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="Texture" isDomainClass="True">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                </MapStrategy>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <Indexes>
+                    <DbIndex>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            <string>Name</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" displayLabel="Texture" typeName="string" description="Name of texture">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                    <IsNullable>True</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
+        <ECProperty propertyName="Data" displayLabel="" typeName="binary" description="Encoded texture data">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Width" typeName="int" displayLabel="Width">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Height" typeName="int" displayLabel="Height">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Flags" typeName="int">
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
     </ECClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
@@ -699,7 +789,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <Key>
                     <Property name="ModelId" />
                 </Key>
-            </Class>
+          </Class>
         </Target>
     </ECRelationshipClass>
 

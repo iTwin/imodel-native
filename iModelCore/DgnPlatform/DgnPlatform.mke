@@ -249,10 +249,6 @@ $(coreObjs)DgnShxFont$(oext): $(DgnCoreDir)DgnShxFont.cpp $(DgnCoreAPISrc)DgnFon
 
 $(coreObjs)DgnShxFontData$(oext): $(DgnCoreDir)DgnShxFontData.cpp $(DgnCoreAPISrc)DgnFont.h ${MultiCompileDepends}
 
-$(coreObjs)MaterialSettings$(oext): $(DgnCoreDir)MaterialSettings.cpp $(DgnCoreAPISrc)Material.h $(DgnCoreAPISrc)MaterialSettings.h ${MultiCompileDepends}
-
-$(coreObjs)MaterialTokens$(oext): $(DgnCoreDir)MaterialTokens.cpp $(DgnPlatformInternalApiSrc)DgnCore/MaterialTokens.h ${MultiCompileDepends}
-
 $(coreObjs)Sprites$(oext): $(DgnCoreDir)Sprites.cpp ${MultiCompileDepends}
 
 $(coreObjs)ImageUtilities$(oext): $(DgnCoreDir)ImageUtilities.cpp $(DgnCoreAPISrc)ImageUtilities.h ${MultiCompileDepends}
@@ -272,6 +268,12 @@ $(coreObjs)DgnIModel$(oext) : $(DgnCoreDir)DgnIModel.cpp $(DgnCoreAPISrc)DgnDb.h
 $(coreObjs)DgnUnits$(oext) : $(DgnCoreDir)DgnUnits.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnTexture$(oext) : $(DgnCoreDir)DgnTexture.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnAuthority$(oext) : $(DgnCoreDir)DgnAuthority.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)SatelliteChangeSets$(oext) : $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnCoreAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
@@ -305,7 +307,10 @@ $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAP
 
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
-$(coreObjs)FileMoniker$(oext): $(DgnCoreDir)FileMoniker.cpp $(DgnCoreAPISrc)FileMoniker.h ${MultiCompileDepends} 
+
+$(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${MultiCompileDepends}
+
+$(o)ModelSolverDef$(oext) : $(DgnCoreDir)ModelSolverDef.cpp $(DgnCoreAPISrc)ModelSolverDef.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   DgnGeoCoord
@@ -525,7 +530,11 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
             LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
         %endif
     %elif $(TARGET_PLATFORM) == "WinRT"
-        LINKER_LIBRARIES + jsrt.lib
+        %if $(MSVC_VERSION) >= 1900
+            LINKER_LIBRARIES + chakrart.lib
+        %else
+            LINKER_LIBRARIES + jsrt.lib
+        %endif
     %elif $(TARGET_PLATFORM) == "Android"
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a

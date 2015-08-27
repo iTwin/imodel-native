@@ -8,8 +8,10 @@
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/ECUtils.h>
 #include <DgnPlatform/DgnCore/DgnScript.h>
 #include <Bentley/BeTimeUtilities.h>
+#include <Bentley/BeNumerical.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -123,7 +125,8 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
     statement.BindId(1, model.GetModelId());
     while (BE_SQLITE_ROW == statement.Step())
         {
-        ASSERT_TRUE( allowedClasses.find(statement.GetValueId<DgnClassId>(0)) != allowedClasses.end() );
+        DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
+        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8String("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str());
         }
     }
 
@@ -152,9 +155,9 @@ void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_CreateTargetModel(Utf8CP targetModelName);
-void Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_InsertNonInstanceElement(Utf8CP modelName, Utf8CP code = nullptr);
-void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, EC::ECInstanceId);
+void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, ComponentSolution::SolutionId);
 void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 void GenerateCMSchema();
@@ -209,24 +212,39 @@ void ComponentModelTest::Developer_CreateCMs()
     ASSERT_TRUE( Developer_CreateCategory("Gadget", ColorDef(0x00,0xff,0x00)).IsValid() );
 
     // Define the Solver wparameters for use by this model.
-    Json::Value wparameters(Json::objectValue);
-    wparameters["X"] = 1;
-    wparameters["Y"] = 1;
-    wparameters["Z"] = 1;
-    wparameters["Other"] = "Something else";
-    DgnModel::Solver wsolver(DgnModel::Solver::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
-    Json::Value gparameters(Json::objectValue);
-    gparameters["Q"] = 1;
-    gparameters["W"] = 1;
-    gparameters["R"] = 1;
-    gparameters["T"] = "Some other parm";
-    DgnModel::Solver gsolver(DgnModel::Solver::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
+    ModelSolverDef::Parameter::Scope ip = ModelSolverDef::Parameter::Scope::Instance;
+    ModelSolverDef::Parameter::Scope tp = ModelSolverDef::Parameter::Scope::Type;
+    bvector<ModelSolverDef::Parameter> wparameters;
+    wparameters.push_back(ModelSolverDef::Parameter("X", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("Y", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("Z", tp, ECN::ECValue(1.0))); 
+    wparameters.push_back(ModelSolverDef::Parameter("Other", ip, ECN::ECValue("Something else")));
+    ModelSolverDef wsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Widget", wparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
+    bvector<ModelSolverDef::Parameter> gparameters; 
+    gparameters.push_back(ModelSolverDef::Parameter("Q", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(ModelSolverDef::Parameter("W", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(ModelSolverDef::Parameter("R", tp, ECN::ECValue(1.0))); 
+    gparameters.push_back(ModelSolverDef::Parameter("T", ip, ECN::ECValue("Some other parm")));
+    ModelSolverDef gsolver(ModelSolverDef::Type::Script, TEST_JS_NAMESPACE ".Gadget", gparameters); // Identify the JS solver that should be used. Note: this JS program must be in the script library
 
     // Create the models
     DgnClassId mclassId = DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel));
-    ComponentModelPtr wcm = new ComponentModel(ComponentModel::CreateParams(*m_componentDb, mclassId, TEST_WIDGET_COMPONENT_NAME, "Widget", wsolver));
+    ComponentModel::CreateParams wparms(*m_componentDb, mclassId, TEST_WIDGET_COMPONENT_NAME);
+    wparms.SetSolver(wsolver);
+    wparms.SetElementCategoryName("Widget");
+    wparms.SetElementECClassName("dgn.PhysicalElement");
+    wparms.SetItemECBaseClassName("dgn.ElementItem");
+    ComponentModelPtr wcm = new ComponentModel(wparms);
+    ASSERT_TRUE( wcm->IsValid() );
     ASSERT_EQ( DgnDbStatus::Success , wcm->Insert() );       /* Insert the new model into the DgnDb */
-    ComponentModelPtr gcm = new ComponentModel(ComponentModel::CreateParams(*m_componentDb, mclassId, TEST_GADGET_COMPONENT_NAME, "Gadget", gsolver));
+
+    ComponentModel::CreateParams gparms(*m_componentDb, mclassId, TEST_GADGET_COMPONENT_NAME);
+    gparms.SetSolver(gsolver);
+    gparms.SetElementCategoryName("Gadget");
+    gparms.SetElementECClassName("dgn.PhysicalElement");
+    gparms.SetItemECBaseClassName("dgn.ElementItem");
+    ComponentModelPtr gcm = new ComponentModel(gparms);
+    ASSERT_TRUE( gcm->IsValid() );
     ASSERT_EQ( DgnDbStatus::Success , gcm->Insert() );       /* Insert the new model into the DgnDb */
 
     // Here is the model solver that should be used. 
@@ -253,8 +271,6 @@ void ComponentModelTest::Developer_CreateCMs()
         element2.Insert(); \
         element.SetParent(element2);\
         element.Update();\
-        element.Dispose();\
-        element2.Dispose();\
         return 0;\
     } \
     function gadgetSolver(model, params) { \
@@ -266,7 +282,6 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \
-        element.Dispose();\
         return 0;\
     } \
     BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \
@@ -291,22 +306,24 @@ void ComponentModelTest::Developer_TestWidgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_WIDGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
-    Json::Value parms = cm->GetSolver().GetParameters();  // make a copy
+    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
 
     for (int i=0; i<10; ++i)
         {
-        parms["X"] = parms["X"].asDouble() + 1*i;
-        parms["Y"] = parms["Y"].asDouble() + 2*i;
-        parms["Z"] = parms["Z"].asDouble() + 3*i;
+        params.GetParameterP("X")->SetValue(ECN::ECValue(1*i));
+        params.GetParameterP("Y")->SetValue(ECN::ECValue(2*i));
+        params.GetParameterP("Z")->SetValue(ECN::ECValue(3*i));
 
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(parms) );
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
     
         cm->FillModel();
         ASSERT_EQ( 2 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(), parms["X"].asDouble(), parms["Y"].asDouble(), parms["Z"].asDouble());
+        checkSlabDimensions(*el->ToGeometricElement(),  params.GetParameter("X")->GetValue().GetDouble(), 
+                                                        params.GetParameter("Y")->GetValue().GetDouble(),
+                                                        params.GetParameter("Z")->GetValue().GetDouble());
         }
 
     CloseComponentDb();
@@ -322,22 +339,24 @@ void ComponentModelTest::Developer_TestGadgetSolver()
     ComponentModelPtr cm = getModelByName<ComponentModel>(*m_componentDb, TEST_GADGET_COMPONENT_NAME);
     ASSERT_TRUE( cm.IsValid() );
 
-    Json::Value parms = cm->GetSolver().GetParameters();  // make a copy
+    ModelSolverDef::ParameterSet params = cm->GetSolver().GetParameters();
 
     for (int i=0; i<10; ++i)
         {
-        parms["Q"] = parms["Q"].asDouble() + 1*i;
-        parms["W"] = parms["W"].asDouble() + 2*i;
-        parms["R"] = parms["R"].asDouble() + 3*i;
+        params.GetParameterP("Q")->SetValue(ECN::ECValue(1*i));
+        params.GetParameterP("W")->SetValue(ECN::ECValue(2*i));
+        params.GetParameterP("R")->SetValue(ECN::ECValue(3*i));
 
-        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(parms) );
+        ASSERT_EQ( DgnDbStatus::Success , cm->Solve(params) );
     
         cm->FillModel();
         ASSERT_EQ( 1 , countElementsInModel(*cm) );
 
         RefCountedCPtr<DgnElement> el = cm->begin()->second;
         checkGeomStream(*el->ToGeometricElement(), ElementGeometry::GeometryType::SolidPrimitive, 1);
-        checkSlabDimensions(*el->ToGeometricElement(), parms["Q"].asDouble(), parms["W"].asDouble(), parms["R"].asDouble());
+        checkSlabDimensions(*el->ToGeometricElement(),  params.GetParameter("Q")->GetValue().GetDouble(), 
+                                                        params.GetParameter("W")->GetValue().GetDouble(),
+                                                        params.GetParameter("R")->GetValue().GetDouble());
         }
 
     CloseComponentDb();
@@ -354,6 +373,7 @@ void ComponentModelTest::GenerateCMSchema()
     OpenComponentDb(Db::OpenMode::ReadWrite);
     ECN::ECSchemaPtr schema;
     ASSERT_EQ( ECN::ECOBJECTS_STATUS_Success , ECN::ECSchema::CreateSchema(schema, TEST_JS_NAMESPACE, 0, 0) );
+    schema->AddReferencedSchema(*const_cast<ECN::ECSchemaP>(m_componentDb->Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
     ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
     ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
     CloseComponentDb();
@@ -422,7 +442,7 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndCapture(ComponentSolution::SolutionId& solutionId, Utf8CP componentName, Json::Value const& parmsToChange, bool solutionAlreadyExists)
     {
     //  -------------------------------------------------------
     //  ComponentModel - Solve for the given parameter values
@@ -432,13 +452,17 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_clientDb, componentName);  // Open the client's imported copy
     ASSERT_TRUE( componentModel.IsValid() );
 
-    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(parms) );
-
-    Json::Value solvedParms = componentModel->GetSolver().GetParameters();
-    for (auto pn : parms.getMemberNames())
+    ModelSolverDef::ParameterSet newParameterValues = componentModel->GetSolver().GetParameters();
+    for (auto pname : parmsToChange.getMemberNames())
         {
-        ASSERT_TRUE( parms[pn] == solvedParms[pn] ) << "Solving a CM should result in saving the specified parameter values";
+        ModelSolverDef::Parameter* sparam = newParameterValues.GetParameterP(pname.c_str());
+        ASSERT_NE( nullptr , sparam );
+        ECN::ECValue ecv;
+        ECUtils::ConvertJsonToECValue(ecv, parmsToChange[pname], sparam->GetValue().GetPrimitiveType());
+        sparam->SetValue(ecv);
         }
+
+    ASSERT_EQ( DgnDbStatus::Success , componentModel->Solve(newParameterValues) );
 
     //  -------------------------------------------------------
     //  ComponentModel - Capture (or look up) the solution geometry
@@ -449,14 +473,15 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
     RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
     ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
-    ComponentModelSolution solutions(*m_clientDb);
-    EC::ECInstanceId existingSid = solutions.QuerySolutionId(ccId, ComponentModelSolution::ComputeSolutionName(parms));
-    
+    ComponentSolution solutions(*m_clientDb);
+
+    ComponentSolution::SolutionId existingSid = componentModel->ComputeSolutionId(newParameterValues);
+
     solutionId = solutions.CaptureSolution(*componentModel);
     ASSERT_TRUE( solutionId.IsValid() );
 
     if (solutionAlreadyExists)
-        ASSERT_EQ( solutionId.GetValue(), existingSid.GetValue() );
+        ASSERT_EQ( solutionId, existingSid );
 
     // *** WIP_COMPONENT_MODEL -- roll back to mark
     }
@@ -464,27 +489,46 @@ void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, EC::ECInstanceId solutionId)
+void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, ComponentSolution::SolutionId solutionId)
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
     
-    ComponentModelSolution solutions(*m_clientDb);
-    PhysicalElementPtr instance = solutions.CreateSolutionInstance(*targetModel, TEST_JS_NAMESPACE, solutionId, DPoint3d::FromZero(), YawPitchRollAngles());
+    DPoint3d placementOrigin = DPoint3d::From(1,2,3);
+    YawPitchRollAngles placementAngles = YawPitchRollAngles::FromDegrees(4,5,6);
+
+    ComponentSolution solutions(*m_clientDb);
+    PhysicalElementPtr instance = solutions.CreateSolutionInstanceElement(*targetModel, solutionId, placementOrigin, placementAngles)->ToPhysicalElementP();
     ASSERT_TRUE( instance.IsValid() );
-    ASSERT_TRUE( instance->Insert().IsValid() );
+    
+    ECN::IECInstancePtr props;
+    ASSERT_EQ( DgnDbStatus::Success , solutions.CreateSolutionInstanceItem(*instance, props, TEST_JS_NAMESPACE, solutionId) );
+    
+    DgnElementCPtr newEl = instance->Insert();
+    ASSERT_TRUE( newEl.IsValid() );
+    ASSERT_TRUE( newEl->ToPhysicalElement() != nullptr );
 
     ieid = instance->GetElementId();
 
+    ASSERT_TRUE( newEl->GetElementId() == ieid );
+
     ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
+
+    Placement3d placement = newEl->ToPhysicalElement()->GetPlacement();
+    ASSERT_TRUE( placement.GetOrigin().IsEqual(placementOrigin) );
+    ASSERT_TRUE( placement.GetAngles().GetYaw() == placementAngles.GetYaw() );
+    ASSERT_TRUE( placement.GetAngles().GetPitch() == placementAngles.GetPitch() );
+    ASSERT_TRUE( placement.GetAngles().GetRoll() == placementAngles.GetRoll() );
 
     // Make sure that no component model elements are accidentally copied into the instances model
     bset<DgnClassId> targetModelElementClasses;
+    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
+    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Widget")));
+    // *** TBD: These are now Item classes targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Gadget")));
     targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element)));
-    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Widget")));
-    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(TEST_JS_NAMESPACE, "Gadget")));
+    targetModelElementClasses.insert(DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)));
     checkElementClassesInModel(*targetModel, targetModelElementClasses);
     }
 
@@ -495,7 +539,7 @@ void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP
     {
     ASSERT_TRUE(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    EC::ECInstanceId solutionId;
+    ComponentSolution::SolutionId solutionId;
     Client_SolveAndCapture(solutionId, componentName, parms, solutionAlreadyExists);
     
     if (solutionId.IsValid())

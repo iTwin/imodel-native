@@ -56,7 +56,7 @@ void AnnounceCurrentState()
 
     m_dropObj->_AnnounceTransform(m_context->GetCurrLocalToWorldTransformCP());
     m_dropObj->_AnnounceElemMatSymb(currentMatSymb);
-    m_dropObj->_AnnounceElemDisplayParams(*m_context->GetCurrentDisplayParams());
+    m_dropObj->_AnnounceElemDisplayParams(m_context->GetCurrentDisplayParams());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -213,10 +213,10 @@ ElementGraphicsContext(IElementGraphicsProcessor* dropObj, ElementGraphicsDrawGe
 virtual void _DrawTextString(TextStringCR text) override
     {
     // NOTE: When IElementGraphicsProcessor handles TextString we don't want to spew adornment geometry!
-    text.GetGlyphSymbology(*GetCurrentDisplayParams());
+    text.GetGlyphSymbology(GetCurrentDisplayParams());
     CookDisplayParams();
 
-    double zDepth = GetCurrentDisplayParams()->GetNetDisplayPriority();
+    double zDepth = GetCurrentDisplayParams().GetNetDisplayPriority();
     GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     }
 
@@ -295,7 +295,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, Geometri
                 {
                 context.SetGeomStreamEntryId(collection.GetGeomStreamEntryId());
 
-                *context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
+                context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
                 context.CookDisplayParams();
 
                 context.PushTransform(collection.GetGeometryToWorld());
@@ -319,7 +319,7 @@ void ElementGraphicsOutput::Process(IElementGraphicsProcessorR dropObj, DgnDbR d
     ElementGraphicsDrawGeom output;
     ElementGraphicsContext  context(&dropObj, output);
 
-    context.GetCurrentDisplayParams()->Init();
+    context.GetCurrentDisplayParams() = ElemDisplayParams();
     context.SetDgnDb(dgnDb);
 
     dropObj._OutputGraphics(context);

@@ -37,12 +37,12 @@ TEST_F (DgnElementTests, ResetStatistics)
     EXPECT_TRUE (M1id.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement("E1", M1id);
+    auto keyE1 = InsertElement(DgnElement::Code("E1"), M1id);
     DgnElementId E1id = keyE1->GetElementId();
     DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
     EXPECT_TRUE (E1 != nullptr);
 
-    auto keyE2 = InsertElement("E2", M1id);
+    auto keyE2 = InsertElement(DgnElement::Code("E2"), M1id);
     DgnElementId E2id = keyE2->GetElementId();
     DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
     EXPECT_TRUE (E2 != nullptr);
@@ -104,29 +104,31 @@ TEST_F (DgnElementTests, UpdateElement)
     EXPECT_TRUE (seedModel != nullptr);
 
     //Inserts a model
-    DgnModelPtr M1 = seedModel->Clone("Model1");
-    M1->Insert("Test Model 1");
-    EXPECT_TRUE (M1 != nullptr);
+    DgnModelPtr m1 = seedModel->Clone("Model1");
+    m1->Insert("Test Model 1");
+    EXPECT_TRUE(m1 != nullptr);
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId M1id = m_db->Models().QueryModelId("model1");
-    EXPECT_TRUE (M1id.IsValid());
+    DgnModelId m1id = m_db->Models().QueryModelId("model1");
+    EXPECT_TRUE(m1id.IsValid());
 
-    auto keyE1 = InsertElement("E1", M1id);
-    DgnElementId E1id = keyE1->GetElementId();
-    DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
-    EXPECT_TRUE (E1 != nullptr);
+    auto keyE1 = InsertElement(DgnElement::Code("E1"), m1id);
+    DgnElementId e1id = keyE1->GetElementId();
+    DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
+    EXPECT_TRUE(e1 != nullptr);
 
-    DgnClassId classId = E1->QueryClassId(*m_db);
-    EXPECT_TRUE (classId.IsValid());
+    DgnClassId classId = e1->QueryClassId(*m_db);
+    EXPECT_TRUE(classId.IsValid());
 
     //Creating a copy of element to edit.
-    DgnElementPtr E1Copy = E1->CopyForEdit();
-    E1Copy->SetLabel("Updated Test Element");
-    E1Copy->SetCode("This is the updated Element.");
+    DgnElementPtr e1Copy = e1->CopyForEdit();
+    e1Copy->SetLabel("Updated Test Element");
 
-    DgnElementCPtr Update_Element = E1Copy->Update();
+    DgnElement::Code updatedCode("This is the updated Element.");
+    e1Copy->SetCode(updatedCode);
 
-    EXPECT_STREQ ("Updated Test Element", Update_Element->GetLabel());
-    EXPECT_STREQ ("This is the updated Element.", Update_Element->GetCode());
+    DgnElementCPtr updatedElement = e1Copy->Update();
+
+    EXPECT_STREQ("Updated Test Element", updatedElement->GetLabel());
+    EXPECT_TRUE(updatedCode == updatedElement->GetCode());
     }

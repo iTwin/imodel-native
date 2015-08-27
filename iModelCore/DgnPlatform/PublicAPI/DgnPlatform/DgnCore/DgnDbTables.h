@@ -20,49 +20,51 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#define DGN_CLASSNAME_ComponentModelSolution "ComponentModelSolution"
+#define DGN_CLASSNAME_ComponentSolution     "ComponentSolution"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
-#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
+#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_GeomPart              "GeomPart"
+#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_Link                  "Link"
+#define DGN_CLASSNAME_Material              "Material"
 #define DGN_CLASSNAME_Model                 "Model"
+#define DGN_CLASSNAME_Model2d               "Model2d"
 #define DGN_CLASSNAME_PhysicalElement       "PhysicalElement"
 #define DGN_CLASSNAME_PhysicalModel         "PhysicalModel"
 #define DGN_CLASSNAME_PhysicalView          "PhysicalView"
-#define DGN_CLASSNAME_Model2d               "Model2d"
-#define DGN_CLASSNAME_GraphicsModel2d       "GraphicsModel2d"
 #define DGN_CLASSNAME_PlanarPhysicalModel   "PlanarPhysicalModel"
 #define DGN_CLASSNAME_SectionDrawingModel   "SectionDrawingModel"
 #define DGN_CLASSNAME_SheetModel            "SheetModel"
 #define DGN_CLASSNAME_Style                 "Style"
 #define DGN_CLASSNAME_SubCategory           "SubCategory"
+#define DGN_CLASSNAME_Texture               "Texture"
 #define DGN_CLASSNAME_View                  "View"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain        DGN_TABLE("Domain")
-#define DGN_TABLE_Font          DGN_TABLE("Font")
-#define DGN_TABLE_Handler       DGN_TABLE("Handler")
-#define DGN_TABLE_Txns          DGN_TABLE("Txns")
-#define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain   DGN_TABLE("Domain")
+#define DGN_TABLE_Font     DGN_TABLE("Font")
+#define DGN_TABLE_Handler  DGN_TABLE("Handler")
+#define DGN_TABLE_Txns     DGN_TABLE("Txns")
+#define DGN_VTABLE_RTree3d DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define DGN_RELNAME_CategoryOwnsSubCategories   "CategoryOwnsSubCategories"
 #define DGN_RELNAME_ElementDrivesElement        "ElementDrivesElement"
-#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
-#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
+#define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
+#define DGN_RELNAME_ElementUsesStyles           "ElementUsesStyles"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
 #include <DgnPlatform/DgnProperties.h>
@@ -70,7 +72,6 @@
 #include "DgnLink.h"
 #include "DgnFont.h"
 #include "DgnCoreEvent.h"
-#include "DgnElement.h"
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -105,7 +106,7 @@ public:
 };
 
 /** @addtogroup DgnCategoryGroup Categories and SubCategories
-@ref PAGE_CategoryOverview 
+@ref PAGE_CategoryOverview
 */
 
 //=======================================================================================
@@ -486,9 +487,8 @@ public:
     //! @return the Id of the SubCategory.
     static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
 
-    DgnCategoryId Import(DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
+    DgnCategoryId Import(struct DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
     DgnSubCategoryId Import(DgnRemapTables& remap, DgnCategoryId destCategoryId, DgnDbR sourceDb, DgnSubCategoryId sourceSubCategoryId);
-
 };
 
 //=======================================================================================
@@ -690,7 +690,7 @@ public:
         enum class CoordinateSpace
         {
             Local   = 0,    // the model has a local coordinate system
-            World   = 1,    // the model is in the physical (world) coordinate system. 
+            World   = 1,    // the model is in the physical (world) coordinate system.
         };
 
         friend struct DgnModels;
@@ -833,160 +833,6 @@ public:
     static bool IsValidName(Utf8StringCR name) {return DgnDbTable::IsValidName(name, GetIllegalCharacters());}
 };
 
-//=======================================================================================
-//! The DgnElements for a DgnDb.
-//! This class holds a cache of reference-counted DgnElements. All in-memory DgnElements for a DgnDb are held in its DgnElements member.
-//! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
-//! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
-//! their reference count goes to 0 and the cache is subsequently purged.
-//! @see DgnDb::Elements
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct DgnElements : DgnDbTable
-{
-    friend struct DgnDb;
-    friend struct DgnElement;
-    friend struct DgnModel;
-    friend struct DgnModels;
-    friend struct ElementHandler;
-    friend struct TxnManager;
-    friend struct ProgressiveViewFilter;
-    friend struct dgn_TxnTable::Element;
-
-    //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
-    struct Totals
-    {
-        uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
-        uint32_t m_entries;        //! total number of persistent elements 
-        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements 
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements 
-    };
-
-    //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
-    //! (note: the same element may become garbage and then be reclaimed, each such occurrence is reflected here.)
-    struct Statistics
-    {
-        uint32_t m_newElements;    //! number of newly created or loaded elements
-        uint32_t m_unReferenced;   //! number of elements that became garbage since last reset
-        uint32_t m_reReferenced;   //! number of garbage elements that were referenced
-        uint32_t m_purged;         //! number of garbage elements that were purged
-    };
-
-private:
-    DgnElementId                m_highestElementId;
-    struct ElemIdTree*          m_tree;
-    HeapZone                    m_heapZone;
-    BeSQLite::StatementCache    m_stmts;
-    BeSQLite::SnappyFromBlob    m_snappyFrom;
-    BeSQLite::SnappyToBlob      m_snappyTo;
-    DgnElementIdSet             m_selectionSet;
-    mutable BeSQLite::BeDbMutex m_mutex;
-
-    void OnReclaimed(DgnElementCR);
-    void OnUnreferenced(DgnElementCR);
-    void Destroy();
-    void AddToPool(DgnElementCR) const;
-    void DropFromPool(DgnElementCR) const;
-    void SendOnLoadedEvent(DgnElementR elRef) const;
-    void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
-    DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
-    DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
-    bool IsElementIdUsed(DgnElementId id) const;
-    DgnElementId MakeNewElementId();
-    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
-    DgnDbStatus PerformDelete(DgnElementCR);
-    explicit DgnElements(DgnDbR db);
-    ~DgnElements();
-
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
-
-public:
-    BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
-    BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
-    DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
-
-    //! Look up an element in the pool of loaded elements for this DgnDb.
-    //! @return A pointer to the element, or nullptr if the is not in the pool.
-    //! @private
-    DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
-
-    //! Query the DgnModelId of the specified DgnElementId.
-    //! @private
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
-
-    //! Query for the DgnElementId of the element that has the specified code
-    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
-    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP code) const;
-
-    //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
-    //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
-    //! unreferenced elements are freed until the the pool uses no more than targetMem bytes. Least recently used elements are freed first.
-    //! If memTarget <= 0, all unreferenced elements are freed.
-    //! @note: There is no guarantee that the pool will not actually consume more than memTarget bytes after this call, since elements with
-    //! reference counts greater than 0 cannot be purged.
-    DGNPLATFORM_EXPORT void Purge(int64_t memTarget);
-
-    //! Get the total counts for the current state of the pool.
-    DGNPLATFORM_EXPORT Totals GetTotals() const;
-
-    //! Shortcut to get the Totals.m_allocatedBytes member
-    int64_t GetTotalAllocated() const {return GetTotals().m_allocedBytes;}
-
-    //! Get the statistics for the current state of the element pool.
-    DGNPLATFORM_EXPORT Statistics GetStatistics() const;
-
-    //! Reset the statistics for the element pool.
-    DGNPLATFORM_EXPORT void ResetStatistics();
-
-    //! Get a DgnElement from this DgnDb by its DgnElementId.
-    //! @remarks The element is loaded from the database if necessary.
-    //! @return Invalid if the element does not exist.
-    DGNPLATFORM_EXPORT DgnElementCPtr GetElement(DgnElementId id) const;
-
-    //! Get a DgnElement by its DgnElementId, and dynamic_cast the result to a specific subclass of DgnElement.
-    //! This is merely a templated shortcut to dynamic_cast the return of #GetElement to a subclass of DgnElement.
-    template<class T> RefCountedCPtr<T> Get(DgnElementId id) const {return dynamic_cast<T const*>(GetElement(id).get());}
-
-    //! Get an editable copy of an element by DgnElementId.
-    //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
-
-    //! Insert a copy of the supplied DgnElement into this DgnDb.
-    //! @param[in] element The DgnElement to insert.
-    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
-    //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
-
-    //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
-    //! @param[in] element The modified copy of element to update.
-    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the update was successful, error status otherwise.
-    //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
-    template<class T> RefCountedCPtr<T> Update(T& element, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
-
-    //! Delete a DgnElement from this DgnDb.
-    //! @param[in] element The element to delete.
-    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
-
-    //! Delete a DgnElement from this DgnDb by DgnElementId.
-    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
-    //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
-
-    //! Get the Heapzone for this DgnDb.
-    HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
-    //! @return Invalid key if the element does not exist.
-    //! @remarks This queries the database for the DgnClassId for the given DgnElementId. It does not check if the element is loaded, nor does it load the element into memory.
-    //! If you have a DgnElement, call GetElementKey on it rather than using this method.
-    DGNPLATFORM_EXPORT DgnElementKey QueryElementKey(DgnElementId id) const;
-
-    DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
-    DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
-};
 
 //=======================================================================================
 //! Each GeomPart has a row in the DgnGeomParts table
@@ -1036,46 +882,57 @@ public:
 //! The DgnColors holds the Named Colors for a DgnDb. Named Colors are RGB values (no transparency) that may
 //! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
 //! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
-//! However, if a book name is supplied, there may not be two entries with the same name.
+//! However, for a given book name, there may not be two entries with the same name.
 //! @see DgnDb::Colors
-//! @ingroup DgnColorGroup
 //=======================================================================================
 struct DgnColors : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    mutable DgnTrueColorId m_nextColorId;
 
     explicit DgnColors(DgnDbR db) : DgnDbTable(db){}
 
 public:
-    //! Add a new entry to this DgnColors.
-    //! @param[in] color The RGB values for the new entry.
-    //! @param[in] name The name of the color (or nullptr).
-    //! @param[in] bookname The name of the colorbook (or nullptr).
+    struct Color
+    {
+    friend struct DgnColors;
+    private:
+        DgnTrueColorId m_id;
+        ColorDef       m_color;
+        Utf8String     m_name;
+        Utf8String     m_book;
+
+    public:
+        Color(ColorDef color, Utf8CP name, Utf8CP book=nullptr) : m_color(color), m_book(book), m_name(name) {}
+        Color() {}
+        bool IsValid() const {return m_id.IsValid();}
+        DgnTrueColorId GetId() const {return m_id;}
+        ColorDef GetColor() const {return m_color;}
+        Utf8StringCR GetName() const {return m_name;}
+        Utf8StringCR GetBook() const {return m_book;}
+    };
+
+    //! Add a new Color to the table.
+    //! @param[in] color    The Color values for the new entry.
+    //! @param[out] result  The result of the operation
     //! @note For a given bookname, there may not be more than one color with the same name.
     //! @return colorId The DgnTrueColorId for the newly created entry. Will be invalid if name+bookname is not unique.
-    DGNPLATFORM_EXPORT DgnTrueColorId Insert(ColorDef color, Utf8CP name=0, Utf8CP bookname=0);
+    DGNPLATFORM_EXPORT DgnTrueColorId Insert(Color& color, DgnDbStatus* result = nullptr);
 
-    //! Find the first DgnTrueColorId that has a given color value.
+    //! Find the first DgnTrueColorId that has a given ColorDef value.
     //! @return A DgnTrueColorId for the supplied color value. If no entry in the table has the given value, the DgnTrueColorId will be invalid.
-    //! @note If the table holds more than one entry with the same value, the "first" DgnTrueColorId is returned.
+    //! @note If the table holds more than one entry with the same value, it is undefined which DgnTrueColorId is returned.
     DGNPLATFORM_EXPORT DgnTrueColorId FindMatchingColor(ColorDef color) const;
 
     //! Get a color by DgnTrueColorId.
-    //! @param[out] color The RGB value for the color
-    //! @param[out] name The name for the colorId. May be nullptr.
-    //! @param[out] bookname The bookName for the colorId. May be nullptr.
     //! @param[in] colorId the true color id to query
-    //! @return SUCCESS if colorId was found in the table and the values are valid. ERROR otherwise.
-    DGNPLATFORM_EXPORT BentleyStatus QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP bookname, DgnTrueColorId colorId) const;
+    //! @return Color 
+    DGNPLATFORM_EXPORT Color QueryColor(DgnTrueColorId colorId) const;
 
     //! Get color by name and bookname.
-    //! @param[out] color The RGB value for the color
     //! @param[in] name The name for the colorId.
     //! @param[in] bookname The bookName for the colorId.
-    //! @return SUCCESS if color was found in the table and the RGB value is valid. ERROR otherwise.
-    DGNPLATFORM_EXPORT BentleyStatus QueryColorByName(ColorDef& color, Utf8StringCR name, Utf8StringCR bookname) const;
+    DGNPLATFORM_EXPORT Color QueryColorByName(Utf8CP name, Utf8CP bookname) const;
 
     struct Iterator : BeSQLite::DbTableIterator
     {
@@ -1089,9 +946,9 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
-            DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
+            DGNPLATFORM_EXPORT ColorDef GetColor() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetBookName() const;
+            DGNPLATFORM_EXPORT Utf8CP GetBook() const;
             Entry const& operator*() const {return *this;}
         };
 
@@ -1164,7 +1021,7 @@ struct DgnFonts : NonCopyableClass
         DGNPLATFORM_EXPORT BentleyStatus Update(DgnFontCR, DgnFontId);
         DGNPLATFORM_EXPORT BentleyStatus Delete(DgnFontId);
         Iterator MakeIterator() const { return Iterator(m_dbFonts); }
-        };
+    };
 
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     03/2015
@@ -1257,66 +1114,380 @@ public:
 };
 
 //=======================================================================================
-//! @private
+//! The DgnTextures holds the textures defined for a DgnDb. Texture data is stored as a
+//! binary blob interpreted according to the specified texture format. Textures may be
+//! optionally named, but names must be unique within the DgnDb.
+//=======================================================================================
+struct DgnTextures : DgnDbTable
+    {
+private:
+    friend struct DgnDb;
+    explicit DgnTextures (DgnDbR db) : DgnDbTable (db) { }
+
+public:
+    //! Supported texture formats. A texture's binary data is interpreted according to its specified format.
+    enum class Format
+        {
+        JPEG        = 0,    //!< JPEG
+        RAW         = 1,    //!< Raw RGBA bitmap
+        PNG         = 2,    //!< PNG
+        TIFF        = 3,    //!< TIFF
+        Unknown     = 0xff  //!< Unrecognized texture format.
+        };
+
+    enum class Flags : uint32_t
+        {
+        None        = 0,    //!< No flags
+        };
+
+    //! Holds the raw texture data
+    struct TextureData
+        {
+    private:
+        friend struct DgnTextures;
+
+        bvector<Byte>       m_data;
+        uint32_t            m_width;
+        uint32_t            m_height;
+        Flags               m_flags;
+        Format              m_format;
+    public:
+        //! Constructs an empty, invalid texture data
+        TextureData() : m_width(0), m_height(0), m_flags(Flags::None), m_format(Format::Unknown) { }
+
+        //! Constructor
+        //! @param[in]      format   The format of the raw texture data
+        //! @param[in]      data     The texture data encoded according to specified format. Must be non-null.
+        //! @param[in]      dataSize The number of byte in the texture data. Must be greater than 0
+        //! @param[in]      width    The width of the texture
+        //! @param[in]      height   The height of the texture
+        //! @param[in]      flags    Additional texture flags
+        TextureData (Format format, ByteCP data, size_t dataSize, uint32_t width, uint32_t height, Flags flags = Flags::None)
+            : m_data(data, data + dataSize), m_width(width), m_height(height), m_format(format), m_flags(flags)  { }
+
+        Format                  GetFormat() const       { return m_format; }//!< The format of the texture data
+        uint32_t                GetWidth() const        { return m_width; } //!< The texture width
+        uint32_t                GetHeight() const       { return m_height; }//!< The texture height
+        bvector<Byte> const&    GetData() const         { return m_data; }  //!< The raw texture data
+        Flags                   GetFlags() const        { return m_flags; }//!< Texture flags
+        };
+
+    //=======================================================================================
+    //! Holds a texture's data in memory.
+    //=======================================================================================
+    struct Texture
+        {
+    private:
+        friend struct DgnTextures;
+
+        DgnTextureId        m_id;
+        Utf8String          m_name;
+        Utf8String          m_descr;
+        TextureData         m_data;
+
+    public:
+        //! Constructs an empty, invalid texture
+        Texture() { }
+        //! Constructs a texture for insertion into the textures table
+        //! @param[in]      data  The encoded texture data
+        //! @param[in]      name  The optional name of this texture. Must be unique within the DgnDb.
+        //! @param[in]      descr The optional texture description
+        explicit Texture (TextureData const& data, Utf8CP name = nullptr, Utf8CP descr = nullptr) : m_data(data), m_name(name), m_descr(descr) { }
+
+        bool                    IsValid() const         { return m_id.IsValid(); }  //!< Test whether this is a valid texture
+
+        DgnTextureId            GetId() const           { return m_id; }    //!< The ID of the texture
+        Utf8StringCR            GetName() const         { return m_name; }  //!< The optional texture name
+        Utf8StringCR            GetDescription() const  { return m_descr; } //!< The optional texture description
+        TextureData const&      GetData() const         { return m_data; }  //!< The encoded texture data
+
+        void    SetName (Utf8CP name)               { m_name = name; }      //!< Set the texture name
+        void    SetDescription (Utf8CP descr)       { m_descr = descr; }    //!< Set the texture description
+        void    SetData (TextureData const& data)   { m_data = data; }      //!< Set the texture data
+        };
+
+    //! An iterator over the textures in a DgnDb
+    struct Iterator : BeSQLite::DbTableIterator
+        {
+    public:
+        explicit Iterator (DgnDbCR db) : DbTableIterator ((BeSQLite::DbCR)db) { }
+
+        //! An entry in the texture table
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+        private:
+            friend struct Iterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) { }
+        public:
+            DGNPLATFORM_EXPORT DgnTextureId GetId() const;          //!< The texture ID
+            DGNPLATFORM_EXPORT Utf8CP       GetName() const;        //!< The texture name
+            DGNPLATFORM_EXPORT Utf8CP       GetDescr() const;       //!< The texture description
+            DGNPLATFORM_EXPORT Format       GetFormat() const;      //!< The texture format
+            DGNPLATFORM_EXPORT Flags        GetFlags() const;       //!< The texture flags
+            DGNPLATFORM_EXPORT uint32_t     GetWidth() const;       //!< The texture width
+            DGNPLATFORM_EXPORT uint32_t     GetHeight() const;      //!< The texture height
+            DGNPLATFORM_EXPORT size_t       GetDataSize() const;    //!< The number of bytes in the encoded texture data
+            DGNPLATFORM_EXPORT ByteCP       GetDataBytes() const;   //!< The encoded texture data
+
+            Entry const&    operator*() const   { return *this; }
+            };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+
+        DGNPLATFORM_EXPORT size_t   QueryCount() const;         //!< The number of entries in the texture table
+        DGNPLATFORM_EXPORT Entry    begin() const;              //!< An iterator to the first entry in the table
+        Entry end() const { return Entry (nullptr, false); }    //!< An iterator one beyond the last entry in the table
+        };
+
+    //! Obtain an iterator over the textures in a DgnDb.
+    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+
+    //! Insert a new texture into the DgnDb. If the texture is named, its name must be unique.
+    //! @param[in]      texture The new texture
+    //! @param[out]     result  If supplied, holds the result of the insert operation
+    //! @return The ID of the newly-created texture, or an invalid ID if insertion failed.
+    DGNPLATFORM_EXPORT DgnTextureId Insert (Texture& texture, DgnDbStatus* result = nullptr);
+
+    //! Change the properties of the specified texture. This method cannot be used to change the texture name
+    //! @param[in]      texture The modified texture.
+    //! @return Success if the texture was updated, or else an error code.
+    DGNPLATFORM_EXPORT DgnDbStatus  Update (Texture const& texture) const;
+
+    //! Look up a texture by ID.
+    //! @param[in]      id The ID of the desired texture
+    //! @return The texture with the specified ID, or an invalid texture if no such texture exists.
+    DGNPLATFORM_EXPORT Texture      Query (DgnTextureId id) const;
+
+    //! Look up the ID of the texture with the specified name
+    //! @param[in]      name The name of the desired texture
+    //! @return The ID of the texture with the specified name, or an invalid ID if no such texture exists.
+    DGNPLATFORM_EXPORT DgnTextureId QueryTextureId (Utf8StringCR name) const;
+    };
+
+//=======================================================================================
+//! The DgnMaterials holds the materials defined for a DgnDb. Each material has a unique
+//! combination of palette and material name, and an optional description and parent
+//! material ID.
+//! @see DgnDb::Materials
 //=======================================================================================
 struct DgnMaterials : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) { }
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db), m_nextQvMaterialId (0) {}
+
+    mutable uintptr_t                           m_nextQvMaterialId;
+    mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
 
 public:
-    struct Row
+
+    //=======================================================================================
+    //! Holds a material's data in memory.
+    //=======================================================================================
+    struct Material
     {
     private:
         friend struct DgnMaterials;
 
-        DgnMaterialId       m_materialId;
-        Utf8String          m_name;
-        Utf8String          m_palette;
+        DgnMaterialId m_id;
+        DgnMaterialId m_parentId;
+        Utf8String    m_name;
+        Utf8String    m_descr;
+        Utf8String    m_palette;
+        Utf8String    m_value;
 
     public:
-        Row() { }
-        Row(Utf8CP name, Utf8CP palette, DgnMaterialId id = DgnMaterialId()) : m_materialId(id), m_name(name), m_palette(palette) { }
+        //! Constructs an empty, invalid Material
+        Material() {}
+        //! Constructs a Material for insertion into the materials table.
+        //! @param[in]      name     The material's name. The combination of name and palette must be unique.
+        //! @param[in]      palette  The name of the material's palette. The combination of name and palette must be unique.
+        //! @param[in]      value    JSON representation of the material.
+        //! @param[in]      descr    Optional material description.
+        //! @param[in]      parentId Optional ID of this material's parent material.
+        Material(Utf8CP name, Utf8CP palette, Utf8CP value, Utf8CP descr=nullptr, DgnMaterialId parentId=DgnMaterialId()) : m_parentId(parentId), m_name(name), m_palette(palette), 
+                            m_descr(descr), m_value(value) {}
 
-        DgnMaterialId GetId() const { return m_materialId; }
-        Utf8CP GetName() const { return m_name.c_str(); }
-        Utf8CP GetPalette() const { return m_palette.c_str(); }
-        void SetName(Utf8CP val) { m_name = val; }
-        void SetPalette(Utf8CP val) { m_palette = val; }
-        bool IsValid() const { return m_materialId.IsValid(); }
+        DgnMaterialId GetId() const {return m_id;}  //!< The ID of this material.
+        DgnMaterialId GetParentId() const {return m_parentId;}  //!< The ID of this material's parent, or an invalid ID if no parent is defined.
+        Utf8StringCR GetName() const {return m_name;}   //!< The name of this material.
+        Utf8StringCR GetPalette() const {return m_palette;} //!< The name of this material's palette.
+        Utf8StringCR GetValue() const {return m_value;} //!< JSON representation of this material.
+        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.
+        void SetName(Utf8CP val) {m_name = val;} //!< Sets the name of this material.
+        void SetPalette(Utf8CP val) {m_palette = val;} //!< Sets the name of this material's palette.
+        void SetValue(Utf8CP val) {m_value = val;} //!< Sets the JSON representation of this material.
+        void SetDescr(Utf8CP val) {m_descr= val;} //!< Sets the description of this material.
+        void SetParentId(DgnMaterialId id) {m_parentId=id;} //!< Sets the parent material ID.
+        bool IsValid() const {return m_id.IsValid();} //!< Test if the Material is valid.
+        
+        //! Get an asset of the material as a Json value.  (Rendering, physical etc.)
+        //! @param[out]     value       The Json value for the asset.
+        //! @param[in]      keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
+        DGNPLATFORM_EXPORT BentleyStatus GetAsset (JsonValueR value, char const* keyWord) const; 
+
+        //! Set an asset of material from a Json value.
+        //! @param[in]     value       The Json value for the asset.
+        //! @param[in]     keyWord     asset keyword -- "RenderMaterial", "Physical" etc.
+        DGNPLATFORM_EXPORT void          SetAsset (JsonValueCR value, char const* keyWord);
     };
 
+    //! An iterator over the materials in a DgnDb
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
 
+        //! An entry in the material table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
             Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
-            DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
+            DGNPLATFORM_EXPORT DgnMaterialId GetId() const; //!< The material ID.
+            DGNPLATFORM_EXPORT DgnMaterialId GetParentId() const; //!< The parent material ID.
+            DGNPLATFORM_EXPORT Utf8CP GetName() const; //!< The material name.
+            DGNPLATFORM_EXPORT Utf8CP GetPalette() const; //!< The material palette name.
+            DGNPLATFORM_EXPORT Utf8CP GetValue() const; //!< The JSON representation of the material.
+            DGNPLATFORM_EXPORT Utf8CP GetDescr() const; //!< The material description.
             Entry const& operator*() const {return *this;}
         };
 
     typedef Entry const_iterator;
     typedef Entry iterator;
-    DGNPLATFORM_EXPORT size_t QueryCount() const;
-    DGNPLATFORM_EXPORT Entry begin() const;
-    Entry end() const {return Entry(nullptr, false);}
+    DGNPLATFORM_EXPORT size_t QueryCount() const; //!< The number of entries in the material table.
+    DGNPLATFORM_EXPORT Entry begin() const; //!< An iterator to the first entry in the table.
+    Entry end() const {return Entry(nullptr, false);} //!< An iterator one beyond the last entry in the table.
     };
 
+    //! Obtain an iterator over the materials in a DgnDb.
     Iterator MakeIterator() const {return Iterator(m_dgndb);}
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult InsertMaterial(Row& row);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteMaterial(DgnMaterialId materialId);
-    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Row const& row);
-    DGNPLATFORM_EXPORT Row QueryMaterialById(DgnMaterialId id) const;
+    //! Insert a new material into the DgnDb. The combination of material+palette name must be unique.
+    //! @param[in]      material    The new material
+    //! @param[out]     result      If supplied, holds the result of the insert operation
+    //! @return The DgnMaterialId of the newly created material, or an invalid ID if the material was not created.
+    DGNPLATFORM_EXPORT DgnMaterialId Insert(Material& material, DgnDbStatus* result=nullptr);
+
+    //! Change the properties of the specified material. This method cannot be used to change the material or palette name.
+    //! @param[in]      material The modified material.
+    //! @return Success if the material was updated, or else an error code.
+    DGNPLATFORM_EXPORT DgnDbStatus Update(Material const& material) const;
+
+    //! Look up a material by ID.
+    //! @param[in]      id The ID of the desired material
+    //! @return The material with the specified ID, or an invalid material if no such ID exists.
+    DGNPLATFORM_EXPORT Material Query(DgnMaterialId id) const;
+
+    //! Look up the ID of the material with the specifed name and palette name.
+    //! @param[in]      name    The material name
+    //! @param[in]      palette The palette name
+    //! @return The ID of the specified material, or an invalid ID if no such material exists.
+    DGNPLATFORM_EXPORT DgnMaterialId QueryMaterialId(Utf8StringCR name, Utf8StringCR palette) const;
+
+    DGNPLATFORM_EXPORT uintptr_t   GetQvMaterialId (DgnMaterialId materialId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t   AddQvMaterialId (DgnMaterialId materialId) const; //!< set QuickVision material ID for supplied material Id.
+
+};
+
+//=======================================================================================
+//! A DgnElement within a DgnDb can be identified by a "code" which is unique among all
+//! elements in the DgnDb. The meaning of the code is determined by the "authority" by which
+//! the code was assigned. Therefore the code includes the ID of the authority.
+//! DgnAuthorities holds all such authorities associated with a DgnDb. The name of an authority
+//! must be unique. An optional URI can be provided to specify how to contact the authority.
+//! @see DgnDb::Authorities
+//=======================================================================================
+struct DgnAuthorities : DgnDbTable
+{
+private:
+    friend struct DgnDb;
+    explicit DgnAuthorities(DgnDbR db) : DgnDbTable(db) {}
+
+public:
+    //=======================================================================================
+    //! Holds an authority's data in memory.
+    //=======================================================================================
+    struct Authority
+    {
+    private:
+        friend struct DgnAuthorities;
+
+        DgnAuthorityId  m_id;
+        Utf8String      m_name;
+        Utf8String      m_uri;
+    public:
+        //! Constructs an empty, invalid Authority
+        Authority() { }
+        //! Constructs a new Authority for insertion into the authorities table.
+        //! @param[in]      name The name of the authority. Must be unique.
+        //! @param[in]      uri  The optional Uri of the authority.
+        explicit Authority (Utf8CP name, Utf8CP uri = nullptr) : m_name (name), m_uri (uri) { }
+
+        DgnAuthorityId  GetId() const   { return m_id; } //!< This authority's ID.
+        Utf8StringCR    GetName() const { return m_name; } //!< This authority's unique name.
+        Utf8StringCR    GetUri() const  { return m_uri; } //!< This authority's URI.
+        bool            IsValid() const { return m_id.IsValid(); } //!< Test whether this Authority is valid.
+
+        void            SetName (Utf8CP val)    { m_name = val; } //!< Set the name of the authority. Must be unique.
+        void            SetUri (Utf8CP val)     { m_uri = val; } //!< Set the URI of the authority.
+    };
+
+    //! An iterator over the Authorities within a DgnDb.
+    struct Iterator : BeSQLite::DbTableIterator
+    {
+    public:
+        explicit Iterator (DgnDbCR db) : DbTableIterator ((BeSQLite::DbCR)db) { }
+
+        //! An entry in the Authorities table.
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct Iterator;
+            Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql, isValid) { }
+        public:
+            DGNPLATFORM_EXPORT DgnAuthorityId   GetId() const; //!< The authority ID.
+            DGNPLATFORM_EXPORT Utf8CP           GetName() const; //!< The authority name.
+            DGNPLATFORM_EXPORT Utf8CP           GetUri() const; //!< The authority URI.
+
+            Entry const& operator*() const      { return *this; }
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT size_t   QueryCount() const; //!< The number of entries in the table.
+        DGNPLATFORM_EXPORT Entry    begin() const; //!< An iterator to the first entry in the table.
+        Entry                       end() const { return Entry (nullptr, false); } //!< An iterator one beyond the last entry in the table.
+    };
+
+    //! Obtain an iterator over the authorities within a DgnDb.
+    Iterator    MakeIterator() const    { return Iterator (m_dgndb); }
+
+    //! Add a new Authority to the table.
+    //! @param[in]      authority   The new entry to add.
+    //! @param[out]     result      The result of the insert operation.
+    //! @return The ID of the newly-created Authority, or an invalid ID if insertion failed.
+    DGNPLATFORM_EXPORT DgnAuthorityId   Insert (Authority& authority, DgnDbStatus* result = nullptr);
+
+    //! Change the properties of an Authority. This method cannot be used to change the authority's name.
+    //! @param[in]      authority The modified Authority.
+    //! @return Success if the update was successful, or else an error code.
+    DGNPLATFORM_EXPORT DgnDbStatus      Update (Authority const& authority) const;
+
+    //! Look up an Authority by ID.
+    //! @param[in]      id The ID of the desired Authority.
+    //! @return The Authority with the specified ID, or an invalid ID if no such Authority exists.
+    DGNPLATFORM_EXPORT Authority        Query (DgnAuthorityId id) const;
+
+    //! Look up the ID of the authority with the specified name.
+    //! @param[in]      name The name of the desired Authority.
+    //! @return The ID corresponding to the name, or an invalid ID if no such name exists.
+    DGNPLATFORM_EXPORT DgnAuthorityId   QueryAuthorityId (Utf8StringCR name) const;
+
+    //! The built-in "local" code-generating authority
+    static DgnAuthorityId Local() {return DgnAuthorityId(1LL);}
 };
 
 //=======================================================================================
@@ -1325,8 +1496,8 @@ public:
 struct DgnScriptLibrary : DgnDbTable
 {
 public:
-    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
-    
+    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) {}
+
     //! Register the specified script in the DgnDb's script library.
     //! @param sName    The name to assign to the script in the library
     //! @param sText    The content of the script program
@@ -1334,7 +1505,7 @@ public:
     //! @see QueryScript
     DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, bool updateExisting);
 
-    //! Look up an imported script program by the specified name. 
+    //! Look up an imported script program by the specified name.
     //! @param[out] sText           The text of the script that was found in the library
     //! @param[out] stypeFound      The type of script actually found in the library
     //! @param[in] sName            Identifies the script in the library
@@ -1342,25 +1513,11 @@ public:
     //! @see RegisterScript
     DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred);
 
-    //! Utility function to read the text of the specified file 
+    //! Utility function to read the text of the specified file
     //! @param contents[out]    The content of the file
     //! @param fileName[in]     The name of the file to read
     //! @return non-zero error status if the file could not be found
     DGNPLATFORM_EXPORT static DgnDbStatus ReadText(Utf8StringR contents, BeFileNameCR fileName);
-
-    //! Utility function to convert ECProperties to JSON properties
-    //! @param json     The JSON object to be populated
-    //! @param ec       an ECObject that contains values
-    //! @param props    comma-separated list of property names
-    //! @return non-zero if a property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props);
-
-    //! Utility function to convert ECProperties to JSON properties
-    //! @param json     The JSON object to be populated
-    //! @param ec       an ECObject that contains values
-    //! @param prop     the name of a property
-    //! @return non-zero if the property could not be converted.
-    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop);
 };
 
 //=======================================================================================
@@ -1610,61 +1767,96 @@ public:
 //! @see ComponentModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
-struct ComponentModelSolution : DgnDbTable
+struct ComponentSolution : DgnDbTable
 {
     DEFINE_T_SUPER(DgnDbTable)
 
 public:
-    struct Solution
+    //! Identifies a solution the ComponentSolution table
+    struct SolutionId
         {
-        BeSQLite::EC::ECInstanceId m_id;
-        DgnModelId  m_componentModelId;
-        Utf8String m_parameters;
-        ElementAlignedBox3d m_range;
-        DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
+        friend struct ComponentModel;
+        friend struct ComponentSolution;
+      private:
+        Utf8String m_modelName;
+        Utf8String m_solutionName;
+
+        SolutionId(Utf8String m, Utf8String s) : m_modelName(m), m_solutionName(s) {;}
+
+      public:
+        SolutionId() {;}
+
+        bool IsValid() const {return !m_modelName.empty() && !m_solutionName.empty();}
+
+        bool operator==(SolutionId const& rhs) const {return m_modelName==rhs.m_modelName && m_solutionName==rhs.m_solutionName;}
         };
 
-    ComponentModelSolution(DgnDbR db) : T_Super(db) {;}
+    //! Access to the geometry of a captured solution
+    struct Solution
+        {
+        friend struct ComponentSolution;
+      private:
+        uint64_t m_rowId;
+        SolutionId m_id;
+        DgnModelId  m_componentModelId;
+        ElementAlignedBox3d m_range;
+
+      public:
+        Solution() : m_rowId(0) {;}
+
+        bool IsValid() {return m_id.IsValid() && m_rowId != 0;}
+
+        //! Get the range of the solution geometry.
+        ElementAlignedBox3d GetRange() const {return m_range;}
+
+        //! Read the captured solution geometry
+        //! @param[out]  geomStream     Where to write the geometry
+        //! @param[in]   db             The DgnDb to query
+        //! @return non-zero if the geometry could not be read
+        DgnDbStatus QueryGeomStream(GeomStreamR geomStream, DgnDbR db) const;
+        };
+
+    ComponentSolution(DgnDbR db) : T_Super(db) {;}
 
     //! @name Capturing Solutions
     //@{
-    //! Compute the code that would be used by row in ComponentModelSolutions to refer to a solution with the specified parameters.
-    //! @param[in] parms    The solver parameters
-    //! @return a generated name for the solution
-    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(Json::Value const& parms);
-
-    //! Look up a captured solution from a solution name
-    //! @param[in] componentModelId Identifies the local copy of the ComponentModel
-    //! @param[in] solutionName     The solution name to look for
-    //! @return The ID of the captured solution or an invalid ID if no such solution has been captured.
-    //! @see ComputeSolutionName
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId QuerySolutionId(DgnModelId componentModelId, Utf8StringCR solutionName);
 
     //! Look up a captured solution
     //! @param[out] solution  The solution data
     //! @param[in] sid     The solution id
     //! @return non-zero if no such solution exists
     //! @see CaptureSolution
-    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, BeSQLite::EC::ECInstanceId sid);
+    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, SolutionId sid);
 
     //! Harvest geometry from the component model and store in the solutions table.
     //! @param[in] componentModel The ComponentModel that is to be harvested
-    //! @return The ID of the captured solution 
+    //! @return The ID of the captured solution
     //! @see ComponentModel::Solve
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId CaptureSolution(ComponentModelR componentModel);
+    DGNPLATFORM_EXPORT SolutionId CaptureSolution(ComponentModelR componentModel);
     //@}
 
     //! @name Creating a Solution Instance
     //@{
-    //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
+    //! A convenience method to create a new element that will hold an instance of a captured solution geometry. The caller must insert the returned element into the Db.
+    //! This convenience method creates an element based on the class specified by ComponentModel::GetElementECClassName and assigns it to the category
+    //! specified by ComponentModel::GetElementCategoryName. The caller should call CreateSolutionInstanceItem next.
+    //! @note The caller does not have to call this method to capture an instance. The caller could create an instance element based on a different class or in a different category, as long as it is 
+    //! compatible with the ComponentModel's generated item.
     //! @param[in] destinationModel The model where the instance will be inserted by the caller
-    //! @param[in] componentSchemaName The 
     //! @param[in] solutionId Identifies a captured solution. See CaptureSolution and QuerySolutionId
-    //! @param[in] origin The instance placement origin
-    //! @param[in] angles The instance placement angles
-    //! @return An new element that could be inserted as an instance of a captured solution
-    //! @see CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+    //! @param[in] origin The element's placement origin
+    //! @param[in] angles The element's placement angles
+    //! @return An new element that could be inserted as an instance of a captured solution (but only \em after calling CreateSolutionInstanceItem)
+    //! @see CreateSolutionInstanceItem, CaptureSolution, QuerySolution
+    DGNPLATFORM_EXPORT DgnElementPtr CreateSolutionInstanceElement(DgnModelR destinationModel, SolutionId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+
+    //! Create an item that holds the geometry from specified solution and set it on the specified element.
+    //! @param instanceElement  The element to update with the new item
+    //! @param itemProperties   An ECInstance that contains the item's properties. It is up to the caller to transfer these properties to the DgnElement::Item object before inserting or updating the element.
+    //! @param solutionId       Identifies the solution to use
+    //! @param componentSchemaName  The name of the schema (in the element's DgnDb) that defines the component model item ECClass definition
+    //! @return non-zero error status if the item could not be created
+    DGNPLATFORM_EXPORT DgnDbStatus CreateSolutionInstanceItem(DgnElementR instanceElement, ECN::IECInstancePtr& itemProperties, Utf8CP componentSchemaName, SolutionId solutionId);
     //@}
     };
 

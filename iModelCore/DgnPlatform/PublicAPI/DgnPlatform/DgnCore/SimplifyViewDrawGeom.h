@@ -56,7 +56,9 @@ virtual bool                        _ProcessAsFacets (bool isPolyface) const {re
 virtual bool                        _ProcessAsBody (bool isCurved) const {return false;}                       // Output surfaces/solids not handled directly or are clipped through _ProcessBody.
 virtual bool                        _ProcessAsStrokes (bool isCurved) const {return _ProcessAsFacets (false);} // Output CurveVector not handled directly through _ProcessLinearSegments (or _ProcessFacetSet if region and _ProcessAsFacets).
 
+#if defined (NEEDS_WORK_MATERIAL)
 virtual bool                        _ProduceMaterialGeometryMaps (MaterialCR material, MaterialMapCR materialMap) const {return false;}
+#endif
 virtual bool                        _ProduceTextureOutlines () const {return false;}
 
 virtual bool                        _ClipPreservesRegions () const {return !m_inSymbolDraw;} // Want "fast" clip for patterns/lstyle symbols...

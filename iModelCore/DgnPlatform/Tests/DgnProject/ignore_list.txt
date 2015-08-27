@@ -3,36 +3,20 @@
 #----------------------------------------------------------------------------------------
 Performance*
 
-DimensionHandler.CreateAngularTypes                     # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-DimensionHandler.CreateLabelLineDimension               # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-TextBlockTest.CombineRunsUnitTest                       # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.CombiningEdfThenCharStream                # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.CombiningManyCharStreamsEdfs              # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.CombiningManyCharStreamsEdfsInTextnode    # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.EnforcingAtomicEdfsOnDelete               # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.EnforcingAtomicEdfsOnInsert               # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.RoundTripMultiFormat                      # Jeff - We'll need this for markups in Graphite04
-TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this for markups in Graphite04
+DimensionHandler.CreateAngularTypes                     # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
+DimensionHandler.CreateLabelLineDimension               # Josh -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
-AnnotationFrameStyleTest.InvalidOperations              # notified Umar Hayat
-TextAnnotationSeedTest.DefaultsAndAccessors # Failing after merge from 0504 to 06
-TextAnnotationSeedTest.DeepCopy # Failing after merge from 0504 to 06
-TextAnnotationSeedTest.TableReadWrite # Failing after merge from 0504 to 06
-TextAnnotationSeedTest.InvalidOperations # Failing after merge from 0504 to 06
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnGraphicsTest2d.*                                     # WIP DgnElement
-DgnGraphicsTest3d.*                                     # WIP DgnElement
 DgnMaterialsTest.*                                      # WIP DgnMaterials
-DgnStylesTest.*                                         # WIP DgnLineStyles
-DgnTextStylesTest.*                                     # WIP DgnTextStyles
+DgnLineStyleTest.*                                      # WIP DgnLineStyles
 DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
 DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem

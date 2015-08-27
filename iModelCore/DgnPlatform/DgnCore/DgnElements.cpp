@@ -1105,10 +1105,11 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
                     stmt->GetValueText(Column::Label), 
-                    stmt->GetValueText(Column::Code), 
+                    DgnElement::Code(stmt->GetValueText(Column::Code)), 
                     elementId, 
                     stmt->GetValueId<DgnElementId>(Column::ParentId),
-                    stmt->GetValueDouble(Column::LastMod)), makePersistent);
+                    stmt->GetValueDouble(Column::LastMod)),
+                    makePersistent);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1373,9 +1374,9 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    06/2015
 //---------------------------------------------------------------------------------------
-DgnElementId DgnElements::QueryElementIdByCode(Utf8CP code) const
+DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
     CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
-    statement->BindText(1, code, Statement::MakeCopy::No);
+    statement->BindText(1, code.GetValue(), Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
