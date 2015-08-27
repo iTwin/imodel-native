@@ -28,9 +28,10 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         ECSqlAdapterCache<ECInstanceInserter> m_inserters;
         ECSqlStatementCache m_statementCache;
         std::shared_ptr<Statement> m_findRelationshipClassesStatement;
-        std::shared_ptr<Statement> m_findRelationshipClassesWithSourceStatement;
-        std::shared_ptr<Statement> m_findRelationshipClassesInSchemaStatement;
         std::shared_ptr<ECInstanceFinder> m_finder;
+
+    private:
+        static bool DoesConstraintSupportECClass(ECRelationshipConstraintCR constraint, ECClassCR ecClass, bool allowPolymorphic);
 
     public:
         WSCACHE_EXPORT ECDbAdapter(ObservableECDb& ecDb);
