@@ -454,6 +454,8 @@ DgnDbStatus GeometricElement::_UpdateInDb()
     if (DgnDbStatus::Success != stat)
         return stat;
 
+    ClearGraphics(); // whenever we're changed, we simply drop all the cached graphics 
+    
     DgnDbR dgnDb = GetDgnDb();
     CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT OR REPLACE INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " (Geom,Placement,ElementId) VALUES(?,?,?)");
     stmt->BindId(3, m_elementId);
@@ -508,6 +510,15 @@ DgnDbStatus GeometricElement::_UpdateInDb()
         }
 
     return stat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_OnReversedUpdate(DgnElementCR changed) const 
+    {
+    T_Super::_OnReversedUpdate(changed); 
+    ClearGraphics();    // we just did an undo of a modification, clear any graphics on this element.
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -830,8 +841,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    // Copying between DgnDbs is allowed. Caller must do ID remapping.
-
+    // Copying between DgnDbs is allowed. Caller must do Id remapping.
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_label      = other.m_label;

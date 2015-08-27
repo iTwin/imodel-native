@@ -1097,6 +1097,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT void _OnReversedUpdate(DgnElementCR changed) const override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
     virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) = 0;
