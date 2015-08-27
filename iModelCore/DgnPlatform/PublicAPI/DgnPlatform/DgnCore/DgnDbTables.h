@@ -1275,9 +1275,9 @@ struct DgnMaterials : DgnDbTable
 {
 private:
     friend struct DgnDb;
-    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db), m_nextQvMaterialId (0) {}
+    explicit DgnMaterials(DgnDbR db) : DgnDbTable(db) {}
 
-    mutable uintptr_t                           m_nextQvMaterialId;
+    static uintptr_t                            s_nextQvMaterialId;
     mutable bmap <DgnMaterialId, uintptr_t>     m_qvMaterialIds;
 
 public:
