@@ -382,7 +382,7 @@ void TextString::DrawTextAdornments(ViewContextR context) const
 
     IDrawGeomR output = context.GetIDrawGeom();
 
-    ElemDisplayParamsR elParams = *context.GetCurrentDisplayParams();
+    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
     GetGlyphSymbology(elParams);
     elParams.SetWeight(0); // IsBold should not affect underline.
 

@@ -6,7 +6,6 @@ declare module BentleyApi.Dgn {
         X: cxx_double;
         Y: cxx_double;
         Z: cxx_double;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -30,7 +29,6 @@ declare module BentleyApi.Dgn {
         X: cxx_double;
         Y: cxx_double;
         Z: cxx_double;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
         Normalize(): JsDVector3dP;
@@ -86,7 +84,6 @@ declare module BentleyApi.Dgn {
         YawDegrees: cxx_double;
         PitchDegrees: cxx_double;
         RollDegrees: cxx_double;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -101,7 +98,6 @@ declare module BentleyApi.Dgn {
         static CreateRadians (value : cxx_double) : JsAngleP;
         Radians : cxx_double;
         Degrees : cxx_double;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -133,7 +129,6 @@ declare module BentleyApi.Dgn {
                 sweepAngle  : JsAngleP
                 );
         PointAtFraction (f : cxx_double) : JsDPoint3dP;                
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -147,7 +142,6 @@ declare module BentleyApi.Dgn {
                 endPoint   : JsDPoint3dP
                 );
         PointAtFraction (f : cxx_double) : JsDPoint3dP;                
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -164,7 +158,6 @@ declare module BentleyApi.Dgn {
         PointAtFraction (f : cxx_double) : JsDPoint3dP;                
         Origin: JsDPoint3dP;
         Direction: JsDVector3dP;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -186,7 +179,6 @@ declare module BentleyApi.Dgn {
 
         At(index: cxx_double): JsDPoint3dP;
 
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -258,7 +250,6 @@ declare module BentleyApi.Dgn {
         HasUnitLengthMutuallyPerpendicularRowsAndColumns () : cxx_bool;
 
 
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -339,7 +330,6 @@ declare module BentleyApi.Dgn {
         IsRigid () : cxx_bool;
             
         ScaleMatrixColumnsInPlace (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : void;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -357,7 +347,6 @@ declare module BentleyApi.Dgn {
         CurvePrimitiveType(): cxx_double;
         PointAtFraction(f: cxx_double): JsDPoint3dP; 
 
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }

@@ -58,7 +58,9 @@ void ModelSolverDef::Solve(DgnModelR model)
         int retval;
         Json::Value parmsJson(Json::objectValue);
         GetParameters().ConvertValuesToJson(parmsJson);
-        DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), parmsJson);
+        Json::Value optionsJson(Json::objectValue);
+        model._GetSolverOptions(optionsJson);
+        DgnDbStatus xstatus = DgnScript::ExecuteModelSolver(retval, model, m_name.c_str(), parmsJson, optionsJson);
         if (xstatus != DgnDbStatus::Success || 0 != retval)
             {
             TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Model solver failed");   // *** NEEDS WORK: Get failure description from ModelSolverDef
@@ -160,6 +162,7 @@ Utf8String ModelSolverDef::ToJson() const
     Json::Value json (Json::objectValue);
     json["Type"] = tval;
     json["Name"] = m_name.c_str();
+    json["Version"] = m_version.c_str();
     json["Parameters"] = m_parameters.ToJson();
 
     return Json::FastWriter::ToString(json);
@@ -196,6 +199,7 @@ void ModelSolverDef::FromJson(Utf8CP str)
     
     //  Extract simple properties
     m_name = json["Name"].asCString();
+    m_version = json["Version"].asCString();
     m_parameters = ParameterSet(json["Parameters"]);
     }
 

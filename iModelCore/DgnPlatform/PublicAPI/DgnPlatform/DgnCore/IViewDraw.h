@@ -404,12 +404,12 @@ private:
         bool m_material:1;
         bool m_fill:1; // If not set, fill is an opaque fill that matches sub-category appearance color...
         bool m_bgFill:1; // When set, fill is an opaque fill that matches current view background color...
+        AppearanceOverrides() {memset(this, 0, sizeof(*this));}
         };
 
     // NOTE: Constructor uses memset (this, 0, offsetof (ElemDisplayParams, m_material));
     AppearanceOverrides m_appearanceOverrides;          //!< flags for parameters that override SubCategory::Appearance.
     bool                m_resolved:1;                   //!< whether Resolve has established SubCategory::Appearance/effective values.
-
     DgnCategoryId       m_categoryId;                   //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId    m_subCategoryId;                //!< the SubCategory Id that controls the appearence of subsequent geometry.
     int32_t             m_elmPriority;                  //!< display priority (applies to 2d only)
@@ -430,10 +430,8 @@ private:
     PlotInfoPtr         m_plotInfo;
 
 public:
-    ElemDisplayParams() {Init();}
+    DGNPLATFORM_EXPORT ElemDisplayParams();
     DGNPLATFORM_EXPORT explicit ElemDisplayParams(ElemDisplayParamsCR rhs);
-
-    DGNPLATFORM_EXPORT void Init();
     DGNPLATFORM_EXPORT void ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
     DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values
 
@@ -627,6 +625,7 @@ public:
     DGNPLATFORM_EXPORT void          SetTreatAsSingleSegment(bool yesNo);
     DGNPLATFORM_EXPORT void          SetTangents(DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT void          SetLineStyle(ILineStyleCP lstyle);
+    DGNPLATFORM_EXPORT void          ConvertToRasterLineStyle(ViewContextR context, bool force);
 
     bool HasTrueWidth() const  {return HasOrgWidth() || HasEndWidth();}
     bool HasMaxCompress() const {return m_options.maxCompress;}

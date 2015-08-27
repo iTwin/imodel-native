@@ -185,7 +185,7 @@ $(coreObjs)TextStyleInterop$(oext): $(DgnCoreDir)TextStyleInterop.cpp $(DgnCoreA
 
 $(coreObjs)DgnPropertyJson$(oext): $(DgnCoreDir)DgnPropertyJson.cpp ${MultiCompileDepends}
 
-$(coreObjs)ElementGeometry$(oext): $(DgnCoreDir)ElementGeometry.cpp ${MultiCompileDepends}
+$(coreObjs)ElementGeometry$(oext): $(DgnCoreDir)ElementGeometry.cpp $(DgnCoreAPISrc)LineStyle.h ${MultiCompileDepends}
 
 $(coreObjs)ElementGraphics$(oext): $(DgnCoreDir)ElementGraphics.cpp $(DgnCoreAPISrc)ElementGraphics.h ${MultiCompileDepends}
 
@@ -270,6 +270,10 @@ $(coreObjs)DgnUnits$(oext) : $(DgnCoreDir)DgnUnits.cpp $(DgnCoreAPISrc)DgnDb.h $
 $(coreObjs)DgnCategories$(oext) : $(DgnCoreDir)DgnCategories.cpp $(DgnCoreAPISrc)DgnDb.h $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)DgnMaterial$(oext) : $(DgnCoreDir)DgnMaterial.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnTexture$(oext) : $(DgnCoreDir)DgnTexture.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
+
+$(coreObjs)DgnAuthority$(oext) : $(DgnCoreDir)DgnAuthority.cpp $(DgnCoreAPISrc)DgnDbTables.h ${MultiCompileDepends}
 
 $(coreObjs)SatelliteChangeSets$(oext) : $(DgnCoreDir)SatelliteChangeSets.cpp $(DgnCoreAPISrc)SatelliteChangeSets.h ${MultiCompileDepends}
 
@@ -526,7 +530,11 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
             LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
         %endif
     %elif $(TARGET_PLATFORM) == "WinRT"
-        LINKER_LIBRARIES + jsrt.lib
+        %if $(MSVC_VERSION) >= 1900
+            LINKER_LIBRARIES + chakrart.lib
+        %else
+            LINKER_LIBRARIES + jsrt.lib
+        %endif
     %elif $(TARGET_PLATFORM) == "Android"
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
         LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a
