@@ -371,7 +371,7 @@ void    LineStyleSymb::CheckContinuationData ()
         }
     }
 
-static bool s_allowLineStyles = false;  //  LINESTYLES_DISABLED
+static bool s_allowLineStyles = bool(LINESTYLES_ENABLED); 
 /*---------------------------------------------------------------------------------**//**
 * see whether this element should be drawn with a custom linestyle.
 * @return the hardware linestyle to be used.
@@ -546,7 +546,8 @@ DPoint3dCP          endTangent
 
     SetScale (scale);
 
-    m_rasterTexture = nameRec->GetRasterTexture (context, *this, context.Is3dView(), scale);
+    //  NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
+    //  m_rasterTexture = nameRec->GetRasterTexture (context, *this, context.Is3dView(), scale);
 
     return 0;
     }
@@ -641,6 +642,17 @@ bool                LineStyleSymb::HasEndTangent()    const {return m_options.en
 uintptr_t           LineStyleSymb::GetRasterTexture() const {return m_rasterTexture; }
 void                LineStyleSymb::SetTotalLength (double length) {m_totalLength = length;}
 void                LineStyleSymb::SetLineStyle (ILineStyleCP lstyle) {m_lStyle = lstyle;}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    08/2015
+//---------------------------------------------------------------------------------------
+void LineStyleSymb::ConvertToRasterLineStyle(ViewContextR context, bool force)
+    {
+    LsDefinitionP lsDef = (LsDefinitionP)m_lStyle;
+    BeAssert(nullptr != lsDef && dynamic_cast<LsDefinitionCP>(m_lStyle) == lsDef);
+
+    m_rasterTexture = lsDef->GetRasterTexture (context, *this, force, m_scale);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * calulate the number of repetitions of this linestyle necessary to cover this element.

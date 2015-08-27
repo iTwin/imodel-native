@@ -253,7 +253,7 @@ void ComponentModelTest::Developer_CreateCMs()
     // Note that a script will generally create elements from scratch. That's why it starts by deleting all elements in the model. They would have been the outputs of the last run.
     AddToFakeScriptLibrary(TEST_JS_NAMESPACE, 
 "(function () { \
-    function widgetSolver(model, params) { \
+    function widgetSolver(model, params, options) { \
         model.DeleteAllElements();\
         var element = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin = new BentleyApi.Dgn.JsDPoint3d(1,2,3);\
@@ -273,7 +273,7 @@ void ComponentModelTest::Developer_CreateCMs()
         element.Update();\
         return 0;\
     } \
-    function gadgetSolver(model, params) { \
+    function gadgetSolver(model, params, options) { \
         model.DeleteAllElements();\
         var element = model.CreateElement('dgn.PhysicalElement', 'Gadget');\
         var origin = new BentleyApi.Dgn.JsDPoint3d(0,0,0);\

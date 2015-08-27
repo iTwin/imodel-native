@@ -27,7 +27,7 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
     DPoint3dCP  org   = inPoints;
     DPoint3dCP  end   = org + (nPoints-1);
 
-    // process vertext symbols
+    // process vertex symbols
     LsSymbolReferenceCP   sym;
     DPoint3d     dir, dir1, dir2;
 
