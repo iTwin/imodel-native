@@ -38,8 +38,6 @@ void ECDbAdapter::OnSchemaChanged()
     {
     m_inserters = ECSqlAdapterCache<ECInstanceInserter>(*m_ecDb);
     m_findRelationshipClassesStatement = nullptr;
-    m_findRelationshipClassesWithSourceStatement = nullptr;
-    m_findRelationshipClassesInSchemaStatement = nullptr;
     m_finder = nullptr;
     }
 
@@ -218,10 +216,33 @@ ECRelationshipClassP ECDbAdapter::GetECRelationshipClass(ObjectIdCR objectId)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECDbAdapter::DoesConstraintSupportECClass(ECRelationshipConstraintCR constraint, ECClassCR ecClass, bool allowPolymorphic)
+    {
+    for (auto constraintClass : constraint.GetClasses())
+        {
+        if ((!allowPolymorphic || !constraint.GetIsPolymorphic()) && &ecClass == constraintClass)
+            {
+            return true;
+            }
+
+        if (allowPolymorphic && constraint.GetIsPolymorphic() && ecClass.Is(constraintClass))
+            {
+            return true;
+            }
+        }
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId sourceClassId, ECClassId targetClassId)
     {
+    // Doing ECDb query is 3-6 times faster than loading schema to memory. However, schema loading is done once.
+    // If this method needs to be called multiple times, then its faster to use schema approach.
+
     bvector<ECRelationshipClassCP> classes;
 
     if (nullptr == m_findRelationshipClassesStatement)
@@ -276,51 +297,29 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClasses(ECClassId so
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Mark.Uvari      04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(ECClassId sourceClassId, Utf8String schemaName)
+bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesWithSource(ECClassId endClassId, Utf8String schemaName)
     {
     bvector<ECRelationshipClassCP> classes;
 
-    if (nullptr == m_findRelationshipClassesWithSourceStatement)
+    ECClassCP endClass = GetECClass(endClassId);
+    ECSchemaCP schema = GetECSchema(schemaName);
+
+    if (schema == nullptr || endClass == nullptr)
         {
-        Utf8CP sql = R"(WITH RECURSIVE
-           RelationshipConstraintClasses (ECClassId, RelationECClassId) AS
-           (
-           SELECT  RCC.ECClassId, RCC.RelationECClassId
-               FROM ec_RelationshipConstraintClass RCC JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId WHERE ES.Name = ?
-           UNION
-           SELECT RCC.ECClassId, BC.ECClassId
-               FROM RelationshipConstraintClasses RCC
-                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId WHERE ES.Name = ?
-           )
-                SELECT DISTINCT SRC.ECClassId
-           FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
-                WHERE SRC.RelationECClassId = ? OR TRG.RelationECClassId = ?)";
+        return classes;
+        }
 
-        m_findRelationshipClassesWithSourceStatement = std::make_shared<Statement>();
+    for (ECClassCP ecClass : schema->GetClasses())
+        {
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (nullptr == relClass)
+            continue;
 
-        BeSQLite::DbResult status;
-        if (BeSQLite::DbResult::BE_SQLITE_OK != (status = m_findRelationshipClassesWithSourceStatement->Prepare(*m_ecDb, sql)))
+        if (DoesConstraintSupportECClass(relClass->GetSource(), *endClass, true) ||
+            DoesConstraintSupportECClass(relClass->GetTarget(), *endClass, true))
             {
-            BeAssert(false);
-            return classes;
+            classes.push_back(relClass);
             }
-        }
-    else
-        {
-        m_findRelationshipClassesWithSourceStatement->Reset();
-        m_findRelationshipClassesWithSourceStatement->ClearBindings();
-        }
-
-    m_findRelationshipClassesWithSourceStatement->BindText(1, schemaName, Statement::MAKE_COPY_Yes);
-    m_findRelationshipClassesWithSourceStatement->BindText(2, schemaName, Statement::MAKE_COPY_Yes);
-    m_findRelationshipClassesWithSourceStatement->BindInt64(3, sourceClassId);
-    m_findRelationshipClassesWithSourceStatement->BindInt64(4, sourceClassId);
-
-    BeSQLite::DbResult status;
-    while (BeSQLite::DbResult::BE_SQLITE_ROW == (status = m_findRelationshipClassesWithSourceStatement->Step()))
-        {
-        classes.push_back(GetECRelationshipClass(m_findRelationshipClassesWithSourceStatement->GetValueInt64(0)));
         }
 
     return classes;
@@ -333,54 +332,26 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
     {
     bvector<ECRelationshipClassCP> classes;
 
-    if (nullptr == m_findRelationshipClassesInSchemaStatement)
+    ECClassCP sourceClass = GetECClass(sourceClassId);
+    ECClassCP targetClass = GetECClass(targetClassId);
+    ECSchemaCP schema = GetECSchema(schemaName);
+
+    if (schema == nullptr || sourceClass == nullptr || targetClass == nullptr)
         {
-        Utf8CP sql = R"(WITH RECURSIVE
-           RelationshipConstraintClasses (ECClassId, ECRelationshipEnd, IsPolymorphic, RelationECClassId, NestingLevel, SchemaName) AS
-           (
-           SELECT  RC.ECClassId, RCC.ECRelationshipEnd, RC.IsPolymorphic, RCC.RelationECClassId, 0, ES.Name
-               FROM ec_RelationshipConstraint RC
-                   INNER JOIN ec_RelationshipConstraintClass RCC ON RC.ECClassId = RCC.ECClassId  AND RC.[ECRelationshipEnd] = RCC.[ECRelationshipEnd] JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-           UNION
-           SELECT RCC.ECClassId, RCC.ECRelationshipEnd, RCC.IsPolymorphic, BC.ECClassId, NestingLevel + 1, ES.Name
-               FROM RelationshipConstraintClasses RCC
-                   INNER JOIN ec_BaseClass BC ON BC.BaseECClassId = RCC.RelationECClassId JOIN ec_Class EC ON RCC.ECClassId = EC.ECClassId JOIN ec_Schema ES ON EC.ECSchemaId = ES.ECSchemaId
-               WHERE RCC.IsPolymorphic = 1
-               ORDER BY 2 DESC
-           )
-        SELECT SRC.ECClassId
-           FROM RelationshipConstraintClasses SRC
-           INNER JOIN   RelationshipConstraintClasses TRG ON SRC.ECClassId = TRG.ECClassId
-                WHERE SRC.ECRelationshipEnd = 0 AND TRG.ECRelationshipEnd = 1
-                      AND ((SRC.RelationECClassId = ? AND TRG.RelationECClassId = ?)
-                          OR (TRG.RelationECClassId = ? AND SRC.RelationECClassId = ?))
-                      AND SRC.SchemaName = ?)";
+        return classes;
+        }
 
-        m_findRelationshipClassesInSchemaStatement = std::make_shared<Statement>();
+    for (ECClassCP ecClass : schema->GetClasses())
+        {
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        if (nullptr == relClass)
+            continue;
 
-        BeSQLite::DbResult status;
-        if (BeSQLite::DbResult::BE_SQLITE_OK != (status = m_findRelationshipClassesInSchemaStatement->Prepare(*m_ecDb, sql)))
+        if (DoesConstraintSupportECClass(relClass->GetSource(), *sourceClass, true) &&
+            DoesConstraintSupportECClass(relClass->GetTarget(), *targetClass, true))
             {
-            BeAssert(false);
-            return classes;
+            classes.push_back(relClass);
             }
-        }
-    else
-        {
-        m_findRelationshipClassesInSchemaStatement->Reset();
-        m_findRelationshipClassesInSchemaStatement->ClearBindings();
-        }
-
-    m_findRelationshipClassesInSchemaStatement->BindInt64(1, sourceClassId);
-    m_findRelationshipClassesInSchemaStatement->BindInt64(2, targetClassId);
-    m_findRelationshipClassesInSchemaStatement->BindInt64(3, sourceClassId);
-    m_findRelationshipClassesInSchemaStatement->BindInt64(4, targetClassId);
-    m_findRelationshipClassesInSchemaStatement->BindText(5, schemaName, Statement::MAKE_COPY_Yes); //TODO: Temporarily hard-coded schema
-
-    BeSQLite::DbResult status;
-    while (BeSQLite::DbResult::BE_SQLITE_ROW == (status = m_findRelationshipClassesInSchemaStatement->Step()))
-        {
-        classes.push_back(GetECRelationshipClass(m_findRelationshipClassesInSchemaStatement->GetValueInt64(0)));
         }
 
     return classes;
@@ -392,21 +363,22 @@ bvector<ECRelationshipClassCP> ECDbAdapter::FindRelationshipClassesInSchema(ECCl
 ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithSource(ECClassId sourceClassId, ECClassId targetClassId)
     {
     ECRelationshipClassCP relClass = nullptr;
+
+    ECClassCP sourceClass = GetECClass(sourceClassId);
+    if (sourceClass == nullptr)
+        {
+        return nullptr;
+        }
+
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        for (ECClassCP sourceClass : candidateRelClass->GetSource().GetClasses())
+        if (DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, false))
             {
-            if (sourceClass->GetId() != sourceClassId)
-                {
-                continue;
-                }
-
             if (relClass != nullptr)
                 {
                 // Duplicate found
                 return nullptr;
                 }
-
             relClass = candidateRelClass;
             }
         }
@@ -420,21 +392,22 @@ ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithSource(ECClassId sou
 ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithTarget(ECClassId sourceClassId, ECClassId targetClassId)
     {
     ECRelationshipClassCP relClass = nullptr;
+
+    ECClassCP targetClass = GetECClass(targetClassId);
+    if (targetClass == nullptr)
+        {
+        return nullptr;
+        }
+
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        for (ECClassCP targetClass : candidateRelClass->GetTarget().GetClasses())
+        if (DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *targetClass, false))
             {
-            if (targetClass->GetId() != targetClassId)
-                {
-                continue;
-                }
-
             if (relClass != nullptr)
                 {
                 // Duplicate found
                 return nullptr;
                 }
-
             relClass = candidateRelClass;
             }
         }
