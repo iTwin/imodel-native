@@ -106,6 +106,7 @@ struct ModelSolverDef
     private:
     Type        m_type;
     Utf8String  m_name;
+    Utf8String  m_version;
     ParameterSet m_parameters;
 
     void FromJson(Utf8CP);
@@ -134,6 +135,10 @@ struct ModelSolverDef
     DGNPLATFORM_EXPORT ParameterSet const& GetParameters() const;
     //! Get the parameters of the solver.
     DGNPLATFORM_EXPORT ParameterSet& GetParametersR();
+    //! Get the solver version
+    Utf8String GetVersion() {return m_version;}
+    //! Set the solver version
+    void SetVersion(Utf8StringCR v) {m_version=v;}
     };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
