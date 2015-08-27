@@ -1720,7 +1720,7 @@ void Db::FlushPageCache()
 bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
     {
     Statement sql;
-    return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM [%s]", columnName, tableName));
+    return BE_SQLITE_OK == sql.TryPrepare(*this, SqlPrintfString("SELECT [%s] FROM %s", columnName, tableName));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1729,7 +1729,7 @@ bool Db::ColumnExists(Utf8CP tableName, Utf8CP columnName) const
 bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
     {
     Statement statement;
-    DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM [%s] LIMIT 0", tableName));
+    DbResult status =  statement.TryPrepare(*this, SqlPrintfString("SELECT * FROM %s LIMIT 0", tableName));
     if (status != BE_SQLITE_OK)
         return false;
 
@@ -1745,7 +1745,7 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Db::RenameTable(Utf8CP tableName, Utf8CP newTableName)
     {
-    return BE_SQLITE_OK == ExecuteSql(SqlPrintfString("ALTER TABLE [%s] RENAME TO [%s]", tableName, newTableName));
+    return BE_SQLITE_OK == ExecuteSql(SqlPrintfString("ALTER TABLE %s RENAME TO %s", tableName, newTableName));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3466,9 +3466,7 @@ static DbResult compressAndEmbedFile(Db& db, uint64_t& filesize, uint32_t& chunk
         return BE_SQLITE_IOERR;
         }
 
-    DbResult rc = outStream.Flush();
-
-    return rc;
+    return outStream.Flush();
     }
 
 //---------------------------------------------------------------------------------------
@@ -3919,8 +3917,6 @@ DbResult DbEmbeddedFileTable::Read(bvector<Byte>& callerBuffer, Utf8CP name)
 
     return BE_SQLITE_OK;
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
@@ -4695,7 +4691,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    01/2013
 //=======================================================================================
-struct          MemoryLzmaInStream : ILzmaInputStream
+struct MemoryLzmaInStream : ILzmaInputStream
 {
 private:
     uint32_t    m_offset;
