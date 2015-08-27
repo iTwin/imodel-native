@@ -176,7 +176,7 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
-    ElemDisplayParams   savedParams(*context.GetCurrentDisplayParams());
+    ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
     ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
 
     context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
@@ -194,7 +194,7 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
 
     context.PopTransformClip();
 
-    *context.GetCurrentDisplayParams() = savedParams;
+    context.GetCurrentDisplayParams() = savedParams;
     *context.GetElemMatSymb() = savedMatSymb;
     }
 
