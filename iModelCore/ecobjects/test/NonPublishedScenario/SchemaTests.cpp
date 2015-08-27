@@ -34,7 +34,7 @@ TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer
         {
         ECClassCP ecClass = *cit;
         Utf8String name = ecClass->GetName();
-        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        //printf("ECClass=0x%lx, name=%s\n", (uintptr_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(2, count);
@@ -42,7 +42,7 @@ TEST_F(NonPublishedScenarioSchemaTest, ShouldBeAbleToIterateOverECClassContainer
     for (ECClassCP ecClass: container)
         {
         Utf8String name = ecClass->GetName();
-        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        //printf("ECClass=0x%lx, name=%s\n", (uintptr_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(4, count);
@@ -69,7 +69,7 @@ TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
         {
         ECClassCP ecClass = *cit;
         Utf8String name = ecClass->GetName();
-        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        //printf("ECClass=0x%lx, name=%s\n", (uintptr_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(2, count);
@@ -77,7 +77,7 @@ TEST_F(NonPublishedScenarioSchemaTest, TestGetClassCount)
     for (ECClassCP ecClass: container)
         {
         Utf8String name = ecClass->GetName();
-        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        //printf("ECClass=0x%lx, name=%s\n", (uintptr_t)ecClass, name.c_str());
         count++;
         }
     ASSERT_EQ(4, count);
