@@ -101,7 +101,7 @@ public:
             struct ScriptErrorHandler : IHostObject
                 {
                 //! Handle a script error
-                enum class Category {ReportedByScript, Other};
+                enum class Category {ReportedByScript, Other, Info};
                 DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description);
                 };
 

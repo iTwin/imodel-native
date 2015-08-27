@@ -405,7 +405,7 @@ declare module BentleyApi.Dgn {
     IsClosedByEdgePairing() : cxx_bool;
     HasFacets() : cxx_bool;
     HasConvexFacets() : cxx_bool;
-    GetNumFacet() : cxx_double;
+    GetFacetCount () : cxx_double;
     GetLargestCoordinate() : cxx_double;
 
     _OnDispose(): void;
@@ -419,7 +419,7 @@ declare module BentleyApi.Dgn {
     class JsPolyfaceVisitor implements IDisposable {
 
 
-    CreateVisitor(mesh : JsPolyfaceMeshP, aNumWrap : cxx_double) : JsPolyfaceVisitorP;
+    static CreateVisitor(mesh : JsPolyfaceMeshP, aNumWrap : cxx_double) : JsPolyfaceVisitorP;
 
     Reset() : void;
 
@@ -430,7 +430,7 @@ declare module BentleyApi.Dgn {
     GetParam(aIndex : cxx_double) : JsDPoint2dP;
 
     GetNormal(aIndex : cxx_double) : JsDVector3dP;
-
+    GetEdgeCount () : cxx_double;
     _OnDispose(): void;
     OnDispose(): void;
     Dispose(): void;

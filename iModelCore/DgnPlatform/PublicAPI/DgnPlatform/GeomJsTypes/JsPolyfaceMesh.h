@@ -86,7 +86,7 @@ public:
         size_t numLoop, minPerLoop, maxPerLoop;
         bool hasNonPlanarFacets, hasNonConvexFacets;
         m_data->InspectFaces (numLoop, minPerLoop, maxPerLoop, hasNonPlanarFacets, hasNonConvexFacets);
-        auto context = T_HOST. GetScriptAdmin().GetDgnScriptContext();
+        auto &context = T_HOST. GetScriptAdmin().GetDgnScriptContext();
 
         auto beJsObj = BeJsObject::New (context);
         beJsObj.SetNumberProperty ("numLoop", (int32_t)numLoop);
@@ -108,7 +108,7 @@ public:
     bool IsClosedByEdgePairing (){return m_data->IsClosedByEdgePairing ();}
     bool HasFacets(){return m_data->HasFacets();}
     bool HasConvexFacets(){return m_data->HasConvexFacets();}
-    double GetNumFacet (){return (double)m_data->GetNumFacet ();}
+    double GetFacetCount (){return (double)m_data->GetNumFacet ();}
     double GetLargestCoordinate (){return m_data->LargestCoordinate ();}
 
 

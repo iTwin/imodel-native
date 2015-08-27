@@ -22,7 +22,7 @@ struct JsPolyfaceVisitor: JsGeomWrapperBase<PolyfaceVisitorPtr>
     JsPolyfaceVisitor (PolyfaceVisitorPtr &data) {m_data = data;}
 public:
     JsPolyfaceVisitor (){}  // umm.. really should not happen -- visitor without client is disaster
-    JsPolyfaceVisitorP CreateVisitor (JsPolyfaceMeshP mesh, double aNumWrap)
+    static JsPolyfaceVisitorP CreateVisitor (JsPolyfaceMeshP mesh, double aNumWrap)
         {
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*mesh->Get (), true);
         visitor->SetNumWrap ((uint32_t)aNumWrap);
@@ -33,6 +33,7 @@ public:
 
     bool AdvanceToNextFacet (){return m_data->AdvanceToNextFace ();}
 
+    double GetEdgeCount (){return m_data->NumEdgesThisFace ();}
     JsDPoint3dP GetPoint (double aIndex)
         {
         DPoint3d data;
