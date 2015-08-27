@@ -261,17 +261,17 @@ public:
     //=======================================================================================
     struct  ContextMark
         {
-        ViewContextP    m_context;
-        size_t          m_hdrOvrMark;
-        size_t          m_transClipMark;
-        size_t          m_dynamicViewStateStackMark;
-        size_t          m_displayStyleStackMark;
-        bool            m_pushedRange;
-        bool            m_ignoreScaleForDimensions;
-        bool            m_ignoreScaleForMultilines;
-        bool            m_applyRotationToDimView;
-        RangeResult     m_parentRangeResult;
-        double          m_reservedDouble;
+        ViewContextP m_context;
+        size_t       m_hdrOvrMark;
+        size_t       m_transClipMark;
+        size_t       m_dynamicViewStateStackMark;
+        size_t       m_displayStyleStackMark;
+        bool         m_pushedRange;
+        bool         m_ignoreScaleForDimensions;
+        bool         m_ignoreScaleForMultilines;
+        bool         m_applyRotationToDimView;
+        RangeResult  m_parentRangeResult;
+        double       m_reservedDouble;
 
     public:
         DGNPLATFORM_EXPORT explicit ContextMark(ViewContextP context);
@@ -760,7 +760,7 @@ public:
 
     //! Get the current ElemDisplayParams.
     //! @return the current ElemDisplayParams.
-    DGNPLATFORM_EXPORT ElemDisplayParamsP GetCurrentDisplayParams();
+	ElemDisplayParams& GetCurrentDisplayParams() {return m_currDisplayParams;}
 
     //! Change the current "natural" ElemDisplayParams. Resolves effective symbology as required by the context and initializes the current ElemMatSymb.
     //! @note Calls ActivateMatSymb on the output.
@@ -928,34 +928,6 @@ public:
 /** @endGroup */
 
 //__PUBLISH_SECTION_END__
-//=======================================================================================
-//! Encapsulates all possible factors that could affect the display of an annotation element.
-// @bsiclass                                                     Sam.Wilson      03/2008
-//=======================================================================================
-struct AnnotationDisplayParameters
-{
-private:
-    double      elementScale;    //!< The element's "native" scale. This is normally applied by transforming the element when it is placed or when the annotation scale of its host model changes.
-    double      desiredScale;    //!< Active Annotation Scale to be applied to annotation elements in references.
-    Transform   aspectRatioSkew; //!< Non-uniform scaling that will be applied to the view.
-
-public:
-    void Init();
-    void Init(double e, double r, double d, Transform const& a);
-
-    DGNPLATFORM_EXPORT void SwapScales();
-
-    //! The element's current annotation scale
-    double GetElementNativeScale() const {return elementScale;}
-
-    //! The annotation scale that should be used when drawing in the current context.
-    double GetDesiredScale() const {return desiredScale;}
-
-    //! The factor by which the annotation element should be rescaled.
-    double GetRescaleFactor() const {return GetDesiredScale() / GetElementNativeScale();}
-
-}; // AnnotationDisplayParameters
-
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
 +===============+===============+===============+===============+===============+======*/

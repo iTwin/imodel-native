@@ -1039,7 +1039,7 @@ void            RegionGraphicsContext::_SetupOutputs()
 void            RegionGraphicsContext::_DrawTextString(TextStringCR text)
     {
     // Don't draw background shape and other adornments...
-    text.GetGlyphSymbology(*GetCurrentDisplayParams());
+    text.GetGlyphSymbology(GetCurrentDisplayParams());
     CookDisplayParams();
 
     GetIDrawGeom().DrawTextString(text, NULL);

@@ -545,15 +545,15 @@ struct PatternHelper
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void CookPatternSymbology(PatternParamsCR params, ViewContextR context)
     {
-    ElemDisplayParamsP  elParams = context.GetCurrentDisplayParams();
+    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
 
     if (PatternParamsModifierFlags::None != ((PatternParamsModifierFlags::Color | PatternParamsModifierFlags::Weight | PatternParamsModifierFlags::Style) & params.modifiers))
         {
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Color))
-            elParams->SetLineColor(params.color);
+            elParams.SetLineColor(params.color);
 
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Weight))
-            elParams->SetWeight(params.weight);
+            elParams.SetWeight(params.weight);
 
 #if defined (NEEDSWORK_WIP_LINESTYLE)
         if (PatternParamsModifierFlags::None != (params.modifiers & PatternParamsModifierFlags::Style))
@@ -953,7 +953,7 @@ static bool DrawCellTiles(ViewContextR context, PatternSymbol& symbCell, DPoint2
                 break;
                 }
 
-            cellTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
+            cellTrans.TranslateInLocalCoordinates(orgTrans, patOrg.x/scale, patOrg.y/scale, context.GetCurrentDisplayParams().GetNetDisplayPriority());
             cellTrans.Multiply(tileCorners, cellCorners, 8);
 
             if (ClipPlaneContainment_StronglyOutside == context.GetTransformClipStack().ClassifyPoints(tileCorners, 8))
@@ -1100,7 +1100,7 @@ ViewContextR    context
     size_t        nGot, sourceCount = pGPA->GetGraphicsPointCount();
     DPoint3d      localPoints[MAX_GPA_STROKES];
     bool          is3d = context.Is3dView();
-    double        priority = context.GetCurrentDisplayParams()->GetNetDisplayPriority();
+    double        priority = context.GetCurrentDisplayParams().GetNetDisplayPriority();
     GraphicsPoint gp;
 
     for (size_t i=0; i < sourceCount;)

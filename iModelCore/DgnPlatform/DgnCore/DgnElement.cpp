@@ -150,7 +150,7 @@ DgnElement::Code DgnElement::_GenerateDefaultCode()
     if (!m_elementId.IsValid())
         return Code();
 
-    Utf8PrintfString val("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xFFFF & m_elementId.GetValue()));
+    Utf8PrintfString val("%s%u-%u", GetElementClass()->GetName().c_str(), m_elementId.GetRepositoryId().GetValue(), (uint32_t)(0xffffffff & m_elementId.GetValue()));
     return Code(val.c_str());
     }
 

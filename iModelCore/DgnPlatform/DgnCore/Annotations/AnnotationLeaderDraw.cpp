@@ -30,16 +30,15 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
 //---------------------------------------------------------------------------------------
 static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_t weight)
     {
-    ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
-    PRECONDITION(NULL != displayParams, );
+    ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
 
-    displayParams->ResetAppearance();
+    displayParams.ResetAppearance();
     
-    displayParams->SetWeight(weight);
-    displayParams->SetFillDisplay(FillDisplay::Never);
+    displayParams.SetWeight(weight);
+    displayParams.SetFillDisplay(FillDisplay::Never);
 
     if (!color.IsByCategory())
-        displayParams->SetLineColor(*color.GetColorCP());
+        displayParams.SetLineColor(*color.GetColorCP());
 
     context.CookDisplayParams();
     }
@@ -49,16 +48,15 @@ static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_
 //---------------------------------------------------------------------------------------
 static void setFillSymbology(ViewContextR context, ElementColor color, double transparency)
     {
-    ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
-    PRECONDITION(NULL != displayParams, );
+    ElemDisplayParamsR displayParams = context.GetCurrentDisplayParams();
 
-    displayParams->ResetAppearance();
+    displayParams.ResetAppearance();
 
-    displayParams->SetTransparency(transparency);
-    displayParams->SetFillDisplay(FillDisplay::Always);
+    displayParams.SetTransparency(transparency);
+    displayParams.SetFillDisplay(FillDisplay::Always);
 
     if (!color.IsByCategory())
-        displayParams->SetFillColor(*color.GetColorCP());
+        displayParams.SetFillColor(*color.GetColorCP());
 
     context.CookDisplayParams();
     }
@@ -191,9 +189,6 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
     
     IDrawGeomR output = context.GetIDrawGeom();
 
-    ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
-    PRECONDITION(NULL != displayParams, ERROR);
-    
     if (AnnotationLeaderLineType::None != leaderStyle->GetLineType())
         {
         CurveVectorPtr transformedTerminatorGeometry;

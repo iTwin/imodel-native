@@ -10,13 +10,13 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-SymbolContext::SymbolContext (ViewContextR seedContext) : m_seedContext (seedContext)
+SymbolContext::SymbolContext(ViewContextR seedContext) : m_seedContext(seedContext)
     {
-    if (SUCCESS != Attach (seedContext.GetViewport (), seedContext.GetDrawPurpose ()))
-        SetDgnDb (seedContext.GetDgnDb ()); // so "by level" stuff will work in the symbol.
+    if (SUCCESS != Attach(seedContext.GetViewport(), seedContext.GetDrawPurpose()))
+        SetDgnDb(seedContext.GetDgnDb()); // so "by level" stuff will work in the symbol.
 
-    m_currDisplayParams = *m_seedContext.GetCurrentDisplayParams ();
-    m_elemMatSymb       = *m_seedContext.GetElemMatSymb ();
+    m_currDisplayParams = m_seedContext.GetCurrentDisplayParams();
+    m_elemMatSymb       = *m_seedContext.GetElemMatSymb();
     m_filterLOD         = FILTER_LOD_Off;
     m_ignoreViewRange   = true;
     m_parentRangeResult = RangeResult::Inside; // This will cause inhibit all range testing.
@@ -25,17 +25,17 @@ SymbolContext::SymbolContext (ViewContextR seedContext) : m_seedContext (seedCon
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SymbolContext::_SetupOutputs ()
+void            SymbolContext::_SetupOutputs()
     {
-    m_IViewDraw   = m_viewport->GetIViewDraw ();
-    m_IDrawGeom   = m_viewport->GetICachedDraw ();
-    m_ICachedDraw = m_viewport->GetICachedDraw ();
+    m_IViewDraw   = m_viewport->GetIViewDraw();
+    m_IDrawGeom   = m_viewport->GetICachedDraw();
+    m_ICachedDraw = m_viewport->GetICachedDraw();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            SymbolContext::_Detach ()
+void            SymbolContext::_Detach()
     {
     // Preserve current QVis state, i.e. don't call PopAll, ActivateOverrideMatSymb, ResynchColorMap, etc.
     m_IViewDraw   = NULL;
@@ -43,26 +43,26 @@ void            SymbolContext::_Detach ()
     m_ICachedDraw = NULL;
     m_viewport    = NULL;
 
-    T_Super::_Detach ();
+    T_Super::_Detach();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElemP         SymbolContext::DrawSymbolForCache (IDisplaySymbol* symbol, QvCacheR symbolCache)
+QvElemP         SymbolContext::DrawSymbolForCache(IDisplaySymbol* symbol, QvCacheR symbolCache)
     {
-    m_ICachedDraw->BeginCacheElement (&symbolCache);
+    m_ICachedDraw->BeginCacheElement(&symbolCache);
 
     m_creatingCacheElem = true;
-    symbol->_Draw (*this);
+    symbol->_Draw(*this);
     m_creatingCacheElem = false;
 
-    QvElemP qvElem = m_ICachedDraw->EndCacheElement ();
+    QvElemP qvElem = m_ICachedDraw->EndCacheElement();
 
     if (NULL == qvElem)
         return NULL;
 
-    T_HOST.GetGraphicsAdmin()._SaveQvElemForSymbol (symbol, qvElem); // save the qvelem in case we encounter this symbol again
+    T_HOST.GetGraphicsAdmin()._SaveQvElemForSymbol(symbol, qvElem); // save the qvelem in case we encounter this symbol again
     
     return qvElem;
     }

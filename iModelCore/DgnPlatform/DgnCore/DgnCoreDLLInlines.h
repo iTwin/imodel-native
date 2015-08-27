@@ -192,7 +192,6 @@ DG_INLINE double ViewContext::GetArcTolerance() const {return m_arcTolerance;}
 DG_INLINE double ViewContext::GetMinLOD() const {return m_minLOD;}
 DG_INLINE void ViewContext::SetMinLOD(double lod) { m_minLOD = lod; }
 DG_INLINE ScanCriteriaCP ViewContext::GetScanCriteria() const {return m_scanCriteria;}
-DG_INLINE ElemDisplayParamsP ViewContext::GetCurrentDisplayParams() {return &m_currDisplayParams;}
 DG_INLINE bool ViewContext::GetDisplayPriorityRange(int32_t& low, int32_t& high) const {if (NULL == m_viewport) return false; low = m_displayPriorityRange[0]; high = m_displayPriorityRange[1]; return true;}
 DG_INLINE void ViewContext::SetArcTolerance(double tol) {m_arcTolerance = tol;}
 DG_INLINE uint32_t ViewContext::GetRasterPlane() const {return m_rasterPlane;}

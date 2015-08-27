@@ -112,6 +112,17 @@ DgnAuthorities::Iterator::const_iterator DgnAuthorities::Iterator::begin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+size_t DgnAuthorities::Iterator::QueryCount() const
+    {
+    Utf8String sqlString = MakeSqlString ("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Authority));
+    Statement sql;
+    sql.Prepare (*m_db, sqlString.c_str());
+    return (BE_SQLITE_ROW == sql.Step()) ? static_cast<size_t>(sql.GetValueInt (0)) : 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthorityId DgnAuthorities::Iterator::Entry::GetId() const   { Verify(); return m_sql->GetValueId<DgnAuthorityId>(0); }
 Utf8CP DgnAuthorities::Iterator::Entry::GetName() const         { Verify(); return m_sql->GetValueText (1); }
 Utf8CP DgnAuthorities::Iterator::Entry::GetUri() const          { Verify(); return m_sql->GetValueText (2); }

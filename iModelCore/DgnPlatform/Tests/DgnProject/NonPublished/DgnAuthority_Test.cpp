@@ -104,6 +104,9 @@ TEST_F (DgnAuthoritiesTest, Authorities)
 
     EXPECT_EQ (nAuths, expected.size());
 
+    auto iter = auths.MakeIterator();
+    EXPECT_EQ (nAuths, iter.QueryCount());
+
     // Names must be unique
     DgnDbStatus status;
     auth = DgnAuthorities::Authority ("Auth1", "This is a duplicate name");

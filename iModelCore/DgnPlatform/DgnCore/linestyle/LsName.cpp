@@ -162,7 +162,7 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 //---------------------------------------------------------------------------------------
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
-    ElemDisplayParams   savedParams(*context.GetCurrentDisplayParams());
+    ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
 
     //  Compute size of one iteration and stroke a line for that size.
     LsComponentCP    topComponent = m_lsDef.GetComponentCP (nullptr);
@@ -173,7 +173,7 @@ void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     DPoint3d points[2] = { {0,0,0}, {length, 0,0} };
     topComponent->_StrokeLineString(&context, &m_lineStyleSymb, points, 2, false);
 
-    *context.GetCurrentDisplayParams() = savedParams;
+    context.GetCurrentDisplayParams() = savedParams;
     }
 
 //---------------------------------------------------------------------------------------

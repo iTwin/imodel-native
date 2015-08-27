@@ -422,7 +422,7 @@ void HitDetail::FlashCurveSegment(ViewContextR context) const
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
         return;
 
-    ElemDisplayParamsR elParams = *context.GetCurrentDisplayParams();
+    ElemDisplayParamsR elParams = context.GetCurrentDisplayParams();
     ElemMatSymbR elMatSymb = *context.GetElemMatSymb();
 
     context.CookDisplayParams(elParams, elMatSymb); // Don't activate elMatSymb yet...
