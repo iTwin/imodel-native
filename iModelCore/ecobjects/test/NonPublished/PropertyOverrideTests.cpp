@@ -36,7 +36,7 @@ struct PropertyOverrideTests : Public::testing::Test
 ECSchemaPtr PropertyOverrideTests::RoundTripSchema(ECSchemaPtr testSchema)
     {
     ECSchemaPtr tempSchema;
-    WString schemaXml;
+    Utf8String schemaXml;
     EXPECT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, testSchema->WriteToXmlString(schemaXml));
     ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(tempSchema, schemaXml.c_str(), *deserializedSchemaContext));
