@@ -699,7 +699,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Test Model 1", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
             EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
-            EXPECT_EQ (1, entry.GetVisibility ());
+            EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m2id)
             {
@@ -708,7 +708,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Test Model 2", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
             EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
-            EXPECT_EQ (1, entry.GetVisibility ());
+            EXPECT_EQ (true, entry.InGuiList ());
             }
         else if (entry.GetModelId () == m3id)
             {
@@ -717,7 +717,7 @@ TEST_F (DgnModelTests, ModelsIterator)
             EXPECT_STREQ ("Test Model 3", entry.GetDescription ());
             EXPECT_EQ (DgnModelType::Physical, entry.GetModelType ());
             EXPECT_EQ (DgnModels::Model::CoordinateSpace::World, entry.GetCoordinateSpace ());
-            EXPECT_EQ (1, entry.GetVisibility ());
+            EXPECT_EQ (true, entry.InGuiList ());
             }
         i++;
         }

@@ -761,10 +761,9 @@ public:
             DGNPLATFORM_EXPORT DgnModelType GetModelType() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
             DGNPLATFORM_EXPORT Model::CoordinateSpace GetCoordinateSpace() const;
-            DGNPLATFORM_EXPORT uint32_t GetVisibility() const;
+            DGNPLATFORM_EXPORT bool InGuiList() const;
 
             bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
-            bool InModelGui() const {return 0 != ((int)ModelIterate::Gui & GetVisibility());}
             Entry const& operator*() const {return *this;}
         };
 
