@@ -521,12 +521,12 @@ ECObjectsStatus ECDbClassMap::TryGetMapStrategy(MapStrategy& mapStrategy) const
     if (ECOBJECTS_STATUS_Success != stat)
         return stat;
 
-    bool isPolymorphic = false;
-    stat = CustomAttributeReader::TryGetBooleanValue(isPolymorphic, *m_ca, "MapStrategy.IsPolymorphic");
+    bool appliesToSubclasses = false;
+    stat = CustomAttributeReader::TryGetBooleanValue(appliesToSubclasses, *m_ca, "MapStrategy.AppliesToSubclasses");
     if (ECOBJECTS_STATUS_Success != stat)
         return stat;
 
-    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), isPolymorphic);
+    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), appliesToSubclasses);
     return ECOBJECTS_STATUS_Success;
     }
 

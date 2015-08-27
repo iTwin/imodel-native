@@ -549,7 +549,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     testInstance->ToString("").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
-    WString ecInstanceXml;
+    Utf8String ecInstanceXml;
 
     InstanceWriteStatus status2 = testInstance->WriteToXmlString(ecInstanceXml, true, false);
     EXPECT_EQ(INSTANCE_WRITE_STATUS_Success, status2);
