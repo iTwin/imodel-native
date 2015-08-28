@@ -24,7 +24,7 @@ public:
     JsDPoint2d() {m_data.Init(0,0);}
     JsDPoint2d(DPoint2dCR data) {m_data = data;}
     JsDPoint2d(double x, double y) {m_data.x=x; m_data.y=y;}
-
+    JsDPoint2dP Clone () {return new JsDPoint2d (m_data);}
     double GetX() {return m_data.x;}
     double GetY() {return m_data.y;}
     void SetX(double v) {m_data.x = v;}

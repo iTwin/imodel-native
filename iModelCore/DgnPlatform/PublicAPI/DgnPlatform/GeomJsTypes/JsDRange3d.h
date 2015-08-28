@@ -23,6 +23,8 @@ public:
     JsDRange3d() {m_data.Init ();}
     JsDRange3d(DRange3dCR data) { m_data = data;}
 
+    JsDRange3dP Clone (){return new JsDRange3d (m_data);}
+
     JsDPoint3dP GetLow() {return new JsDPoint3d (m_data.low);}
     JsDPoint3dP GetHigh() {return new JsDPoint3d (m_data.high);}
     void SetLow (JsDPoint3dP point) {m_data.low = point->Get ();}

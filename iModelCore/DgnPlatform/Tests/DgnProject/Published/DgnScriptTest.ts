@@ -10,21 +10,23 @@ module DgnScriptTests {
             this.RelTol = 1.0e-12;
         }
 
-        Abs(a: number): number { return a >= 0 ? a : -a; }
-        ConstructErrorString(a: number, b: number): string {
+        Abs(a: number) : number { return a >= 0 ? a : -a; }
+        ConstructErrorString(a: number, b: number) : string 
+            {
             var labelA = "Value of A was: "
-            var labelB = "Value of B was: "
+            var labelB = " Value of B was: "
             var fullA = labelA.concat(a.toString());
             var fullB = labelB.concat(b.toString());
             var fullString = fullA.concat(fullB);
             return fullString;
-        }
-        NearDouble(a: number, b: number, reportError: boolean): boolean {
-            var d = this.Abs(b - a);
-            if (d < this.AbsTol)
-                return true;
-            if (reportError)
-                var message = this.ConstructErrorString(a, b);
+            }
+        NearDouble(a: number, b: number, reportError : boolean) : boolean
+        {
+        var d = this.Abs(b - a);
+        if (d < this.AbsTol)
+            return true;
+        if (reportError)
+            var message = this.ConstructErrorString(a,b);
             BentleyApi.Dgn.JsUtils.ReportError(message);
             return false;
         }
@@ -47,12 +49,23 @@ module DgnScriptTests {
             BentleyApi.Dgn.JsUtils.ReportError('NearVector');
             return false;
         }
-        CheckBool(a: boolean, b: boolean): boolean {
-            if (a == b)
+        IsNearJsRotmatrix(b: BentleyApi.Dgn.JsRotMatrix, c: BentleyApi.Dgn.JsRotMatrix, reportError: boolean): boolean
+            {
+            var d = b.MaxDiff (c);
+            var a = b.MaxAbs () + c.MaxAbs ();
+            if(reportError)
+            return(this.NearDouble(a,a+d,true));
+            else
+                BentleyApi.Dgn.JsUtils.ReportError('NearRotmatrix');
+            }
+
+        CheckBool(a: boolean, b: boolean) : boolean
+            {
+            if(a==b)
                 return true;
             BentleyApi.Dgn.JsUtils.ReportError("Not Equal");
             return false;
-        }
+            }
     }
     var checker = new Checker();
     // Test1 - DPoint3d properties
@@ -89,7 +102,7 @@ module DgnScriptTests {
 
     }
     function Negate(vecA: BentleyApi.Dgn.JsDVector3d): void {
-        var vecB = BentleyApi.Dgn.JsDVector3d.CreateClone(vecA);
+        var vecB = vecA.Clone ();
         //Fix
         var vecC = vecB.Negate();
         vecC = vecC.Negate();
@@ -118,16 +131,16 @@ module DgnScriptTests {
         checker.CheckBool(true, u.IsParallelTo(v));
     }
     function Adding(u: BentleyApi.Dgn.JsDVector3d, v: BentleyApi.Dgn.JsDVector3d, w: BentleyApi.Dgn.JsDVector3d): void {
-        var vu = v.Add(u);
-        var uv = u.Add(v);
-        var v2 = uv.Subtract(u);
+        var vu = v.PlusVector(u);
+        var uv = u.PlusVector(v);
+        var v2 = uv.MinusVector (u);
         var uvFromAdd2 = BentleyApi.Dgn.JsDVector3d.FromAdd2Scaled(u, 1, v, 2);
         checker.IsNearJsDVector3d(vu, uv);
         checker.IsNearJsDVector3d(v2, v);
-        var uvAddScaled = u.AddScaled(v, 2);
+        var uvAddScaled = u.PlusScaledVector(v, 2);
         checker.NearDouble(uvAddScaled.Magnitude(), uvFromAdd2.Magnitude(), true);
         var vuwFromAdd3 = BentleyApi.Dgn.JsDVector3d.FromAdd3Scaled(u, 1, v, 1, w, 1);
-        var uvw = uv.Add(w);
+        var uvw = uv.PlusVector (w);
         checker.IsNearJsDVector3d(vuwFromAdd3, uvw);
         vu = vu.ScaleToLength(2);
         uv = uv.Normalize();
@@ -148,7 +161,7 @@ module DgnScriptTests {
     }
     function Distances(u: BentleyApi.Dgn.JsDVector3d, v: BentleyApi.Dgn.JsDVector3d): void {
         var Dist = u.Distance(v);
-        var uv = u.Subtract(v);
+        var uv = u.MinusVector (v);
         checker.NearDouble(Dist, uv.Magnitude(), true);
         var DistSq = u.DistanceSquared(v);
         var uvMagnitudeSq = uv.MagnitudeSquared();
@@ -172,23 +185,145 @@ module DgnScriptTests {
         checker.NearDouble(u.AngleTo(v).Radians, degrees90.Radians, true);
     }
 
+    //Rotmatrix tests
+    function IdentityMatrix(u :BentleyApi.Dgn.JsDVector3d, n: number): void {
+        var identity = BentleyApi.Dgn.JsRotMatrix.CreateIdentity();
+        var multiplied = identity.MultiplyVector(u);
+        checker.IsNearJsDVector3d(u,multiplied);
+        var identityX =  BentleyApi.Dgn.JsRotMatrix.CreateUniformScale(n);
+        var identityScaledRows = identity.Clone ();
+        var identityScaledColumns = identity.Clone ();
+        identityScaledColumns.ScaleColumnsInPlace(n,n,n);
+        identityScaledRows.ScaleRowsInPlace(n,n,n);
+        checker.IsNearJsRotmatrix(identityX,identityScaledRows,true)
+        checker.IsNearJsRotmatrix(identityX,identityScaledColumns,true);
+        checker.CheckBool(identity.IsIdentity(),true);
+    }
+    function MultiplyMatrix(a : BentleyApi.Dgn.JsRotMatrix, b : BentleyApi.Dgn.JsRotMatrix): void {
+    var product = a.MultiplyMatrix(b);
+    var productTranspose = product.Transpose();
+    var aTranspose = a.Transpose();
+    var bTranspose = b.Transpose();
+    var testProductTranspose = aTranspose.MultiplyMatrix(bTranspose);
+    checker.IsNearJsRotmatrix(testProductTranspose,productTranspose,true);
+    }
+    function InverseMatrix(b : BentleyApi.Dgn.JsRotMatrix): void {
+    var inverseB = b.Inverse();
+    var testIdentity = b.MultiplyMatrix(inverseB);
+    var identity = BentleyApi.Dgn.JsRotMatrix.CreateIdentity();
+    checker.IsNearJsRotmatrix(identity,testIdentity,true);
+    }
+    function NinetyDegreeRotation(u :BentleyApi.Dgn.JsDVector3d): void {
+    var a = BentleyApi.Dgn.JsRotMatrix.Create90DegreeRotationAroundVector(v);
+    checker.CheckBool(a.IsRigid(),true);
+    var degrees90 = BentleyApi.Dgn.JsAngle.CreateDegrees(90);
+    var b = BentleyApi.Dgn.JsRotMatrix.CreateRotationAroundVector(v,degrees90)
+    checker.IsNearJsRotmatrix(a,b,true);
+    var v1 = a.MultiplyVector(v);
+    var v2 = b.MultiplyVector(v);
+    checker.IsNearJsDVector3d(v1,v2);
 
+    }
+    function Determinants(a : BentleyApi.Dgn.JsRotMatrix): void {
+    var b = a.Determinant();
+    var aTranspose = a.Transpose();
+    var c = aTranspose.Determinant();
+    checker.NearDouble(b,c,true);
+    }
+
+    function SetAt(a : BentleyApi.Dgn.JsRotMatrix, n: number): void {
+        a.SetAt(1,1,n);
+        checker.NearDouble(a.At(1,1),n,true);
+    }
+    function Diagonal(x: number, y: number, z: number): void {
+
+        var a = BentleyApi.Dgn.JsRotMatrix.CreateScale(x,y,z);
+        var testDeterminant = x * y * z;
+        var detA = a.Determinant();
+        checker.NearDouble(detA,testDeterminant,true);
+        checker.CheckBool(a.IsDiagonal(),true);
+    }
+    function Solve(a : BentleyApi.Dgn.JsRotMatrix,v :BentleyApi.Dgn.JsDVector3d): void {
+        var solved = a.Solve(v);
+        var testV = a.MultiplyVector(solved)
+        checker.IsNearJsDVector3d(v,testV);
+    }
+    function SetRowsAndColumns(u :BentleyApi.Dgn.JsDVector3d, v :BentleyApi.Dgn.JsDVector3d, w: BentleyApi.Dgn.JsDVector3d): void {
+        var a = BentleyApi.Dgn.JsRotMatrix.CreateRows(u,v,w);
+        var b = BentleyApi.Dgn.JsRotMatrix.CreateColumns(u,v,w);
+        var transposeA = a.Transpose();
+        checker.IsNearJsRotmatrix(b,transposeA,true);
+    }
+    function MultiplyVectors(a : BentleyApi.Dgn.JsRotMatrix,u :BentleyApi.Dgn.JsDVector3d): void {
+        var test = a.MultiplyVector(u);
+        var testXYZ = a.MultiplyXYZ(u.X,u.Y,u.Z);
+        checker.IsNearJsDVector3d(test,testXYZ);
+        var aTranspose = a.Transpose();
+        var test1 = aTranspose.MultiplyVector(u);
+        var test2 = a.MultiplyTransposeVector(u)
+        checker.IsNearJsDVector3d(test1,test2);
+        var test3 = a.MultiplyTransposeXYZ(u.X,u.Y,u.Z);
+        checker.IsNearJsDVector3d(test1,test3);
+    }
+    function ConditionNumber(){
+        var m1 = BentleyApi.Dgn.JsRotMatrix.CreateRowValues(1.0, 2.0, 3.0, 2.0, 3.0, 1.0, 3.0, 1.0, 2.0);
+        var scaled = m1.Clone ();
+        scaled.ScaleRowsInPlace(6,6,6);
+        scaled.ScaleColumnsInPlace(6,6,6);
+        var m1ConditionNumber = m1.ConditionNumber()
+        var scaledConditionNumber = scaled.ConditionNumber();
+        checker.NearDouble(m1ConditionNumber,scaledConditionNumber,true);
+    }
+    function Orthogonal(){
+    var m1 = BentleyApi.Dgn.JsRotMatrix.CreateRowValues(1.0, 2.0, 3.0, 2.0, 3.0, 1.0, 3.0, 1.0, 2.0);
+    var m1Transpose = m1.Transpose();
+    var m1Inverse = m1.Inverse();
+    if(m1Transpose == m1Inverse)
+        checker.CheckBool(true,m1.HasUnitLengthMutuallyPerpendicularRowsAndColumns())
+    
+    else
+        checker.CheckBool(false,m1.HasUnitLengthMutuallyPerpendicularRowsAndColumns());
+    }
     // Run the tests
     //debugger;
+    //Vector
     var a = new BentleyApi.Dgn.JsDPoint3d(2, 3, 4);
-    var b = new BentleyApi.Dgn.JsDPoint3d(10, 11, 12);
-    var u = new BentleyApi.Dgn.JsDVector3d(3, 6, 8);
-    var v = new BentleyApi.Dgn.JsDVector3d(4, 9, 14);
-    var w = new BentleyApi.Dgn.JsDVector3d(1, -6, 2);
-    FromStartEnd(a, b);
+    var b = new BentleyApi.Dgn.JsDPoint3d(10,11, 12);
+    var u =  new BentleyApi.Dgn.JsDVector3d(3,6,8);
+    var v =  new BentleyApi.Dgn.JsDVector3d(4,9,14);
+    var w =  new BentleyApi.Dgn.JsDVector3d(1,-6,2);
+    
+
+    FromStartEnd(a,b);
     Negate(w);
     Perpendicular(v);
     Parallel(u);
-    Adding(u, v, w);
-    CrossProducts(u, v);
-    Distances(u, v);
-    XY(u, v);
+    Adding(u,v,w);
+    CrossProducts(u,v);
+    Distances(u,v);
+    XY(u,v);
     Rotate(u);
+
+    //Matrix
+    var m1 = BentleyApi.Dgn.JsRotMatrix.CreateRowValues(1.0, 2.0, 3.0, 2.0, 3.0, 1.0, 3.0, 1.0, 2.0);
+    var m2 = BentleyApi.Dgn.JsRotMatrix.CreateRowValues(4.0, 5.0, 6.0, 5.0, 6.0, 4.0, 6.0, 4.0, 5.0);
+    var n = 13;
+    var x = 2;
+    var y = 4;
+    var z = 16;
+    IdentityMatrix(u,n);
+    MultiplyMatrix(m1,m2);
+    InverseMatrix(m2);
+    NinetyDegreeRotation(u);
+    Determinants(m2);
+    SetAt(m2,n);
+    Diagonal(x,y,z);
+    Solve(m2,w);
+    SetRowsAndColumns(u,v,w);
+    MultiplyVectors(m1,v);
+    ConditionNumber();
+    Orthogonal();
+
 
 
     function ExerciseMesh(mesh: BentleyApi.Dgn.JsPolyfaceMesh, expectedFacets : number)
@@ -237,5 +372,6 @@ module DgnScriptTests {
         }
 
     t_polyfaceMeshA ();  
+
 }
 

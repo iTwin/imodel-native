@@ -15,7 +15,12 @@
 extern Utf8CP geomJsApi_GetBootstrappingSource();
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+DVec3d GetDVec3d (JsDVector3dP vector)
+{
+    return vector->Get();
+}
+END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------

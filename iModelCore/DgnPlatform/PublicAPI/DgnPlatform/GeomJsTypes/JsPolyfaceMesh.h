@@ -20,7 +20,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct JsPolyfaceMesh: JsGeomWrapperBase<PolyfaceHeaderPtr>
 {
 public:
-    JsPolyfaceMesh (PolyfaceHeaderPtr &header) { m_data = header;}
+    JsPolyfaceMesh (PolyfaceHeaderPtr const &header) { m_data = header;}
+    JsPolyfaceMeshP Clone ()
+        {
+        PolyfaceHeaderPtr clone = PolyfaceHeader::New ();
+        m_data->CopyTo (*clone);
+        return new JsPolyfaceMesh (clone);
+        }
+    
     JsPolyfaceMesh ()
         {
         m_data = PolyfaceHeader::CreateVariableSizeIndexed ();

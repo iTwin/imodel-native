@@ -31,15 +31,14 @@ public:
     void SetY(double v) {m_data.y = v;}
     void SetZ(double v) {m_data.z = v;}
     JsDVector3dP Normalize()
-    {
-    DVec3d copy;
-    copy.Normalize(m_data);
-    return new JsDVector3d(copy);
-    }
-    static JsDVector3dP CreateClone(JsDVector3dP original)
         {
-        return new JsDVector3d(original->GetX(),original->GetY(),original->GetZ());
+        DVec3d copy;
+        copy.Normalize(m_data);
+        return new JsDVector3d(copy);
         }
+    
+    JsDVector3dP Clone (){return new JsDVector3d (m_data);}
+
     //Scaled vector by -1
     JsDVector3dP Negate()
         {
@@ -47,6 +46,16 @@ public:
         uvw.Negate(m_data);
         return new JsDVector3d(uvw);
         }
+        
+JsDVector3dP VectorTo (JsDPoint3dP target)
+    {
+    return new JsDVector3d (DVec3d::FromStartEnd (m_data, target->Get ()));
+    }
+    JsDVector3dP UnitVectorTowards (JsDPoint3dP target)
+        {
+        return new JsDVector3d (DVec3d::FromStartEnd (m_data, target->Get ()));
+        }
+            
     //Returns new vector that begins at start, and ends at end
     static JsDVector3dP FromStartEnd (JsDPoint3dP start, JsDPoint3dP end)
         {
@@ -78,10 +87,7 @@ static JsDVector3dP FromInterpolate (JsDVector3dP vectorA, double fraction, JsDV
     {
     return new JsDVector3d(DVec3d::FromInterpolate(vectorA->Get(),fraction, vectorB->Get()));
     }
-static JsDVector3dP FromInterpolateBilinear (JsDVector3dP vector00, JsDVector3dP vector10, JsDVector3dP vector01, JsDVector3dP vector11, double u, double v)
-    {
-    return new JsDVector3d(DVec3d::FromInterpolateBilinear(vector00->Get(),vector10->Get(),vector01->Get(),vector11->Get(),u,v));
-    }
+
 static JsDVector3dP FromAdd2Scaled (JsDVector3dP vectorA, double scaleA,JsDVector3dP vectorB, double scaleB)
     {
     return new JsDVector3d(DVec3d::FromSumOf(vectorA->Get(),scaleA, vectorB->Get(),scaleB));
@@ -90,18 +96,30 @@ static JsDVector3dP FromAdd3Scaled (JsDVector3dP vectorA, double scaleA, JsDVect
     {
     return new JsDVector3d(DVec3d::FromSumOf(vectorA->Get(),scaleA, vectorB->Get(),scaleB, vectorC->Get(), scaleC));
     }
- JsDVector3dP Add(JsDVector3dP vectorB)
+    
+    
+ JsDVector3dP PlusVector (JsDVector3dP vectorB)
     {
     return new JsDVector3d(DVec3d::FromSumOf(m_data,vectorB->Get()));
     }
- JsDVector3dP AddScaled (JsDVector3dP vectorB, double scalar)
+ JsDVector3dP MinusVector (JsDVector3dP vectorB)
+    {
+    return new JsDVector3d(DVec3d::FromSumOf(m_data, 1.0, vectorB->Get(), -1.0));
+    }
+
+
+ JsDVector3dP PlusScaledVector (JsDVector3dP vectorB, double scalar)
     {
     return new JsDVector3d(DVec3d::FromSumOf(m_data,1.0,vectorB->Get(),scalar));
     }
- JsDVector3dP Subtract (JsDVector3dP vectorB)
+
+ JsDVector3dP Plus2ScaledVectors (JsDVector3dP vectorA, double scaleA, JsDVector3dP vectorB, double scaleB)
     {
-    return Add(vectorB->Negate());
+    return new JsDVector3d(DVec3d::FromSumOf(m_data,1.0,vectorA->Get(),scaleA, vectorB->Get (), scaleB));
     }
+
+
+
  JsDVector3dP Scale (double scale)
     {
     return new JsDVector3d(DVec3d::FromScale(m_data,scale));
@@ -121,7 +139,7 @@ JsDVector3dP NormalizedCrossProduct(JsDVector3dP vectorB)
     {
     return new JsDVector3d(DVec3d::FromNormalizedCrossProduct(m_data,vectorB->Get()));
     }
-  JsDVector3dP SizedCrossProduct (JsDVector3dP vectorA,JsDVector3dP vectorB, double productLength)
+JsDVector3dP SizedCrossProduct (JsDVector3dP vectorA,JsDVector3dP vectorB, double productLength)
     {
     DVec3d copy;
     copy = m_data;
@@ -135,7 +153,7 @@ JsDVector3dP RotateXY (double angle)
     copy.RotateXY(angle);
     return new JsDVector3d(copy);
     }
- JsDVector3dP UnitPerpendicularXY (JsDVector3dP vector)
+JsDVector3dP UnitPerpendicularXY (JsDVector3dP vector)
     {
     DVec3d copy;
     copy = m_data;
@@ -184,9 +202,12 @@ double MaxAbs ()
     {
     return m_data.MaxAbs();
     }
-JsDVector3dP CreatePerpendicularTo(JsDVector3dP original)
+    
+JsDVector3dP UnitPerpendicular ()
     {
-
+    DVec3d xVector, yVector, zVector;
+    m_data.GetNormalizedTriad (xVector, yVector, zVector);
+    return new JsDVector3d (xVector);
     }
 JsAngleP AngleTo (JsDVector3dP vectorB)
     {

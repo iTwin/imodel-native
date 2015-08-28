@@ -44,7 +44,7 @@ public:
         return new JsCurvePrimitive (cp);
         }
 
-
+    JsCurvePrimitiveP Clone () {return new JsCurvePrimitive (m_curvePrimitive->Clone ());} 
 
     double CurvePrimitiveType (){return (double)(int)m_curvePrimitive->GetCurvePrimitiveType ();}
     JsDPoint3dP PointAtFraction (double f)

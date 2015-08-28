@@ -34,6 +34,8 @@ private:
         }
 public:   
     JsDPoint3dArray() {}
+    JsDPoint3dArray(bvector<DPoint3d> const &source) {m_data = source;}
+    JsDPoint3dArrayP Clone (){ return new JsDPoint3dArray (m_data);}
     bvector<DPoint3d> & Get () {return m_data;}
     void Add (JsDPoint3dP in){m_data.push_back (in->Get ());}
     void Clear (){m_data.clear ();}

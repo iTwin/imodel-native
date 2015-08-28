@@ -6,6 +6,20 @@ declare module BentleyApi.Dgn {
         X: cxx_double;
         Y: cxx_double;
         Z: cxx_double;
+
+        Clone () : JsDPoint3dP;
+
+        Interpolate (fraction : cxx_double, right : JsDPoint3dP) : JsDPoint3dP;
+        PlusVector (vector : JsDVector3dP) : JsDPoint3dP;
+        MinusVector (vector : JsDVector3dP) : JsDPoint3dP;
+        PlusScaledVector (vector : JsDVector3dP, scalar : cxx_double) : JsDPoint3dP;
+        Plus2ScaledVectors (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double) : JsDPoint3dP;
+
+        Plus3ScaledVectors (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double, vectorC : JsDVector3dP, scalarC : cxx_double) : JsDPoint3dP;
+
+        Distance (other : JsDPoint3dP) : cxx_double;
+        DistanceSquared (other : JsDPoint3dP) : cxx_double;        
+
         OnDispose(): void;
         Dispose(): void;
     }
@@ -13,9 +27,9 @@ declare module BentleyApi.Dgn {
     //! A wrapper for BentleyApi::DPoint2d
     class JsDPoint2d implements IDisposable {
         constructor(x: cxx_double, y: cxx_double);
+        Clone () : JsDPoint2dP;
         X: cxx_double;
         Y: cxx_double;
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -29,50 +43,74 @@ declare module BentleyApi.Dgn {
         X: cxx_double;
         Y: cxx_double;
         Z: cxx_double;
+
         OnDispose(): void;
         Dispose(): void;
-        Normalize(): JsDVector3dP;
-        Negate(): JsDVector3dP;
-        static FromStartEnd (start : JsDPoint3dP, end : JsDPoint3dP) : JsDVector3dP;
-        static FromStartEndNormalize (start : JsDPoint3dP, end : JsDPoint3dP) : JsDVector3dP;
-        FromCCWPerpendicularXY (source : JsDVector3dP) : JsDVector3dP;
-        FromRotate90Towards (source : JsDVector3dP, target : JsDVector3dP) : JsDVector3dP;
-        static FromRotate90Around (source : JsDVector3dP, axis : JsDVector3dP) : JsDVector3dP;
-        static FromXYAngleAndMagnitude (angle : cxx_double, magnitude : cxx_double) : JsDVector3dP;
-        static FromInterpolate (vectorA : JsDVector3dP, fraction : cxx_double, vectorB : JsDVector3dP) : JsDVector3dP;
-        static FromInterpolateBilinear (vector00 : JsDVector3dP, vector10 : JsDVector3dP, vector01 : JsDVector3dP, vector11 : JsDVector3dP, u : cxx_double, v : cxx_double) :       JsDVector3dP;
-        static FromAdd2Scaled (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double) : JsDVector3dP;
-        static FromAdd3Scaled (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double, vectorC : JsDVector3dP, scaleC : cxx_double) :         JsDVector3dP;
-        Add (vectorB : JsDVector3dP) : JsDVector3dP;
-        AddScaled (vectorB : JsDVector3dP, scalar : cxx_double) : JsDVector3dP;
-        Subtract (vectorB : JsDVector3dP) : JsDVector3dP;
-        Scale (scale : cxx_double) : JsDVector3dP;
-        ScaleToLength (scale : cxx_double) : JsDVector3dP;
-        CrossProduct (vectorB : JsDVector3dP) : JsDVector3dP;
-        NormalizedCrossProduct (vectorB : JsDVector3dP) : JsDVector3dP;
-        SizedCrossProduct (vectorA : JsDVector3dP, vectorB : JsDVector3dP, productLength : cxx_double) : JsDVector3dP;
-        RotateXY (angle : cxx_double) : JsDVector3dP;
-        UnitPerpendicularXY (vector : JsDVector3dP) : JsDVector3dP;
-        DotProduct (vectorB : JsDVector3dP) : cxx_double;
-        DotProductXY (vectorB : JsDVector3dP) : cxx_double;
-        CrossProductXY (vectorB : JsDVector3dP) : cxx_double;
-        TripleProduct (vectorB : JsDVector3dP, vectorC : JsDVector3dP) : cxx_double;
-        Magnitude () : cxx_double;
-        MagnitudeSquared () : cxx_double;
-        Distance (vectorB : JsDVector3dP) : cxx_double;
-        DistanceSquared (vectorB : JsDVector3dP) : cxx_double;
-        MaxAbs () : cxx_double;
-        AngleTo (vectorB : JsDVector3dP) : JsAngleP;
-        AngleToXY (vectorB : JsDVector3dP) : JsAngleP;
-        SmallerUnorientedAngleTo (vectorB : JsDVector3dP) : JsAngleP;
-        SignedAngleTo (vectorB : JsDVector3dP, upVector : JsDVector3dP) : JsAngleP;
-        PlanarAngleTo (vectorB : JsDVector3dP, planeNormal : JsDVector3dP) : JsAngleP;
-        IsInSmallerSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP) : cxx_bool;
-        IsInCCWSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP, upVector : JsDVector3dP) : cxx_bool;
-        IsParallelTo (vectorB : JsDVector3dP) : cxx_bool;
-        IsPerpendicularTo(vectorB: JsDVector3dP): cxx_bool;
-        static CreateClone(original: JsDVector3dP): JsDVector3dP;
-        CrossProductMagnitude(vectorB: JsDVector3dP): cxx_double;
+
+
+
+    Normalize () : JsDVector3dP;
+    
+    Clone () : JsDVector3dP;
+
+    //Scaled vector by -1
+    Negate () : JsDVector3dP;
+        
+    VectorTo (target : JsDPoint3dP) : JsDVector3dP;
+    UnitVectorTowards (target : JsDPoint3dP) : JsDVector3dP;
+
+    //Returns new vector that begins at start, and ends at end
+    static FromStartEnd (start : JsDPoint3dP, end : JsDPoint3dP) : JsDVector3dP;
+    //Same as start end, but normalizes result (magnitude : makes 1) : the
+    static FromStartEndNormalize (start : JsDPoint3dP, end : JsDPoint3dP) : JsDVector3dP;
+    //return a vector same length as source but rotate 90 degrees CCW
+    FromCCWPerpendicularXY (source : JsDVector3dP) : JsDVector3dP;  
+    FromRotate90Towards (source : JsDVector3dP, target : JsDVector3dP) : JsDVector3dP;
+    static FromRotate90Around (source : JsDVector3dP, axis : JsDVector3dP) : JsDVector3dP;
+    static FromXYAngleAndMagnitude (angle : cxx_double, magnitude : cxx_double) : JsDVector3dP;
+    static FromInterpolate (vectorA : JsDVector3dP, fraction : cxx_double, vectorB : JsDVector3dP) : JsDVector3dP;
+
+    static FromAdd2Scaled (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double) : JsDVector3dP;
+    static FromAdd3Scaled (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double, vectorC : JsDVector3dP, scaleC : cxx_double) : JsDVector3dP;
+
+
+    PlusVector (vectorB : JsDVector3dP) : JsDVector3dP;
+    MinusVector (vectorB : JsDVector3dP) : JsDVector3dP;
+
+
+    PlusScaledVector (vectorB : JsDVector3dP, scalar : cxx_double) : JsDVector3dP;
+
+    Plus2ScaledVectors (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double) : JsDVector3dP;
+
+
+
+    Scale (scale : cxx_double) : JsDVector3dP;
+    ScaleToLength (scale : cxx_double) : JsDVector3dP;
+    CrossProduct (vectorB : JsDVector3dP) : JsDVector3dP;
+    NormalizedCrossProduct (vectorB : JsDVector3dP) : JsDVector3dP;
+    SizedCrossProduct (vectorA : JsDVector3dP, vectorB : JsDVector3dP, productLength : cxx_double) : JsDVector3dP;
+    RotateXY (angle : cxx_double) : JsDVector3dP;
+    UnitPerpendicularXY (vector : JsDVector3dP) : JsDVector3dP;
+    CrossProductMagnitude (vectorB : JsDVector3dP) : cxx_double;
+    DotProduct (vectorB : JsDVector3dP) : cxx_double;
+    DotProductXY (vectorB : JsDVector3dP) : cxx_double;
+    CrossProductXY (vectorB : JsDVector3dP) : cxx_double;
+    TripleProduct (vectorB : JsDVector3dP, vectorC : JsDVector3dP) : cxx_double;
+    Magnitude () : cxx_double;
+    MagnitudeSquared () : cxx_double;
+    Distance (vectorB : JsDVector3dP) : cxx_double;
+    DistanceSquared (vectorB : JsDVector3dP) : cxx_double;
+    MaxAbs () : cxx_double;
+    UnitPerpendicular () : JsDVector3dP;
+    AngleTo (vectorB : JsDVector3dP) : JsAngleP;
+    AngleToXY (vectorB : JsDVector3dP) : JsAngleP;
+    SmallerUnorientedAngleTo (vectorB : JsDVector3dP) : JsAngleP;
+    SignedAngleTo (vectorB : JsDVector3dP, upVector : JsDVector3dP) : JsAngleP;
+    PlanarAngleTo (vectorB : JsDVector3dP, planeNormal : JsDVector3dP) : JsAngleP;
+    IsInSmallerSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP) : cxx_bool;
+    IsInCCWSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP, upVector : JsDVector3dP) : cxx_bool;
+    IsParallelTo (vectorB : JsDVector3dP) : cxx_bool;
+    IsPerpendicularTo (vectorB : JsDVector3dP) : cxx_bool;
 
     }
 
@@ -81,6 +119,7 @@ declare module BentleyApi.Dgn {
     //! A wrapper for BentleyApi::YawPitchRollAngles
     class JsYawPitchRollAngles implements IDisposable {
         constructor(yaw: cxx_double, pitch: cxx_double, roll: cxx_double);
+        Clone () : JsYawPitchRollAnglesP;
         YawDegrees: cxx_double;
         PitchDegrees: cxx_double;
         RollDegrees: cxx_double;
@@ -93,7 +132,8 @@ declare module BentleyApi.Dgn {
     
     //! A strongly typed angle, with explicitly named access to degrees and radians
     class JsAngle implements IDisposable {
-        
+
+        Clone () : JsAngleP;        
         static CreateDegrees (value : cxx_double) : JsAngleP;
         static CreateRadians (value : cxx_double) : JsAngleP;
         Radians : cxx_double;
@@ -107,11 +147,11 @@ declare module BentleyApi.Dgn {
     class JsDRange3d implements IDisposable {
         //! constructor for empty range.
         constructor();
-
+        Clone () : JsDRange3dP;
+        
         Low: JsDPoint3dP;
         High: JsDPoint3dP;
 
-        _OnDispose(): void;
         OnDispose(): void;
         Dispose(): void;
     }
@@ -128,6 +168,8 @@ declare module BentleyApi.Dgn {
                 startAngle  : JsAngleP,
                 sweepAngle  : JsAngleP
                 );
+        Clone () : JsDEllipse3dP;
+
         PointAtFraction (f : cxx_double) : JsDPoint3dP;                
         OnDispose(): void;
         Dispose(): void;
@@ -137,6 +179,8 @@ declare module BentleyApi.Dgn {
 
     //! A wrapper for BentleyApi::DSegment3d
     class JsDSegment3d implements IDisposable {
+        Clone () : JsDSegment3dP;
+    
         constructor (
                 startPoint : JsDPoint3dP,
                 endPoint   : JsDPoint3dP
@@ -151,6 +195,7 @@ declare module BentleyApi.Dgn {
 
     //! A wrapper for BentleyApi::DRay3d
     class JsDRay3d implements IDisposable {
+        Clone () : JsDRay3dP;
         constructor (
                 Origin : JsDPoint3dP,
                 Direction   : JsDVector3dP
@@ -169,6 +214,7 @@ declare module BentleyApi.Dgn {
 
     //! A wrapper for BentleyApi::DPoint3dArray
     class JsDPoint3dArray implements IDisposable {
+        Clone () : JsDPoint3dArrayP;
         constructor();
 
         Add(value: JsDPoint3dP): void;
@@ -194,9 +240,15 @@ declare module BentleyApi.Dgn {
             ayx : cxx_double, ayy : cxx_double, ayz : cxx_double,
             azx : cxx_double, azy : cxx_double, azz : cxx_double
             );
+        static CreateRotationAroundVector(axis: JsDVector3dP, angle: JsAngleP): JsRotMatrixP;
+        static Create90DegreeRotationAroundVector(axis: JsDVector3dP): JsRotMatrixP;
         static CreateIdentity () : JsRotMatrixP;
         static CreateUniformScale (scaleFactor : cxx_double) : JsRotMatrixP;
-        
+        static CreateRowValues(x00: cxx_double, x01: cxx_double, x02: cxx_double,
+            x10: cxx_double, x11: cxx_double, x12: cxx_double,
+            x20: cxx_double, x21: cxx_double, x22: cxx_double): JsRotMatrixP;
+
+        Clone () : JsRotMatrixP;
         ColumnX : JsDVector3dP;        
         ColumnY : JsDVector3dP;        
         ColumnZ : JsDVector3dP;        
@@ -205,23 +257,22 @@ declare module BentleyApi.Dgn {
         RowY: JsDVector3dP;        
         RowZ: JsDVector3dP;        
 
-        CreateScale (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : JsRotMatrixP;
-        CreateColumns (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
-        CreateRows (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
+        static CreateScale (scaleX : cxx_double, scaleY : cxx_double, scaleZ : cxx_double) : JsRotMatrixP;
+        static CreateColumns (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
+        static CreateRows (vectorU : JsDVector3dP, vectorV : JsDVector3dP, vectorZ : JsDVector3dP) : JsRotMatrixP;
 
-        CreateRotationAroundVector (axis : JsDVector3dP, angle : JsAngleP) : JsRotMatrixP;
-        Create90DegreeRotationAroundVector (axis : JsDVector3dP) : JsRotMatrixP;
-        CreateDirectionalScale (direction : JsDVector3dP, scale : cxx_double) : JsRotMatrixP;
+        
+        static CreateDirectionalScale (direction : JsDVector3dP, scale : cxx_double) : JsRotMatrixP;
         // TODO: square and normalize !!!
         
-        Create1Vector (direction : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
-        CreateFromXYVectors (vectorX : JsDVector3dP, vectorY : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
+        static Create1Vector (direction : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
+        static CreateFromXYVectors (vectorX : JsDVector3dP, vectorY : JsDVector3dP, axisIndex : cxx_double) : JsRotMatrixP;
         MultiplyVector (vector : JsDVector3dP) : JsDVector3dP;        
         MultiplyTransposeVector (vector : JsDVector3dP) : JsDVector3dP;        
 
-        MultiplyXYZ (vector : JsDVector3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
             
-        MultiplyTransposeXYZ (vector : JsDVector3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyTransposeXYZ ( x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
 
         Solve (rightHandSide : JsDVector3dP) : JsDVector3dP;
 
@@ -244,7 +295,7 @@ declare module BentleyApi.Dgn {
         MaxDiff (other : JsRotMatrixP) : cxx_double;
         
         IsIdentity () : cxx_bool;
-        IsDigaonal () : cxx_bool;
+        IsDiagonal () : cxx_bool;
         IsSignedPermutation () : cxx_bool;
         IsRigid () : cxx_bool;
         HasUnitLengthMutuallyPerpendicularRowsAndColumns () : cxx_bool;
@@ -255,7 +306,7 @@ declare module BentleyApi.Dgn {
     }
 
     type JsTransformP = cxx_pointer<JsTransform>;
-    //! A wrapper for BentleyApi::JsRotMatrix
+    //! A wrapper for BentleyApi::Transform
     class JsTransform implements IDisposable {
         constructor();
         constructor
@@ -264,6 +315,10 @@ declare module BentleyApi.Dgn {
             ayx : cxx_double, ayy : cxx_double, ayz : cxx_double, ayw : cxx_double,
             azx : cxx_double, azy : cxx_double, azz : cxx_double, azw : cxx_double
             );
+
+
+        Clone () : JsTransformP;
+
 
         static CreateIdentity () : JsTransformP;
         static CreateMatrix (matrix : JsRotMatrixP) : JsTransformP;
@@ -338,24 +393,28 @@ declare module BentleyApi.Dgn {
 
 
 
-    //! A wrapper for BentleyApi::JsCurvePrimitive
-    class JsCurvePrimitive implements IDisposable {
-        constructor ();
-        static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
-        static CreateEllipticArc(arc: JsDEllipse3dP): JsCurvePrimitiveP;
-        static CreateLineString(points: JsDPoint3dArrayP): JsCurvePrimitiveP;
-        CurvePrimitiveType(): cxx_double;
-        PointAtFraction(f: cxx_double): JsDPoint3dP; 
+//! A wrapper for BentleyApi::JsCurvePrimitive
+class JsCurvePrimitive implements IDisposable
+    {
+    Clone () : JsCurvePrimitiveP;
+    constructor ();
+    static CreateLineSegment(segment: JsDSegment3dP): JsCurvePrimitiveP;
+    static CreateEllipticArc(arc: JsDEllipse3dP): JsCurvePrimitiveP;
+    static CreateLineString(points: JsDPoint3dArrayP): JsCurvePrimitiveP;
+    CurvePrimitiveType(): cxx_double;
+    PointAtFraction(f: cxx_double): JsDPoint3dP; 
 
-        OnDispose(): void;
-        Dispose(): void;
+    OnDispose(): void;
+    Dispose(): void;
     }
 
     type JsCurvePrimitiveP = cxx_pointer<JsCurvePrimitive>;
 
 
-    //! A wrapper for a polyface mesh !!!
-    class JsPolyfaceMesh implements IDisposable {
+//! A wrapper for a polyface mesh !!!
+class JsPolyfaceMesh implements IDisposable
+    {
+    Clone () : JsPolyfaceMeshP;
 
     GetTwoSided () : cxx_bool;
 
@@ -397,7 +456,6 @@ declare module BentleyApi.Dgn {
     GetFacetCount () : cxx_double;
     GetLargestCoordinate() : cxx_double;
 
-    _OnDispose(): void;
     OnDispose(): void;
     Dispose(): void;
     }
@@ -405,25 +463,21 @@ declare module BentleyApi.Dgn {
 
 
     //! A wrapper for a polyface visitor
-    class JsPolyfaceVisitor implements IDisposable {
-
-
+class JsPolyfaceVisitor implements IDisposable
+    {
     static CreateVisitor(mesh : JsPolyfaceMeshP, aNumWrap : cxx_double) : JsPolyfaceVisitorP;
-
     Reset() : void;
-
     AdvanceToNextFacet() : cxx_bool;
-
+    
     GetPoint(aIndex : cxx_double) : JsDPoint3dP;
-
     GetParam(aIndex : cxx_double) : JsDPoint2dP;
-
     GetNormal(aIndex : cxx_double) : JsDVector3dP;
+    
     GetEdgeCount () : cxx_double;
-    _OnDispose(): void;
     OnDispose(): void;
     Dispose(): void;
 }
+
 type JsPolyfaceVisitorP = cxx_pointer<JsPolyfaceVisitor>;
 
 }

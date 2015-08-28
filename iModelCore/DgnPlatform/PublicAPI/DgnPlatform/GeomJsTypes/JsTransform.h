@@ -35,7 +35,8 @@ public:
             azx, azy, azz, azw
             );
         }
-        
+    JsTransformP Clone() {return new JsTransform(m_data);}
+    
     static JsTransformP CreateIdentity (){return new JsTransform (Transform::FromIdentity ());}
     static JsTransformP CreateMatrix (JsRotMatrixP matrix)
                 {return new JsTransform (Transform::From (matrix->Get ()));}
