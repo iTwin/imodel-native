@@ -64,13 +64,7 @@ static const WCharCP s_schemaXml =
 struct AdhocPropertyTest : ECTestFixture
     {
     ECSchemaPtr         m_schema;
-
-    AdhocPropertyTest() : ECTestFixture()
-        {
-        auto context = ECSchemaReadContext::CreateContext();
-        Utf8String temp_schema (s_schemaXml);
-        EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, temp_schema.c_str(), *context));
-        }
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext ();
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -79,6 +73,9 @@ struct AdhocPropertyTest : ECTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AdhocPropertyTest, AdhocInterface)
     {
+    Utf8String schemaXml (s_schemaXml);
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, schemaXml.c_str(), *context));
+
     auto noAdhocs = m_schema->GetClassP ("NoAdhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_FALSE (AdhocPropertyQuery (*noAdhocs, "NONE").IsSupported());
 
@@ -209,6 +206,14 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
     // Test removing all entries
     EXPECT_SUCCESS (adhocs.Clear());
     EXPECT_EQ (0, adhocs.GetCount());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Muhammad Hassan   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (AdhocPropertyTest, WCharSchemaXml_FailsOnNonWindowPlatforms)
+    {
+    EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
