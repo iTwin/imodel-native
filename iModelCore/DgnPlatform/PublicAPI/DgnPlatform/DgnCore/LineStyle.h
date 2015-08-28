@@ -17,6 +17,10 @@
 #include <RmgrTools/Tools/msstrlst.h>
 #include <DgnPlatform/Tools/KeyTree.h>
 
+//  These are both used to try different configurations while testing.  They must both be eliminated
+#define LINESTYLES_ENABLED 0
+#define TRYING_DIRECT_LINESTYLES 0
+
 #define LSID_DEFAULT        0
 #define LSID_HARDWARE       0x80000000
 #define LSID_HWMASK         0x0000000f
@@ -902,12 +906,6 @@ public:
     //!  There is no SetWidthMode method.  Width mode is set via LsStrokePatternComponent::InsertStroke
 
     DGNPLATFORM_EXPORT WidthMode                GetWidthMode ()     const;
-
-    DGNPLATFORM_EXPORT void                     SetIsTaper          (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsTaper             () const;
-
-    DGNPLATFORM_EXPORT void                     SetIsTaperEnd       (bool isOn);
-    DGNPLATFORM_EXPORT bool                     IsTaperEnd          () const;
 };
 
 //__PUBLISH_SECTION_END__

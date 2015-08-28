@@ -14,7 +14,7 @@ DbResult DgnCategories::Insert(DgnCategories::Category& row, DgnCategories::SubC
     {
     if (row.IsValid() || !IsValidCode(row.GetCode()))
         {
-        BeAssert (false);
+        BeAssert(false);
         return  BE_SQLITE_ERROR;
         }
 
@@ -23,21 +23,21 @@ DbResult DgnCategories::Insert(DgnCategories::Category& row, DgnCategories::SubC
     DbResult status = m_dgndb.GetServerIssuedId(row.m_categoryId, DGN_TABLE(DGN_CLASSNAME_SubCategory), "Id");
 
     Statement stmt;
-    stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Category) " (Id,Code,Label,Descr,Rank,Scope) VALUES(?,?,?,?,?,?)");
+    stmt.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Category) " (Id,Code,Label,Descr,Rank,Scope) VALUES(?,?,?,?,?,?)");
 
-    stmt.BindId   (1, row.GetCategoryId());
-    stmt.BindText (2, row.GetCode(), Statement::MakeCopy::No);
-    stmt.BindText (3, row.GetLabel(), Statement::MakeCopy::No);
-    stmt.BindText (4, row.GetDescription(), Statement::MakeCopy::No);
-    stmt.BindInt  (5, (int) row.GetRank());
-    stmt.BindInt  (6, (int) row.GetScope());
+    stmt.BindId(1, row.GetCategoryId());
+    stmt.BindText(2, row.GetCode(), Statement::MakeCopy::No);
+    stmt.BindText(3, row.GetLabel(), Statement::MakeCopy::No);
+    stmt.BindText(4, row.GetDescription(), Statement::MakeCopy::No);
+    stmt.BindInt(5, (int) row.GetRank());
+    stmt.BindInt(6, (int) row.GetScope());
 
     status = stmt.Step();
     if (BE_SQLITE_DONE != status)
         return status;
 
-    SubCategory subCategory (row.GetCategoryId(), DgnCategories::DefaultSubCategoryId(row.GetCategoryId()), "", appearance);
-    return InsertSubCategory (subCategory);
+    SubCategory subCategory(row.GetCategoryId(), DgnCategories::DefaultSubCategoryId(row.GetCategoryId()), "", appearance);
+    return InsertSubCategory(subCategory);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -49,17 +49,17 @@ DbResult DgnCategories::Update(Category const& row)
         return  BE_SQLITE_ERROR;
 
     Statement stmt;
-    stmt.Prepare (m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Category) " SET Code=?,Label=?,Descr=?,Rank=?,Scope=? WHERE Id=?");
+    stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Category) " SET Code=?,Label=?,Descr=?,Rank=?,Scope=? WHERE Id=?");
 
-    stmt.BindText (1, row.GetCode(), Statement::MakeCopy::No);
-    stmt.BindText (2, row.GetLabel(), Statement::MakeCopy::No);
-    stmt.BindText (3, row.GetDescription(), Statement::MakeCopy::No);
-    stmt.BindInt  (4, (int) row.GetRank());
-    stmt.BindInt  (5, (int) row.GetScope());
-    stmt.BindId   (6, row.GetCategoryId());
+    stmt.BindText(1, row.GetCode(), Statement::MakeCopy::No);
+    stmt.BindText(2, row.GetLabel(), Statement::MakeCopy::No);
+    stmt.BindText(3, row.GetDescription(), Statement::MakeCopy::No);
+    stmt.BindInt(4, (int) row.GetRank());
+    stmt.BindInt(5, (int) row.GetScope());
+    stmt.BindId(6, row.GetCategoryId());
 
     DbResult status = stmt.Step();
-    BeDataAssert (BE_SQLITE_DONE==status);
+    BeDataAssert(BE_SQLITE_DONE==status);
     return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
     }
 
@@ -69,9 +69,9 @@ DbResult DgnCategories::Update(Category const& row)
 DbResult DgnCategories::Delete(DgnCategoryId categoryId)
     {
     Statement stmt;
-    stmt.Prepare (m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Id=?");
-    stmt.BindId (1, categoryId);
-    const auto status = stmt.Step ();
+    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Id=?");
+    stmt.BindId(1, categoryId);
+    const auto status = stmt.Step();
     return (BE_SQLITE_DONE == status) ? BE_SQLITE_OK : status;
     }
 
@@ -81,8 +81,8 @@ DbResult DgnCategories::Delete(DgnCategoryId categoryId)
 DgnCategoryId DgnCategories::QueryCategoryId(Utf8CP code) const
     {
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement (stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Code=?");
-    stmt->BindText (1, code, Statement::MakeCopy::No);
+    m_dgndb.GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Code=?");
+    stmt->BindText(1, code, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnCategoryId() : stmt->GetValueId<DgnCategoryId>(0);
     }
 
@@ -94,7 +94,7 @@ DgnCategoryId DgnCategories::QueryCategoryId(DgnSubCategoryId subCategoryId) con
     BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
 
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement (stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
 
     stmt->BindId(1, subCategoryId);
     return (BE_SQLITE_ROW == stmt->Step()) ? stmt->GetValueId<DgnCategoryId>(0) : DgnCategoryId();
@@ -117,7 +117,7 @@ DgnCategoryId DgnCategories::QueryCategoryId(DgnElementId elementId) const
 DgnCategoryId DgnCategories::QueryHighestId() const
     {
     Statement stmt;
-    stmt.Prepare (m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Category));
+    stmt.Prepare(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Category));
     return (BE_SQLITE_ROW != stmt.Step()) ? DgnCategoryId() : stmt.GetValueId<DgnCategoryId>(0);
     }
 
@@ -133,16 +133,16 @@ DgnCategories::Category DgnCategories::Query(DgnCategoryId id) const
     // on HighPriorityOperationBlock for more information.
     BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement (stmt, "SELECT Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category) " WHERE Id=?");
     stmt->BindId(1, id);
 
     Category category;
     if (BE_SQLITE_ROW == stmt->Step())
         {
         category.m_categoryId = id;
-        category.m_code.AssignOrClear (stmt->GetValueText(0));
-        category.m_label.AssignOrClear (stmt->GetValueText(1));
-        category.m_description.AssignOrClear (stmt->GetValueText(2));
+        category.m_code.AssignOrClear(stmt->GetValueText(0));
+        category.m_label.AssignOrClear(stmt->GetValueText(1));
+        category.m_description.AssignOrClear(stmt->GetValueText(2));
         category.m_rank = (Rank) stmt->GetValueInt(3);
         category.m_scope = (Scope) stmt->GetValueInt(4);
         }
@@ -159,7 +159,7 @@ DgnCategories::Iterator::const_iterator DgnCategories::Iterator::begin() const
     if (!m_stmt.IsValid())
         {
         Utf8String sqlString = MakeSqlString("SELECT Id,Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category));
-        m_db->GetCachedStatement (m_stmt, sqlString.c_str());
+        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         }
     else
@@ -167,7 +167,7 @@ DgnCategories::Iterator::const_iterator DgnCategories::Iterator::begin() const
         m_stmt->Reset();
         }
 
-    return Entry (m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
 //---------------------------------------------------------------------------------------
@@ -178,9 +178,9 @@ size_t DgnCategories::Iterator::QueryCount() const
     Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Category));
 
     Statement sql;
-    sql.Prepare (*m_db, sqlString.c_str());
+    sql.Prepare(*m_db, sqlString.c_str());
 
-    return ((BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt (0));
+    return ((BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0));
     }
 
 DgnCategoryId DgnCategories::Iterator::Entry::GetCategoryId() const {Verify(); return m_sql->GetValueId<DgnCategoryId>(0);}
@@ -201,11 +201,11 @@ static Utf8CP APPEARANCE_Transparency = "transp";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnCategories::InsertSubCategory (SubCategory& subCategory)
+DbResult DgnCategories::InsertSubCategory(SubCategory& subCategory)
     {
     if (!subCategory.GetCategoryId().IsValid())
         {
-        BeAssert (false);
+        BeAssert(false);
         return BE_SQLITE_ERROR;
         }
 
@@ -217,21 +217,21 @@ DbResult DgnCategories::InsertSubCategory (SubCategory& subCategory)
         }
 
     Statement stmt;
-    stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_SubCategory) " (Id,CategoryId,Code,Label,Descr,Props) VALUES(?,?,?,?,?,?)");
+    stmt.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_SubCategory) " (Id,CategoryId,Code,Label,Descr,Props) VALUES(?,?,?,?,?,?)");
 
-    stmt.BindId (1, subCategory.GetSubCategoryId());
-    stmt.BindId (2, subCategory.GetCategoryId());
+    stmt.BindId(1, subCategory.GetSubCategoryId());
+    stmt.BindId(2, subCategory.GetCategoryId());
 
     if (!subCategory.IsDefaultSubCategory()) // default SubCategories don't have a code/label/descr
         {
         if (!IsValidCode(subCategory.GetCode()))
             return BE_SQLITE_ERROR;
 
-        stmt.BindText (3, subCategory.GetCode(), Statement::MakeCopy::No);
-        stmt.BindText (4, subCategory.GetLabel(), Statement::MakeCopy::No);
-        stmt.BindText (5, subCategory.GetDescription(), Statement::MakeCopy::No);
+        stmt.BindText(3, subCategory.GetCode(), Statement::MakeCopy::No);
+        stmt.BindText(4, subCategory.GetLabel(), Statement::MakeCopy::No);
+        stmt.BindText(5, subCategory.GetDescription(), Statement::MakeCopy::No);
         }
-    stmt.BindText (6, subCategory.GetAppearance().ToJson(), Statement::MakeCopy::Yes);
+    stmt.BindText(6, subCategory.GetAppearance().ToJson(), Statement::MakeCopy::Yes);
 
     DbResult status = stmt.Step();
     return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
@@ -240,25 +240,25 @@ DbResult DgnCategories::InsertSubCategory (SubCategory& subCategory)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnCategories::UpdateSubCategory (SubCategory const& subCategory)
+DbResult DgnCategories::UpdateSubCategory(SubCategory const& subCategory)
     {
     Statement stmt;
-    stmt.Prepare (m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_SubCategory) " SET Code=?,Descr=?,Props=? WHERE Id=?");
+    stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_SubCategory) " SET Code=?,Descr=?,Props=? WHERE Id=?");
 
     if (!subCategory.IsDefaultSubCategory()) // default SubCategories don't have a code/descr
         {
         if (!IsValidCode(subCategory.GetCode()))
             return BE_SQLITE_ERROR;
 
-        stmt.BindText (1, subCategory.GetCode(), Statement::MakeCopy::No);
-        stmt.BindText (2, subCategory.GetLabel(), Statement::MakeCopy::No);
-        stmt.BindText (3, subCategory.GetDescription(), Statement::MakeCopy::No);
+        stmt.BindText(1, subCategory.GetCode(), Statement::MakeCopy::No);
+        stmt.BindText(2, subCategory.GetLabel(), Statement::MakeCopy::No);
+        stmt.BindText(3, subCategory.GetDescription(), Statement::MakeCopy::No);
         }
-    stmt.BindText (4, subCategory.GetAppearance().ToJson(), Statement::MakeCopy::Yes);
-    stmt.BindId (5, subCategory.GetSubCategoryId());
+    stmt.BindText(4, subCategory.GetAppearance().ToJson(), Statement::MakeCopy::Yes);
+    stmt.BindId(5, subCategory.GetSubCategoryId());
 
     DbResult status = stmt.Step();
-    BeDataAssert (BE_SQLITE_DONE==status);
+    BeDataAssert(BE_SQLITE_DONE==status);
     return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
     }
 
@@ -268,21 +268,21 @@ DbResult DgnCategories::UpdateSubCategory (SubCategory const& subCategory)
 DbResult DgnCategories::DeleteSubCategory(DgnSubCategoryId subCategoryId)
     {
     Statement stmt;
-    stmt.Prepare (m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=? AND CategoryId!=?"); // don't allow the default SubCategory to be deleted
-    stmt.BindId (1, subCategoryId);
-    stmt.BindId (2, subCategoryId); // a default SubCategory has the same Id and CategoryId
+    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=? AND CategoryId!=?"); // don't allow the default SubCategory to be deleted
+    stmt.BindId(1, subCategoryId);
+    stmt.BindId(2, subCategoryId); // a default SubCategory has the same Id and CategoryId
     return BE_SQLITE_DONE == stmt.Step() ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId DgnCategories::QuerySubCategoryId (DgnCategoryId categoryId, Utf8CP subCategoryCode) const
+DgnSubCategoryId DgnCategories::QuerySubCategoryId(DgnCategoryId categoryId, Utf8CP subCategoryCode) const
     {
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement (stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE CategoryId=? AND Code=?");
-    stmt->BindId (1, categoryId);
-    stmt->BindText (2, subCategoryCode, Statement::MakeCopy::No);
+    m_dgndb.GetCachedStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE CategoryId=? AND Code=?");
+    stmt->BindId(1, categoryId);
+    stmt->BindText(2, subCategoryCode, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnSubCategoryId() : stmt->GetValueId<DgnSubCategoryId>(0);
     }
 
@@ -308,7 +308,7 @@ DgnCategories::SubCategory DgnCategories::QuerySubCategory(DgnSubCategoryId subC
     BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
 
     CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement (stmt, "SELECT CategoryId,Code,Label,Descr,Props FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
+    m_dgndb.GetCachedStatement(stmt, "SELECT CategoryId,Code,Label,Descr,Props FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
     stmt->BindId(1, subCategoryId);
 
     SubCategory subCategory;
@@ -341,7 +341,7 @@ DgnCategories::SubCategoryIterator::const_iterator DgnCategories::SubCategoryIte
 
         Utf8String sqlString = MakeSqlString(selectSql.c_str(), whereCategory);
 
-        m_db->GetCachedStatement (m_stmt, sqlString.c_str());
+        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
 
         if (whereCategory)
             m_stmt->BindId(1, m_categoryId);
@@ -353,7 +353,7 @@ DgnCategories::SubCategoryIterator::const_iterator DgnCategories::SubCategoryIte
         m_stmt->Reset();
         }
 
-    return Entry (m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
 DgnCategoryId DgnCategories::SubCategoryIterator::Entry::GetCategoryId() const {Verify(); return m_sql->GetValueId<DgnCategoryId>(0);}
@@ -370,7 +370,7 @@ void DgnCategories::SubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     {
     Init();
 
-    Json::Value val (Json::objectValue);
+    Json::Value val(Json::objectValue);
     if (!Json::Reader::Parse(jsonStr, val))
         return;
 
