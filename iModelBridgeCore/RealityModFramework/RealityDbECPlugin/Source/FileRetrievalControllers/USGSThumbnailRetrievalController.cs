@@ -52,10 +52,19 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                         var link = linkArray.First(l => l["type"].Value<string>() == "browseImage");
                         string thumbnailUri = link["uri"].Value<string>();
 
-                        Stream thumbnailStream = DownloadThumbnail(thumbnailUri);
+                        //long contentLength;
+
+                        MemoryStream thumbnailStream = DownloadThumbnail(thumbnailUri);
+
+                        //This is a test!!!!
+                        //Stream thumbnailStream = File.OpenRead(@"C:\RealityData\PackagesNewDb\test.txt");
+                        //StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, 3, DateTime.Now);
+
+
 
                         //TODO : Decide what to do with expectedSize (Currently 0)
-                        StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, 0, DateTime.Now);
+                        //throw new Exception(String.Format("Length of the response : {0}", contentLength));
+                        StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, m_instance.InstanceId, thumbnailStream.Length, DateTime.Now);
                         StreamBackedDescriptorAccessor.SetIn(m_instance, streamDescriptor);
                         //foreach (var link in linkArray)
                         //{
@@ -74,14 +83,26 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
             }
         }
 
-        private Stream DownloadThumbnail(string thumbnailUri)
+        //TODO : Set a memory limit on the MemoryStream
+        private MemoryStream DownloadThumbnail(string thumbnailUri)
         {
             if(thumbnailUri.StartsWith("ftp"))
             {
                 //FtpWebRequest request = FtpWebRequest.Create(thumbnailUri) as FtpWebRequest;
-                using(WebClient ftpClient = new WebClient())
+                //request.Method = WebRequestMethods.Ftp.GetFileSize;
+
+                //FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+                //contentLength = response.ContentLength;
+
+                //request = FtpWebRequest.Create(thumbnailUri) as FtpWebRequest;
+                //request.Method = WebRequestMethods.Ftp.DownloadFile;
+
+                //response = (FtpWebResponse)request.GetResponse();
+
+                //return response.GetResponseStream();
+                using (WebClient ftpClient = new WebClient())
                 {
-                    
+
                     //string tempPath = Path.GetTempPath();
                     //string tempFilePath = Path.Combine(tempPath, Guid.NewGuid().ToString());
                     //using (Stream fstream = File.Create(tempFilePath))
@@ -89,7 +110,15 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                     //    ftpClient.OpenRead(thumbnailUri).CopyTo(fstream);
                     //}
                     //return File.Open(tempFilePath, FileMode.Open);
-                    return ftpClient.OpenRead(thumbnailUri);
+
+                    using (Stream image = ftpClient.OpenRead(thumbnailUri))
+                    {
+                        MemoryStream imageInMemory = new MemoryStream();
+
+                        image.CopyTo(imageInMemory);
+
+                        return imageInMemory;
+                    }
                 }
                 
             }
@@ -101,14 +130,22 @@ namespace IndexECPlugin.Source.FileRetrievalControllers
                     {
                         using (HttpContent content = response.Content)
                         {
-                            return content.ReadAsStreamAsync().Result;
+
+                            //contentLength = (content.Headers.ContentLength.HasValue ? content.Headers.ContentLength.Value : 0);
+
+                            using (Stream image = content.ReadAsStreamAsync().Result)
+                            {
+                                MemoryStream imageInMemory = new MemoryStream();
+                                image.CopyTo(imageInMemory);
+                                return imageInMemory;
+                            }
                         }
                     }
                 }
             }
             else
             {
-                throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri);
+                throw new NotImplementedException("The download of the thumbnail located at " + thumbnailUri + " is not implemented yet.");
             }
         }
 

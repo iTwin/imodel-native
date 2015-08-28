@@ -88,18 +88,31 @@
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
     </Part>
 	
-	<Part Name="RealityDb" BentleyBuildMakeFile="RealityDb\RealityDb.mke">
-	</Part>
+    <Part Name="RealityDb" BentleyBuildMakeFile="RealityDb\RealityDb.mke">
+    </Part>
 
-	<Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
-		 <!-- <SubPart PartName="RealityDb"/> -->
+    <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="BentleyWMSPackageNet"/>
         <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
         <SubPart PartName="JsonNet45"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"    Repository="Bin-JsonNet" />
         <Bindings>
             <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
         </Bindings>
 
-	</Part>
+    </Part>
+    
+    <Part Name="BentleyWMSPackageNet" BentleyBuildMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke">
+        <SubPart PartName="RealityPackage"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
+        </Bindings>
+
+    </Part>
+
   
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->

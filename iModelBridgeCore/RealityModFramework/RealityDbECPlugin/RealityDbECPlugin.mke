@@ -24,7 +24,8 @@ o = $(BuildDir)Bentley.RealityDbECPlugin/
 always:
     ~mkdir $(o)
 
-
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)BentleyWMSPackageNet.dll
+%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Persistence3.dll
@@ -105,6 +106,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/ECToSQLMap.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/TableDescriptor.cs \
+            $(baseDir)Source/Helpers/SchemaHelper.cs \
             $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \
             $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
@@ -115,6 +117,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs \
             $(baseDir)Source/IndexECPlugin.cs \
+            $(baseDir)Source/IndexPolicyHandler.cs \
             $(baseDir)Source/IndexFileRetrievalController.cs \
             $(baseDir)Source/IndexNavigationModule.cs \
             $(baseDir)Source/models.cs 

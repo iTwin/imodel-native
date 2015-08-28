@@ -21,7 +21,7 @@ using Bentley.ECSystem.Extensibility;
 using Bentley.ECSystem.Repository;
 using Bentley.ECSystem.Session;
 using Bentley.Exceptions;
-//using BentleyRealityDataPackage;
+using BentleyRealityDataPackage;
 using IndexECPlugin.Source;
 using IndexECPlugin.Source.FileRetrievalControllers;
 using IndexECPlugin.Source.Helpers;
@@ -65,7 +65,7 @@ namespace Bentley.ECPluginExamples
         /// Name we will use for our ECSchema
         /// </summary>
         /// <remarks>This is only made public to simplify testing.</remarks>
-        public const string SCHEMA_NAME = "BentleyFiles";
+        public const string SCHEMA_NAME = "RealityModeling";
 
         /// <summary>
         /// Name we will use for our ECPlugin
@@ -122,6 +122,8 @@ namespace Bentley.ECPluginExamples
                 .SetQuerySupport((EnumerableBasedQueryHandler)ExecuteQuery)
                 .SetOperationSupport<RetrieveBackingFileOperation>(FileRetrievalOperation)
                 .SetOperationSupport<InsertOperation>(ExecuteInsertOperation);
+            
+                IndexPolicyHandler.InitializeHandlers(builder);
             
         }
 
@@ -204,32 +206,60 @@ namespace Bentley.ECPluginExamples
             SearchClass searchClass = query.SearchClasses.First();
             {
                 //TODO : code a real procedure to fetch our connection string
-                using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
-                {
-                    IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
 
+                    IECQueryProvider helper/* = new SqlQueryProvider(query)*/;
+                    
                     if (searchClass.Class.GetCustomAttributes("QueryType") == null || searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].IsNull)
                     {
                         throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
                     }
+                    
+                    //string queryType = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
 
-                    string queryType = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
+                    string source;
 
-                    switch (queryType)
+                    if(query.ExtendedData.ContainsKey("source"))
                     {
-                        case "SQL":
-                            helper = new SqlQueryProvider(query, sqlConnection);
-                            break;
+                        source = query.ExtendedData["source"].ToString();
+                    }
+                    else
+                    {
+                        //TODO : We should rename queryType, as it has taken the role of a default parameter
+                        source = searchClass.Class.GetCustomAttributes("QueryType")["QueryType"].StringValue;
+                    }
+                    //IEnumerable<IECInstance> instanceList;
 
-                        case "USGSAPI":
-                            helper = new UsgsAPIQueryProvider(query);
-                            break;
+                    switch (source.ToLower())
+                    {
+                        case "index":
+                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
+                            {
+                                SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME); 
+                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
+                                return helper.CreateInstanceList();
+                            }
+
+                        case "usgsapi":
+                            helper = new UsgsAPIQueryProvider(query, querySettings);
+                            return helper.CreateInstanceList();
+
+                        case "all":
+                            List<IECInstance> instanceList = new List<IECInstance>();
+                            using (SqlConnection sqlConnection = new SqlConnection(m_connectionString))
+                            {
+                                SchemaHelper schemaHelper = new SchemaHelper(sender.ParentECPlugin.SchemaModule, connection, SCHEMA_NAME);
+                                helper = new SqlQueryProvider(query, querySettings, sqlConnection, schemaHelper);
+                                instanceList = helper.CreateInstanceList().ToList();
+                            }
+
+                            helper = new UsgsAPIQueryProvider(query, querySettings);
+                            instanceList.AddRange(helper.CreateInstanceList());
+                            return instanceList;
                         default:
-                            throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                            //throw new UserFriendlyException(String.Format("The class {0} cannot be queried.", searchClass.Class.Name));
+                            throw new UserFriendlyException("The source \"" + source + "\" does not exist. Choose between \"index\", \"usgsapi\" or \"all\"");
                     }
 
-                    return helper.CreateInstanceList();
-                }
 
                 ////SqlCommand cmd = helper.;
 
@@ -271,7 +301,6 @@ namespace Bentley.ECPluginExamples
                 //return ReadInstancesFromAPI(bentleyFileClass, baseURL + apiMethodURL, polygonPointsVar, whereClauseString, pageSize, page, testToErase, testToErase2);
 
             }
-//            return null;
         }
 
 
@@ -360,24 +389,26 @@ namespace Bentley.ECPluginExamples
                 throw new UserFriendlyException(String.Format("There is no file associated to the {0} class", instanceClass.Name));
             }
 
-            var resourceManager = new FileResourceManager(connection);
-            FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
+
 
             switch (fileHolderAttribute["Type"].StringValue)
             {
 
                 case "PreparedPackage":
+
+                    var resourceManager = new FileResourceManager(connection);
+                    FileBackedDescriptorAccessor.SetIn(instance, new FileBackedDescriptor(""));
                     var packageRetrievalController = new PackageRetrievalController(instance, resourceManager, operation, m_packagesLocation);
                     packageRetrievalController.Run();
                     break;
                 case "SQLThumbnail":
                     //var sqlThumbnailRetrievalController = new SQLThumbnailRetrievalController(...);
                     //sqlThumbnailRetrievalController.Run();
-                    //break;
+                    break;
                 case "USGSThumbnail":
 
-                    var usgsThumbnailRetrievalController = new USGSThumbnailRetrievalController(instance);
-                    usgsThumbnailRetrievalController.processThumbnailRetrieval();
+                    //var usgsThumbnailRetrievalController = new USGSThumbnailRetrievalController(instance);
+                    //usgsThumbnailRetrievalController.processThumbnailRetrieval();
                     break;
                 default:
                     throw new ProgrammerException("This type of file holder attribute is not implemented");
@@ -406,6 +437,8 @@ namespace Bentley.ECPluginExamples
         {
             //For now, we only "insert" objects of the PackageRequest class
 
+            QueryModule queryModule = sender.ParentECPlugin.QueryModule;
+
             if(instance.ClassDefinition.Name != "PackageRequest")
             {
                 throw new UserFriendlyException("The only insert operation permitted is a PackageResquest instance insertion.");
@@ -421,115 +454,93 @@ namespace Bentley.ECPluginExamples
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property");
             }
 
-            List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
+            //List<RequestedEntity> bentleyFileInfoList = new List<RequestedEntity>();
             List<RequestedEntity> requestedEntities = new List<RequestedEntity>();
             for(int i = 0; i < requestedEntitiesECArray.Count; i++)
             {
                 requestedEntities.Add(ECStructToRequestedEntity(requestedEntitiesECArray[i] as IECStructValue));
             }
-
             IECClass spatialEntityClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntity");
+            
+            IECRelationshipClass dataSourceRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityToSpatialDataSource") as IECRelationshipClass;
+            IECClass dataSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialDataSource");
+            RelatedInstanceSelectCriteria dataSourceRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(dataSourceRelClass, RelatedInstanceDirection.Forward, dataSourceClass), true);
+
+            IECRelationshipClass metadataRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "SpatialEntityBaseToMetadata") as IECRelationshipClass;
+            IECClass metadataClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Metadata");
+            //RelatedInstanceSelectCriteria metadataRelCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(metadataRelClass, RelatedInstanceDirection.Forward, metadataClass), true);
+
             ECQuery query = new ECQuery(spatialEntityClass);
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "IsGroup"));
-            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ID"));
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Id"));
+            query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Footprint"));
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(requestedEntities.Select(e => e.ID.ToString()).ToArray()));
+            query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
+            //query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
 
-            bool continueQueries = true;
-            bool firstTime = true;
+            var queriedSpatialEntities = ExecuteQuery(queryModule, connection, query, null);
 
-            List<RequestedEntity> oldParentList = null;
-
-            while (continueQueries)
-            {
-                continueQueries = false;
-                var queriedSpatialEntities = ExecuteQuery(null, connection, query, null);
-
-
-                List<RequestedEntity> newParentList = new List<RequestedEntity>();
-
-                foreach (var queriedInstance in queriedSpatialEntities)
-                {
-                    RequestedEntity queriedEntity;
-                    if (firstTime)
-                    {
-                        //We have to get the infos given in the request
-                        queriedEntity = requestedEntities.First(e => e.ID == queriedInstance.GetPropertyValue("ID").IntValue);
-                    }
-                    else
-                    {
-                        //We have to copy the infos (except the ID) from the parent
-                        queriedEntity = new RequestedEntity();
-                        queriedEntity.ID = queriedInstance.GetPropertyValue("ID").IntValue;
-                        var parentEntity = oldParentList.First(e => e.ID == queriedInstance.GetPropertyValue("ParentGroupId").IntValue);
-
-                        queriedEntity.SelectedFormat = parentEntity.SelectedFormat;
-                        queriedEntity.SelectedStyle = parentEntity.SelectedStyle;
-                    }
-
-                    if(queriedInstance.GetAsString("IsGroup").ToLower() == "false")
-                    {   
-                        bentleyFileInfoList.Add(queriedEntity);
-                    }
-                    else
-                    {
-                        //There are parents in the IDs that were given. We will need to get all the children of these.
-                        newParentList.Add(queriedEntity);
-                        continueQueries = true;
-                    }
-                }
-
-                if(continueQueries)
-                {
-                    query = new ECQuery(spatialEntityClass);
-                    query.SelectClause.SelectAllProperties = false;
-                    query.SelectClause.SelectedProperties = new List<IECProperty>();
-                    query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "IsGroup"));
-                    query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ID"));
-                    query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ParentGroupId"));
-                    query.WhereClause = new WhereCriteria();
-                    for(int i = 0; i < newParentList.Count; i++)
-                    {
-                        query.WhereClause.Add(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.First(prop => prop.Name == "ParentGroupId"), newParentList[i].ID));
-                        if(i > 0)
-                        {
-                            query.WhereClause.SetLogicalOperatorBefore(i, LogicalOperator.OR);
-                        }
-                    }
-                }
-                oldParentList = newParentList;
-                firstTime = false;
-            }
-
-            if(bentleyFileInfoList.Count == 0)
-            {
-                throw new UserFriendlyException("The package requested is empty. The request was aborted");
-            }
-
-            IECClass bentleyFileInfoClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "BentleyFileInfo");
-            //Now, we have all the IDs of the bentleyFileInfos. We can query the locations from these and create the archive
-            query = new ECQuery(bentleyFileInfoClass);
-            query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties = new List<IECProperty>();
-            query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "SpatialEntityId"));
-            query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "URL"));
-            query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Version"));
-            query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Layers"));
-            query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Footprint"));
-            query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(bentleyFileInfoList.Select(e => e.ID.ToString()).ToArray()));
-
-            var queriedBentleyFileInfos = ExecuteQuery(null, connection, query, null);
-
-            //throw new Exception("Testing");
             List<MapInfo> mapInfoList = new List<MapInfo>();
 
-            string polygonString;
-            foreach (var queriedBentleyFileInfo in queriedBentleyFileInfos)
+            foreach (IECInstance spatialEntity in queriedSpatialEntities)
             {
-                int entityId = queriedBentleyFileInfo.GetPropertyValue("SpatialEntityId").IntValue;
+                string polygonString = spatialEntity.GetPropertyValue("Footprint").StringValue;
 
-                polygonString = queriedBentleyFileInfo.GetPropertyValue("Footprint").StringValue;
+                //query = new ECQuery(metadataClass);
+                //query.SelectClause.SelectAllProperties = false;
+                //query.SelectClause.SelectedProperties.Add(metadataClass.First(prop => prop.Name == "Legal"));
+                //query.WhereClause = new WhereCriteria(new RelatedCriterion();
+
+                int entityId = spatialEntity.GetPropertyValue("Id").IntValue;
+
+                IECRelationshipInstance firstRel = spatialEntity.GetRelationshipInstances().First();
+                IECInstance firstSpatialDataSource = firstRel.Target;
+
+                //WMSSource table query *******************************
+
+                IECClass wmsSourceClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSSource");
+
+                query = new ECQuery(wmsSourceClass);
+                query.SelectClause.SelectAllProperties = false;
+                query.SelectClause.SelectedProperties = new List<IECProperty>();
+                query.SelectClause.SelectedProperties.Add(wmsSourceClass.First(prop => prop.Name == "Layers"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(firstSpatialDataSource.InstanceId));
+
+                var queriedWMSSourceClass = ExecuteQuery(queryModule, connection, query, null);
+
+                //***********************************************************************
+
+                //Server table query **************************************
+
+                IECRelationshipClass ServerRelClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "ServerToSpatialDataSource") as IECRelationshipClass;
+                IECClass serverClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "Server");
+
+
+                query = new ECQuery(serverClass);
+
+                query.SelectClause.SelectAllProperties = false;
+                query.SelectClause.SelectedProperties = new List<IECProperty>();
+                query.WhereClause = new WhereCriteria(new RelatedCriterion(new QueryRelatedClassSpecifier(ServerRelClass, RelatedInstanceDirection.Forward, dataSourceClass), new WhereCriteria(new ECInstanceIdExpression(firstSpatialDataSource.InstanceId))));
+
+                var queriedServer = ExecuteQuery(queryModule, connection, query, null);
+
+                //**************************************************************
+
+                //WMSServer table query
+
+                IECClass wmsServerClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "WMSServer");
+
+                query = new ECQuery(wmsServerClass);
+                query.SelectClause.SelectAllProperties = false;
+                query.SelectClause.SelectedProperties = new List<IECProperty>();
+                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURL"));
+                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "GetMapURLQuery"));
+                query.SelectClause.SelectedProperties.Add(wmsServerClass.First(prop => prop.Name == "Version"));
+                query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(queriedServer.First().InstanceId));
+
+                var queriedWMSServer = ExecuteQuery(queryModule, connection, query, null);
+
                 PolygonModel model;
                 try
                     {
@@ -542,18 +553,211 @@ namespace Bentley.ECPluginExamples
 
                 MapInfo info = new MapInfo
                 {
-                    URL = queriedBentleyFileInfo.GetPropertyValue("URL").StringValue,
-                    Version = queriedBentleyFileInfo.GetPropertyValue("Version").StringValue,
-                    Layers = queriedBentleyFileInfo.GetPropertyValue("Layers").StringValue,
+                    GetMapURL = queriedWMSServer.First().GetPropertyValue("GetMapURL").StringValue,
+                    GetMapURLQuery = queriedWMSServer.First().GetPropertyValue("GetMapURLQuery").StringValue,
+                    Version = queriedWMSServer.First().GetPropertyValue("Version").StringValue,
+                    Layers = queriedWMSSourceClass.First().GetPropertyValue("Layers").StringValue,
                     CoordinateSystem = coordinateSystem,
-                    SelectedStyle = bentleyFileInfoList.First(e => e.ID == entityId).SelectedStyle,
-                    SelectedFormat = bentleyFileInfoList.First(e => e.ID == entityId).SelectedFormat,
+                    SelectedStyle = requestedEntities.First(e => e.ID == entityId).SelectedStyle,
+                    SelectedFormat = requestedEntities.First(e => e.ID == entityId).SelectedFormat,
+                    Legal = requestedEntities.First(e => e.ID == entityId).Legal,
                     Footprint = model.points
                 };
 
                 mapInfoList.Add(info);
             }
 
+
+            //bool continueQueries = true;
+            //bool firstTime = true;
+
+            //List<RequestedEntity> oldParentList = null;
+
+            //while (continueQueries)
+            //{
+            //    continueQueries = false;
+            //    var queriedSpatialEntities = ExecuteQuery(null, connection, query, null);
+
+
+            //    List<RequestedEntity> newParentList = new List<RequestedEntity>();
+
+            //    foreach (var queriedInstance in queriedSpatialEntities)
+            //    {
+            //        RequestedEntity queriedEntity;
+            //        if (firstTime)
+            //        {
+            //            //We have to get the infos given in the request
+            //            queriedEntity = requestedEntities.First(e => e.ID == queriedInstance.GetPropertyValue("ID").IntValue);
+            //        }
+            //        else
+            //        {
+            //            //We have to copy the infos (except the ID) from the parent
+            //            queriedEntity = new RequestedEntity();
+            //            queriedEntity.ID = queriedInstance.GetPropertyValue("ID").IntValue;
+            //            var parentEntity = oldParentList.First(e => e.ID == queriedInstance.GetPropertyValue("ParentGroupId").IntValue);
+
+            //            queriedEntity.SelectedFormat = parentEntity.SelectedFormat;
+            //            queriedEntity.SelectedStyle = parentEntity.SelectedStyle;
+            //        }
+
+            //        if(queriedInstance.GetAsString("IsGroup").ToLower() == "false")
+            //        {   
+            //            bentleyFileInfoList.Add(queriedEntity);
+            //        }
+            //        else
+            //        {
+            //            //There are parents in the IDs that were given. We will need to get all the children of these.
+            //            newParentList.Add(queriedEntity);
+            //            continueQueries = true;
+            //        }
+            //    }
+
+            //    if(continueQueries)
+            //    {
+            //        query = new ECQuery(spatialEntityClass);
+            //        query.SelectClause.SelectAllProperties = false;
+            //        query.SelectClause.SelectedProperties = new List<IECProperty>();
+            //        query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "IsGroup"));
+            //        query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ID"));
+            //        query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "ParentGroupId"));
+            //        query.WhereClause = new WhereCriteria();
+            //        for(int i = 0; i < newParentList.Count; i++)
+            //        {
+            //            query.WhereClause.Add(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.First(prop => prop.Name == "ParentGroupId"), newParentList[i].ID));
+            //            if(i > 0)
+            //            {
+            //                query.WhereClause.SetLogicalOperatorBefore(i, LogicalOperator.OR);
+            //            }
+            //        }
+            //    }
+            //    oldParentList = newParentList;
+            //    firstTime = false;
+            //}
+
+            //if(bentleyFileInfoList.Count == 0)
+            //{
+            //    throw new UserFriendlyException("The package requested is empty. The request was aborted");
+            //}
+
+            //IECClass bentleyFileInfoClass = sender.ParentECPlugin.SchemaModule.FindECClass(connection, "RealityModeling", "BentleyFileInfo");
+            ////Now, we have all the IDs of the bentleyFileInfos. We can query the locations from these and create the archive
+            //query = new ECQuery(bentleyFileInfoClass);
+            //query.SelectClause.SelectAllProperties = false;
+            //query.SelectClause.SelectedProperties = new List<IECProperty>();
+            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "SpatialEntityId"));
+            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "URL"));
+            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Version"));
+            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Layers"));
+            //query.SelectClause.SelectedProperties.Add(bentleyFileInfoClass.First(prop => prop.Name == "Footprint"));
+            //query.WhereClause = new WhereCriteria(new ECInstanceIdExpression(bentleyFileInfoList.Select(e => e.ID.ToString()).ToArray()));
+
+
+
+            //var queriedBentleyFileInfos = ExecuteQuery(null, connection, query, null);
+
+            //List<MapInfo> mapInfoList = new List<MapInfo>();
+
+            //string polygonString;
+            //foreach (var queriedBentleyFileInfo in queriedBentleyFileInfos)
+            //{
+            //    int entityId = queriedBentleyFileInfo.GetPropertyValue("SpatialEntityId").IntValue;
+
+            //    polygonString = queriedBentleyFileInfo.GetPropertyValue("Footprint").StringValue;
+            //    PolygonModel model;
+            //    try
+            //        {
+            //        model = JsonConvert.DeserializeObject<PolygonModel>(polygonString);
+            //        }
+            //    catch (JsonSerializationException)
+            //        {
+            //        throw new UserFriendlyException("The polygon format is not valid.");
+            //        }
+
+            //    MapInfo info = new MapInfo
+            //    {
+            //        GetMapURL = queriedBentleyFileInfo.GetPropertyValue("URL").StringValue,
+            //        Version = queriedBentleyFileInfo.GetPropertyValue("Version").StringValue,
+            //        Layers = queriedBentleyFileInfo.GetPropertyValue("Layers").StringValue,
+            //        CoordinateSystem = coordinateSystem,
+            //        SelectedStyle = bentleyFileInfoList.First(e => e.ID == entityId).SelectedStyle,
+            //        SelectedFormat = bentleyFileInfoList.First(e => e.ID == entityId).SelectedFormat,
+            //        Footprint = model.points
+            //    };
+
+            //    mapInfoList.Add(info);
+            //}
+
+            // Create WmsSource.
+            List<WmsMapInfoNet> wmsMapInfoList = new List<WmsMapInfoNet> ();
+            foreach(var mapInfo in mapInfoList)
+                {
+                // Extract min/max values for bbox.
+                IEnumerator<double[]> pointsIt = mapInfo.Footprint.GetEnumerator ();
+                double minX = 90.0; double maxX = -90.0;
+                double minY = 180.0; double maxY = -180.0;
+                double temp = 0.0;
+                while (pointsIt.MoveNext())
+                    {
+                    //x
+                    temp = pointsIt.Current[0];
+                    if (minX > temp)
+                        minX = temp;
+                    if (maxX < temp)
+                        maxX = temp;
+
+                    //y
+                    temp = pointsIt.Current[1];
+                    if (minY > temp)
+                        minY = temp;
+                    if (maxY < temp)
+                        maxY = temp;
+                    }
+
+                //&&JFC Workaround for the moment (until we add a csType column in the database). 
+                // We suppose CRS for version 1.3, SRS for 1.1.1 and below.
+                string csType = "CRS";
+                if ( !mapInfo.Version.Equals ("1.3.0") )
+                    csType = "SRS";
+
+                // We need to remove extra characters at the end of the vendor specific since 
+                // this part is at the end of the GetMap query that will be created later.
+                string vendorSpecific = mapInfo.GetMapURLQuery;
+                if ( vendorSpecific.EndsWith ("&") )
+                    vendorSpecific = vendorSpecific.TrimEnd ('&');
+
+                wmsMapInfoList.Add(WmsMapInfoNet.Create(mapInfo.Legal,                      // Copyright
+                                                        mapInfo.GetMapURL.TrimEnd ('?'),    // Url
+                                                        minX, minY, maxX, maxY,             // Bbox min/max values
+                                                        mapInfo.Version,                    // Version
+                                                        mapInfo.Layers,                     // Layers (comma-separated list)
+                                                        csType,                             // Coordinate System Type
+                                                        mapInfo.CoordinateSystem,           // Coordinate System Label
+                                                        10, 10,                             // MetaWidth and MetaHeight
+                                                        mapInfo.SelectedStyle,              // Styles (comma-separated list)
+                                                        mapInfo.SelectedFormat,             // Format
+                                                        vendorSpecific,                     // Vendor Specific
+                                                        true));                             // Transparency
+                }
+
+            // Create package bounding box (region of interest).
+            List<double> selectedRegion = new List<double>();
+
+            string selectedRegionStr = instance.GetPropertyValue("Polygon").StringValue;
+
+            selectedRegion = selectedRegionStr.Split(new char[] { ',', '[', ']' }, StringSplitOptions.RemoveEmptyEntries).Select(str => Convert.ToDouble(str)).ToList();
+
+            // Create package.
+            string name = Guid.NewGuid().ToString();
+            try
+            {
+                RealityDataPackageNet.Create (m_packagesLocation, name, selectedRegion, wmsMapInfoList);
+
+            }
+            catch (Exception e)
+            {
+                throw new UserFriendlyException("There was a problem with the processing of the order.", e);
+            }
+            instance.InstanceId = name + ".xrdp";
         }
 
         private RequestedEntity ECStructToRequestedEntity(IECStructValue structValue)
@@ -567,10 +771,10 @@ namespace Bentley.ECPluginExamples
             {
                 ID = structValue.GetPropertyValue("ID").IntValue,
                 SelectedFormat = structValue.GetPropertyValue("SelectedFormat").StringValue,
-                SelectedStyle = structValue.GetPropertyValue("SelectedStyle").StringValue
+                SelectedStyle = structValue.GetPropertyValue("SelectedStyle").StringValue,
+                Legal = structValue.GetPropertyValue("Legal").StringValue
             };
 
-            
         }
 
         private void CreateArchive(IECInstance instance, List<string> LocationOfFilesList, out string guid)

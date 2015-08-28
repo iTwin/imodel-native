@@ -132,11 +132,19 @@ namespace IndexECPlugin.Source
                 m_sqlWhereClause += AddBrackets(tableName) + ".";
             }
 
-            string paramName = GetNewParamName();
+            string sqlOp = ECToSQLMap.ECRelationalOperatorToSQL(op);
 
-            m_sqlWhereClause += AddBrackets(columnName) + " " + ECToSQLMap.ECRelationalOperatorToSQL(op) + paramName + " ";
-
-            m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideString, dbType));
+            if ((op != RelationalOperator.ISNULL) && (op != RelationalOperator.ISNOTNULL))
+            {
+                string paramName = GetNewParamName();
+                m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp + paramName + " ";
+                m_paramNameValueMap.Add(paramName, new Tuple<string, DbType>(rightSideString, dbType));
+            }
+            else
+            {
+                m_sqlWhereClause += AddBrackets(columnName) + " " + sqlOp;
+            }
+            
         }
 
         public void AddOrderByClause(TableDescriptor table, string columnName, bool sortAscending)

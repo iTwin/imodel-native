@@ -48,6 +48,10 @@ namespace IndexECPlugin.Source.Helpers
                     return "NOT IN";
                 case RelationalOperator.NOTLIKE:
                     return "NOT LIKE";
+                case RelationalOperator.ISNULL:
+                    return "IS NULL";
+                case RelationalOperator.ISNOTNULL:
+                    return "IS NOT NULL";
                 //case RelationalOperator.STARTSWITH:
                 //    break;
                 //case RelationalOperator.X:

@@ -103,6 +103,8 @@
     <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
     <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
     <Compile Include="Source\Helpers\ECToSQLMap.cs" />
+    <Compile Include="Source\Helpers\SchemaHelper.cs" />
+    <Compile Include="Source\IndexPolicyHandler.cs" />
     <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
     <Compile Include="Source\Helpers\TableDescriptor.cs" />
     <Compile Include="Source\IndexECPlugin.cs" />
@@ -120,6 +122,7 @@
     <None Include="External\location.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="External\newDbLocation.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -135,6 +138,7 @@
     <Content Include="External\Assemblies\Bentley.GeometryNET.Structs.dll" />
     <Content Include="External\Assemblies\Bentley.logging-2.0.dll" />
     <Content Include="External\Assemblies\Bentley.Platform.dll" />
+    <Content Include="External\ECSchemaNewDB.xml" />
     <Content Include="External\ECSchemaStubv3.xml">
       <SubType>Designer</SubType>
     </Content>

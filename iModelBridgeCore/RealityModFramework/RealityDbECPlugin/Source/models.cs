@@ -67,93 +67,117 @@ namespace IndexECPlugin.Source
         /// <summary>
         /// TO BE DONE
         /// </summary>
+        public string Legal { get; set; }
+
+        /// <summary>
+        /// TO BE DONE
+        /// </summary>
         public IEnumerable<double[]> Footprint { get; set; }
     }
 
     /// <summary>
-    /// TO BE DONE
-    /// </summary>
+    /// TO BE DONE  
+    /// </summary>    
     public class MapInfo
     {
         /// <summary>
+        /// TO BE DONE  
+        /// </summary>
+        public string GetMapURL { get; set; }
+
+        /// <summary>
         /// TO BE DONE
         /// </summary>
-        public string URL { get; set; }
+        public string GetMapURLQuery { get; set; }
+
         /// <summary>
         /// TO BE DONE
         /// </summary>
         public string Layers { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string Version { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string CoordinateSystem { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string SelectedFormat { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string SelectedStyle { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
+        /// </summary>
+        public string Legal { get; set; }
+
+        /// <summary>
+        ///   
         /// </summary>
         public IEnumerable<double[]> Footprint { get; set; }
     }
 
-    /// <summary>
-    /// TO BE DONE
-    /// </summary>
     internal class UsgsAPICategory
     {
         /// <summary>
-        /// TO BE DONE
-        /// </summary>
+        ///   
+        /// </summary>        
         public string Title { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string SubTitle { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string Format { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public int Priority { get; set; }
     }
 
     /// <summary>
-    /// TO BE DONE
+    ///   
     /// </summary>
     public class UsgsRequest : IComparable<UsgsRequest>
     {
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string Dataset { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string Format { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public string Category { get; set; }
+
         /// <summary>
-        /// TO BE DONE
+        ///   
         /// </summary>
         public int Priority { get; set; }
 
-	/// <summary>
-	///   
-	/// </summary>
-	public int CompareTo(UsgsRequest req)
+        /// <summary>
+        ///   
+        /// </summary>
+        public int CompareTo(UsgsRequest req)
         {
             int comp = Category.CompareTo(req.Category);
             if(comp != 0)
