@@ -112,7 +112,7 @@ void JsUtils::ImportLibrary (Utf8StringCR libName)
 //---------------------------------------------------------------------------------------
 void JsUtils::ReportError (Utf8StringCR description)
     {
-    T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::Category::ReportedByScript, description.c_str());
+    T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::Category::ReportedByScript, description.c_str(), "");
     }
 
 //---------------------------------------------------------------------------------------

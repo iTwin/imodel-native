@@ -27,7 +27,7 @@ public:
     void SetUp() override;
     void TearDown() override;
 
-    void SetupProject (WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode);
+    void SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode);
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     PhysicalModelP GetDefaultPhysicalModel() {return dynamic_cast<PhysicalModelP>(&GetDefaultModel());}
@@ -50,12 +50,12 @@ void SqlFunctionsTest::TearDown()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SqlFunctionsTest::SetupProject (WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode mode)
+void SqlFunctionsTest::SetupProject(WCharCP dgnDbFileName, WCharCP inFileName, BeSQLite::Db::OpenMode mode)
     {
     BeFileName fullDgnDbFileName;
-    ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut (fullDgnDbFileName, dgnDbFileName, inFileName, __FILE__));
+    ASSERT_EQ (SUCCESS, DgnDbTestDgnManager::GetTestDataOut(fullDgnDbFileName, dgnDbFileName, inFileName, __FILE__));
     DbResult result;
-    m_db = DgnDb::OpenDgnDb (&result, fullDgnDbFileName, DgnDb::OpenParams(mode));
+    m_db = DgnDb::OpenDgnDb(&result, fullDgnDbFileName, DgnDb::OpenParams(mode));
     ASSERT_TRUE (m_db.IsValid());
     ASSERT_TRUE( result == BE_SQLITE_OK);
 
@@ -361,7 +361,7 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
         DgnElementIdSet hits;
         while (BE_SQLITE_ROW == stmt.Step())
             {
-            hits.insert (stmt.GetValueId<DgnElementId>(0));
+            hits.insert(stmt.GetValueId<DgnElementId>(0));
             ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
             }
         ASSERT_EQ( 2 , hits.size() );
@@ -444,7 +444,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
     Utf8String qplan = m_db->ExplainQuery(sql);
     auto scanRt = qplan.find("SCAN TABLE dgn_RTree3d VIRTUAL TABLE INDEX");
     auto searchItem = qplan.find("SEARCH TABLE dgn_ElementItem USING INTEGER PRIMARY KEY");
-    auto searchElement = qplan.find ("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
+    auto searchElement = qplan.find("SEARCH TABLE dgn_Element USING INTEGER PRIMARY KEY");
     ASSERT_NE(Utf8String::npos , scanRt );
     ASSERT_NE(Utf8String::npos , searchItem );
     ASSERT_NE(Utf8String::npos , searchElement );
@@ -588,7 +588,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt.Step())
             {
-            overlaps.insert (stmt.GetValueId<DgnElementId>(0));
+            overlaps.insert(stmt.GetValueId<DgnElementId>(0));
             ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
             }
         ASSERT_EQ( 2 , overlaps.size() );
@@ -794,7 +794,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         stmt.BindText(stmt.GetParameterIndex(":propertyValue"), "SomeKindOfObstacle", Statement::MakeCopy::No);
         while (BE_SQLITE_ROW == stmt.Step())
             {
-            overlaps.insert (stmt.GetValueId<DgnElementId>(0));
+            overlaps.insert(stmt.GetValueId<DgnElementId>(0));
             ASSERT_STREQ( "SomeKindOfObstacle", stmt.GetValueText(1) );
             }
         ASSERT_EQ( 2 , overlaps.size() );
@@ -808,7 +808,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SqlFunctionsTest, bbox_union)
     {
-    DgnDbTestDgnManager tdm (L"04_Plant.i.idgndb", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
+    DgnDbTestDgnManager tdm(L"04_Plant.i.idgndb", __FILE__, Db::OpenMode::Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
     DgnDbP dgndb = tdm.GetDgnProjectP();
 
     Statement stmt;
