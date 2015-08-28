@@ -3396,6 +3396,12 @@ static DbResult translateZipErrorToSQLiteError(ZipErrors zipError)
     return BE_SQLITE_ERROR;
     }
 
+// Copied from sqlite3-1.c
+#define SQLITE_PENDING_BYTE     (0x40000000)
+#define SQLITE_RESERVED_BYTE    (PENDING_BYTE+1)
+#define SQLITE_SHARED_FIRST     (PENDING_BYTE+2)
+#define SQLITE_SHARED_SIZE      510
+
 //---------------------------------------------------------------------------------------
 // On Windows SQLite locks files by locking bytes starting at SQLITE_PENDING_BYTE (1gig)
 // when there are pending writes.  We test for it here because:

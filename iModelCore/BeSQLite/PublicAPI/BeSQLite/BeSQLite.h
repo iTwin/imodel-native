@@ -122,12 +122,6 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 //__PUBLISH_SECTION_END__
 #endif
 
-//  Copied from sqlite3-1.c
-#define SQLITE_PENDING_BYTE     (0x40000000)
-#define SQLITE_RESERVED_BYTE    (PENDING_BYTE+1)
-#define SQLITE_SHARED_FIRST     (PENDING_BYTE+2)
-#define SQLITE_SHARED_SIZE      510
-
 //__PUBLISH_SECTION_START__
 
 #define TEMP_TABLE_Prefix "temp."
@@ -154,7 +148,6 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #include <Bentley/bmap.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/DateTime.h>
-#include <Bentley/BeThread.h>
 #include <Bentley/BeVersion.h>
 #include "BeAppData.h"
 
@@ -168,10 +161,10 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 
 #define BESQLITE_TYPEDEFS(_name_) BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
 
-BENTLEY_NAMESPACE_TYPEDEFS (BeGuid);
-BESQLITE_TYPEDEFS (Db);
-BESQLITE_TYPEDEFS (DbFile);
-BESQLITE_TYPEDEFS (Statement);
+BENTLEY_NAMESPACE_TYPEDEFS(BeGuid);
+BESQLITE_TYPEDEFS(Db);
+BESQLITE_TYPEDEFS(DbFile);
+BESQLITE_TYPEDEFS(Statement);
 
 #if !defined (DOCUMENTATION_GENERATOR)
 #ifndef GUID_DEFINED
@@ -565,9 +558,6 @@ enum class DbOpcode : int
     Update  = 23,
 };
 
-inline int GetBaseDbResult(DbResult val) {return 0xff & val;}
-inline bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
-inline bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT_BASE;}
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
@@ -625,7 +615,7 @@ public:
         //! Maps the given UTF-32 character to its case folding equivalent (i.e. a normalized form used for comparison). This is primarily used in the LIKE operator.
         //! If the character has no case folding equivalent, the character itself is returned.
         virtual uint32_t _FoldCase(uint32_t) = 0;
-    }; // ILanguageSupport
+    };
 
     enum class LogErrors : bool {Yes=1, No=0};
 
@@ -664,6 +654,10 @@ public:
 
     //! Gets the current ILanguageSupport. Can return nullptr.
     BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
+
+    static int GetBaseDbResult(DbResult val) {return 0xff & val;}
+    static bool TestBaseDbResult(DbResult val1, DbResult val2) {return GetBaseDbResult(val1) == GetBaseDbResult(val2);}
+    static bool IsConstraintDbResult(DbResult val1) {return GetBaseDbResult(val1) == BE_SQLITE_CONSTRAINT_BASE;}
 };
 
 //=======================================================================================
@@ -1447,10 +1441,10 @@ public:
             BE_SQLITE_EXPORT Utf8CP GetNameUtf8() const;          //!< the name of this embedded file.
             BE_SQLITE_EXPORT Utf8CP GetDescriptionUtf8() const;   //!< the description of this embedded file.
             BE_SQLITE_EXPORT Utf8CP GetTypeUtf8() const;          //!< the type of this embedded file.
-            BE_SQLITE_EXPORT uint64_t GetFileSize() const;           //!< the total size, in bytes, of this embedded file.
-            BE_SQLITE_EXPORT uint32_t GetChunkSize() const;          //!< the chunk size used to embed this file.
-            BE_SQLITE_EXPORT DateTime GetLastModified() const;     //!< the time the file was last modified.
-            BE_SQLITE_EXPORT BeRepositoryBasedId GetId() const;    //!< the id of this embedded file.
+            BE_SQLITE_EXPORT uint64_t GetFileSize() const;        //!< the total size, in bytes, of this embedded file.
+            BE_SQLITE_EXPORT uint32_t GetChunkSize() const;       //!< the chunk size used to embed this file.
+            BE_SQLITE_EXPORT DateTime GetLastModified() const;    //!< the time the file was last modified.
+            BE_SQLITE_EXPORT BeRepositoryBasedId GetId() const;   //!< the id of this embedded file.
             Entry const& operator* () const {return *this;}
         };
 
