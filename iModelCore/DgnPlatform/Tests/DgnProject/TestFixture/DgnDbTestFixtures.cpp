@@ -27,7 +27,7 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
@@ -43,7 +43,7 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Code elementCode)
 {
-    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
 
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
@@ -125,7 +125,7 @@ DgnDbStatus TestElement::_DeleteInDb() const
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, DgnModelId mid, DgnCategoryId categoryId)
+DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, DgnModelId mid, DgnCategoryId categoryId, DgnDbStatus* result)
 {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -134,7 +134,7 @@ DgnElementCPtr DgnDbTestFixture::InsertElement(DgnElement::Code elementCode, Dgn
         categoryId = m_defaultCategoryId;
 
     TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
-    return m_db->Elements().Insert(*el);
+    return m_db->Elements().Insert(*el, result);
 }
 
 /*---------------------------------------------------------------------------------**//**

@@ -625,6 +625,7 @@ public:
     DGNPLATFORM_EXPORT void          SetTreatAsSingleSegment(bool yesNo);
     DGNPLATFORM_EXPORT void          SetTangents(DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT void          SetLineStyle(ILineStyleCP lstyle);
+    DGNPLATFORM_EXPORT void          ConvertToRasterLineStyle(ViewContextR context, bool force);
 
     bool HasTrueWidth() const  {return HasOrgWidth() || HasEndWidth();}
     bool HasMaxCompress() const {return m_options.maxCompress;}

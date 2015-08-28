@@ -216,8 +216,7 @@ DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDb
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Reclaims disk space by vacuuming the database
-* @bsimethod                                                    KeithBentley    12/00
+* @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnDb::CompactFile()
     {
@@ -228,13 +227,12 @@ DgnDbStatus DgnDb::CompactFile()
     if (savepoint)
         savepoint->Commit(nullptr);
 
-    if (BE_SQLITE_OK != TryExecuteSql("VACUUM"))
-        return  DgnDbStatus::SQLiteError;
-    
+    DbResult rc= TryExecuteSql("VACUUM");
+
     if (savepoint)
         savepoint->Begin();
 
-    return DgnDbStatus::Success;
+    return BE_SQLITE_OK != rc ? DgnDbStatus::SQLiteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -270,7 +268,7 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
     {
     Statement stmt;
     stmt.Prepare(m_dgndb, SqlPrintfString(
-        "INSERT %s INTO be_Prop (Namespace,  Name, Id, SubId, TxnMode, StrData) " 
+        "INSERT %s INTO be_Prop (Namespace,Name,Id,SubId,TxnMode,StrData) " 
                        "VALUES('dgn_Script',?,?,?,0,?)", updateExisting ? "OR REPLACE" : ""));
     stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
     stmt.BindInt(2, 0);
@@ -294,11 +292,12 @@ DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& styp
     stmt.BindInt(2, 0);
     if (stmt.Step() != BE_SQLITE_ROW)
         return DgnDbStatus::NotFound;
+
     do  {
         sText = stmt.GetValueText(0);
         stypeFound = (DgnScriptType)stmt.GetValueInt(1);
-        }
-    while ((stypeFound != stypePreferred) && (stmt.Step() == BE_SQLITE_ROW));
+        } while ((stypeFound != stypePreferred) && (stmt.Step() == BE_SQLITE_ROW));
+
     return DgnDbStatus::Success;
     }
 
@@ -328,15 +327,16 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
     {
     if (!IsBetweenDbs())
         return source;
+
     DgnClassId dest = m_remap.Find(source);
     if (dest.IsValid())
         return dest;
 
-    ECN::ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source.GetValue());
+    ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source.GetValue());
     if (nullptr == sourceecclass)
         return DgnClassId();
 
-    ECN::ECClassCP destecclass = GetDestinationDb().Schemas().GetECClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
+    ECClassCP destecclass = GetDestinationDb().Schemas().GetECClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
     if (nullptr == destecclass)
         return DgnClassId();
 

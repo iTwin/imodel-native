@@ -126,7 +126,7 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
     while (BE_SQLITE_ROW == statement.Step())
         {
         DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
-        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8String("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str());
+        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8PrintfString("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str()).c_str();
         }
     }
 

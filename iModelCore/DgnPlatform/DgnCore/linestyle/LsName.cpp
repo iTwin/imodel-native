@@ -133,12 +133,6 @@ Utf8String         LsDefinition::GetStyleName () const
 //---------------------------------------------------------------------------------------
 /* static */  void CreateGeometryMapMaterial(ViewContextR context, IStrokeForCache& stroker, intptr_t textureId)
     {
-#if defined(WIP_LINESTYLES)
-    // NOTE: Need to setup pattern symbology on cell element and hide 0 length lines used as pattern cell extent markers, etc.
-    PatternHelper::CookPatternSymbology (*params, context);
-    symbCell.ApplyElemDisplayParams (*context.GetCurrentDisplayParams ());
-#endif
-
     context.GetIViewDraw ().DefineQVGeometryMap (textureId, stroker, nullptr, false, context, false);
     return;
     }
@@ -153,12 +147,29 @@ private:
     ViewContextR        m_viewContext;
     LineStyleSymbR      m_lineStyleSymb;
     LsDefinitionR       m_lsDef;
+    DPoint3d            m_points[2];
+    double              m_multiplier;
+    double              m_length;
+    Transform           m_transformForTexture;
+
 public:
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
 //---------------------------------------------------------------------------------------
-ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), m_lsDef(lsDef) {}
+ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb, LsDefinitionR lsDef) : m_viewContext(viewContext), m_lineStyleSymb(lineStyleSymb), m_lsDef(lsDef) 
+    {
+    LsComponentCP    topComponent = lsDef.GetComponentCP (nullptr);
+    m_length = topComponent->_GetLength() * lineStyleSymb.GetScale();
+    if (m_length <  mgds_fc_epsilon)
+        m_length = 1.0;   //  Apparently nothing is length dependent.
+
+    //  NEEDSWORK_LINESTYLES decide how to scale when creating texture.
+    m_multiplier = 1024.0 * 1024 * 1024;
+    m_transformForTexture.InitFromScaleFactors(m_multiplier, m_multiplier, m_multiplier);
+    m_points[0].Init(0, 0, 0);
+    m_points[1].Init(m_length, 0, 0);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    08/2015
@@ -166,17 +177,25 @@ ComponentToTextureStroker(ViewContextR viewContext, LineStyleSymbR lineStyleSymb
 void _StrokeForCache(ViewContextR context, double pixelSize = 0.0) override
     {
     ElemDisplayParams   savedParams(context.GetCurrentDisplayParams());
+    ElemMatSymb         savedMatSymb (*context.GetElemMatSymb());
+
+    context.GetIDrawGeom().ActivateMatSymb(&savedMatSymb);
+
+    //  Use the current symbology, activating it here.  We may also activate symbology when drawing 
+    //  symbols. 
 
     //  Compute size of one iteration and stroke a line for that size.
     LsComponentCP    topComponent = m_lsDef.GetComponentCP (nullptr);
-    double length = topComponent->_GetLength();
-    if (length <  mgds_fc_epsilon)
-        length = 1.0;   //  Apparently nothing is length dependent.
 
-    DPoint3d points[2] = { {0,0,0}, {length, 0,0} };
-    topComponent->_StrokeLineString(&context, &m_lineStyleSymb, points, 2, false);
+
+    context.PushTransform(m_transformForTexture);
+
+    topComponent->_StrokeLineString(&context, &m_lineStyleSymb, m_points, 2, false);
+
+    context.PopTransformClip();
 
     context.GetCurrentDisplayParams() = savedParams;
+    *context.GetElemMatSymb() = savedMatSymb;
     }
 
 //---------------------------------------------------------------------------------------
@@ -230,9 +249,6 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
         return m_rasterTexture;
         }
 
-    if (m_lsComp->GetComponentType() == LsComponentType::RasterImage)
-        forceRaster =  true;
-
     if (!m_rasterInitialized)
         {
         m_rasterInitialized = true;
@@ -265,7 +281,11 @@ uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyl
         else if (forceRaster)
             {
             //  Convert this type to raster on the fly if possible
+#if TRYING_DIRECT_LINESTYLES
+            m_rasterTexture = 0; 
+#else
             m_rasterTexture = GenerateRasterTexture(viewContext, lineStyleSymb);
+#endif
             }
         }
     
