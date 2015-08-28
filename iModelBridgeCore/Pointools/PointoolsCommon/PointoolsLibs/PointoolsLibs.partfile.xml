@@ -33,8 +33,8 @@
   ********************************************************************************************************
 -->
   <Part Name="PointoolsLibs_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <SubPart PartName="PointoolsLibsVortex_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="PointoolsLibsIO_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="PointoolsLibsVortex_VS2012" Repository="PointoolsCommon"/>
+    <SubPart PartName="PointoolsLibsIO_VS2012" Repository="PointoolsCommon"/>
   </Part>
 
 <!--
@@ -44,8 +44,7 @@
 -->
 
   <Part Name="PointoolsLibsCommon_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <!-- <SubPart PartName="Boost_1_4_3_VS2012" Repository="PointoolsLibs"/>   -->
-    <SubPart PartName="Boost_1_5_7_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Boost_1_5_7_VS2012" />
     <SubPart PartName="OpenGLExt"   PartFile="opengl" Repository="libsrc-opengl"/>
     <SubPart PartName="GLEW_VS2012" PartFile="opengl" Repository="libsrc-opengl" LibType="static"/>
     <SubPart PartName="ttl" PartFile="ttl" Repository="libsrc-ttl"/>
@@ -98,7 +97,7 @@
 -->
 
   <Part Name="PointoolsLibsVortex_VS2012">
-    <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="PointoolsLibsCommon_VS2012" />
     <SubPart PartName="FastDelegate" PartFile="FastDelegate" Repository="libsrc-FastDelegate"/>
     <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
     <SubPart PartName="SCZ_Compress_VS2012" PartFile="scz_compress" Repository="libsrc-scz_compress"/>
@@ -131,7 +130,7 @@
 -->
 
   <Part Name="PointoolsLibsIO_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="PointoolsLibsCommon_VS2012" />
     <SubPart PartName="BeLibxml2_VS2012" PartFile="BeLibxml2" Repository="libsrc-libxml2" LibType="static"/>
     <SubPart PartName="PublicAPI" PartFile="BeIconv" Repository="Libsrc-Iconv"/>
     <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
