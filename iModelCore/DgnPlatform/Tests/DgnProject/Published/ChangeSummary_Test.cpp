@@ -22,6 +22,7 @@ protected:
     DgnModelPtr m_testModel;
     DgnCategoryId m_testCategoryId;
     DgnElementId m_testElementId;
+    uint32_t m_uniqueCodeAutoIncrement;
 
     void CreateDgnDb();
     void OpenDgnDb();
@@ -42,8 +43,9 @@ protected:
     bool ChangeSummaryHasInstance(ChangeSummary const& changeSummary, ECInstanceId instanceId, Utf8CP schemaName, Utf8CP className, DbOpcode dbOpcode);
     BentleyStatus ImportECInstance(ECInstanceKey& instanceKey, IECInstanceR instance, DgnDbR dgndb);
 
+    DgnElement::Code MakeElementCode (Utf8CP text) { return DgnElement::Code (Utf8PrintfString("%s - %u", text, ++m_uniqueCodeAutoIncrement)); }
 public:
-    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
+    ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true), m_uniqueCodeAutoIncrement(0) {}
     virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
@@ -141,7 +143,7 @@ void ChangeSummaryTestFixture::InsertElement()
     BeAssert(m_testCategoryId.IsValid());
 
     PhysicalElementPtr testElement = PhysicalElement::Create(*physicalTestModel, m_testCategoryId);
-    testElement->SetCode(DgnElement::Code("ChangeSetTestElementCode"));
+    testElement->SetCode(MakeElementCode("ChangeSetTestElementCode"));
     testElement->SetLabel("ChangeSetTestElementLabel");
 
     DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
@@ -166,7 +168,7 @@ void ChangeSummaryTestFixture::ModifyElement()
     RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(m_testElementId);
     BeAssert(testElement.IsValid());
 
-    testElement->SetCode(DgnElement::Code("ModifiedElementCode"));
+    testElement->SetCode(MakeElementCode("ModifiedElementCode"));
     testElement->SetLabel("ModifiedElementLabel");
 
     DgnDbStatus dbStatus;
@@ -337,55 +339,61 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     DumpChangeSummary(changeSummary, "ChangeSummary after inserts");
 
     ChangeSummary after inserts:
-    InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
-    1;149;dgn:ElementGeom;Insert;No
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    1;152;dgn:ElementGeom;Insert;No
             ECInstanceId;NULL;1
             Geom;NULL;...
             Placement;NULL;...
-    1;162;dgn:ElementOwnsGeom;Insert;No
+    1;164;dgn:ElementOwnsGeom;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
-    1;158;dgn:ElementIsInCategory;Insert;No
-            ECInstanceId;NULL;1
-            SourceECClassId;NULL;171
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;169;dgn:ModelContainsElements;Insert;No
+    1;130;dgn:AuthorityIssuesElementCode;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;171
+            TargetECClassId;NULL;174
             TargetECInstanceId;NULL;1
-    1;171;dgn:PhysicalElement;Insert;No
+    1;160;dgn:ElementIsInCategory;Insert;No
+            ECInstanceId;NULL;1
+            SourceECClassId;NULL;174
+            SourceECInstanceId;NULL;1
+            TargetECInstanceId;NULL;1
+    1;172;dgn:ModelContainsElements;Insert;No
+            ECInstanceId;NULL;1
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;174
+            TargetECInstanceId;NULL;1
+    1;174;dgn:PhysicalElement;Insert;No
             CategoryId;NULL;1
-            Code;NULL;"ChangeSetTestElementCode"
+            Code;NULL;"ChangeSetTestElementCode - 1"
+            CodeAuthorityId;NULL;1
             ECInstanceId;NULL;1
             Label;NULL;"ChangeSetTestElementLabel"
             LastMod;NULL;2.45726e+006
             ModelId;NULL;1
-    1;133;dgn:CategoryOwnsSubCategories;Insert;No
+    1;136;dgn:CategoryOwnsSubCategories;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
-    1;134;dgn:SubCategory;Insert;No
+    1;137;dgn:SubCategory;Insert;No
             CategoryId;NULL;1
             ECInstanceId;NULL;1
             Props;NULL;"{"color":16777215}"
-    1;132;dgn:Category;Insert;No
+    1;135;dgn:Category;Insert;No
             Code;NULL;"ChangeSetTestCategory"
             ECInstanceId;NULL;1
             Label;NULL;"ChangeSetTestCategory"
             Rank;NULL;2
             Scope;NULL;1
-    1;173;dgn:PhysicalModel;Insert;No
+    1;175;dgn:PhysicalModel;Insert;No
             ECInstanceId;NULL;1
             Name;NULL;"ChangeSetModel"
-            Props;NULL;"{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio
+            Props;NULL;"{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
             Space;NULL;1
             Type;NULL;0
             Visibility;NULL;1
     */
-    ASSERT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
+    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
     ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testModel->GetModelId().GetValueUnchecked()), "dgn", "PhysicalModel", DbOpcode::Insert));
     ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testCategoryId.GetValueUnchecked()), "dgn", "Category", DbOpcode::Insert));
     ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Insert));
@@ -415,35 +423,48 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromCurrentTransaction)
     /*
     DumpChangeSummary(changeSummary, "ChangeSummary after deletes");
 
+    ChangeSummary after updates:
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    1;174;dgn:PhysicalElement;Update;No
+            Code;"ChangeSetTestElementCode - 1";"ModifiedElementCode - 2"
+            ECInstanceId;1;NULL
+            Label;"ChangeSetTestElementLabel";"ModifiedElementLabel"
+            LastMod;2.45726e+006;2.45726e+006
     ChangeSummary after deletes:
-    InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
-    1;149;dgn:ElementGeom;Delete;Yes
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    1;152;dgn:ElementGeom;Delete;Yes
             ECInstanceId;1;NULL
             Geom;...;NULL
             Placement;...;NULL
-    1;162;dgn:ElementOwnsGeom;Delete;Yes
+    1;164;dgn:ElementOwnsGeom;Delete;Yes
             ECInstanceId;1;NULL
             SourceECInstanceId;1;NULL
             TargetECInstanceId;1;NULL
-    1;158;dgn:ElementIsInCategory;Delete;No
-            ECInstanceId;1;NULL
-            SourceECClassId;171;NULL
-            SourceECInstanceId;1;NULL
-            TargetECInstanceId;1;NULL
-    1;169;dgn:ModelContainsElements;Delete;No
+    1;130;dgn:AuthorityIssuesElementCode;Delete;No
             ECInstanceId;1;NULL
             SourceECInstanceId;1;NULL
-            TargetECClassId;171;NULL
+            TargetECClassId;174;NULL
             TargetECInstanceId;1;NULL
-    1;171;dgn:PhysicalElement;Delete;No
+    1;160;dgn:ElementIsInCategory;Delete;No
+            ECInstanceId;1;NULL
+            SourceECClassId;174;NULL
+            SourceECInstanceId;1;NULL
+            TargetECInstanceId;1;NULL
+    1;172;dgn:ModelContainsElements;Delete;No
+            ECInstanceId;1;NULL
+            SourceECInstanceId;1;NULL
+            TargetECClassId;174;NULL
+            TargetECInstanceId;1;NULL
+    1;174;dgn:PhysicalElement;Delete;No
             CategoryId;1;NULL
-            Code;"ModifiedElementCode";NULL
+            Code;"ModifiedElementCode - 2";NULL
+            CodeAuthorityId;1;NULL
             ECInstanceId;1;NULL
             Label;"ModifiedElementLabel";NULL
             LastMod;2.45726e+006;NULL
             ModelId;1;NULL
     */
-    ASSERT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
+    ASSERT_EQ(6, changeSummary.MakeInstanceIterator().QueryCount());
     ASSERT_TRUE(ChangeSummaryHasInstance(changeSummary, ECInstanceId(m_testElementId.GetValueUnchecked()), "dgn", "PhysicalElement", DbOpcode::Delete));
     }
 
@@ -469,55 +490,61 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After inserts");
 
     After inserts:
-    InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
-    1;173;dgn:PhysicalModel;Insert;No
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    1;175;dgn:PhysicalModel;Insert;No
             ECInstanceId;NULL;1
             Name;NULL;"ChangeSetModel"
             Props;NULL;"{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
             Space;NULL;1
             Type;NULL;0
             Visibility;NULL;1
-    1;132;dgn:Category;Insert;No
+    1;135;dgn:Category;Insert;No
             Code;NULL;"ChangeSetTestCategory"
             ECInstanceId;NULL;1
             Label;NULL;"ChangeSetTestCategory"
             Rank;NULL;2
             Scope;NULL;1
-    1;133;dgn:CategoryOwnsSubCategories;Insert;No
+    1;136;dgn:CategoryOwnsSubCategories;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
-    1;134;dgn:SubCategory;Insert;No
+    1;137;dgn:SubCategory;Insert;No
             CategoryId;NULL;1
             ECInstanceId;NULL;1
             Props;NULL;"{"color":16777215}"
-    1;158;dgn:ElementIsInCategory;Insert;No
-            ECInstanceId;NULL;1
-            SourceECClassId;NULL;171
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;169;dgn:ModelContainsElements;Insert;No
+    1;130;dgn:AuthorityIssuesElementCode;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;171
+            TargetECClassId;NULL;174
             TargetECInstanceId;NULL;1
-    1;171;dgn:PhysicalElement;Insert;No
+    1;160;dgn:ElementIsInCategory;Insert;No
+            ECInstanceId;NULL;1
+            SourceECClassId;NULL;174
+            SourceECInstanceId;NULL;1
+            TargetECInstanceId;NULL;1
+    1;172;dgn:ModelContainsElements;Insert;No
+            ECInstanceId;NULL;1
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;174
+            TargetECInstanceId;NULL;1
+    1;174;dgn:PhysicalElement;Insert;No
             CategoryId;NULL;1
-            Code;NULL;"ChangeSetTestElementCode"
+            Code;NULL;"ChangeSetTestElementCode - 1"
+            CodeAuthorityId;NULL;1
             ECInstanceId;NULL;1
             Label;NULL;"ChangeSetTestElementLabel"
             LastMod;NULL;2.45726e+006
             ModelId;NULL;1
-    1;149;dgn:ElementGeom;Insert;No
+    1;152;dgn:ElementGeom;Insert;No
             ECInstanceId;NULL;1
             Geom;NULL;...
             Placement;NULL;...
-    1;162;dgn:ElementOwnsGeom;Insert;No
+    1;164;dgn:ElementOwnsGeom;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
     */
-    ASSERT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
+    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
 
     ModifyElement();
 
@@ -529,55 +556,61 @@ TEST_F(ChangeSummaryTestFixture, ElementChangesFromSavedTransactions)
     DumpChangeSummary(changeSummary, "After updates");
 
     After updates:
-    InstanceId;ClassId;ClassName;DbOpcode;IsIndirect
-    1;173;dgn:PhysicalModel;Insert;No
+    InstanceId;ClassId;ClassName;DbOpcode;Indirect
+    1;175;dgn:PhysicalModel;Insert;No
             ECInstanceId;NULL;1
             Name;NULL;"ChangeSetModel"
             Props;NULL;"{"fmtDir":0.0,"fmtFlags":{"angMode":0,"angPrec":0,"clockwise":0,"dirMode":0,"linMode":0,"linPrec":0,"linType":0},"mastUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2},"rndRatio":0.0,"rndUnit":0.0,"subUnit":{"base":1,"den":1.0,"label":"m","num":1.0,"sys":2}}"
             Space;NULL;1
             Type;NULL;0
             Visibility;NULL;1
-    1;132;dgn:Category;Insert;No
+    1;135;dgn:Category;Insert;No
             Code;NULL;"ChangeSetTestCategory"
             ECInstanceId;NULL;1
             Label;NULL;"ChangeSetTestCategory"
             Rank;NULL;2
             Scope;NULL;1
-    1;133;dgn:CategoryOwnsSubCategories;Insert;No
+    1;136;dgn:CategoryOwnsSubCategories;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
-    1;134;dgn:SubCategory;Insert;No
+    1;137;dgn:SubCategory;Insert;No
             CategoryId;NULL;1
             ECInstanceId;NULL;1
             Props;NULL;"{"color":16777215}"
-    1;158;dgn:ElementIsInCategory;Insert;No
-            ECInstanceId;NULL;1
-            SourceECClassId;NULL;171
-            SourceECInstanceId;NULL;1
-            TargetECInstanceId;NULL;1
-    1;169;dgn:ModelContainsElements;Insert;No
+    1;130;dgn:AuthorityIssuesElementCode;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
-            TargetECClassId;NULL;171
+            TargetECClassId;NULL;174
             TargetECInstanceId;NULL;1
-    1;171;dgn:PhysicalElement;Insert;No
+    1;160;dgn:ElementIsInCategory;Insert;No
+            ECInstanceId;NULL;1
+            SourceECClassId;NULL;174
+            SourceECInstanceId;NULL;1
+            TargetECInstanceId;NULL;1
+    1;172;dgn:ModelContainsElements;Insert;No
+            ECInstanceId;NULL;1
+            SourceECInstanceId;NULL;1
+            TargetECClassId;NULL;174
+            TargetECInstanceId;NULL;1
+    1;174;dgn:PhysicalElement;Insert;No
             CategoryId;NULL;1
-            Code;NULL;"ModifiedElementCode"
+            Code;NULL;"ModifiedElementCode - 2"
+            CodeAuthorityId;NULL;1
             ECInstanceId;NULL;1
             Label;NULL;"ModifiedElementLabel"
             LastMod;NULL;2.45726e+006
             ModelId;NULL;1
-    1;149;dgn:ElementGeom;Insert;No
+    1;152;dgn:ElementGeom;Insert;No
             ECInstanceId;NULL;1
             Geom;NULL;...
             Placement;NULL;...
-    1;162;dgn:ElementOwnsGeom;Insert;No
+    1;164;dgn:ElementOwnsGeom;Insert;No
             ECInstanceId;NULL;1
             SourceECInstanceId;NULL;1
             TargetECInstanceId;NULL;1
     */
-    ASSERT_EQ(9, changeSummary.MakeInstanceIterator().QueryCount());
+    ASSERT_EQ(10, changeSummary.MakeInstanceIterator().QueryCount());
 
     DeleteElement();
 
@@ -636,10 +669,10 @@ TEST_F(ChangeSummaryTestFixture, ValidateInstanceIterator)
         countIter++;
         UNUSED_VARIABLE(entry);
         }
-    ASSERT_EQ(countIter, 9);
+    ASSERT_EQ(countIter, 10);
 
     int countQuery = changeSummary.MakeInstanceIterator().QueryCount();
-    ASSERT_EQ(countQuery, 9);
+    ASSERT_EQ(countQuery, 10);
     }
 
 extern ECSchemaPtr ReadECSchemaFromDisk(WCharCP schemaPathname);

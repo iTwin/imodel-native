@@ -363,8 +363,8 @@ void DgnElement::_OnReversedAdd() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_InsertInDb()
     {
-    enum Column : int { ElementId = 1, ECClassId = 2, ModelId = 3, CategoryId = 4, Label = 5, Code = 6, ParentId = 7, LastMod = 8 };
-    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
+    enum Column : int { ElementId = 1, ECClassId = 2, ModelId = 3, CategoryId = 4, Label = 5, Code = 6, ParentId = 7, LastMod = 8, CodeAuthorityId = 9 };
+    CachedStatementPtr stmt = GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod,CodeAuthorityId) VALUES(?,?,?,?,?,?,?,?,?)");
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
@@ -374,13 +374,24 @@ DgnDbStatus DgnElement::_InsertInDb()
     if (!m_label.empty())
         stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
 
-    if (m_code.IsValid()) // needs work - should not allow null
-        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    BeAssert (m_code.IsValid());
+
+    stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
 
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
 
-    return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    auto stmtStatus = stmt->Step();
+    if (BE_SQLITE_CONSTRAINT_UNIQUE == stmtStatus)
+        {
+        // SQLite doesn't tell us which constraint failed - check if it's the Code.
+        auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
+        if (existingElemWithCode.IsValid())
+            return DgnDbStatus::InvalidName;
+        }
+
+    return stmtStatus != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -388,8 +399,8 @@ DgnDbStatus DgnElement::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_UpdateInDb()
     {
-    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,ElementId=6};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
+    enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,CodeAuthorityId=6,ElementId=7};
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=?,CodeAuthorityId=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
@@ -397,8 +408,9 @@ DgnDbStatus DgnElement::_UpdateInDb()
     if (!m_label.empty())
         stmt->BindText(Column::Label, m_label.c_str(), Statement::MakeCopy::No);
     
-    if (m_code.IsValid())
-        stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    BeAssert (m_code.IsValid());
+    stmt->BindText(Column::Code, m_code.GetValue(), Statement::MakeCopy::No);
+    stmt->BindId(Column::CodeAuthorityId, m_code.GetAuthority());
     
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
@@ -747,6 +759,22 @@ void DgnElement::CreateParams::RelocateToDestinationDb(DgnImportContext& importe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* NEEDSWORK: Not clear in what contexts an element's code should be copied, or not.
+* GetCreateParamsForImport() only copies the code if we're copying between DBs.
+* But _CopyFrom() always copies it. Which is what we want when called from CopyForEdit(),
+* but not what we want from _CloneForImport() or Clone(), which both use their own CreateParams
+* to specify the desired code.
+* So - Clone-like methods use this to ensure the code is copied or not copied appropriately.
+* @bsistruct                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::CopyForCloneFrom(DgnElementCR src)
+    {
+    DgnElement::Code code = GetCode();
+    _CopyFrom(src);
+    SetCode(code);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
@@ -780,7 +808,7 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
         return nullptr;
         }
 
-    cloneElem->_CopyFrom(*this);
+    cloneElem->CopyForCloneFrom(*this);
 
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
@@ -806,7 +834,7 @@ DgnElementPtr DgnElement::_CloneForImport(DgnDbStatus* stat, DgnModelR destModel
         return nullptr;
         }
 
-    cloneElem->_CopyFrom(*this);
+    cloneElem->CopyForCloneFrom(*this);
 
     if (importer.IsBetweenDbs())
         {
