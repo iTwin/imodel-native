@@ -37,9 +37,9 @@ public:
         }
 };
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 3/2015
+//-------------------------------------------------------------------------------------
 TEST_F (PlatformTestFixture, ReadVersion_1_3)
     {
     ASSERT_EQ(1/*expected*/, 1/*actual*/);    
@@ -439,30 +439,30 @@ TEST_F (PlatformTestFixture, ReadVersion_1_3)
 
     // Capabilities.
     ASSERT_TRUE(pCapabilities.IsValid());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITIES_VERSION), pCapabilities->GetVersion().c_str());
+    ASSERT_STREQ(WMSCAPABILITIES_VERSION, pCapabilities->GetVersion().c_str());
 
     // Service Group.
     WMSServiceCP pService = pCapabilities->GetServiceGroup();
-    ASSERT_STREQ(WIDEN(WMSSERVICE_NAME), pService->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_TITLE), pService->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_ABSTRACT), pService->GetAbstract().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_FEES), pService->GetFees().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_ACCESS_CONST), pService->GetAccessConstraints().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_KEYWORD_0), pService->GetKeywordList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_KEYWORD_1), pService->GetKeywordList()[1].c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_KEYWORD_2), pService->GetKeywordList()[2].c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_ONLINERES_HREF), pService->GetOnlineResource()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_ONLINERES_TYPE), pService->GetOnlineResource()->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_PERS_NAME), pService->GetContactInformation()->GetPerson()->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_PERS_ORG), pService->GetContactInformation()->GetPerson()->GetOrganization().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_POS), pService->GetContactInformation()->GetPosition().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_ADDR), pService->GetContactInformation()->GetAddress()->GetAddress().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_ADDR_TYPE), pService->GetContactInformation()->GetAddress()->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_ADDR_CITY), pService->GetContactInformation()->GetAddress()->GetCity().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_ADDR_POSTCODE), pService->GetContactInformation()->GetAddress()->GetPostCode().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_ADDR_COUNTRY), pService->GetContactInformation()->GetAddress()->GetCountry().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_VOICE_TEL), pService->GetContactInformation()->GetVoiceTelephone().c_str());
-    ASSERT_STREQ(WIDEN(WMSSERVICE_CONTACT_EMAIL), pService->GetContactInformation()->GetEmailAddress().c_str());
+    ASSERT_STREQ(WMSSERVICE_NAME, pService->GetName().c_str());
+    ASSERT_STREQ(WMSSERVICE_TITLE, pService->GetTitle().c_str());
+    ASSERT_STREQ(WMSSERVICE_ABSTRACT, pService->GetAbstract().c_str());
+    ASSERT_STREQ(WMSSERVICE_FEES, pService->GetFees().c_str());
+    ASSERT_STREQ(WMSSERVICE_ACCESS_CONST, pService->GetAccessConstraints().c_str());
+    ASSERT_STREQ(WMSSERVICE_KEYWORD_0, pService->GetKeywordList()[0].c_str());
+    ASSERT_STREQ(WMSSERVICE_KEYWORD_1, pService->GetKeywordList()[1].c_str());
+    ASSERT_STREQ(WMSSERVICE_KEYWORD_2, pService->GetKeywordList()[2].c_str());
+    ASSERT_STREQ(WMSSERVICE_ONLINERES_HREF, pService->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSSERVICE_ONLINERES_TYPE, pService->GetOnlineResource()->GetType().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_PERS_NAME, pService->GetContactInformation()->GetPerson()->GetName().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_PERS_ORG, pService->GetContactInformation()->GetPerson()->GetOrganization().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_POS, pService->GetContactInformation()->GetPosition().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_ADDR, pService->GetContactInformation()->GetAddress()->GetAddress().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_ADDR_TYPE, pService->GetContactInformation()->GetAddress()->GetType().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_ADDR_CITY, pService->GetContactInformation()->GetAddress()->GetCity().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_ADDR_POSTCODE, pService->GetContactInformation()->GetAddress()->GetPostCode().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_ADDR_COUNTRY, pService->GetContactInformation()->GetAddress()->GetCountry().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_VOICE_TEL, pService->GetContactInformation()->GetVoiceTelephone().c_str());
+    ASSERT_STREQ(WMSSERVICE_CONTACT_EMAIL, pService->GetContactInformation()->GetEmailAddress().c_str());
     ASSERT_EQ(WMSSERVICE_LAYER_LIMIT, pService->GetLayerLimit());
     ASSERT_EQ(WMSSERVICE_MAX_WIDTH, pService->GetMaxWidth());
     ASSERT_EQ(WMSSERVICE_MAX_HEIGHT, pService->GetMaxHeight());
@@ -470,35 +470,35 @@ TEST_F (PlatformTestFixture, ReadVersion_1_3)
     // Capability Group.
     WMSCapabilityCP pCapability = pCapabilities->GetCapabilityGroup();
     // Request.
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_XML), pCapability->GetRequest()->GetCapabilities()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_TYPE), pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpGet()->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_HREF), pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpGet()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_TYPE), pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpPost()->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_HREF), pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpPost()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_GIF), pCapability->GetRequest()->GetMap()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_PNG), pCapability->GetRequest()->GetMap()->GetFormatList()[1].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_JPEG), pCapability->GetRequest()->GetMap()->GetFormatList()[2].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_TYPE), pCapability->GetRequest()->GetMap()->GetDcpType()->GetHttpGet()->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_HREF), pCapability->GetRequest()->GetMap()->GetDcpType()->GetHttpGet()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_XML), pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_PLAIN), pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[1].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_HTML), pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[2].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_TYPE), pCapability->GetRequest()->GetFeatureInfo()->GetDcpType()->GetHttpGet()->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_ONLINERES_HREF), pCapability->GetRequest()->GetFeatureInfo()->GetDcpType()->GetHttpGet()->GetHref().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_XML, pCapability->GetRequest()->GetCapabilities()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_TYPE, pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpGet()->GetType().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_HREF, pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpGet()->GetHref().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_TYPE, pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpPost()->GetType().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_HREF, pCapability->GetRequest()->GetCapabilities()->GetDcpType()->GetHttpPost()->GetHref().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_GIF, pCapability->GetRequest()->GetMap()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_PNG, pCapability->GetRequest()->GetMap()->GetFormatList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_JPEG, pCapability->GetRequest()->GetMap()->GetFormatList()[2].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_TYPE, pCapability->GetRequest()->GetMap()->GetDcpType()->GetHttpGet()->GetType().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_HREF, pCapability->GetRequest()->GetMap()->GetDcpType()->GetHttpGet()->GetHref().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_XML, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_PLAIN, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_HTML, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[2].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_TYPE, pCapability->GetRequest()->GetFeatureInfo()->GetDcpType()->GetHttpGet()->GetType().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_ONLINERES_HREF, pCapability->GetRequest()->GetFeatureInfo()->GetDcpType()->GetHttpGet()->GetHref().c_str());
     // Exception.
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_EXCEPTION_XML), pCapability->GetExceptionList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_EXCEPTION_INIMAGE), pCapability->GetExceptionList()[1].c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_EXCEPTION_BLANK), pCapability->GetExceptionList()[2].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_XML, pCapability->GetExceptionList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_INIMAGE, pCapability->GetExceptionList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_BLANK, pCapability->GetExceptionList()[2].c_str());
     // Layer.
     WMSLayerPtr pLayer = pCapability->GetLayerList()[0];
-    ASSERT_STREQ(WIDEN(WMSLAYER0_TITLE), pLayer->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER0_CRS), pLayer->GetCRSList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER0_AUTH_NAME), pLayer->GetAuthorityUrl()->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER0_AUTH_ONLINERES_HREF), pLayer->GetAuthorityUrl()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER0_TITLE, pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER0_CRS, pLayer->GetCRSList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER0_AUTH_NAME, pLayer->GetAuthorityUrl()->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER0_AUTH_ONLINERES_HREF, pLayer->GetAuthorityUrl()->GetOnlineResource()->GetHref().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[0];
-    ASSERT_STREQ(WIDEN(WMSLAYER00_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_TITLE), pLayer->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_CRS), pLayer->GetCRSList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER00_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER00_TITLE, pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER00_CRS, pLayer->GetCRSList()[0].c_str());
     ASSERT_EQ(WMSLAYER00_GEOBBOX_W, pLayer->GetGeoBBox()->GetWestBoundLong());
     ASSERT_EQ(WMSLAYER00_GEOBBOX_E, pLayer->GetGeoBBox()->GetEastBoundLong());
     ASSERT_EQ(WMSLAYER00_GEOBBOX_S, pLayer->GetGeoBBox()->GetSouthBoundLat());
@@ -509,121 +509,304 @@ TEST_F (PlatformTestFixture, ReadVersion_1_3)
     ASSERT_EQ(WMSLAYER00_BBOX0_MIN_Y, pLayer->GetBBox()[0]->GetMinY());
     ASSERT_EQ(WMSLAYER00_BBOX0_MAX_X, pLayer->GetBBox()[0]->GetMaxX());
     ASSERT_EQ(WMSLAYER00_BBOX0_MAX_Y, pLayer->GetBBox()[0]->GetMaxY());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_BBOX0_CRS), pLayer->GetBBox()[0]->GetCRS().c_str());
+    ASSERT_STREQ(WMSLAYER00_BBOX0_CRS, pLayer->GetBBox()[0]->GetCRS().c_str());
     ASSERT_EQ(WMSLAYER00_BBOX1_RES_X, pLayer->GetBBox()[1]->GetResX());
     ASSERT_EQ(WMSLAYER00_BBOX1_RES_Y, pLayer->GetBBox()[1]->GetResY());
     ASSERT_EQ(WMSLAYER00_BBOX1_MIN_X, pLayer->GetBBox()[1]->GetMinX());
     ASSERT_EQ(WMSLAYER00_BBOX1_MIN_Y, pLayer->GetBBox()[1]->GetMinY());
     ASSERT_EQ(WMSLAYER00_BBOX1_MAX_X, pLayer->GetBBox()[1]->GetMaxX());
     ASSERT_EQ(WMSLAYER00_BBOX1_MAX_Y, pLayer->GetBBox()[1]->GetMaxY());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_BBOX1_CRS), pLayer->GetBBox()[1]->GetCRS().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_ATTR_TITLE), pLayer->GetAttribution()->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_ATTR_ONLINERES_HREF), pLayer->GetAttribution()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER00_BBOX1_CRS, pLayer->GetBBox()[1]->GetCRS().c_str());
+    ASSERT_STREQ(WMSLAYER00_ATTR_TITLE, pLayer->GetAttribution()->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER00_ATTR_ONLINERES_HREF, pLayer->GetAttribution()->GetOnlineResource()->GetHref().c_str());
     ASSERT_EQ(WMSLAYER00_LOGO_HEIGHT, pLayer->GetAttribution()->GetLogoUrl()->GetHeight());
     ASSERT_EQ(WMSLAYER00_LOGO_WIDTH, pLayer->GetAttribution()->GetLogoUrl()->GetWidth());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_GIF), pLayer->GetAttribution()->GetLogoUrl()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_LOGO_ONLINERES_HREF), pLayer->GetAttribution()->GetLogoUrl()->GetOnlineResource()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_ID_AUTH), pLayer->GetIdentifier()->GetAuthority().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_GIF, pLayer->GetAttribution()->GetLogoUrl()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER00_LOGO_ONLINERES_HREF, pLayer->GetAttribution()->GetLogoUrl()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER00_ID_AUTH, pLayer->GetIdentifier()->GetAuthority().c_str());
     //&&JFC:    It seems like BeXml is not able to retrieve all the information when a node has some attributes plus a node value. 
     //          Example: <Identifier authority="DIF_ID">123456</Identifier>
     //          The node value (in the example above: 123456) is always missing. To investigate ...
-    //ASSERT_STREQ(WIDEN(WMSLAYER00_ID), pLayer->GetIdentifier()->GetID().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_FTLIST_FORMAT), pLayer->GetFeatureListUrl()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_FTLIST_ONLINERES_HREF), pLayer->GetFeatureListUrl()->GetOnlineResource()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_STYLE_NAME), pLayer->GetStyle()->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_STYLE_TITLE), pLayer->GetStyle()->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_STYLE_ABSTRACT), pLayer->GetStyle()->GetAbstract().c_str());
+    //ASSERT_STREQ(WMSLAYER00_ID, pLayer->GetIdentifier()->GetID().c_str());
+    ASSERT_STREQ(WMSLAYER00_FTLIST_FORMAT, pLayer->GetFeatureListUrl()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER00_FTLIST_ONLINERES_HREF, pLayer->GetFeatureListUrl()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER00_STYLE_NAME, pLayer->GetStyle()->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER00_STYLE_TITLE, pLayer->GetStyle()->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER00_STYLE_ABSTRACT, pLayer->GetStyle()->GetAbstract().c_str());
     ASSERT_EQ(WMSLAYER00_STYLE_LEG_HEIGHT, pLayer->GetStyle()->GetLegendUrl()->GetHeight());
     ASSERT_EQ(WMSLAYER00_STYLE_LEG_WIDTH, pLayer->GetStyle()->GetLegendUrl()->GetWidth());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_GIF), pLayer->GetStyle()->GetLegendUrl()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_STYLE_LEG_ONLINERES_HREF), pLayer->GetStyle()->GetLegendUrl()->GetOnlineResource()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSCAPABILITY_FORMAT_XSL), pLayer->GetStyle()->GetStyleSheetUrl()->GetFormatList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER00_STYLE_SHEET_ONLINERES_HREF), pLayer->GetStyle()->GetStyleSheetUrl()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_GIF, pLayer->GetStyle()->GetLegendUrl()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER00_STYLE_LEG_ONLINERES_HREF, pLayer->GetStyle()->GetLegendUrl()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_XSL, pLayer->GetStyle()->GetStyleSheetUrl()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER00_STYLE_SHEET_ONLINERES_HREF, pLayer->GetStyle()->GetStyleSheetUrl()->GetOnlineResource()->GetHref().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[0]->GetLayerList()[0];
     ASSERT_TRUE(pLayer->IsQueryable());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_TITLE), pLayer->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_ABSTRACT), pLayer->GetAbstract().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_KEYWORD0), pLayer->GetKeywordList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_KEYWORD1), pLayer->GetKeywordList()[1].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_KEYWORD2), pLayer->GetKeywordList()[2].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_ID_AUTH), pLayer->GetIdentifier()->GetAuthority().c_str());
-    //ASSERT_STREQ(WIDEN(WMSLAYER000_ID), pLayer->GetIdentifier()->GetID().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_METADATA0_TYPE), pLayer->GetMetadataUrlList()[0]->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_METADATA0_ONLINERES_HREF), pLayer->GetMetadataUrlList()[0]->GetOnlineResource()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_METADATA1_TYPE), pLayer->GetMetadataUrlList()[1]->GetType().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_METADATA1_ONLINERES_HREF), pLayer->GetMetadataUrlList()[1]->GetOnlineResource()->GetHref().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_STYLE_NAME), pLayer->GetStyle()->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_STYLE_TITLE), pLayer->GetStyle()->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_STYLE_ABSTRACT), pLayer->GetStyle()->GetAbstract().c_str());
+    ASSERT_STREQ(WMSLAYER000_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER000_TITLE, pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER000_ABSTRACT, pLayer->GetAbstract().c_str());
+    ASSERT_STREQ(WMSLAYER000_KEYWORD0, pLayer->GetKeywordList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER000_KEYWORD1, pLayer->GetKeywordList()[1].c_str());
+    ASSERT_STREQ(WMSLAYER000_KEYWORD2, pLayer->GetKeywordList()[2].c_str());
+    ASSERT_STREQ(WMSLAYER000_ID_AUTH, pLayer->GetIdentifier()->GetAuthority().c_str());
+    //ASSERT_STREQ(WMSLAYER000_ID, pLayer->GetIdentifier()->GetID().c_str());
+    ASSERT_STREQ(WMSLAYER000_METADATA0_TYPE, pLayer->GetMetadataUrlList()[0]->GetType().c_str());
+    ASSERT_STREQ(WMSLAYER000_METADATA0_ONLINERES_HREF, pLayer->GetMetadataUrlList()[0]->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER000_METADATA1_TYPE, pLayer->GetMetadataUrlList()[1]->GetType().c_str());
+    ASSERT_STREQ(WMSLAYER000_METADATA1_ONLINERES_HREF, pLayer->GetMetadataUrlList()[1]->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER000_STYLE_NAME, pLayer->GetStyle()->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER000_STYLE_TITLE, pLayer->GetStyle()->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER000_STYLE_ABSTRACT, pLayer->GetStyle()->GetAbstract().c_str());
     ASSERT_EQ(WMSLAYER000_STYLE_LEG_HEIGHT, pLayer->GetStyle()->GetLegendUrl()->GetHeight());
     ASSERT_EQ(WMSLAYER000_STYLE_LEG_WIDTH, pLayer->GetStyle()->GetLegendUrl()->GetWidth());
-    ASSERT_STREQ(WIDEN(WMSLAYER000_STYLE_LEG_ONLINERES_HREF), pLayer->GetStyle()->GetLegendUrl()->GetOnlineResource()->GetHref().c_str());
+    ASSERT_STREQ(WMSLAYER000_STYLE_LEG_ONLINERES_HREF, pLayer->GetStyle()->GetLegendUrl()->GetOnlineResource()->GetHref().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[0]->GetLayerList()[1];
     ASSERT_TRUE(pLayer->IsQueryable());
-    ASSERT_STREQ(WIDEN(WMSLAYER001_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER001_TITLE), pLayer->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER001_ABSTRACT), pLayer->GetAbstract().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER001_KEYWORD0), pLayer->GetKeywordList()[0].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER001_KEYWORD1), pLayer->GetKeywordList()[1].c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER001_KEYWORD2), pLayer->GetKeywordList()[2].c_str());
+    ASSERT_STREQ(WMSLAYER001_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER001_TITLE, pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER001_ABSTRACT, pLayer->GetAbstract().c_str());
+    ASSERT_STREQ(WMSLAYER001_KEYWORD0, pLayer->GetKeywordList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER001_KEYWORD1, pLayer->GetKeywordList()[1].c_str());
+    ASSERT_STREQ(WMSLAYER001_KEYWORD2, pLayer->GetKeywordList()[2].c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[1];
     ASSERT_TRUE(pLayer->IsQueryable());
-    ASSERT_STREQ(WIDEN(WMSLAYER01_TITLE), pLayer->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER01_CRS), pLayer->GetCRSList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER01_TITLE, pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER01_CRS, pLayer->GetCRSList()[0].c_str());
     ASSERT_EQ(WMSLAYER01_GEOBBOX_W, pLayer->GetGeoBBox()->GetWestBoundLong());
     ASSERT_EQ(WMSLAYER01_GEOBBOX_E, pLayer->GetGeoBBox()->GetEastBoundLong());
     ASSERT_EQ(WMSLAYER01_GEOBBOX_S, pLayer->GetGeoBBox()->GetSouthBoundLat());
     ASSERT_EQ(WMSLAYER01_GEOBBOX_N, pLayer->GetGeoBBox()->GetNorthBoundLat());
-    ASSERT_STREQ(WIDEN(WMSLAYER01_DIM_NAME), pLayer->GetDimensionList()[0]->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER01_DIM_DEFAULT), pLayer->GetDimensionList()[0]->GetDefault().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER01_DIM_UNITS), pLayer->GetDimensionList()[0]->GetUnits().c_str());
-    //ASSERT_STREQ(WIDEN(WMSLAYER01_DIM), pLayer->GetDimensionList()[0]->GetDimension().c_str());
+    ASSERT_STREQ(WMSLAYER01_DIM_NAME, pLayer->GetDimensionList()[0]->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER01_DIM_DEFAULT, pLayer->GetDimensionList()[0]->GetDefault().c_str());
+    ASSERT_STREQ(WMSLAYER01_DIM_UNITS, pLayer->GetDimensionList()[0]->GetUnits().c_str());
+    //ASSERT_STREQ(WMSLAYER01_DIM, pLayer->GetDimensionList()[0]->GetDimension().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[1]->GetLayerList()[0];
-    ASSERT_STREQ(WIDEN(WMSLAYER010_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER010_TITLE), pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER010_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER010_TITLE, pLayer->GetTitle().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[1]->GetLayerList()[1];
-    ASSERT_STREQ(WIDEN(WMSLAYER011_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER011_TITLE), pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER011_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER011_TITLE, pLayer->GetTitle().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[1]->GetLayerList()[2];
-    ASSERT_STREQ(WIDEN(WMSLAYER012_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_TITLE), pLayer->GetTitle().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM0_NAME), pLayer->GetDimensionList()[0]->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM0_UNITS), pLayer->GetDimensionList()[0]->GetUnits().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM1_NAME), pLayer->GetDimensionList()[1]->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM1_DEFAULT), pLayer->GetDimensionList()[1]->GetDefault().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM1_UNITS), pLayer->GetDimensionList()[1]->GetUnits().c_str());
-    //ASSERT_STREQ(WIDEN(WMSLAYER012_DIM1), pLayer->GetDimensionList()[1]->GetDimension().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM2_NAME), pLayer->GetDimensionList()[2]->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM2_DEFAULT), pLayer->GetDimensionList()[2]->GetDefault().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER012_DIM2_UNITS), pLayer->GetDimensionList()[2]->GetUnits().c_str());
+    ASSERT_STREQ(WMSLAYER012_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER012_TITLE, pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM0_NAME, pLayer->GetDimensionList()[0]->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM0_UNITS, pLayer->GetDimensionList()[0]->GetUnits().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM1_NAME, pLayer->GetDimensionList()[1]->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM1_DEFAULT, pLayer->GetDimensionList()[1]->GetDefault().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM1_UNITS, pLayer->GetDimensionList()[1]->GetUnits().c_str());
+    //ASSERT_STREQ(WMSLAYER012_DIM1, pLayer->GetDimensionList()[1]->GetDimension().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM2_NAME, pLayer->GetDimensionList()[2]->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM2_DEFAULT, pLayer->GetDimensionList()[2]->GetDefault().c_str());
+    ASSERT_STREQ(WMSLAYER012_DIM2_UNITS, pLayer->GetDimensionList()[2]->GetUnits().c_str());
     ASSERT_TRUE(pLayer->GetDimensionList()[2]->GetNearestValue());
-    //ASSERT_STREQ(WIDEN(WMSLAYER012_DIM2), pLayer->GetDimensionList()[2]->GetDimension().c_str());
+    //ASSERT_STREQ(WMSLAYER012_DIM2, pLayer->GetDimensionList()[2]->GetDimension().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[2];
     ASSERT_EQ(WMSLAYER02_FIXEDHEIGHT, pLayer->GetFixedHeight());
     ASSERT_EQ(WMSLAYER02_FIXEDWIDTH, pLayer->GetFixedWidth());
     ASSERT_TRUE(pLayer->HasSubsets());
     ASSERT_TRUE(pLayer->IsOpaque());
-    ASSERT_STREQ(WIDEN(WMSLAYER02_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER02_TITLE), pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER02_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER02_TITLE, pLayer->GetTitle().c_str());
     ASSERT_EQ(WMSLAYER02_GEOBBOX_W, pLayer->GetGeoBBox()->GetWestBoundLong());
     ASSERT_EQ(WMSLAYER02_GEOBBOX_E, pLayer->GetGeoBBox()->GetEastBoundLong());
     ASSERT_EQ(WMSLAYER02_GEOBBOX_S, pLayer->GetGeoBBox()->GetSouthBoundLat());
     ASSERT_EQ(WMSLAYER02_GEOBBOX_N, pLayer->GetGeoBBox()->GetNorthBoundLat());
-    ASSERT_STREQ(WIDEN(WMSLAYER02_DIM_NAME), pLayer->GetDimensionList()[0]->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER02_DIM_DEFAULT), pLayer->GetDimensionList()[0]->GetDefault().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER02_DIM_UNITS), pLayer->GetDimensionList()[0]->GetUnits().c_str());
-    //ASSERT_STREQ(WIDEN(WMSLAYER02_DIM), pLayer->GetDimensionList()[0]->GetDimension().c_str());
+    ASSERT_STREQ(WMSLAYER02_DIM_NAME, pLayer->GetDimensionList()[0]->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER02_DIM_DEFAULT, pLayer->GetDimensionList()[0]->GetDefault().c_str());
+    ASSERT_STREQ(WMSLAYER02_DIM_UNITS, pLayer->GetDimensionList()[0]->GetUnits().c_str());
+    //ASSERT_STREQ(WMSLAYER02_DIM, pLayer->GetDimensionList()[0]->GetDimension().c_str());
     pLayer = pCapability->GetLayerList()[0]->GetLayerList()[3];
     ASSERT_EQ(WMSLAYER03_CASCADED, pLayer->GetCascaded());
-    ASSERT_STREQ(WIDEN(WMSLAYER03_NAME), pLayer->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER03_TITLE), pLayer->GetTitle().c_str());
+    ASSERT_STREQ(WMSLAYER03_NAME, pLayer->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER03_TITLE, pLayer->GetTitle().c_str());
     ASSERT_EQ(WMSLAYER03_GEOBBOX_W, pLayer->GetGeoBBox()->GetWestBoundLong());
     ASSERT_EQ(WMSLAYER03_GEOBBOX_E, pLayer->GetGeoBBox()->GetEastBoundLong());
     ASSERT_EQ(WMSLAYER03_GEOBBOX_S, pLayer->GetGeoBBox()->GetSouthBoundLat());
     ASSERT_EQ(WMSLAYER03_GEOBBOX_N, pLayer->GetGeoBBox()->GetNorthBoundLat());
-    ASSERT_STREQ(WIDEN(WMSLAYER03_DIM_NAME), pLayer->GetDimensionList()[0]->GetName().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER03_DIM_DEFAULT), pLayer->GetDimensionList()[0]->GetDefault().c_str());
-    ASSERT_STREQ(WIDEN(WMSLAYER03_DIM_UNITS), pLayer->GetDimensionList()[0]->GetUnits().c_str());
-    //ASSERT_STREQ(WIDEN(WMSLAYER03_DIM), pLayer->GetDimensionList()[0]->GetDimension().c_str());
+    ASSERT_STREQ(WMSLAYER03_DIM_NAME, pLayer->GetDimensionList()[0]->GetName().c_str());
+    ASSERT_STREQ(WMSLAYER03_DIM_DEFAULT, pLayer->GetDimensionList()[0]->GetDefault().c_str());
+    ASSERT_STREQ(WMSLAYER03_DIM_UNITS, pLayer->GetDimensionList()[0]->GetUnits().c_str());
+    //ASSERT_STREQ(WMSLAYER03_DIM, pLayer->GetDimensionList()[0]->GetDimension().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+TEST_F(PlatformTestFixture, ReadMultiElementList)
+    {
+    #define WMSCAPABILITIES_VERSION "1.3.0"
+
+    #define WMSSERVICE_KEYWORD_0 "bird"
+    #define WMSSERVICE_KEYWORD_1 "roadrunner"
+    #define WMSSERVICE_KEYWORD_2 "ambush"
+
+    #define WMSCAPABILITY_FORMAT_XML "text/xml"
+    #define WMSCAPABILITY_FORMAT_PLAIN "text/plain"
+    #define WMSCAPABILITY_FORMAT_HTML "text/html"
+    #define WMSCAPABILITY_FORMAT_GIF "image/gif"
+    #define WMSCAPABILITY_FORMAT_PNG "image/png"
+    #define WMSCAPABILITY_FORMAT_JPEG "image/jpeg"
+
+    #define WMSCAPABILITY_EXCEPTION_XML "XML"
+    #define WMSCAPABILITY_EXCEPTION_INIMAGE "INIMAGE"
+    #define WMSCAPABILITY_EXCEPTION_BLANK "BLANK"
+
+    #define WMSLAYER_CRS_0 "CRS:84"
+    #define WMSLAYER_CRS_1 "EPSG:26986"
+    #define WMSLAYER_CRS_2 "CRS:88"
+
+    ASSERT_EQ(1/*expected*/, 1/*actual*/);
+
+    Utf8String capabilitiesString =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<WMS_Capabilities xsi:schemaLocation='http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns='http://www.opengis.net/wms' version='1.3.0'>"
+            "<Service>"
+                "<KeywordList>"
+                    "<Keyword>" WMSSERVICE_KEYWORD_0 "</Keyword>"
+                    "<Keyword>" WMSSERVICE_KEYWORD_1 "</Keyword>"
+                    "<Keyword>" WMSSERVICE_KEYWORD_2 "</Keyword>"
+                "</KeywordList>"
+            "</Service>"
+            "<Capability>"
+                "<Request>"
+                    "<GetCapabilities>"
+                        "<Format>" WMSCAPABILITY_FORMAT_XML "</Format>"
+                    "</GetCapabilities>"
+                    "<GetMap>"
+                        "<Format>" WMSCAPABILITY_FORMAT_GIF "</Format>"
+                        "<Format>" WMSCAPABILITY_FORMAT_PNG "</Format>"
+                        "<Format>" WMSCAPABILITY_FORMAT_JPEG "</Format>"
+                    "</GetMap>"
+                    "<GetFeatureInfo>"
+                        "<Format>" WMSCAPABILITY_FORMAT_PLAIN "</Format>"
+                        "<Format>" WMSCAPABILITY_FORMAT_HTML "</Format>"
+                    "</GetFeatureInfo>"
+                "</Request>"
+                "<Exception>"
+                    "<Format>" WMSCAPABILITY_EXCEPTION_XML "</Format>"
+                    "<Format>" WMSCAPABILITY_EXCEPTION_INIMAGE "</Format>"
+                    "<Format>" WMSCAPABILITY_EXCEPTION_BLANK "</Format>"
+                "</Exception>"
+                "<Layer>"
+                    "<CRS>" WMSLAYER_CRS_0 "</CRS>"
+                    "<CRS>" WMSLAYER_CRS_1 "</CRS>"
+                    "<CRS>" WMSLAYER_CRS_2 "</CRS>"
+                "</Layer>"
+            "</Capability>"
+        "</WMS_Capabilities>";
+
+    WString parseError;
+    WMSParserStatus status = WMSParserStatus::Success;
+    WMSCapabilitiesPtr pCapabilities = WMSCapabilities::CreateAndReadFromMemory(status, capabilitiesString.c_str(), capabilitiesString.length(), &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str());
+    //ASSERT_EQ(WMSParserStatus::Success, status);
+
+    // Capabilities.
+    ASSERT_TRUE(pCapabilities.IsValid());
+    ASSERT_STREQ(WMSCAPABILITIES_VERSION, pCapabilities->GetVersion().c_str());
+
+    // Service Group.
+    WMSServiceCP pService = pCapabilities->GetServiceGroup();
+    ASSERT_STREQ(WMSSERVICE_KEYWORD_0, pService->GetKeywordList()[0].c_str());
+    ASSERT_STREQ(WMSSERVICE_KEYWORD_1, pService->GetKeywordList()[1].c_str());
+    ASSERT_STREQ(WMSSERVICE_KEYWORD_2, pService->GetKeywordList()[2].c_str());
+
+    // Capability Group.
+    WMSCapabilityCP pCapability = pCapabilities->GetCapabilityGroup();
+    // Request.
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_XML, pCapability->GetRequest()->GetCapabilities()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_GIF, pCapability->GetRequest()->GetMap()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_PNG, pCapability->GetRequest()->GetMap()->GetFormatList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_JPEG, pCapability->GetRequest()->GetMap()->GetFormatList()[2].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_PLAIN, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_HTML, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[1].c_str());
+    // Exception.
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_XML, pCapability->GetExceptionList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_INIMAGE, pCapability->GetExceptionList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_BLANK, pCapability->GetExceptionList()[2].c_str());
+    // Layer.
+    WMSLayerPtr pLayer = pCapability->GetLayerList()[0];
+    ASSERT_STREQ(WMSLAYER_CRS_0, pLayer->GetCRSList()[0].c_str());
+    ASSERT_STREQ(WMSLAYER_CRS_1, pLayer->GetCRSList()[1].c_str());
+    ASSERT_STREQ(WMSLAYER_CRS_2, pLayer->GetCRSList()[2].c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+TEST_F(PlatformTestFixture, ReadEmptyObject)
+    {
+    #define WMSCAPABILITIES_VERSION "1.3.0"
+
+    #define WMSCAPABILITY_FORMAT_XML "text/xml"
+    #define WMSCAPABILITY_FORMAT_PLAIN "text/plain"
+    #define WMSCAPABILITY_FORMAT_HTML "text/html"
+    #define WMSCAPABILITY_FORMAT_GIF "image/gif"
+    #define WMSCAPABILITY_FORMAT_PNG "image/png"
+    #define WMSCAPABILITY_FORMAT_JPEG "image/jpeg"
+
+    #define WMSCAPABILITY_EXCEPTION_XML "XML"
+    #define WMSCAPABILITY_EXCEPTION_INIMAGE "INIMAGE"
+    #define WMSCAPABILITY_EXCEPTION_BLANK "BLANK"
+
+    ASSERT_EQ(1/*expected*/, 1/*actual*/);
+
+    Utf8String capabilitiesString =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<WMS_Capabilities xsi:schemaLocation='http://www.opengis.net/wms http://schemas.opengis.net/wms/1.3.0/capabilities_1_3_0.xsd' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns='http://www.opengis.net/wms' version='1.3.0'>"
+            "<Service>"
+            "</Service>"
+            "<Capability>"
+                "<Request>"
+                    "<GetCapabilities>"
+                        "<Format>" WMSCAPABILITY_FORMAT_XML "</Format>"
+                    "</GetCapabilities>"
+                    "<GetMap>"
+                        "<Format>" WMSCAPABILITY_FORMAT_GIF "</Format>"
+                        "<Format>" WMSCAPABILITY_FORMAT_PNG "</Format>"
+                        "<Format>" WMSCAPABILITY_FORMAT_JPEG "</Format>"
+                    "</GetMap>"
+                    "<GetFeatureInfo>"
+                        "<Format>" WMSCAPABILITY_FORMAT_PLAIN "</Format>"
+                        "<Format>" WMSCAPABILITY_FORMAT_HTML "</Format>"
+                    "</GetFeatureInfo>"
+                "</Request>"
+                "<Exception>"
+                    "<Format>" WMSCAPABILITY_EXCEPTION_XML "</Format>"
+                    "<Format>" WMSCAPABILITY_EXCEPTION_INIMAGE "</Format>"
+                    "<Format>" WMSCAPABILITY_EXCEPTION_BLANK "</Format>"
+                "</Exception>"
+            "</Capability>"
+        "</WMS_Capabilities>";
+
+    WString parseError;
+    WMSParserStatus status = WMSParserStatus::Success;
+    WMSCapabilitiesPtr pCapabilities = WMSCapabilities::CreateAndReadFromMemory(status, capabilitiesString.c_str(), capabilitiesString.length(), &parseError);
+
+    ASSERT_STREQ(L"", parseError.c_str());
+    //ASSERT_EQ(WMSParserStatus::Success, status);
+
+    // Capabilities.
+    ASSERT_TRUE(pCapabilities.IsValid());
+    ASSERT_STREQ(WMSCAPABILITIES_VERSION, pCapabilities->GetVersion().c_str());
+
+    // Service Group.
+    WMSServiceCP pService = pCapabilities->GetServiceGroup();
+    ASSERT_EQ(0, pService->GetKeywordList().size());
+
+    // Capability Group.
+    WMSCapabilityCP pCapability = pCapabilities->GetCapabilityGroup();
+    // Request.
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_XML, pCapability->GetRequest()->GetCapabilities()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_GIF, pCapability->GetRequest()->GetMap()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_PNG, pCapability->GetRequest()->GetMap()->GetFormatList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_JPEG, pCapability->GetRequest()->GetMap()->GetFormatList()[2].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_PLAIN, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_FORMAT_HTML, pCapability->GetRequest()->GetFeatureInfo()->GetFormatList()[1].c_str());
+    // Exception.
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_XML, pCapability->GetExceptionList()[0].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_INIMAGE, pCapability->GetExceptionList()[1].c_str());
+    ASSERT_STREQ(WMSCAPABILITY_EXCEPTION_BLANK, pCapability->GetExceptionList()[2].c_str());
+    // Layer.
+    ASSERT_EQ(0, pCapability->GetLayerList().size());
     }

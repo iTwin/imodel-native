@@ -15,7 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_WMSPARSER
 
-Utf8CP WMSCapabilities::m_namespace = NULL;
+Utf8String WMSCapabilities::m_namespace = "";
 
 //=====================================================================================
 //                              UtilityFunctions
@@ -25,7 +25,7 @@ Utf8CP WMSCapabilities::m_namespace = NULL;
 //-------------------------------------------------------------------------------------
 Utf8String BuildNodePath(Utf8CP nodeName)
     {
-    if (NULL == WMSCapabilities::GetNamespace())
+    if (WMSCapabilities::GetNamespace().empty())
         return nodeName;
     else 
         {
@@ -55,14 +55,12 @@ Utf8String BuildNodePath(Utf8CP nodeName)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-WMSCapabilities::WMSCapabilities(WStringCR version)
+WMSCapabilities::WMSCapabilities(Utf8StringCR version)
     : m_version(version)    
-    {}
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-WMSCapabilities::~WMSCapabilities() {}
+    {
+    m_pService = WMSService::Create();
+    m_pCapability = WMSCapability::Create(); 
+    }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
@@ -101,16 +99,25 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromString(WMSParserStatus& sta
     if (NULL == pRootNode)
         return NULL;
 
-    WString version;
-    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version) || version.empty())
+    // Read version attribute and valid it.
+    Utf8String version;
+    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version))
         {
-        BeDataAssert(!"Missing wms version attribute.");
         status = WMSParserStatus::UnknownVersion;
         return NULL;
         }
 
-    WMSCapabilitiesPtr pCapabilities = WMSCapabilities::Create(status, version);
-    if (WMSParserStatus::Success != status)
+    if (!version.Equals("1.3.0") &&
+        !version.Equals("1.1.1") &&
+        !version.Equals("1.1.0") &&
+        !version.Equals("1.0.0"))
+        {
+        status = WMSParserStatus::UnknownVersion;
+        return NULL;
+        }
+
+    WMSCapabilitiesPtr pCapabilities = new WMSCapabilities(version);
+    if (!pCapabilities.IsValid())
         return NULL;
 
     //Read namespace attribute.
@@ -147,16 +154,25 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromMemory(WMSParserStatus& sta
     if (NULL == pRootNode)
         return NULL;
 
-    WString version;
-    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version) || version.empty())
+    // Read and validate version attribute.
+    Utf8String version;
+    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version))
         {
-        BeDataAssert(!"Missing wms version attribute.");
         status = WMSParserStatus::UnknownVersion;
         return NULL;
         }
 
-    WMSCapabilitiesPtr pCapabilities = WMSCapabilities::Create(status, version);
-    if (WMSParserStatus::Success != status)
+    if (!version.Equals("1.3.0") &&
+        !version.Equals("1.1.1") &&
+        !version.Equals("1.1.0") &&
+        !version.Equals("1.0.0"))
+        {
+        status = WMSParserStatus::UnknownVersion;
+        return NULL;
+        }
+
+    WMSCapabilitiesPtr pCapabilities = new WMSCapabilities(version);
+    if (!pCapabilities.IsValid())
         return NULL;
 
     //Read namespace attribute.
@@ -180,7 +196,7 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromMemory(WMSParserStatus& sta
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromFile(WMSParserStatus& status, WCharCP fileName, WStringP errorMsg)
+WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromFile(WMSParserStatus& status, Utf8CP fileName, WStringP errorMsg)
     {
     status = WMSParserStatus::Success;
 
@@ -196,16 +212,25 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromFile(WMSParserStatus& statu
     if (NULL == pRootNode)
         return NULL;
 
-    WString version;
-    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version) || version.empty())
+    // Read version attribute and valid it.
+    Utf8String version;
+    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version))
         {
-        BeDataAssert(!"Missing wms version attribute.");
         status = WMSParserStatus::UnknownVersion;
         return NULL;
         }
 
-    WMSCapabilitiesPtr pCapabilities = WMSCapabilities::Create(status, version);
-    if (WMSParserStatus::Success != status)
+    if (!version.Equals("1.3.0") &&
+        !version.Equals("1.1.1") &&
+        !version.Equals("1.1.0") &&
+        !version.Equals("1.0.0"))
+        {
+        status = WMSParserStatus::UnknownVersion;
+        return NULL;
+        }
+
+    WMSCapabilitiesPtr pCapabilities = new WMSCapabilities(version);
+    if (!pCapabilities.IsValid())
         return NULL;
 
     //Read namespace attribute.
@@ -226,67 +251,113 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromFile(WMSParserStatus& statu
     return pCapabilities;
     }
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-WMSCapabilitiesPtr WMSCapabilities::Create(WMSParserStatus& status, WStringCR version)
-    {
-    if (version.Equals(L"1.3.0") ||
-        version.Equals(L"1.1.1") ||
-        version.Equals(L"1.1.0") ||
-        version.Equals(L"1.0.0"))
-        return new WMSCapabilities(version);
-
-    status = WMSParserStatus::UnknownVersion;
-    return NULL;
-    }
-
 //=====================================================================================
 //                                      WMSList
 //=====================================================================================
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
 //-------------------------------------------------------------------------------------
-WMSFormatListPtr WMSFormatList::Create(WMSParserStatus& status, BeXmlNodeR pParentNode)
+WMSSingleLevelList::WMSSingleLevelList()
     {
-    WMSFormatListPtr pFormatList = new WMSFormatList();
+    m_list = bvector<Utf8String>();
+    }
 
-    WString format = L"";
-    pParentNode.GetContent(format);
-    pFormatList->m_formatList.push_back(format);
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSSingleLevelListPtr WMSSingleLevelList::Create()
+    {
+    return new WMSSingleLevelList();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSSingleLevelListPtr WMSSingleLevelList::Create(WMSParserStatus& status, BeXmlNodeR pParentNode, Utf8CP nodeName)
+    {
+    WMSSingleLevelListPtr pList = new WMSSingleLevelList();
+
+    Utf8String content = "";
+    pParentNode.GetContent(content);
+    pList->Add(content.c_str());
 
     for (BeXmlNodeP siblingNode = pParentNode.GetNextSibling(); NULL != siblingNode; siblingNode = siblingNode->GetNextSibling())
         {
-        if (0 == BeStringUtilities::Stricmp(siblingNode->GetName(), WMS_ELEMENT_FormatList))
+        if (0 == BeStringUtilities::Stricmp(siblingNode->GetName(), nodeName))
             {
-            siblingNode->GetContent(format);
-            pFormatList->m_formatList.push_back(format);
+            siblingNode->GetContent(content);
+            pList->Add(content.c_str());
             }
         }
 
-    return pFormatList;
+    return pList;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+void WMSSingleLevelList::Add(Utf8CP content)
+    {
+    m_list.push_back(content);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSMultiLevelList::WMSMultiLevelList()
+    {
+    m_list = bvector<Utf8String>();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSMultiLevelListPtr WMSMultiLevelList::Create()
+    {
+    return new WMSMultiLevelList();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-WMSElementListPtr WMSElementList::Create(WMSParserStatus& status, BeXmlNodeR pParentNode)
+WMSMultiLevelListPtr WMSMultiLevelList::Create(WMSParserStatus& status, BeXmlNodeR pParentNode)
     {
-    WMSElementListPtr pElementList = new WMSElementList();
+    WMSMultiLevelListPtr pList = new WMSMultiLevelList();
 
-    WString element = L"";
+    Utf8String content = "";
     for (BeXmlNodeP childElement = pParentNode.GetFirstChild(); NULL != childElement; childElement = childElement->GetNextSibling())
         {
-        childElement->GetContent(element);
-        pElementList->m_elementList.push_back(element);
+        childElement->GetContent(content);
+        pList->Add(content.c_str());
         }
 
-    return pElementList;
+    return pList;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+void WMSMultiLevelList::Add(Utf8CP content)
+    {
+    m_list.push_back(content);
     }
 
 //=====================================================================================
 //                              WMSService
 //=====================================================================================
+WMSService::WMSService()
+    {
+    m_name = "";
+    m_title = "";
+    m_abstract = "";
+    m_fees = "";
+    m_accessConstraints = "";
+
+    m_pKeywordList = WMSMultiLevelList::Create();
+    m_pOnlineResource = WMSOnlineResource::Create();
+    m_pContactInformation = WMSContactInformation::Create();
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
@@ -300,11 +371,19 @@ void WMSService::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom
         }
 
     if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_KeywordList))
-        m_pKeywordList = WMSElementList::Create(status, *pNode);
+        m_pKeywordList = WMSMultiLevelList::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_OnlineResource))
         m_pOnlineResource = WMSOnlineResource::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_ContactInformation))
         m_pContactInformation = WMSContactInformation::Create(status, xmlDom, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSServicePtr WMSService::Create()
+    {
+    return new WMSService();
     }
 
 //-------------------------------------------------------------------------------------
@@ -324,7 +403,7 @@ WMSServicePtr WMSService::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXm
     xmlDom.SelectNodeContent(pService->GetAccessConstraintsR(), BuildNodePath(WMS_ELEMENT_AccessConstraints).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     
     // Read positive integer.
-    WString posInt = L"";
+    Utf8String posInt = "";
     xmlDom.SelectNodeContent(posInt, BuildNodePath(WMS_ELEMENT_LayerLimit).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pService->SetLayerLimit(posInt);
     xmlDom.SelectNodeContent(posInt, BuildNodePath(WMS_ELEMENT_MaxWidth).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
@@ -344,6 +423,23 @@ WMSServicePtr WMSService::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXm
 //                              WMSOnlineResource
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSOnlineResource::WMSOnlineResource()
+    {
+    m_type = "";
+    m_href = "";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSOnlineResourcePtr WMSOnlineResource::Create()
+    {
+    return new WMSOnlineResource();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSOnlineResourcePtr WMSOnlineResource::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
@@ -359,6 +455,17 @@ WMSOnlineResourcePtr WMSOnlineResource::Create(WMSParserStatus& status, BeXmlNod
 //=====================================================================================
 //                              WMSContactInformation
 //=====================================================================================
+WMSContactInformation::WMSContactInformation()
+    {
+    m_position = "";
+    m_voiceTelephone = "";
+    m_facsimileTelephone = "";
+    m_emailAddress = "";
+
+    m_pPerson = WMSContactPerson::Create();
+    m_pAddress = WMSContactAddress::Create();
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
@@ -375,6 +482,14 @@ void WMSContactInformation::Read(WMSParserStatus& status, Utf8CP nodeName, BeXml
         m_pPerson = WMSContactPerson::Create(status, xmlDom, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_ContactAddress))
         m_pAddress = WMSContactAddress::Create(status, xmlDom, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSContactInformationPtr WMSContactInformation::Create()
+    {
+    return new WMSContactInformation();
     }
 
 //-------------------------------------------------------------------------------------
@@ -400,6 +515,23 @@ WMSContactInformationPtr WMSContactInformation::Create(WMSParserStatus& status, 
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSContactPerson::WMSContactPerson()
+    {
+    m_name = "";
+    m_organization = "";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSContactPersonPtr WMSContactPerson::Create()
+    {
+    return new WMSContactPerson();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSContactPersonPtr WMSContactPerson::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
@@ -413,6 +545,27 @@ WMSContactPersonPtr WMSContactPerson::Create(WMSParserStatus& status, BeXmlDomR 
     xmlDom.SelectNodeContent(pContactPerson->GetOrganizationR(), BuildNodePath(WMS_ELEMENT_Organization).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
 
     return pContactPerson;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSContactAddress::WMSContactAddress()
+    {
+    m_type = "";
+    m_address = "";
+    m_city = "";
+    m_stateOrProvince = "";
+    m_postCode = "";
+    m_country = "";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSContactAddressPtr WMSContactAddress::Create()
+    {
+    return new WMSContactAddress();
     }
 
 //-------------------------------------------------------------------------------------
@@ -439,6 +592,16 @@ WMSContactAddressPtr WMSContactAddress::Create(WMSParserStatus& status, BeXmlDom
 //                              WMSCapability
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSCapability::WMSCapability() 
+    {
+    m_pRequest = WMSRequest::Create();
+    m_pExceptionList = WMSMultiLevelList::Create();
+    m_pLayerList = bvector<WMSLayerPtr>();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 void WMSCapability::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
@@ -453,9 +616,17 @@ void WMSCapability::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xml
     if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Request))
         m_pRequest = WMSRequest::Create(status, xmlDom, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Exception))
-        m_pExceptionList = WMSElementList::Create(status, *pNode);
+        m_pExceptionList = WMSMultiLevelList::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Layer))
         m_pLayerList.push_back(WMSLayer::Create(status, xmlDom, *pNode));
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSCapabilityPtr WMSCapability::Create()
+    {
+    return new WMSCapability();
     }
 
 //-------------------------------------------------------------------------------------
@@ -477,6 +648,16 @@ WMSCapabilityPtr WMSCapability::Create(WMSParserStatus& status, BeXmlDomR xmlDom
 //                              WMSRequest
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSRequest::WMSRequest()
+    {
+    m_pGetCapabilities = WMSOperationType::Create();
+    m_pGetMap = WMSOperationType::Create();
+    m_pGetFeatureInfo = WMSOperationType::Create();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 void WMSRequest::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
@@ -494,6 +675,14 @@ void WMSRequest::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom
         m_pGetMap = WMSOperationType::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName,WMS_ELEMENT_GetFeatureInfo))
         m_pGetFeatureInfo = WMSOperationType::Create(status, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSRequestPtr WMSRequest::Create()
+    {
+    return new WMSRequest();
     }
 
 //-------------------------------------------------------------------------------------
@@ -515,6 +704,15 @@ WMSRequestPtr WMSRequest::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXm
 //                              WMSOperationType
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSOperationType::WMSOperationType()
+    {
+    m_pFormatList = WMSSingleLevelList::Create();
+    m_pDcpType = WMSDCPType::Create();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 void WMSOperationType::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
@@ -527,9 +725,17 @@ void WMSOperationType::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR
         }
 
     if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_FormatList))
-        m_pFormatList = WMSFormatList::Create(status, *pNode);
+        m_pFormatList = WMSSingleLevelList::Create(status, *pNode, WMS_ELEMENT_FormatList);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_DCPType))
         m_pDcpType = WMSDCPType::Create(status, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSOperationTypePtr WMSOperationType::Create()
+    {
+    return new WMSOperationType();
     }
 
 //-------------------------------------------------------------------------------------
@@ -549,6 +755,15 @@ WMSOperationTypePtr WMSOperationType::Create(WMSParserStatus& status, BeXmlNodeR
 //=====================================================================================
 //                                  WMSDCPType
 //=====================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSDCPType::WMSDCPType()
+    {
+    m_pHttpGet = WMSOnlineResource::Create();
+    m_pHttpPost = WMSOnlineResource::Create();
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
@@ -571,6 +786,14 @@ void WMSDCPType::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR paren
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSDCPTypePtr WMSDCPType::Create()
+    {
+    return new WMSDCPType();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSDCPTypePtr WMSDCPType::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
@@ -587,6 +810,36 @@ WMSDCPTypePtr WMSDCPType::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
 //=====================================================================================
 //                              WMSLayer
 //=====================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSLayer::WMSLayer()
+    {
+    m_queryable = false;
+    m_opaque = false;
+    m_noSubsets = false;
+
+    m_name = "";
+    m_title = "";
+    m_abstract = "";
+
+    m_pKeywordList = WMSMultiLevelList::Create();
+    m_pCRSList = WMSSingleLevelList::Create();
+    m_pGeoBBox = WMSGeoBoundingBox::Create();
+    m_pLatLonBBox = WMSLatLonBoundingBox::Create();
+    m_pAttribution = WMSAttribution::Create();
+    m_pAuthorityUrl = WMSUrl::Create();
+    m_pIdentifier = WMSIdentifier::Create();
+    m_pDataUrl = WMSUrl::Create();
+    m_pFeatureListUrl = WMSUrl::Create();
+    m_pStyle = WMSStyle::Create();
+
+    m_pBBoxList = bvector<WMSBoundingBoxPtr>();
+    m_pDimensionList = bvector<WMSDimensionPtr>();
+    m_pMetadataUrlList = bvector<WMSUrlPtr>();
+    m_pLayerList = bvector<WMSLayerPtr>();
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
@@ -633,36 +886,57 @@ void WMSLayer::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, 
         return;
         }
 
-    for (BeXmlNodeP pNode : nodes)
+    for (BeXmlDom::IterableNodeSetIter nodeIt = nodes.begin(); nodeIt != nodes.end(); ++nodeIt)
         {
         if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_KeywordList))
-            m_pKeywordList = WMSElementList::Create(status, *pNode);
-        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_CRS) ||
-                 0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_SRS))
-                 m_pCRSList = WMSFormatList::Create(status, *pNode);
+            m_pKeywordList = WMSMultiLevelList::Create(status, **nodeIt);
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_CRS))
+            {
+            m_pCRSList = WMSSingleLevelList::Create(status, **nodeIt, WMS_ELEMENT_CRS);
+            //&&JFC: Need to find a better way of skipping the nodes that were already processed when creating the list.
+            for (size_t index = 1; index < m_pCRSList->Get().size(); ++index)
+                ++nodeIt;
+            }
+        else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_SRS))
+            {
+            m_pCRSList = WMSSingleLevelList::Create(status, **nodeIt, WMS_ELEMENT_SRS);
+            //&&JFC: Need to find a better way of skipping the nodes that were already processed when creating the list.
+            for (size_t index = 1; index < m_pCRSList->Get().size(); ++index)
+                ++nodeIt;
+            }
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_GeoBoundingBox))
-            m_pGeoBBox = WMSGeoBoundingBox::Create(status, xmlDom, *pNode);
+            m_pGeoBBox = WMSGeoBoundingBox::Create(status, xmlDom, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_LatLongBoundingBox))
-            m_pLatLonBBox = WMSLatLonBoundingBox::Create(status, *pNode);
+            m_pLatLonBBox = WMSLatLonBoundingBox::Create(status, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_BoundingBox))
-            m_pBBoxList.push_back(WMSBoundingBox::Create(status, *pNode));
+            m_pBBoxList.push_back(WMSBoundingBox::Create(status, **nodeIt));
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Dimension))
-            m_pDimensionList.push_back(WMSDimension::Create(status, xmlDom, *pNode));
+            m_pDimensionList.push_back(WMSDimension::Create(status, xmlDom, **nodeIt));
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Attribution))
-            m_pAttribution = WMSAttribution::Create(status, xmlDom, *pNode);
+            m_pAttribution = WMSAttribution::Create(status, xmlDom, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_AuthorityURL))
-            m_pAuthorityUrl = WMSUrl::Create(status, *pNode);
+            m_pAuthorityUrl = WMSUrl::Create(status, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Identifier))
-            m_pIdentifier = WMSIdentifier::Create(status, xmlDom, *pNode);
+            m_pIdentifier = WMSIdentifier::Create(status, xmlDom, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_MetadataURL))
-            m_pMetadataUrlList.push_back(WMSUrl::Create(status, *pNode));
+            m_pMetadataUrlList.push_back(WMSUrl::Create(status, **nodeIt));
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_DataURL))
-            m_pDataUrl = WMSUrl::Create(status, *pNode);
+            m_pDataUrl = WMSUrl::Create(status, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_FeatureListURL))
-            m_pFeatureListUrl = WMSUrl::Create(status, *pNode);
+            m_pFeatureListUrl = WMSUrl::Create(status, **nodeIt);
         else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_Style))
-            m_pStyle = WMSStyle::Create(status, xmlDom, *pNode);
+            m_pStyle = WMSStyle::Create(status, xmlDom, **nodeIt);
+
+
         }
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSLayerPtr WMSLayer::Create()
+    {
+    return new WMSLayer();
     }
 
 //-------------------------------------------------------------------------------------
@@ -675,7 +949,7 @@ WMSLayerPtr WMSLayer::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNod
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read attributes.
-    WString stringValue = L"";
+    Utf8String stringValue = "";
     parentNode.GetAttributeStringValue(stringValue, "queryable");
     pLayer->SetQueryable(stringValue);
     parentNode.GetAttributeStringValue(stringValue, "opaque");
@@ -729,6 +1003,22 @@ WMSLayerPtr WMSLayer::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNod
 //                              WMSBoundingBoxes
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSGeoBoundingBox::WMSGeoBoundingBox()
+    {
+
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSGeoBoundingBoxPtr WMSGeoBoundingBox::Create()
+    {
+    return new WMSGeoBoundingBox();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSGeoBoundingBoxPtr WMSGeoBoundingBox::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
@@ -738,7 +1028,7 @@ WMSGeoBoundingBoxPtr WMSGeoBoundingBox::Create(WMSParserStatus& status, BeXmlDom
     xmlXPathContextPtr pContext = xmlDom.AcquireXPathContext(&parentNode);
 
     // Read string.
-    WString stringValue = L"";
+    Utf8String stringValue = "";
     xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_WestBoundLong).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
     pGeoBBox->SetWestBoundLong(stringValue);
     xmlDom.SelectNodeContent(stringValue, BuildNodePath(WMS_ELEMENT_EastBoundLong).c_str(), pContext, BeXmlDom::NODE_BIAS_First);
@@ -752,6 +1042,22 @@ WMSGeoBoundingBoxPtr WMSGeoBoundingBox::Create(WMSParserStatus& status, BeXmlDom
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSLatLonBoundingBox::WMSLatLonBoundingBox()
+    {
+
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSLatLonBoundingBoxPtr WMSLatLonBoundingBox::Create()
+    {
+    return new WMSLatLonBoundingBox();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSLatLonBoundingBoxPtr WMSLatLonBoundingBox::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
@@ -759,7 +1065,7 @@ WMSLatLonBoundingBoxPtr WMSLatLonBoundingBox::Create(WMSParserStatus& status, Be
     WMSLatLonBoundingBoxPtr pLatLonBBox = new WMSLatLonBoundingBox();
 
     // Read attributes.
-    WString stringValue = L"";
+    Utf8String stringValue = "";
     parentNode.GetAttributeStringValue(stringValue, "minx");
     pLatLonBBox->SetMinX(stringValue);
     parentNode.GetAttributeStringValue(stringValue, "miny");
@@ -773,6 +1079,22 @@ WMSLatLonBoundingBoxPtr WMSLatLonBoundingBox::Create(WMSParserStatus& status, Be
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSBoundingBox::WMSBoundingBox()
+    {
+
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSBoundingBoxPtr WMSBoundingBox::Create()
+    {
+    return new WMSBoundingBox();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSBoundingBoxPtr WMSBoundingBox::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
@@ -780,7 +1102,7 @@ WMSBoundingBoxPtr WMSBoundingBox::Create(WMSParserStatus& status, BeXmlNodeR par
     WMSBoundingBoxPtr pBBox = new WMSBoundingBox();
 
     // Read attributes.
-    WString stringValue = L"";
+    Utf8String stringValue = "";
     parentNode.GetAttributeStringValue(stringValue, "minx");
     pBBox->SetMinX(stringValue);
     parentNode.GetAttributeStringValue(stringValue, "miny");
@@ -805,6 +1127,26 @@ WMSBoundingBoxPtr WMSBoundingBox::Create(WMSParserStatus& status, BeXmlNodeR par
 //                              WMSDimension
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSDimension::WMSDimension()
+    {
+    m_name = "";
+    m_units = "";
+    m_unitSymbol = "";
+    m_default = "";
+    m_dimension = "";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSDimensionPtr WMSDimension::Create()
+    {
+    return new WMSDimension();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 WMSDimensionPtr WMSDimension::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNodeR parentNode)
@@ -818,7 +1160,7 @@ WMSDimensionPtr WMSDimension::Create(WMSParserStatus& status, BeXmlDomR xmlDom, 
     parentNode.GetAttributeStringValue(pDimension->GetUnitsR(), "units");
     parentNode.GetAttributeStringValue(pDimension->GetUnitSymbolR(), "unitSymbol");
     parentNode.GetAttributeStringValue(pDimension->GetDefaultR(), "default");
-    WString stringValue = L"";
+    Utf8String stringValue = "";
     parentNode.GetAttributeStringValue(stringValue, "multipleValues");
     pDimension->SetMultipleValues(stringValue);
     parentNode.GetAttributeStringValue(stringValue, "nearestValue");
@@ -836,6 +1178,17 @@ WMSDimensionPtr WMSDimension::Create(WMSParserStatus& status, BeXmlDomR xmlDom, 
 //                              WMSAttribution
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSAttribution::WMSAttribution()
+    {
+    m_title = "";
+
+    m_pOnlineRes = WMSOnlineResource::Create();
+    m_pLogoUrl = WMSUrl::Create();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 void WMSAttribution::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
@@ -851,6 +1204,14 @@ void WMSAttribution::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR p
         m_pOnlineRes = WMSOnlineResource::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_LogoURL))
         m_pLogoUrl = WMSUrl::Create(status, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSAttributionPtr WMSAttribution::Create()
+    {
+    return new WMSAttribution();
     }
 
 //-------------------------------------------------------------------------------------
@@ -876,6 +1237,18 @@ WMSAttributionPtr WMSAttribution::Create(WMSParserStatus& status, BeXmlDomR xmlD
 //                                  WMSUrl
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSUrl::WMSUrl()
+    {
+    m_type = "";
+    m_name = "";
+
+    m_pFormatList = WMSSingleLevelList::Create();
+    m_pOnlineRes = WMSOnlineResource::Create();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 void WMSUrl::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
@@ -888,9 +1261,17 @@ void WMSUrl::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNod
         }
 
     if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_FormatList))
-        m_pFormatList = WMSFormatList::Create(status, *pNode);
+        m_pFormatList = WMSSingleLevelList::Create(status, *pNode, WMS_ELEMENT_FormatList);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_OnlineResource))
         m_pOnlineRes = WMSOnlineResource::Create(status, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSUrlPtr WMSUrl::Create()
+    {
+    return new WMSUrl();
     }
 
 //-------------------------------------------------------------------------------------
@@ -903,7 +1284,7 @@ WMSUrlPtr WMSUrl::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
     // Read attributes.
     parentNode.GetAttributeStringValue(pUrl->GetTypeR(), "type");
     parentNode.GetAttributeStringValue(pUrl->GetNameR(), "name");
-    WString stringValue = L"";
+    Utf8String stringValue = "";
     parentNode.GetAttributeStringValue(stringValue, "height");
     pUrl->SetHeight(stringValue);
     parentNode.GetAttributeStringValue(stringValue, "width");
@@ -919,6 +1300,23 @@ WMSUrlPtr WMSUrl::Create(WMSParserStatus& status, BeXmlNodeR parentNode)
 //=====================================================================================
 //                              WMSIdentifier
 //=====================================================================================
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSIdentifier::WMSIdentifier()
+    {
+    m_authority = "";
+    m_id = "";
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSIdentifierPtr WMSIdentifier::Create()
+    {
+    return new WMSIdentifier();
+    }
+
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
@@ -941,6 +1339,20 @@ WMSIdentifierPtr WMSIdentifier::Create(WMSParserStatus& status, BeXmlDomR xmlDom
 //                                  WMSStyle
 //=====================================================================================
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSStyle::WMSStyle()
+    {
+    m_name = "";
+    m_title = "";
+    m_abstract = "";
+
+    m_pLegendUrl = WMSUrl::Create();
+    m_pStyleSheetUrl = WMSUrl::Create();
+    m_pStyleUrl = WMSUrl::Create();
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
 void WMSStyle::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentNode)
@@ -958,6 +1370,14 @@ void WMSStyle::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlNodeR parentN
         m_pStyleSheetUrl = WMSUrl::Create(status, *pNode);
     else if (0 == BeStringUtilities::Stricmp(nodeName, WMS_ELEMENT_StyleURL))
         m_pStyleUrl = WMSUrl::Create(status, *pNode);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         		 8/2015
+//-------------------------------------------------------------------------------------
+WMSStylePtr WMSStyle::Create()
+    {
+    return new WMSStyle();
     }
 
 //-------------------------------------------------------------------------------------
