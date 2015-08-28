@@ -25,6 +25,7 @@ struct ObstacleElementHandler;
 //=======================================================================================
 struct RobotElement : PhysicalElement
 {
+    DGNELEMENT_DECLARE_MEMBERS(DGN_SQL_TEST_ROBOT_CLASS, PhysicalElement)
 private:
     friend struct RobotElementHandler;
     RobotElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}
@@ -47,6 +48,8 @@ public:
 //=======================================================================================
 struct ObstacleElement : PhysicalElement
 {
+    DGNELEMENT_DECLARE_MEMBERS(DGN_SQL_TEST_OBSTACLE_CLASS, PhysicalElement)
+
 private:
     friend struct ObstacleElementHandler;
     ObstacleElement(PhysicalElement::CreateParams const& params) : PhysicalElement(params) {;}

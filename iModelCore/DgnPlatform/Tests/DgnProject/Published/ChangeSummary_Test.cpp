@@ -44,7 +44,7 @@ protected:
 
 public:
     ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true) {}
-    virtual ~ChangeSummaryTestFixture() {}
+    virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
 };

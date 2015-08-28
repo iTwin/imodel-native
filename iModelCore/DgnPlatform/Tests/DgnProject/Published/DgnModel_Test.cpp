@@ -516,6 +516,7 @@ TEST_F(DgnModelTests, ImportGroups)
         ASSERT_EQ( DgnDbStatus::Success , stat );
 
         checkGroupHasOneMemberInModel(*model3);
+        db2->SaveChanges();
         }
 
     }
@@ -578,6 +579,7 @@ TEST_F(DgnModelTests, ImportElementsWithItems)
 
         DgnElementCPtr el = getSingleElementInModel(*model3);
         ASSERT_NE( nullptr , DgnElement::Item::GetItem(*el) );
+        db2->SaveChanges();
         }
     }
 
@@ -591,6 +593,8 @@ TEST_F(DgnModelTests, ImportElementsWithDependencies)
     db->Txns().EnableTracking(true);
 
     ASSERT_EQ( DgnDbStatus::Success , DgnPlatformTestDomain::ImportSchema(*db) );
+
+    TestElementDrivesElementHandler::GetHandler().Clear();
 
     // ******************************
     //  Create model1

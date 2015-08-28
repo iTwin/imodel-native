@@ -177,6 +177,7 @@ TransactionManagerTests::TransactionManagerTests()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransactionManagerTests::~TransactionManagerTests()
     {
+    m_db->SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
