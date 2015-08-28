@@ -41,12 +41,16 @@ protected:
     bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
     bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
     bmap<DgnClassId, DgnClassId> m_classId;
+    bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
 
     template<typename T>
     T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
 
 public:
     DgnRemapTables& Get(DgnDbR);
+
+    DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
+    DgnAuthorityId Add(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_authorityId[sourceId] = targetId;}
 
     DgnModelId Find(DgnModelId sourceId) const {return Find<DgnModelId>(m_modelId, sourceId);}
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
@@ -93,6 +97,8 @@ public:
 
     //! @name ID remapping
     //! @{
+    //! Make sure that a DgnAuthority has been imported
+    DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
     //! Look up a copy of a model
     DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
@@ -193,6 +199,7 @@ public:
         Utf8CP GetValueCP() const {return m_value.c_str();}
         //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
         DgnAuthorityId GetAuthority() const {return m_authority;}
+        void RelocateToDestinationDb(DgnImportContext&);
     };
 
     //! Parameters for creating new DgnElements

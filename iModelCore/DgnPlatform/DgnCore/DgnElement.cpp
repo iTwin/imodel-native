@@ -868,9 +868,18 @@ void DgnElement::_CopyFrom(DgnElementCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::Code::RelocateToDestinationDb(DgnImportContext& importer)
+    {
+    m_authority = importer.RemapAuthorityId(m_authority);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
+    m_code.RelocateToDestinationDb(importer);
     m_categoryId = importer.RemapCategory(m_categoryId);
     m_parentId   = importer.FindElementId(m_parentId);
     }
