@@ -60,7 +60,7 @@ ECSqlStatus ECSqlPreparer::Prepare (Utf8StringR nativeSql, ECSqlPrepareContext& 
 
         case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer2::Prepare (context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
+            status = ECSqlDeletePreparer::Prepare (context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
             if (status != ECSqlStatus::Success)
                 return status;
 

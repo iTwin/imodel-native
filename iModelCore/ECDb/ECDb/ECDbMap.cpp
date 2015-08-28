@@ -149,15 +149,16 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             classMaps.insert (key.second.get ());
         }
-    ECDbViewGenerator a;
-    a.BuildGraph (*this);
-    SqlGenerator viewGen (*this);
-    if (SUCCESS != viewGen.BuildViewInfrastructure (classMaps))
-        {
-        BeAssert ( false && "failed to create view infrastructure");
-        m_schemaImportContext = nullptr;
-        return MapStatus::Error;
-        }
+    ECDbViewGenerator a(*this);
+    a.BuildGraph ();
+    a.ComputeView ();
+    //SqlGenerator viewGen (*this);
+    //if (SUCCESS != viewGen.BuildViewInfrastructure (classMaps))
+    //    {
+    //    BeAssert ( false && "failed to create view infrastructure");
+    //    m_schemaImportContext = nullptr;
+    //    return MapStatus::Error;
+    //    }
 
     m_schemaImportContext = nullptr;
     return MapStatus::Success;
@@ -166,7 +167,23 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         06/2015
 //---------------------------------------------------------------------------------------
-RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId)
+ClassMapCP  ECDbMap::GetClassMapCP (ECN::ECClassId classId) const
+    {
+
+    auto ecClass = GetECDbR ().Schemas ().GetECClass (classId);
+    if (ecClass == nullptr)
+        {
+        BeDataAssert (false && "Failed to find classmap with given ecclassid");
+        return nullptr;
+        }
+
+    return static_cast<RelationshipClassMapCP>(GetClassMap (*ecClass));;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         06/2015
+//---------------------------------------------------------------------------------------
+RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const
     {
     auto ecClass = GetECDbR ().Schemas ().GetECClass (ecRelationshipClassId);
     if (ecClass == nullptr)
@@ -1100,7 +1117,7 @@ void ECDbMap::LightWeightMapCache::LoadRelationshipByTable ()  const
         "        INNER JOIN ec_ClassMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
         "        INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
         "    WHERE ec_ClassMap.MapStrategy  <> 0 AND ec_Column.KnownColumn NOT IN (1, 2) AND ec_Class.IsRelationship = 1 AND ec_Table.IsVirtual = 0";
-
+    // AND ec_Table.IsVirtual = 0
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     while (stmt->Step () == BE_SQLITE_ROW)

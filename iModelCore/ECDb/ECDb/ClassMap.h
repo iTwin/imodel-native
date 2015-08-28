@@ -226,6 +226,7 @@ struct PropertyMapSet : NonCopyableClass
     typedef std::vector<EndPoint const*> EndPoints;
     private:
         std::vector<std::unique_ptr<EndPoint>> m_orderedEndPoints;
+        std::map<Utf8CP,EndPoint const*, CompareUtf8> m_endPointByAccessString;
         IClassMap const& m_classMap;
 
         PropertyMapSet (IClassMap const& classMap)
@@ -236,7 +237,14 @@ struct PropertyMapSet : NonCopyableClass
         IClassMap const& GetClassMap () const;
         const EndPoints GetEndPoints () const;
         const EndPoints FindEndPoints (ECDbKnownColumns filter) const;
+        const EndPoint* GetEndPointByAccessString (Utf8CP accessString) const
+            {
+            auto itor = m_endPointByAccessString.find (accessString);
+            if (itor == m_endPointByAccessString.end ())
+                return nullptr;
 
+            return itor->second;
+            }
         static BentleyStatus AddSystemEndPoint (PropertyMapSet& propertySet, IClassMap const& classMap, ECDbKnownColumns knownColumnId, ECN::ECValueCR value, ECDbSqlColumn const* column = nullptr);
         static PropertyMapSet::Ptr Create (IClassMap const& classMap);
     };

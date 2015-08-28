@@ -24,14 +24,14 @@ typedef bmap<ECDbSqlTable*, MappedTablePtr> ClustersByTable;
 public:
     struct LightWeightMapCache : NonCopyableClass
         {
-        enum class RelationshipEnd
+        enum class RelationshipEnd : int
             {
             None = 0,
             Source = 1,
             Target = 2,
             Both = Source | Target
             };
-        enum class RelationshipType
+        enum class RelationshipType : int
             {
             Link = 0,
             Source = (int)ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable,
@@ -164,7 +164,8 @@ public:
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR) const;
     size_t                      GetTableCountOnRelationshipEnd (ECN::ECRelationshipConstraintCR) const;
     void                        ClearCache();
-    RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId);
+    RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId) const;
+    ClassMapCP             GetClassMapCP (ECN::ECClassId classId) const;
     };
 
 

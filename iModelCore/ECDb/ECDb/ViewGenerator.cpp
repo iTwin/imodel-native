@@ -410,7 +410,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
              auto classSqlName = BuildSchemaQualifiedClassName (classMap.GetClass ());
 
              auto const& targetTable = ecclassIdPropertyMap->GetFirstColumn ()->GetTable ();
-             sqlBuilder.Append (" LEFT JOIN ");
+             sqlBuilder.Append (" INNER JOIN ");
              sqlBuilder.AppendEscaped (targetTable.GetName ().c_str ());
              sqlBuilder.AppendSpace ();
              sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
@@ -995,7 +995,6 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         auto& constraints = end == ECRelationshipEnd::ECRelationshipEnd_Source ? relationship.GetSource () : relationship.GetTarget ();
         auto anyClassId = m_map.GetLightWeightMapCache ().GetAnyClassId ();
         ClassMapCP classMap = nullptr;
-        ECDbSchemaManagerCR schemaManager = m_map.GetECDbR().Schemas();
         for (auto constraint : constraints.GetConstraintClasses ())
             {
             if (constraint->GetClass().GetId() == anyClassId)
@@ -1003,15 +1002,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 classes.clear();
                 for (auto classId : m_map.GetLightWeightMapCache().GetAnyClassReplacements())
                     {
-                    ECClassCP ecclass = schemaManager.GetECClass(classId);
-                    if (ecclass == nullptr)
-                        {
-                        BeAssert(ecclass != nullptr);
-                        classes.clear();
-                        return classes;
-                        }
-
-                    classMap = m_map.GetClassMapCP(*ecclass);
+                    classMap = m_map.GetClassMapCP (classId);
                     if (classMap != nullptr)
                         classes.push_back(classMap);
                     }
@@ -2432,7 +2423,7 @@ NConstraint::NConstraint (NClass const& nclass)
     :m_class (nclass)
     {
     }
-
+NRelationship const& NRelationshipConstraint::GetRelationship () const { return static_cast<NRelationship const&>(GetClass ()); }
 NRelationshipConstraint::NRelationshipConstraint (NRelationship const& nclass)
     :NConstraint (nclass)
     {
@@ -2448,7 +2439,7 @@ void NRelationshipConstraint::SetEnd (ECN::ECClassId classId, ECDbMap::LightWeig
 
     if (itor->second != ECDbMap::LightWeightMapCache::RelationshipEnd::Both)
         {
-        itor->second = Enum::Or (itor->second, end);
+        itor->second = static_cast<ECDbMap::LightWeightMapCache::RelationshipEnd> (static_cast<int>(end) | static_cast<int>(itor->second));
         }
     }
 NConstraint::Type NRelationshipConstraint::GetType () const  { return Type::Relationship; }
@@ -2551,7 +2542,7 @@ NRelationship::Ptr NRelationship::Create (ECN::ECClassId classId, ECDbMap::Light
     }
 
 
-NClass const* ECDbViewGenerator::FindClass (ECN::ECClassId classId, bool add)
+NClass* ECDbViewGenerator::FindClass (ECN::ECClassId classId, bool add)
     {
     auto itor = m_classes.find (classId);
     if (itor != m_classes.end ())
@@ -2568,16 +2559,18 @@ NClass const* ECDbViewGenerator::FindClass (ECN::ECClassId classId, bool add)
     return nullptr;
     }
 
-void ECDbViewGenerator::BuildGraph (ECDbMapCR map)
+void ECDbViewGenerator::BuildGraph ()
     {
     //Load tables
-    auto const tables = map.GetSQLManager ().GetDbSchema ().GetTables ();
+    m_classes.clear ();
+    m_tables.clear ();
+    auto const tables = m_map.GetSQLManager ().GetDbSchema ().GetTables ();
     for (auto const table : tables)
         {
-        m_tables[table->GetName ().c_str ()] = NTable::Create (*table, map.GetLightWeightMapCache ().GetClassesMapToTable (*table));
+        m_tables[table->GetName ().c_str ()] = NTable::Create (*table, m_map.GetLightWeightMapCache ().GetClassesMapToTable (*table));
         }
     //Load relationships
-    for (auto const& i : map.GetLightWeightMapCache ().GetRelationshipsMapToTables ())
+    for (auto const& i : m_map.GetLightWeightMapCache ().GetRelationshipsMapToTables ())
         {
         auto itor = m_tables.find (i.first->GetName ().c_str ());
         if (itor == m_tables.end ())
@@ -2597,7 +2590,7 @@ void ECDbViewGenerator::BuildGraph (ECDbMapCR map)
         }
 
     //Load classes that are not relationship
-    for (auto const& i : map.GetLightWeightMapCache ().GetTablesMapToClass ())
+    for (auto const& i : m_map.GetLightWeightMapCache ().GetTablesMapToClass ())
         {
         if (FindClass (i.first, false) != nullptr) //Skip link table relationships;
             continue;
@@ -2616,18 +2609,627 @@ void ECDbViewGenerator::BuildGraph (ECDbMapCR map)
             }
 
         //load relationship constraints
-        for (auto const& r : map.GetLightWeightMapCache ().GetClassRelationships (i.first))
+        for (auto const& r : m_map.GetLightWeightMapCache ().GetClassRelationships (i.first))
             {
-            NRelationship* rel = (NRelationship*)FindClass (r.first, false);
-            BeAssert (rel != nullptr);
-            for (auto & partition : nClass->GetPartitionsR ())
+            if (NRelationship* rel = (NRelationship*)FindClass (r.first, false))
                 {
-                partition.first->AppendRelationshipConstraint (*rel, nClass->GetClassId (), r.second);
+                for (auto & partition : nClass->GetPartitionsR ())
+                    {
+                    partition.first->AppendRelationshipConstraint (*rel, nClass->GetClassId (), r.second);
+                    }
                 }
             }
 
         m_classes[i.first] = std::move (nClass);
         }
     }
-    
+const std::set<ECDbSqlTable const*> ECDbViewGenerator::GetEndTables (ECRelationshipClassCR relationship, ECRelationshipEnd end)
+    {
+    std::set<ECDbSqlTable const*> tables;
+    auto& constraints = end == ECRelationshipEnd::ECRelationshipEnd_Source ? relationship.GetSource () : relationship.GetTarget ();
+    auto anyClassId = m_map.GetLightWeightMapCache ().GetAnyClassId ();
+    ClassMapCP classMap = nullptr;
+    for (auto constraint : constraints.GetConstraintClasses ())
+        {
+        if (constraint->GetClass ().GetId () == anyClassId)
+            {
+            tables.clear ();
+            for (auto classId : m_map.GetLightWeightMapCache ().GetAnyClassReplacements ())
+                {
+                classMap = m_map.GetClassMapCP (classId);
+                if (classMap != nullptr && classMap->GetTable ().GetPersistenceType () == PersistenceType::Persisted)
+                    tables.insert (&classMap->GetTable ());
+                }
+
+            return tables;
+            }
+
+        classMap = m_map.GetClassMapCP (constraint->GetClass ());
+        if (classMap != nullptr)
+            tables.insert (&classMap->GetTable ());
+        }
+
+    return tables;
+    }
+
+const NativeSqlBuilder ECDbViewGenerator::CreateFilterList (std::set<ECN::ECClassId> const& allSet, std::set<ECN::ECClassId> const& subSet, Utf8CP columnName ) const
+    {
+    NativeSqlBuilder builder;
+    std::set<ECN::ECClassId> otherSet;
+    BeAssert (!subSet.empty () && !allSet.empty());
+
+    for (auto classId : subSet)
+        {
+        BeDataAssert ((allSet.find (classId) != allSet.end ()) && "subset is not entirly included in allSet");
+        }
+    for (auto classId : allSet)
+        {
+        if (subSet.find (classId) == subSet.end ())
+            {
+            otherSet.insert (classId);
+            }
+        }
+    if (otherSet.empty())
+        {
+        return std::move(builder);
+        }
+    else if (otherSet.size() <= subSet.size())
+        {
+        if (columnName != nullptr)
+            builder.AppendEscaped (columnName).AppendSpace ();
+
+        builder.Append ("IN (");
+        for (auto i : otherSet)
+            {
+            builder.Append (i);
+            if (*otherSet.rbegin () != i)
+                builder.Append (", ");
+            }
+
+        builder.AppendParenRight ();
+        }
+
+    else if (otherSet.size () > subSet.size ())
+        {
+        if (columnName != nullptr)
+            builder.AppendEscaped (columnName).AppendSpace ();
+
+        builder.Append ("NOT IN (");
+        for (auto i : subSet)
+            {
+            builder.Append (i);
+            if (*subSet.rbegin () != i)
+                builder.Append (", ");
+            }
+
+        builder.AppendParenRight ();
+        }
+
+    return std::move (builder);
+    }
+void ECDbViewGenerator::BuildView (NClass& nclass)
+    {
+    //BeAssert (nclass.GetType ().)
+    auto classMap = m_map.GetClassMapCP (nclass.GetClassId ());
+    auto rootPMS = PropertyMapSet::Create (*classMap);
+    auto const& storageDescription = classMap->GetStorageDescription ();
+
+    SqlViewBuilder builder;
+    builder.GetNameBuilder ()
+        .Append ("_")
+        .Append (classMap->GetClass ().GetSchema ().GetNamespacePrefix ().c_str ())
+        .Append ("_")
+        .Append (classMap->GetClass ().GetName ().c_str ());
+
+    NativeSqlBuilder::List selects;
+    for (auto const& hp : storageDescription.GetHorizontalPartitions ())
+        {
+        if (hp.GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+            continue;
+        NativeSqlBuilder select;
+        auto firstChildMap = m_map.GetClassMapCP (hp.GetClassIds ().front ());
+        auto childPMS = PropertyMapSet::Create (*firstChildMap);
+        auto rootEndPoints = rootPMS->GetEndPoints ();
+        for (auto const rootE : rootEndPoints)
+            {
+            auto childE = childPMS->GetEndPointByAccessString (rootE->GetAccessString ().c_str ());
+            if (childE->GetValue ().IsNull ())
+                {
+                select.Append (childE->GetColumn ()->GetName ().c_str ());
+                }
+            else
+                {
+                if (rootE->GetColumn () != nullptr)
+                    select.Append (Utf8PrintfString ("%lld %s", childE->GetValue ().GetLong (), rootE->GetColumn ()->GetName ().c_str ()));
+                else
+                    select.Append (Utf8PrintfString ("%lld %s", childE->GetValue ().GetLong (), (rootE->GetAccessString ().c_str ())));
+                }
+
+            if (rootE != rootEndPoints.back ())
+                select.Append (", ");
+
+            if (auto classIdColumn = hp.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+                {
+                if (classIdColumn->GetPersistenceType () == PersistenceType::Persisted && hp.NeedsClassIdFilter ())
+                    {
+                    select.Append (" WHERE ");
+                    select.AppendEscaped (classIdColumn->GetName ().c_str ());
+                    hp.AppendECClassIdFilterSql (select);
+                    }
+                }
+            }
+        selects.push_back (std::move (select));
+        }
+
+    if (!selects.empty ())
+        {
+        for (auto const& select : selects)
+            {
+            builder.AddSelect ().Append (select);
+            }
+        }
+    else
+        {
+        auto& select = builder.AddSelect ();
+        select.Append ("SELECT ");
+        auto rootEndPoints = rootPMS->GetEndPoints ();
+        for (auto const rootE : rootEndPoints)
+            {
+            select.Append ("NULL ");
+            select.AppendEscaped (rootE->GetColumn ()->GetName ().c_str ());
+            if (rootE != rootEndPoints.back ())
+                select.Append (", ");
+            }
+
+        select.Append (" LIMIT 0");
+        builder.MarkAsNullView ();
+        }
+    }
+BentleyStatus ECDbViewGenerator::CreateDeleteTriggerForConstraints (NTable& primaryTable)
+    {
+    struct LinkTableInfo
+        {
+        std::vector<NRelationshipConstraint const*> m_relationshipConstraints;
+        std::set<ECN::ECClassId> m_constraintClassIds;
+        ECDbMap::LightWeightMapCache::RelationshipEnd m_relationshipEnd;
+        LinkTableInfo ()
+            :m_relationshipEnd (ECDbMap::LightWeightMapCache::RelationshipEnd::None)
+            {
+            }
+        };
+
+    std::map<NTable const*, LinkTableInfo> linkTables;
+    std::vector<NRelationshipConstraint const*> endTables;
+    //we like to group link table relationship by table so we only create one statement for it.
+    for (auto& j : primaryTable.GetConstraints ())
+        {
+        auto constraint = j.second.get ();
+        if (constraint->GetType () == NConstraint::Type::Relationship)
+            {
+            NRelationshipConstraint const* relationship = static_cast<NRelationshipConstraint const*>(constraint);
+            if (relationship->GetRelationship ().IsLinkTable ())
+                {
+                auto const& partitions = relationship->GetRelationship ().GetPartitions ();
+                if (partitions.empty ())
+                    continue;
+
+                auto const firstPartition = partitions.begin ();
+                auto const table = firstPartition->first;
+                auto& linkInfo = linkTables[table];
+                linkInfo.m_relationshipConstraints.push_back (relationship);
+                for (auto const& i : relationship->GetRelationshipEnds ())
+                    {
+                    linkInfo.m_constraintClassIds.insert (i.first);
+                    if (linkInfo.m_relationshipEnd != ECDbMap::LightWeightMapCache::RelationshipEnd::Both)
+                        {
+                        linkInfo.m_relationshipEnd = Enum::Or (linkInfo.m_relationshipEnd, i.second);
+                        }
+                    }
+                }
+            else
+                {
+                endTables.push_back (relationship);
+                }
+            }
+        else
+            {
+            //struct not handled 
+            }
+        }
+
+    //process relationships
+    for (auto const& i : linkTables)
+        {
+        LinkTableInfo const& info = i.second;
+        NTable const* targetTable = i.first;
+        if (info.m_relationshipEnd == ECDbMap::LightWeightMapCache::RelationshipEnd::None)
+            continue;
+
+        auto& builder = primaryTable.GetTriggersR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
+        builder.GetNameBuilder ()
+            .Append (targetTable->GetTable().GetName().c_str())
+            .Append ("_LTDelete");
+
+        builder.GetOnBuilder ().Append (primaryTable.GetTable ().GetName ().c_str ());
+        if (auto classIdColumn = primaryTable.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECClassId))
+            {
+            const NativeSqlBuilder whereBuilder = CreateFilterList (primaryTable.GetClassIds (), info.m_constraintClassIds, classIdColumn->GetName().c_str());
+            if (!whereBuilder.IsEmpty ())
+                {
+                builder.GetWhenBuilder ().Append (whereBuilder);
+                }
+            }
+
+        auto& body = builder.GetBodyBuilder ();
+        auto sourceECInstanceIdColumn = targetTable->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::SourceECInstanceId);
+        BeAssert (sourceECInstanceIdColumn != nullptr);
+        auto targetECInstanceIdColumn = targetTable->GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::TargetECInstanceId);
+        BeAssert (targetECInstanceIdColumn != nullptr);
+        auto ecInstanceIdColumn = primaryTable.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+        BeAssert (ecInstanceIdColumn != nullptr);
+        switch (info.m_relationshipEnd)
+            {
+            case ECDbMap::LightWeightMapCache::RelationshipEnd::Source:
+                {
+                body.AppendFormatted ("DELETE FROM [%s] WHERE (OLD.[%s] = [%s]);",
+                    targetTable->GetTable ().GetName ().c_str (), 
+                    ecInstanceIdColumn->GetName().c_str(), 
+                    sourceECInstanceIdColumn->GetName ().c_str ()).AppendEOL ();
+                break;
+                }
+            case ECDbMap::LightWeightMapCache::RelationshipEnd::Target:
+                {
+                body.AppendFormatted ("DELETE FROM [%s] WHERE (OLD.[%s] = [%s]);",
+                    targetTable->GetTable ().GetName ().c_str (),
+                    ecInstanceIdColumn->GetName ().c_str (),
+                    targetECInstanceIdColumn->GetName ().c_str ()).AppendEOL ();
+                break;
+                }
+            case ECDbMap::LightWeightMapCache::RelationshipEnd::Both:
+                {
+                body.AppendFormatted ("DELETE FROM [%s] WHERE (OLD.[%s] = [%s] OR OLD.[%s] = [%s]);",
+                    targetTable->GetTable ().GetName ().c_str (),
+                    ecInstanceIdColumn->GetName ().c_str (),
+                    sourceECInstanceIdColumn->GetName ().c_str (),
+                    ecInstanceIdColumn->GetName ().c_str (),
+                    targetECInstanceIdColumn->GetName ().c_str ()).AppendEOL ();
+
+                break;
+                }
+            default:
+                break;
+            }
+        }
+    //process relationships
+    for (NRelationshipConstraint const* constraint : endTables)
+        {
+        auto rel = m_map.GetRelationshipClassMap (constraint->GetRelationship().GetClassId ());
+        auto relMap = static_cast<RelationshipClassEndTableMapCP>(rel);
+        auto fk = relMap->GetThisEnd () == ECRelationshipEnd::ECRelationshipEnd_Target ? relMap->GetSourceECInstanceIdPropMap () : relMap->GetTargetECInstanceIdPropMap ();
+        auto fkClass = relMap->GetThisEnd () == ECRelationshipEnd::ECRelationshipEnd_Target ? relMap->GetSourceECClassIdPropMap () : relMap->GetTargetECClassIdPropMap ();
+        auto& builder = primaryTable.GetTriggersR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
+        builder.GetNameBuilder ()
+            .Append (relMap->GetClass ().GetSchema ().GetNamespacePrefix ().c_str ())
+            .Append ("_")
+            .Append (relMap->GetClass ().GetName ().c_str ()).Append ("_FKDelete");
+
+        builder.GetOnBuilder ().Append (primaryTable.GetTable().GetName ().c_str ());     
+        auto& body = builder.GetBodyBuilder ();
+
+        body.Append ("UPDATE ")
+            .AppendEscaped (rel->GetTable ().GetName ().c_str ())
+            .Append ("SET ")
+            .AppendEscaped (fk->GetFirstColumn ()->GetName ().c_str ())
+            .Append (" = NULL");
+
+        if (fkClass != nullptr && !fkClass->IsVirtual () && fkClass->IsMappedToPrimaryTable ())
+            {
+            body.Append(", ")
+                .AppendEscaped (fkClass->GetFirstColumn ()->GetName ().c_str ())
+                .Append (" = NULL");
+            }
+        auto pk = primaryTable.GetTable ().GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId);
+        body.AppendFormatted (" WHERE (OLD.[%s] = [%s])", pk->GetName ().c_str (), fk->GetFirstColumn ()->GetName ().c_str ());
+        body.Append (";").AppendEOL ();
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+BentleyStatus ECDbViewGenerator::CreateCascadeDeleteRelationshipTrigger (NRelationship& relationship)
+    {
+    auto rel = m_map.GetRelationshipClassMap (relationship.GetClassId ());
+    if (rel->GetRelationshipClass ().GetStrength () == StrengthType::STRENGTHTYPE_Referencing)
+        return BentleyStatus::SUCCESS;
+
+    auto& primaryTable = m_tables[rel->GetTable ().GetName ().c_str ()];
+    BeAssert (primaryTable != nullptr);
+    if (relationship.IsLinkTable ())
+        {
+        auto relMap = static_cast<RelationshipClassLinkTableMapCP>(rel);
+        auto& builder = primaryTable->GetTriggersR ().Create (SqlTriggerBuilder::Type::Delete, SqlTriggerBuilder::Condition::After, false);
+        builder.GetNameBuilder ()
+            .Append (relMap->GetClass ().GetSchema ().GetNamespacePrefix ().c_str ())
+            .Append ("_")
+            .Append (relMap->GetClass ().GetName ().c_str ()).Append ("_LTCascadeDelete");
+
+        builder.GetOnBuilder ().Append (rel->GetTable ().GetName ().c_str ());
+        auto& body = builder.GetBodyBuilder ();
+
+        ECRelationshipEnd endToDelete =
+            relMap->GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+
+        auto fk = endToDelete == ECRelationshipEnd::ECRelationshipEnd_Source ? relMap->GetSourceECInstanceIdPropMap () : relMap->GetTargetECInstanceIdPropMap ();
+        auto fkColumnName = fk->GetFirstColumn ()->GetName ().c_str ();
+        for (auto endTable : GetEndTables (relMap->GetRelationshipClass (), endToDelete))
+            {
+            auto pkColumnName = endTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId)->GetName ().c_str ();
+            body.AppendFormatted ("DELETE FROM [%s] WHERE (OLD.[%s] = [%s])", endTable->GetName ().c_str (), fkColumnName, pkColumnName);
+            if (relMap->GetRelationshipClass ().GetStrength () == StrengthType::STRENGTHTYPE_Holding)
+                {
+                body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.%s) = 0", fkColumnName);
+                }
+            body.Append (";").AppendEOL ();
+            }
+        }
+    else
+        {
+        auto relMap = static_cast<RelationshipClassEndTableMapCP>(rel);
+        auto fk = relMap->GetThisEnd () == ECRelationshipEnd::ECRelationshipEnd_Target ? relMap->GetSourceECInstanceIdPropMap () : relMap->GetTargetECInstanceIdPropMap ();
+        auto fkColumnName = fk->GetFirstColumn ()->GetName ().c_str ();
+        
+        auto& builder = primaryTable->GetTriggersR ().Create (SqlTriggerBuilder::Type::UpdateOf, SqlTriggerBuilder::Condition::After, false);
+        builder.GetNameBuilder ()
+            .Append (relMap->GetClass ().GetSchema ().GetNamespacePrefix ().c_str ())
+            .Append ("_")
+            .Append (relMap->GetClass ().GetName ().c_str ()).Append ("_FKCascadeDelete");
+
+        builder.GetOnBuilder ().Append (rel->GetTable ().GetName ().c_str ());
+        builder.GetUpdateOfColumnsR ().push_back (fkColumnName);
+        builder.GetWhenBuilder ().AppendFormatted (" (OLD.[%s] IS NOT NULL) AND (NEW.[%s] IS NULL)", fkColumnName, fkColumnName);
+        auto& body = builder.GetBodyBuilder ();
+
+        ECRelationshipEnd endToDelete =
+            relMap->GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+        for (auto endTable : GetEndTables (relMap->GetRelationshipClass (), endToDelete))
+            {
+            auto pkColumnName = endTable->GetFilteredColumnFirst (ECDbKnownColumns::ECInstanceId)->GetName ().c_str ();
+            body.AppendFormatted ("DELETE FROM [%s] WHERE (OLD.[%s] = [%s])", endTable->GetName ().c_str (), fkColumnName, pkColumnName);
+            if (relMap->GetRelationshipClass ().GetStrength () == StrengthType::STRENGTHTYPE_Holding)
+                {
+                body.AppendFormatted (" AND (SELECT COUNT (*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.[%s]) = 0", fkColumnName);
+                }
+            body.Append (";").AppendEOL ();
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+BentleyStatus ECDbViewGenerator::BuildHoldingView (NativeSqlBuilder& viewSql)
+    {
+    Utf8CP sql = "SELECT Id FROM ec_Class WHERE ec_Class.RelationStrength = 1"; // Holding relationships       
+    NativeSqlBuilder::List unionList;
+    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql);
+    if (!stmt.IsValid ())
+        {
+        BeAssert (false && "Failed to prepared statement");
+        return BentleyStatus::ERROR;
+        }
+    std::map<ECDbSqlTable const*, ECDbMap::LightWeightMapCache::RelationshipEnd> doneSet;
+    while (stmt->Step () == BE_SQLITE_ROW)
+        {
+        ECClassId ecClassId = stmt->GetValueInt64 (0);
+        auto holdingRelationshipClass = m_map.GetECDbR ().Schemas ().GetECClass (ecClassId);
+        if (holdingRelationshipClass == nullptr)
+            {
+            BeAssert (false && "Fail to find class for holding relationship");
+            return BentleyStatus::ERROR;
+            }
+
+        auto holdingRelationshipClassMap = static_cast<RelationshipClassMapCP>(m_map.GetClassMap (*holdingRelationshipClass));
+        if (holdingRelationshipClassMap == nullptr || holdingRelationshipClassMap->GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+            continue;
+
+
+        Utf8CP column;
+        ECDbMap::LightWeightMapCache::RelationshipEnd filter;
+        if (holdingRelationshipClassMap->GetRelationshipClass ().GetStrengthDirection () == ECRelatedInstanceDirection::Forward)
+            {
+            column = holdingRelationshipClassMap->GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
+            filter = ECDbMap::LightWeightMapCache::RelationshipEnd::Source;
+            }
+        else
+            {
+            column = holdingRelationshipClassMap->GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ();
+            filter = ECDbMap::LightWeightMapCache::RelationshipEnd::Target;
+            }
+
+        auto table = &holdingRelationshipClassMap->GetTable ();
+        auto itor = doneSet.find (table);
+        if (itor == doneSet.end () || (((int)(itor->second) & (int)filter) == 0))
+            {
+            NativeSqlBuilder relaitonshipView;
+            relaitonshipView.Append ("SELECT ");
+            relaitonshipView.Append (column);
+            relaitonshipView.Append (" ECInstanceId FROM ").Append (table->GetName ().c_str ());
+            //relaitonshipView.Append (" WHERE (").Append (column).Append(" IS NOT NULL)").AppendEOL();
+            unionList.push_back (std::move (relaitonshipView));
+            if (itor == doneSet.end ())
+                doneSet[table] = filter;
+            else
+                doneSet[table] = static_cast<ECDbMap::LightWeightMapCache::RelationshipEnd>((int)(itor->second) & (int)(filter));
+            }
+        }
+    viewSql.Append ("DROP VIEW IF EXISTS ").Append (ECDB_HOLDING_VIEW).Append (";").AppendEOL ();
+    viewSql.Append ("CREATE VIEW ").Append (ECDB_HOLDING_VIEW).Append (" AS ").AppendEOL ();
+    if (!unionList.empty ())
+        {
+
+        for (auto& select : unionList)
+            {
+            viewSql.Append (select);
+            if (&select != &(unionList.back ()))
+                viewSql.Append (" \r\n UNION ALL \r\n");
+            }
+        viewSql.Append (";\n");
+        }
+    else
+        {
+        viewSql.Append ("SELECT NULL ECInstanceId LIMIT 0;");
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+
+
+
+//=================================================================================================================
+SqlTriggerBuilder::SqlTriggerBuilder (Type type, Condition condition, bool temprary)
+    :m_type (type), m_condition (condition), m_temprory (temprary)
+    {
+    }
+SqlTriggerBuilder::SqlTriggerBuilder (SqlTriggerBuilder && rhs)
+    :m_type (std::move (rhs.m_type)), m_condition (std::move (rhs.m_condition)), m_temprory (std::move (rhs.m_temprory)), m_name (std::move (rhs.m_name)),
+    m_when (std::move (rhs.m_when)), m_body (std::move (rhs.m_body)), m_on (rhs.m_on), m_ofColumns (std::move (rhs.m_ofColumns))
+    {
+    }
+SqlTriggerBuilder& SqlTriggerBuilder::operator = (SqlTriggerBuilder&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_type = rhs.m_type;
+        m_body = rhs.m_body;
+        m_condition = rhs.m_condition;
+        m_on = rhs.m_on;
+        m_temprory = rhs.m_temprory;
+        m_when = rhs.m_when;
+        rhs.m_ofColumns = rhs.m_ofColumns;
+        }
+
+    return *this;
+    }
+SqlTriggerBuilder& SqlTriggerBuilder::operator = (SqlTriggerBuilder const& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_type = std::move(rhs.m_type);
+        m_body = std::move (rhs.m_body);
+        m_condition = std::move (rhs.m_condition);
+        m_on = std::move (rhs.m_on);
+        m_temprory = std::move (rhs.m_temprory);
+        m_when = std::move (rhs.m_when);
+        m_ofColumns = std::move (rhs.m_ofColumns);
+        }
+
+    return *this;
+    }
+NativeSqlBuilder& SqlTriggerBuilder::GetNameBuilder () { return m_name; }
+NativeSqlBuilder& SqlTriggerBuilder::GetWhenBuilder () { return m_when; }
+NativeSqlBuilder& SqlTriggerBuilder::GetBodyBuilder () { return m_body; }
+NativeSqlBuilder& SqlTriggerBuilder::GetOnBuilder () { return m_on; }
+SqlTriggerBuilder::Type SqlTriggerBuilder::GetType () const { return m_type; }
+SqlTriggerBuilder::Condition SqlTriggerBuilder::GetCondition () const { return m_condition; }
+std::vector<Utf8String> const& SqlTriggerBuilder::GetUpdateOfColumns () const
+    {
+    BeAssert (m_type == Type::UpdateOf);
+    return m_ofColumns;
+    }
+std::vector<Utf8String>& SqlTriggerBuilder::GetUpdateOfColumnsR ()
+    {
+    BeAssert (m_type == Type::UpdateOf);
+    return m_ofColumns;
+    }
+Utf8CP SqlTriggerBuilder::GetName () const { return m_name.ToString (); }
+Utf8CP SqlTriggerBuilder::GetWhen () const { return m_when.ToString (); }
+Utf8CP SqlTriggerBuilder::GetBody () const { return m_body.ToString (); }
+Utf8CP SqlTriggerBuilder::GetOn () const { return m_on.ToString (); }
+bool SqlTriggerBuilder::IsTemprory () const { return m_temprory; }
+bool SqlTriggerBuilder::IsValid () const
+    {
+    if (m_name.IsEmpty ())
+        {
+        BeAssert (false && "Must specify a trigger name");
+        return false;
+        }
+
+    if (m_on.IsEmpty ())
+        {
+        BeAssert (false && "Must specify a trigger ON Table/View");
+        return false;
+        }
+
+    if (m_body.IsEmpty ())
+        {
+        BeAssert (false && "Must specify a trigger body");
+        return false;
+        }
+
+    if (m_type == Type::UpdateOf && m_ofColumns.empty ())
+        {
+        BeAssert (false && "For UPDATE OF trigger must specify atleast one column");
+        return false;
+        }
+
+    return true;
+    }
+const Utf8String SqlTriggerBuilder::ToString (SqlOption option, bool escape) const
+    {
+    if (!IsValid ())
+        {
+        BeAssert (false && "Trigger specification is not valid");
+        }
+
+    NativeSqlBuilder sql;
+    if (option == SqlOption::Drop || option == SqlOption::DropIfExists)
+        {
+        sql.Append ("DROP TRIGGER ").AppendIf (option == SqlOption::DropIfExists, "IF EXISTS ").AppendEscapedIf (escape, GetName ()).Append (";");
+        }
+    else
+        {
+        sql.AppendLine ("\n--### WARNING: SYSTEM GENERATED TRIGGER. DO NOT CHANGE THIS TRIGGER IN ANYWAY. ####");
+        sql.Append ("CREATE TRIGGER ").AppendIf (IsTemprory (), "TEMP ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
+        switch (m_condition)
+            {
+            case Condition::After:
+                sql.Append ("AFTER "); break;
+            case Condition::Before:
+                sql.Append ("BEFORE "); break;
+            case Condition::InsteadOf:
+                sql.Append ("INSTEAD OF "); break;
+            }
+
+        switch (m_type)
+            {
+            case Type::Delete:
+                sql.Append ("DELETE "); break;
+            case Type::Insert:
+                sql.Append ("INSERT "); break;
+            case Type::Update:
+                sql.Append ("UPDATE "); break;
+            case Type::UpdateOf:
+                sql.Append ("UPDATE OF ");
+                for (auto& column : m_ofColumns)
+                    {
+                    if (&column != &m_ofColumns.front ())
+                        sql.Append (", ");
+
+                    sql.AppendEscapedIf (escape, column.c_str ());
+                    }
+                break;
+            }
+
+        sql.AppendEOL ();
+        sql.Append ("ON ").AppendEscapedIf (escape, GetOn ()).AppendEOL ();
+        if (!m_when.IsEmpty ())
+            {
+            sql.Append ("\tWHEN ").Append (GetWhen ()).AppendEOL ();
+            }
+
+        sql.Append ("BEGIN").AppendEOL ();
+        sql.Append (GetBody ());
+        sql.Append ("END;").AppendEOL ();;
+        }
+
+    return sql.ToString ();
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -1571,6 +1571,10 @@ PropertyMapSet::Ptr PropertyMapSet::Create (IClassMap const& classMap)
         feedback = TraversalFeedback::Next;
         }, true);
 
+    for (auto const& ep : propertySet->m_orderedEndPoints)
+        {
+        propertySet->m_endPointByAccessString[ep->GetAccessString ().c_str ()] = ep.get ();
+        }
     return propertySet;
     }
 
