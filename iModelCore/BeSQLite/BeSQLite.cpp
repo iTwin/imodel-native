@@ -4000,7 +4000,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
         return BE_SQLITE_OK;
 
     DbResult rc = m_db.CreateTable(BEDB_TABLE_EmbeddedFile,
-            "Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Descr CHAR,Type CHAR,Size INT,Chunk INT,LastModified TIMESTAMP");
+            "Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE,Descr CHAR,Type CHAR,Size INT,Chunk INT,LastModified TIMESTAMP, CONSTRAINT nameAndType UNIQUE(Name,Type)");
 
     if (BE_SQLITE_OK != rc)
         return rc;
