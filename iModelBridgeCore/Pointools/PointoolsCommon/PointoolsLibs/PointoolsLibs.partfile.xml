@@ -135,16 +135,17 @@
     <SubPart PartName="BeLibxml2_VS2012" PartFile="BeLibxml2" Repository="libsrc-libxml2" LibType="static"/>
     <SubPart PartName="PublicAPI" PartFile="BeIconv" Repository="Libsrc-Iconv"/>
     <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
-    <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="libLAS_VS2012" PartFile="liblas" Repository="libsrc-libLAS" />
-    <SubPart PartName="Format_TopconCodec_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="Bin-Leica_PTZ_6_0_0" PartFile="Leica_PTZ_6_0_0"/>
+    <SubPart PartName="Format_TopconCodec_VS2012" Repository="Bin-TopconCodec" PartFile="TopconCodec"/>
     <SubPart PartName="libE57_VS2012" PartFile="libE57" Repository="libsrc-libE57"/>
-    <SubPart PartName="Format_ZF_8_5_0_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="Format_Riegl_RivLib_2_0_2_VS2012_x86" Repository="PointoolsLibs" PartFile="${SrcRoot}Bin/Riegl/rivlib-2_0_2-x86-windows-vc110/Format_Riegl_RivLib_2_0_2"/>
-    <SubPart PartName="Format_Riegl_RivLib_2_0_2_VS2012_x64" Repository="PointoolsLibs" PartFile="${SrcRoot}Bin/Riegl/rivlib-2_0_2-x86_64-windows-vc110/Format_Riegl_RivLib_2_0_2"/>
-    <SubPart PartName="Format_Riegl_RiscanLib_3_5_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="Format_Faro_5_4_3_10_VS2012_x86" Repository="PointoolsLibs" PartFile="${SrcRoot}Bin/Faro/5.4.3.10/Format_Faro_5_4_3_10"/>
-    <SubPart PartName="Format_Faro_5_4_3_10_VS2012_x64" Repository="PointoolsLibs" PartFile="${SrcRoot}Bin/Faro/5.4.3.10/Format_Faro_5_4_3_10"/>
+    <SubPart PartName="Format_ZF_8_5_0_VS2012_x86" Repository="Bin-ZF_8_5_0_VS2012_x86" PartFile="ZF_8_5_0"/>
+    <SubPart PartName="Format_ZF_8_5_0_VS2012_x64" Repository="Bin-ZF_8_5_0_VS2012_x64" PartFile="ZF_8_5_0"/>
+    <SubPart PartName="Format_Riegl_RivLib_2_0_2_VS2012_x86" Repository="Bin-Riegl_RivLib_2.0.2_VS2012_x86" PartFile="Riegl_RivLib_2_0_2"/>
+    <SubPart PartName="Format_Riegl_RivLib_2_0_2_VS2012_x64" Repository="Bin-Riegl_RivLib_2.0.2_VS2012_x64" PartFile="Riegl_RivLib_2_0_2"/>
+    <SubPart PartName="Format_Riegl_RiscanLib_3_5_VS2012" Repository="Bin-Riegl-RiscanLib_3.5" PartFile="Riegl_RiscanLib_3_5"/>
+    <SubPart PartName="Format_Faro_5_4_3_10_VS2012_x86" Repository="Bin-Faro_5.4.3.10_VS2012" PartFile="Format_Faro_5_4_3_10"/>
+    <SubPart PartName="Format_Faro_5_4_3_10_VS2012_x64" Repository="Bin-Faro_5.4.3.10_VS2012" PartFile="Format_Faro_5_4_3_10"/>
   </Part>
 
       
@@ -182,13 +183,6 @@
     </Bindings>
   </Part>
 
-  <Part Name="Format_Leica_PTZ_6_0_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\Leica\Format_Leica_PTZ_6_0_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\ptzreader80x64.dll
-      </Assemblies>
-    </Bindings>
-  </Part>
 
   <Part Name="Format_LibE57_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/Formats/LibE57/Format_LibE57.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
   </Part>
@@ -204,30 +198,6 @@
       </Assemblies>
     </Bindings>
   </Part>  
-
-  <Part Name="Format_Riegl_RiscanLib_3_5_VS2012" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO/Formats/Riegl/Format_Riegl_RiscanLib_3_5.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\scannermod.dll
-      </Assemblies>
-    </Bindings>
-  </Part>
-
-  <Part Name="Format_TopconCodec_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/Formats/Topcon/Format_TopconCodec.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\TopconCodec.dll       
-      </Assemblies>
-    </Bindings>
-  </Part>
-
-  <Part Name="Format_ZF_8_5_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\ZF\Format_ZF_8_5_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\zfs.dll
-      </Assemblies>
-    </Bindings>
-  </Part>
 
 <!--
   ********************************************************************************************************
@@ -398,13 +368,6 @@
     </Bindings>
   </Part>
 
-  <Part Name="Format_Leica_PTZ_6_0_0_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO\Formats\Leica\Format_Leica_PTZ_6_0_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\ptzreader80.dll
-      </Assemblies>
-    </Bindings>
-  </Part>
 
   <Part Name="Format_LibE57_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Formats/LibE57/Format_LibE57.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
   </Part>
@@ -434,20 +397,5 @@
     </Bindings>
   </Part>
 
-  <Part Name="Format_TopconCodec_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Formats/Topcon/Format_TopconCodec.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-        Delivery\TopconCodec.dll
-      </Assemblies>
-    </Bindings>
-  </Part>
-
-  <Part Name="Format_ZF_8_5_0_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO\Formats\ZF\Format_ZF_8_5_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
-    <Bindings>
-      <Assemblies ProductDirectoryName="PointoolsAssemblies">
-          Delivery\zfs.dll
-      </Assemblies>
-    </Bindings>
-  </Part>
   
 </BuildContext>
