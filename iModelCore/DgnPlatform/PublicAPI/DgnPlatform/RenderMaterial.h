@@ -113,6 +113,48 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 // DgnDB Only...
 #define RENDER_MATERIAL_TextureId                                  "TextureId"
 
+// These were an internal map enum in V8.  
+#define RENDER_MATERIAL_MAP_None                                   "None"                 
+#define RENDER_MATERIAL_MAP_Pattern                                "Pattern"              
+#define RENDER_MATERIAL_MAP_Bump                                   "Bump"                 
+#define RENDER_MATERIAL_MAP_Specular                               "Specular"             
+#define RENDER_MATERIAL_MAP_Reflect                                "Reflect"              
+#define RENDER_MATERIAL_MAP_Transparency                           "Transparency"         
+#define RENDER_MATERIAL_MAP_Translucency                           "Translucency"         
+#define RENDER_MATERIAL_MAP_Finish                                 "Finish"               
+#define RENDER_MATERIAL_MAP_Diffuse                                "Diffuse"              
+#define RENDER_MATERIAL_MAP_GlowAmount                             "GlowAmount"           
+#define RENDER_MATERIAL_MAP_ClearcoatAmount                        "ClearcoatAmount"      
+#define RENDER_MATERIAL_MAP_AnisotropicDirection                   "AnisotropicDirection" 
+#define RENDER_MATERIAL_MAP_SpecularColor                          "SpecularColor"        
+#define RENDER_MATERIAL_MAP_TransparentColor                       "TransparentColor"     
+#define RENDER_MATERIAL_MAP_TranslucencyColor                      "TranslucencyColor"    
+#define RENDER_MATERIAL_MAP_Displacement                           "Displacement"         
+#define RENDER_MATERIAL_MAP_Normal                                 "Normal"               
+#define RENDER_MATERIAL_MAP_FurLength                              "FurLength"            
+#define RENDER_MATERIAL_MAP_FurDensity                             "FurDensity"           
+#define RENDER_MATERIAL_MAP_FurJitter                              "FurJitter"            
+#define RENDER_MATERIAL_MAP_FurFlex                                "FurFlex"              
+#define RENDER_MATERIAL_MAP_FurClumps                              "FurClumps"            
+#define RENDER_MATERIAL_MAP_FurDirection                           "FurDirection"         
+#define RENDER_MATERIAL_MAP_FurVector                              "FurVector"            
+#define RENDER_MATERIAL_MAP_FurBump                                "FurBump"              
+#define RENDER_MATERIAL_MAP_FurCurls                               "FurCurls"             
+#define RENDER_MATERIAL_MAP_GlowColor                              "GlowColor"            
+#define RENDER_MATERIAL_MAP_ReflectColor                           "ReflectColor"         
+#define RENDER_MATERIAL_MAP_RefractionRoughness                    "RefractionRoughness"  
+#define RENDER_MATERIAL_MAP_SpecularFresnel                        "SpecularFresnel"      
+#define RENDER_MATERIAL_MAP_Geometry                               "Geometry"             
+
+
+
+
+
+
+
+
+
+
 
 // From V8 Palette Tokens.
 #define RENDER_MATERIAL_Color                                       "color" 

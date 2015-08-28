@@ -1124,6 +1124,9 @@ private:
     friend struct DgnDb;
     explicit DgnTextures (DgnDbR db) : DgnDbTable (db) { }
 
+    static uintptr_t                            s_nextQvTextureId;
+    mutable bmap <DgnTextureId, uintptr_t>      m_qvTextureIds;
+
 public:
     //! Supported texture formats. A texture's binary data is interpreted according to its specified format.
     enum class Format
@@ -1263,6 +1266,10 @@ public:
     //! @param[in]      name The name of the desired texture
     //! @return The ID of the texture with the specified name, or an invalid ID if no such texture exists.
     DGNPLATFORM_EXPORT DgnTextureId QueryTextureId (Utf8StringCR name) const;
+
+    DGNPLATFORM_EXPORT uintptr_t   GetQvTextureId (DgnTextureId TextureId) const; //!< Return nonzero QuickVision material ID for QVision for supplied material ID.
+    DGNPLATFORM_EXPORT uintptr_t   AddQvTextureId (DgnTextureId TextureId) const; //!< set QuickVision material ID for supplied material Id.
+
     };
 
 //=======================================================================================
