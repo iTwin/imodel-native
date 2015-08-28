@@ -213,7 +213,9 @@ TEST_F (AdhocPropertyTest, AdhocInterface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AdhocPropertyTest, WCharSchemaXml_FailsOnNonWindowPlatforms)
     {
+#ifdef BENTLEY_WIN32
     EXPECT_EQ (SUCCESS, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *context));
+#endif
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
