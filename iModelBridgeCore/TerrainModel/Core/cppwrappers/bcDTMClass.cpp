@@ -3988,7 +3988,7 @@ DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformed
         Bentley::Transform trfs;
         Bentley::Transform curTrfs;
 
-        if (_dtmTransformHelper.IsValid() && _dtmTransformHelper->GetTransformation (curTrfs))
+        if (_dtmTransformHelper.IsValid() && _dtmTransformHelper->GetTransformationFromDTM (curTrfs))
             trfs.productOf (&curTrfs, &transformation);
         else
             trfs = transformation;
@@ -4022,7 +4022,7 @@ TMTransformHelperP BcDTM::GetTransformHelper ()
 bool BcDTM::_GetTransformation (TransformR transformation)
     {
     if (_dtmTransformHelper.IsValid ())
-        return _dtmTransformHelper->GetTransformation (transformation);
+        return _dtmTransformHelper->GetTransformationFromDTM (transformation);
     transformation.initIdentity();
     return true;
     }
