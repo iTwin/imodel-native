@@ -60,6 +60,11 @@ void DgnDb::Destroy()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::~DgnDb()
     {
+    if (m_txnManager.IsValid() && m_txnManager->HasChanges())
+        {
+        BeAssert(false && "Make sure you save your outstanding Txn before deleting a DgnDb");
+        SaveChanges(); // make sure we save changes before we remove the change tracker (really, the app shouldn't have left them uncommitted!)
+        }
     Destroy();
     }
 

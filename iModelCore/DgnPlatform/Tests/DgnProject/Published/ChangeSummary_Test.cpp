@@ -46,7 +46,7 @@ protected:
     DgnElement::Code MakeElementCode (Utf8CP text) { return DgnElement::Code (Utf8PrintfString("%s - %u", text, ++m_uniqueCodeAutoIncrement)); }
 public:
     ChangeSummaryTestFixture() : GenericDgnModelTestFixture(__FILE__, true), m_uniqueCodeAutoIncrement(0) {}
-    virtual ~ChangeSummaryTestFixture() {}
+    virtual ~ChangeSummaryTestFixture() {m_testDb->SaveChanges();}
     virtual void SetUp() override {}
     virtual void TearDown() override {}
 };
