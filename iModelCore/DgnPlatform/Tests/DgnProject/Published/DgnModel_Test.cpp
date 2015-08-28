@@ -595,6 +595,7 @@ TEST_F(DgnModelTests, ImportElementsWithAuthorities)
         ASSERT_NE( daid , sourceAuthorityId ) << "Authority ID should have been remapped";
         DgnAuthorities::Authority destAuthority = db2->Authorities().Query(daid);
         ASSERT_STREQ( destAuthority.GetName().c_str(), "TestAuthority" );
+        db2->SaveChanges();
         }
     }
 
