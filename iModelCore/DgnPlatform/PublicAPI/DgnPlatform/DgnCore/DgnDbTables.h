@@ -1321,7 +1321,7 @@ public:
         Utf8StringCR GetName() const {return m_name;}   //!< The name of this material.
         Utf8StringCR GetPalette() const {return m_palette;} //!< The name of this material's palette.
         Utf8StringCR GetValue() const {return m_value;} //!< JSON representation of this material.
-        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.
+        Utf8StringCR GetDescr() const {return m_descr;} //!< Description of this material.                                                                              
         void SetName(Utf8CP val) {m_name = val;} //!< Sets the name of this material.
         void SetPalette(Utf8CP val) {m_palette = val;} //!< Sets the name of this material's palette.
         void SetValue(Utf8CP val) {m_value = val;} //!< Sets the JSON representation of this material.

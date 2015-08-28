@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/RenderMaterial.h $
+|     $Source: PublicAPI/DgnPlatform/DgnCore/RenderMaterial.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,43 +10,79 @@
 //__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
 //=======================================================================================
 // @bsiclass                                             
 //=======================================================================================
-enum MapType
-    {
-    MAPTYPE_None                    = 0,
-    MAPTYPE_Pattern                 = 1,
-    MAPTYPE_Bump                    = 2,
-    MAPTYPE_Specular                = 3,
-    MAPTYPE_Reflect                 = 4,
-    MAPTYPE_Transparency            = 5,
-    MAPTYPE_Translucency            = 6,
-    MAPTYPE_Finish                  = 7,
-    MAPTYPE_Diffuse                 = 8,
-    MAPTYPE_GlowAmount              = 9,
-    MAPTYPE_ClearcoatAmount         = 10,
-    MAPTYPE_AnisotropicDirection    = 11,
-    MAPTYPE_SpecularColor           = 12,
-    MAPTYPE_TransparentColor        = 13,
-    MAPTYPE_TranslucencyColor       = 14,
-    MAPTYPE_Displacement            = 15,
-    MAPTYPE_Normal                  = 16,
-    MAPTYPE_FurLength               = 17,
-    MAPTYPE_FurDensity              = 18,
-    MAPTYPE_FurJitter               = 19,
-    MAPTYPE_FurFlex                 = 20,
-    MAPTYPE_FurClumps               = 21,
-    MAPTYPE_FurDirection            = 22,
-    MAPTYPE_FurVector               = 23,
-    MAPTYPE_FurBump                 = 24,
-    MAPTYPE_FurCurls                = 25,
-    MAPTYPE_GlowColor               = 26,
-    MAPTYPE_ReflectColor            = 27,
-    MAPTYPE_RefractionRoughness     = 28,
-    MAPTYPE_SpecularFresnel         = 29,
-    MAPTYPE_Geometry                = 30,
-    };
+struct RenderMaterial
+{
+
+    enum class MapType
+        {
+        None                    = 0,
+        Pattern                 = 1,
+        Bump                    = 2,
+        Specular                = 3,
+        Reflect                 = 4,
+        Transparency            = 5,
+        Translucency            = 6,
+        Finish                  = 7,
+        Diffuse                 = 8,
+        GlowAmount              = 9,
+        ClearcoatAmount         = 10,
+        AnisotropicDirection    = 11,
+        SpecularColor           = 12,
+        TransparentColor        = 13,
+        TranslucencyColor       = 14,
+        Displacement            = 15,
+        Normal                  = 16,
+        FurLength               = 17,
+        FurDensity              = 18,
+        FurJitter               = 19,
+        FurFlex                 = 20,
+        FurClumps               = 21,
+        FurDirection            = 22,
+        FurVector               = 23,
+        FurBump                 = 24,
+        FurCurls                = 25,
+        GlowColor               = 26,
+        ReflectColor            = 27,
+        RefractionRoughness     = 28,
+        SpecularFresnel         = 29,
+        Geometry                = 30,
+        };
+
+    enum class MapMode : int
+        {
+        None                    = -1,
+        Parametric              = 0,
+        ElevationDrape          = 1,
+        Planar                  = 2,
+        DirectionalDrape        = 3,
+        Cubic                   = 4,
+        Spherical               = 5,
+        Cylindrical             = 6,
+        Solid                   = 7,
+        //! Only valid for lights.
+        FrontProject            = 8,
+        };
+
+    enum class MapUnits
+        {
+        Relative               = 0,
+        Meters                 = 3,
+        Millimeters            = 4,
+        Feet                   = 5,
+        Inches                 = 6,
+        };
+
+    DGNPLATFORM_EXPORT static Json::Value      GetLastDataLayerFromMap (Json::Value const& map);
+    DGNPLATFORM_EXPORT static double           GetMapUnitScale (MapUnits mapUnits);
+
+
+};  // RenderMaterial.
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 
@@ -80,35 +116,36 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 // From DgnMaterial.cpp Internal Tags.
 #define RENDER_MATERIAL_FileName                                    "Filename"
+#define RENDER_MATERIAL_Layer                                       "layer"
 #define RENDER_MATERIAL_Type                                        "Type"
 #define RENDER_MATERIAL_Map                                         "Map"
 #define RENDER_MATERIAL_Shader                                      "Shader"
 #define RENDER_MATERIAL_Fur                                         "Fur"
-#define RENDER_MATERIAL_Flags                                      "Flags"
-#define RENDER_MATERIAL_BumpFlags                                  "BumpFlags"
-#define RENDER_MATERIAL_PatternFlags                               "PatternFlags"
-#define RENDER_MATERIAL_SpecularFlags                              "SpecularFlags"
-#define RENDER_MATERIAL_ReflectFlags                               "ReflectFlags"
-#define RENDER_MATERIAL_TransparencyFlags                          "TransparencyFlags"
-#define RENDER_MATERIAL_TranslucencyFlags                          "TranslucencyFlags"
-#define RENDER_MATERIAL_FinishFlags                                "FinishFlags"
-#define RENDER_MATERIAL_DiffuseFlags                               "DiffuseFlags"
-#define RENDER_MATERIAL_GlowAmountFlags                            "GlowAmountFlags"
-#define RENDER_MATERIAL_ClearcoatAmountFlags                       "ClearcoatAmountFlags"
-#define RENDER_MATERIAL_AnisotropicDirectionFlags                  "AnisotropicDirectionFlags"
-#define RENDER_MATERIAL_DisplacementFlags                          "DisplacementFlags"
-#define RENDER_MATERIAL_NormalFlags                                "NormalFlags"
-#define RENDER_MATERIAL_FurLengthFlags                             "FurLengthFlags"
-#define RENDER_MATERIAL_FurDensityFlags                            "FurDensityFlags"
-#define RENDER_MATERIAL_FurJitterFlags                             "FurJitterFlags"
-#define RENDER_MATERIAL_FurFlexFlags                               "FurFlexFlags"
-#define RENDER_MATERIAL_FurClumpsFlags                             "FurClumpsFlags"
-#define RENDER_MATERIAL_FurDirectionFlags                          "FurDirectionFlags"
-#define RENDER_MATERIAL_FurVectorFlags                             "FurVectorFlags"
-#define RENDER_MATERIAL_FurBumpFlags                               "FurBumpFlags"
-#define RENDER_MATERIAL_FurCurlsFlags                              "FurCurlsFlags"
-#define RENDER_MATERIAL_RefractionRoughnessFlags                   "RefractionRoughnessFlags"
-#define RENDER_MATERIAL_SpecularFresnelFlags                       "SpecularFresnelFlags"
+#define RENDER_MATERIAL_Flags                                       "Flags"
+#define RENDER_MATERIAL_BumpFlags                                   "BumpFlags"
+#define RENDER_MATERIAL_PatternFlags                                "PatternFlags"
+#define RENDER_MATERIAL_SpecularFlags                               "SpecularFlags"
+#define RENDER_MATERIAL_ReflectFlags                                "ReflectFlags"
+#define RENDER_MATERIAL_TransparencyFlags                           "TransparencyFlags"
+#define RENDER_MATERIAL_TranslucencyFlags                           "TranslucencyFlags"
+#define RENDER_MATERIAL_FinishFlags                                 "FinishFlags"
+#define RENDER_MATERIAL_DiffuseFlags                                "DiffuseFlags"
+#define RENDER_MATERIAL_GlowAmountFlags                             "GlowAmountFlags"
+#define RENDER_MATERIAL_ClearcoatAmountFlags                        "ClearcoatAmountFlags"
+#define RENDER_MATERIAL_AnisotropicDirectionFlags                   "AnisotropicDirectionFlags"
+#define RENDER_MATERIAL_DisplacementFlags                           "DisplacementFlags"
+#define RENDER_MATERIAL_NormalFlags                                 "NormalFlags"
+#define RENDER_MATERIAL_FurLengthFlags                              "FurLengthFlags"
+#define RENDER_MATERIAL_FurDensityFlags                             "FurDensityFlags"
+#define RENDER_MATERIAL_FurJitterFlags                              "FurJitterFlags"
+#define RENDER_MATERIAL_FurFlexFlags                                "FurFlexFlags"
+#define RENDER_MATERIAL_FurClumpsFlags                              "FurClumpsFlags"
+#define RENDER_MATERIAL_FurDirectionFlags                           "FurDirectionFlags"
+#define RENDER_MATERIAL_FurVectorFlags                              "FurVectorFlags"
+#define RENDER_MATERIAL_FurBumpFlags                                "FurBumpFlags"
+#define RENDER_MATERIAL_FurCurlsFlags                               "FurCurlsFlags"
+#define RENDER_MATERIAL_RefractionRoughnessFlags                    "RefractionRoughnessFlags"
+#define RENDER_MATERIAL_SpecularFresnelFlags                        "SpecularFresnelFlags"
 
 // DgnDB Only...
 #define RENDER_MATERIAL_TextureId                                  "TextureId"
