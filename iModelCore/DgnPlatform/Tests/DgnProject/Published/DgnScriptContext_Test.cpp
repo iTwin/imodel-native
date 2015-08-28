@@ -182,7 +182,7 @@ struct DetectJsErrors : DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler
     {
     void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details) override
         {
-        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s | %s", (int)category, description, details);
+        FAIL() << (Utf8CP)Utf8PrintfString("JS error %x: %s , %s", (int)category, description, details);
         }
     };
 
