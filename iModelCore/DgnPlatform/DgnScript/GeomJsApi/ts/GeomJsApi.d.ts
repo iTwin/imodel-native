@@ -10,12 +10,12 @@ declare module BentleyApi.Dgn {
         Clone () : JsDPoint3dP;
 
         Interpolate (fraction : cxx_double, right : JsDPoint3dP) : JsDPoint3dP;
-        PlusVector (vector : JsDVector3dP) : JsDPoint3dP;
-        MinusVector (vector : JsDVector3dP) : JsDPoint3dP;
-        PlusScaledVector (vector : JsDVector3dP, scalar : cxx_double) : JsDPoint3dP;
-        Plus2ScaledVectors (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double) : JsDPoint3dP;
+        Plus (vector : JsDVector3dP) : JsDPoint3dP;
+        Minus (vector : JsDVector3dP) : JsDPoint3dP;
+        PlusScaled (vector : JsDVector3dP, scalar : cxx_double) : JsDPoint3dP;
+        Plus2Scaled (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double) : JsDPoint3dP;
 
-        Plus3ScaledVectors (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double, vectorC : JsDVector3dP, scalarC : cxx_double) : JsDPoint3dP;
+        Plus3Scaled (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double, vectorC : JsDVector3dP, scalarC : cxx_double) : JsDPoint3dP;
 
         Distance (other : JsDPoint3dP) : cxx_double;
         DistanceSquared (other : JsDPoint3dP) : cxx_double;        
@@ -32,6 +32,10 @@ declare module BentleyApi.Dgn {
         Y: cxx_double;
         OnDispose(): void;
         Dispose(): void;
+
+
+        Distance(other: JsDPoint2dP): cxx_double;
+        DistanceSquared(other: JsDPoint2dP): cxx_double;        
     }
 
 
@@ -67,21 +71,16 @@ declare module BentleyApi.Dgn {
     FromCCWPerpendicularXY (source : JsDVector3dP) : JsDVector3dP;  
     FromRotate90Towards (source : JsDVector3dP, target : JsDVector3dP) : JsDVector3dP;
     static FromRotate90Around (source : JsDVector3dP, axis : JsDVector3dP) : JsDVector3dP;
-    static FromXYAngleAndMagnitude (angle : cxx_double, magnitude : cxx_double) : JsDVector3dP;
-    static FromInterpolate (vectorA : JsDVector3dP, fraction : cxx_double, vectorB : JsDVector3dP) : JsDVector3dP;
-
-    static FromAdd2Scaled (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double) : JsDVector3dP;
-    static FromAdd3Scaled (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double, vectorC : JsDVector3dP, scaleC : cxx_double) : JsDVector3dP;
 
 
-    PlusVector (vectorB : JsDVector3dP) : JsDVector3dP;
-    MinusVector (vectorB : JsDVector3dP) : JsDVector3dP;
+    static FromXYAngleAndMagnitude(angle: cxx_double, magnitude: cxx_double): JsDVector3dP;
 
-
-    PlusScaledVector (vectorB : JsDVector3dP, scalar : cxx_double) : JsDVector3dP;
-
-    Plus2ScaledVectors (vectorA : JsDVector3dP, scaleA : cxx_double, vectorB : JsDVector3dP, scaleB : cxx_double) : JsDVector3dP;
-
+    Interpolate(fraction: cxx_double, right: JsDVector3dP): JsDVector3dP;
+    Plus(vector: JsDVector3dP): JsDVector3dP;
+    Minus(vector: JsDVector3dP): JsDVector3dP;
+    PlusScaled(vector: JsDVector3dP, scalar: cxx_double): JsDVector3dP;
+    Plus2Scaled(vectorA: JsDVector3dP, scalarA: cxx_double, vectorB: JsDVector3dP, scalarB: cxx_double): JsDVector3dP;
+    Plus3Scaled(vectorA: JsDVector3dP, scalarA: cxx_double, vectorB: JsDVector3dP, scalarB: cxx_double, vectorC: JsDVector3dP, scalarC: cxx_double): JsDVector3dP;
 
 
     Scale (scale : cxx_double) : JsDVector3dP;

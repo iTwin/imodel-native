@@ -29,6 +29,10 @@ public:
     double GetY() {return m_data.y;}
     void SetX(double v) {m_data.x = v;}
     void SetY(double v) {m_data.y = v;}
+    
+    double Distance (JsDPoint2dP other){return m_data.Distance (other->m_data);}
+    double DistanceSquared (JsDPoint2dP other){return m_data.DistanceSquared (other->m_data);}
+    
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

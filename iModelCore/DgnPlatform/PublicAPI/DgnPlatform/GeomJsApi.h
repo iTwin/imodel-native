@@ -58,6 +58,26 @@ JSSTRUCT(JsPolyfaceVisitor)
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
+// Consistent method names for A.Plus(U) === A+U and similar expressions.
+// To be expanded in DPoint2d, DPoint3d, DVector2d, DVector3d with "AType" as the immediate class
+// and "BType" as the vector type.
+// ASSUME there is a GetData (BTypeP) method.
+#define VectorAdditionMethods(NativeType,AType,ATypeP,BTypeP) \
+    ATypeP Interpolate (double fraction, ATypeP right)\
+        {return new AType(NativeType::FromInterpolate(m_data, fraction,right->m_data));}\
+    ATypeP Plus (BTypeP vector)\
+        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vector))); }\
+    ATypeP Minus (BTypeP vector)\
+        {return new AType (NativeType::FromSumOf (m_data, GetDVec3d (vector), -1.0));}\
+    ATypeP PlusScaled (BTypeP vector,double scalar)\
+        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vector), scalar));}\
+    ATypeP Plus2Scaled (BTypeP vectorA, double scalarA,  BTypeP vectorB, double scalarB)\
+        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vectorA), scalarA, GetDVec3d(vectorB),scalarB)); }\
+    ATypeP Plus3Scaled (BTypeP vectorA, double scalarA,  BTypeP vectorB, double scalarB, BTypeP vectorC, double scalarC)\
+        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vectorA), scalarA, GetDVec3d(vectorB),scalarB,  GetDVec3d(vectorC),scalarC));}
+
+
+
 #include <DgnPlatform/GeomJsTypes/JsAngle.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint2d.h>

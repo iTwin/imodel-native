@@ -67,16 +67,16 @@ module DgnScriptTests {
         checker.CheckBool(true, u.IsParallelTo(v));
     }
     function Adding(u: BentleyApi.Dgn.JsDVector3d, v: BentleyApi.Dgn.JsDVector3d, w: BentleyApi.Dgn.JsDVector3d): void {
-        var vu = v.PlusVector(u);
-        var uv = u.PlusVector(v);
-        var v2 = uv.MinusVector (u);
-        var uvFromAdd2 = BentleyApi.Dgn.JsDVector3d.FromAdd2Scaled(u, 1, v, 2);
+        var vu = v.Plus(u);
+        var uv = u.Plus(v);
+        var v2 = uv.Minus (u);
+        var uvFromAdd2 = u.PlusScaled (v, 2);
         checker.IsNearJsDVector3d(vu, uv);
         checker.IsNearJsDVector3d(v2, v);
-        var uvAddScaled = u.PlusScaledVector(v, 2);
+        var uvAddScaled = u.PlusScaled (v, 2);
         checker.NearDouble(uvAddScaled.Magnitude(), uvFromAdd2.Magnitude(), true);
-        var vuwFromAdd3 = BentleyApi.Dgn.JsDVector3d.FromAdd3Scaled(u, 1, v, 1, w, 1);
-        var uvw = uv.PlusVector (w);
+        var vuwFromAdd3 = u.Plus2Scaled (v, 1, w, 1);
+        var uvw = uv.Plus (w);
         checker.IsNearJsDVector3d(vuwFromAdd3, uvw);
         vu = vu.ScaleToLength(2);
         uv = uv.Normalize();
@@ -97,7 +97,7 @@ module DgnScriptTests {
     }
     function Distances(u: BentleyApi.Dgn.JsDVector3d, v: BentleyApi.Dgn.JsDVector3d): void {
         var Dist = u.Distance(v);
-        var uv = u.MinusVector (v);
+        var uv = u.Minus (v);
         checker.NearDouble(Dist, uv.Magnitude(), true);
         var DistSq = u.DistanceSquared(v);
         var uvMagnitudeSq = uv.MagnitudeSquared();

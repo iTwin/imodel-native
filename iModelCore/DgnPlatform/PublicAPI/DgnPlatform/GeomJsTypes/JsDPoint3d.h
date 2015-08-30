@@ -35,33 +35,9 @@ public:
     void SetZ(double v) {m_data.z = v;}
 
     JsDPoint3dP Clone () {return new JsDPoint3d (m_data);}
-    
-    JsDPoint3dP Interpolate (double fraction, JsDPoint3dP right)
-        {
-        return new JsDPoint3d(DPoint3d::FromInterpolate(m_data, fraction,right->m_data));
-        }
-    JsDPoint3dP PlusVector (JsDVector3dP vector)
-        {
-        return new JsDPoint3d(DPoint3d::FromSumOf(m_data, GetDVec3d (vector))); 
-        }
-    JsDPoint3dP MinusVector (JsDVector3dP vector)
-        {
-        return new JsDPoint3d (DPoint3d::FromSumOf (m_data, GetDVec3d (vector), -1.0));
-        }
-    JsDPoint3dP PlusScaledVector(JsDVector3dP vector,double scalar)
-        {
-        return new JsDPoint3d(DPoint3d::FromSumOf(m_data, GetDVec3d (vector), scalar)); 
-        }
-     JsDPoint3dP Plus2ScaledVectors (JsDVector3dP vectorA, double scalarA,  JsDVector3dP vectorB, double scalarB)
-        {
-        return new JsDPoint3d(DPoint3d::FromSumOf(m_data, GetDVec3d (vectorA), scalarA, GetDVec3d(vectorB),scalarB)); 
-        }
-    
-     JsDPoint3dP Plus3ScaledVectors(JsDVector3dP vectorA, double scalarA,  JsDVector3dP vectorB, double scalarB, JsDVector3dP vectorC, double scalarC)
-        {
-        return new JsDPoint3d(DPoint3d::FromSumOf(m_data, GetDVec3d (vectorA), scalarA, GetDVec3d(vectorB),scalarB,  GetDVec3d(vectorC),scalarC)); 
-        }
         
+    VectorAdditionMethods(DPoint3d,JsDPoint3d,JsDPoint3dP,JsDVector3dP)
+
     double Distance (JsDPoint3dP other){return m_data.Distance (other->m_data);}
     double DistanceSquared (JsDPoint3dP other){return m_data.DistanceSquared (other->m_data);}
 

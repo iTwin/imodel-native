@@ -83,42 +83,8 @@ static JsDVector3dP FromXYAngleAndMagnitude (double angle, double magnitude)
     {
     return new JsDVector3d(DVec3d::FromXYAngleAndMagnitude(angle, magnitude));
     }
-static JsDVector3dP FromInterpolate (JsDVector3dP vectorA, double fraction, JsDVector3dP vectorB)
-    {
-    return new JsDVector3d(DVec3d::FromInterpolate(vectorA->Get(),fraction, vectorB->Get()));
-    }
 
-static JsDVector3dP FromAdd2Scaled (JsDVector3dP vectorA, double scaleA,JsDVector3dP vectorB, double scaleB)
-    {
-    return new JsDVector3d(DVec3d::FromSumOf(vectorA->Get(),scaleA, vectorB->Get(),scaleB));
-    }
-static JsDVector3dP FromAdd3Scaled (JsDVector3dP vectorA, double scaleA, JsDVector3dP vectorB, double scaleB, JsDVector3dP vectorC, double scaleC)
-    {
-    return new JsDVector3d(DVec3d::FromSumOf(vectorA->Get(),scaleA, vectorB->Get(),scaleB, vectorC->Get(), scaleC));
-    }
-    
-    
- JsDVector3dP PlusVector (JsDVector3dP vectorB)
-    {
-    return new JsDVector3d(DVec3d::FromSumOf(m_data,vectorB->Get()));
-    }
- JsDVector3dP MinusVector (JsDVector3dP vectorB)
-    {
-    return new JsDVector3d(DVec3d::FromSumOf(m_data, 1.0, vectorB->Get(), -1.0));
-    }
-
-
- JsDVector3dP PlusScaledVector (JsDVector3dP vectorB, double scalar)
-    {
-    return new JsDVector3d(DVec3d::FromSumOf(m_data,1.0,vectorB->Get(),scalar));
-    }
-
- JsDVector3dP Plus2ScaledVectors (JsDVector3dP vectorA, double scaleA, JsDVector3dP vectorB, double scaleB)
-    {
-    return new JsDVector3d(DVec3d::FromSumOf(m_data,1.0,vectorA->Get(),scaleA, vectorB->Get (), scaleB));
-    }
-
-
+    VectorAdditionMethods(DVec3d,JsDVector3d,JsDVector3dP,JsDVector3dP)
 
  JsDVector3dP Scale (double scale)
     {
