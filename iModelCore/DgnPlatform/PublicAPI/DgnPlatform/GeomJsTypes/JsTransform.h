@@ -84,7 +84,7 @@ public:
         }
         
 
-    JsDPoint3dP MultiplyXYZ (JsDPoint3dP Point, double x, double y, double z)
+    JsDPoint3dP MultiplyXYZ (double x, double y, double z)
         {
         DVec3d result;
         m_data.Multiply (result, x, y, z);
@@ -104,14 +104,14 @@ public:
         return new JsDVector3d (result);
         }        
 
-    JsDVector3dP MultiplyXYZMatrixOnly (JsDVector3dP vector, double x, double y, double z)
+    JsDVector3dP MultiplyXYZMatrixOnly (double x, double y, double z)
         {
         DVec3d result;
         m_data.MultiplyMatrixOnly (result, x, y, z);
         return new JsDVector3d (result);
         }        
         
-    JsDVector3dP MultiplyTransposeXYZMatrixOnly (JsDVector3dP vector, double x, double y, double z)
+    JsDVector3dP MultiplyTransposeXYZMatrixOnly (double x, double y, double z)
         {
         DVec3d result;
         m_data.MultiplyTransposeMatrixOnly (result, x, y, z);

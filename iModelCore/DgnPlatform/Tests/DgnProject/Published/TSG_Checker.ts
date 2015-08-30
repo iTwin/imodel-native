@@ -1,6 +1,7 @@
 //! Script that is executed by one of the unit tests in DgnScriptContext_Test.cpp
 module DgnScriptChecker {
     BentleyApi.Dgn.JsUtils.ReportError(':Checker A');
+
     export class Checker {
         AbsTol: number;
         RelTol: number;
@@ -15,7 +16,7 @@ module DgnScriptChecker {
         Abs(a: number) : number { return a >= 0 ? a : -a; }
         ConstructErrorString(a: number, b: number) : string 
             {
-            var labelA = "Value of A was: "
+            var labelA = ":Value of A was: "
             var labelB = " Value of B was: "
             var fullA = labelA.concat(a.toString());
             var fullB = labelB.concat(b.toString());
@@ -39,7 +40,7 @@ module DgnScriptChecker {
                 && this.NearDouble(this.Abs(a.Z - b.Z), 0.0, false)
                 )
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError('NearPoint');
+            BentleyApi.Dgn.JsUtils.ReportError(':NearPoint');
             return false;
         }
         IsNearJsDVector3d(a: BentleyApi.Dgn.JsDVector3d, b: BentleyApi.Dgn.JsDVector3d) {
@@ -48,7 +49,7 @@ module DgnScriptChecker {
                 && this.NearDouble(this.Abs(a.Z - b.Z), 0.0, false)
                 )
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError('NearVector');
+            BentleyApi.Dgn.JsUtils.ReportError(':NearVector');
             return false;
         }
         IsNearJsRotmatrix(b: BentleyApi.Dgn.JsRotMatrix, c: BentleyApi.Dgn.JsRotMatrix, reportError: boolean): boolean
@@ -58,14 +59,14 @@ module DgnScriptChecker {
             if(reportError)
             return(this.NearDouble(a,a+d,true));
             else
-                BentleyApi.Dgn.JsUtils.ReportError('NearRotmatrix');
+                BentleyApi.Dgn.JsUtils.ReportError(':NearRotmatrix');
             }
 
         CheckBool(a: boolean, b: boolean) : boolean
             {
             if(a==b)
                 return true;
-            BentleyApi.Dgn.JsUtils.ReportError("Not Equal");
+            BentleyApi.Dgn.JsUtils.ReportError(":Not Equal");
             return false;
             }
     }

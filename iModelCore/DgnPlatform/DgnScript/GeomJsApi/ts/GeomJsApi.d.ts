@@ -340,14 +340,14 @@ declare module BentleyApi.Dgn {
         MultiplyPoint (Point : JsDPoint3dP) : JsDPoint3dP;
             
 
-        MultiplyXYZ (Point : JsDPoint3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDPoint3dP;        
+        MultiplyXYZ (x : cxx_double, y : cxx_double, z : cxx_double) : JsDPoint3dP;        
             
         MultiplyMatrixOnly (vector : JsDVector3dP) : JsDVector3dP;        
         MultiplyTransposeMatrixOnly (vector : JsDVector3dP) : JsDVector3dP;        
 
-        MultiplyXYZMatrixOnly (vector : JsDVector3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyXYZMatrixOnly (x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
             
-        MultiplyTransposeXYZMatrixOnly (vector : JsDVector3dP, x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
+        MultiplyTransposeXYZMatrixOnly (x : cxx_double, y : cxx_double, z : cxx_double) : JsDVector3dP;        
 
         Solve (rightHandSide : JsDPoint3dP) : JsDPoint3dP;
 
