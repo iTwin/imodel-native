@@ -127,3 +127,36 @@ DgnAuthorityId DgnAuthorities::Iterator::Entry::GetId() const   { Verify(); retu
 Utf8CP DgnAuthorities::Iterator::Entry::GetName() const         { Verify(); return m_sql->GetValueText (1); }
 Utf8CP DgnAuthorities::Iterator::Entry::GetUri() const          { Verify(); return m_sql->GetValueText (2); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityId DgnImportContext::RemapAuthorityId(DgnAuthorityId source)
+    {
+    if (!IsBetweenDbs())
+        return source;
+
+    DgnAuthorityId dest = m_remap.Find(source);
+    if (dest.IsValid())
+        return dest;
+
+    DgnAuthorities::Authority sourceAuthority = m_sourceDb.Authorities().Query(source);
+    if (!sourceAuthority.IsValid())
+        {
+        BeDataAssert(false && "Missing source authority");
+        return source;
+        }
+
+    dest = m_destDb.Authorities().QueryAuthorityId(sourceAuthority.GetName());
+    if (!dest.IsValid())
+        {
+        DgnAuthorities::Authority destAuthority (sourceAuthority.GetName().c_str(), sourceAuthority.GetUri().c_str());
+        dest = m_destDb.Authorities().Insert(destAuthority);
+        if (!dest.IsValid())
+            {
+            BeDataAssert(false && "Invalid source authority");
+            return source;
+            }
+        }
+
+    return m_remap.Add(source, dest);
+    }

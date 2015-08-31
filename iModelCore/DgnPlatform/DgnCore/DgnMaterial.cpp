@@ -104,7 +104,9 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                   08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-uintptr_t   DgnMaterials::AddQvMaterialId (DgnMaterialId materialId) const        { return (m_qvMaterialIds[materialId] = ++m_nextQvMaterialId); }
+uintptr_t   DgnMaterials::s_nextQvMaterialId;
+
+uintptr_t   DgnMaterials::AddQvMaterialId (DgnMaterialId materialId) const        { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
 uintptr_t   DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
     {
     auto const&   found = m_qvMaterialIds.find(materialId);

@@ -1386,11 +1386,7 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
         if (!cc.IsValid() || (DgnDbStatus::Success != status))
             {
             // *** TBD: Record failure somehow
-            continue;
-            }
-        if (DgnDbStatus::Success != status)
-            {
-            // *** TBD: Record failure somehow
+            BeDataAssert(false && "element import failure -- probably a duplicate code");
             continue;
             }
 
@@ -1442,6 +1438,7 @@ DgnDbStatus DgnModel::_ImportElementAspectsFrom(DgnModelCR sourceModel, DgnImpor
         if (!ccitem.IsValid())
             {
             // *** TBD: Record failure somehow
+            BeDataAssert(false && "item import failure");
             continue;
             }
 

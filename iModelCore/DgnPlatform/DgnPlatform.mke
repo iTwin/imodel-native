@@ -312,6 +312,8 @@ $(o)ECUtils$(oext) : $(DgnCoreDir)ECUtils.cpp $(DgnPlatformAPISrc)ECUtils.h ${Mu
 
 $(o)ModelSolverDef$(oext) : $(DgnCoreDir)ModelSolverDef.cpp $(DgnCoreAPISrc)ModelSolverDef.h ${MultiCompileDepends}
 
+$(o)RenderMaterial$(oext) : $(DgnCoreDir)RenderMaterial.cpp $(DgnCoreAPISrc)RenderMaterial.h ${MultiCompileDepends}
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------

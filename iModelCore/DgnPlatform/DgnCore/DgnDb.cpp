@@ -60,6 +60,11 @@ void DgnDb::Destroy()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::~DgnDb()
     {
+    if (m_txnManager.IsValid() && m_txnManager->HasChanges())
+        {
+        BeAssert(false && "Make sure you save your outstanding Txn before deleting a DgnDb");
+        SaveChanges(); // make sure we save changes before we remove the change tracker (really, the app shouldn't have left them uncommitted!)
+        }
     Destroy();
     }
 
@@ -216,8 +221,7 @@ DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDb
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Reclaims disk space by vacuuming the database
-* @bsimethod                                                    KeithBentley    12/00
+* @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnDb::CompactFile()
     {
@@ -228,13 +232,12 @@ DgnDbStatus DgnDb::CompactFile()
     if (savepoint)
         savepoint->Commit(nullptr);
 
-    if (BE_SQLITE_OK != TryExecuteSql("VACUUM"))
-        return  DgnDbStatus::SQLiteError;
-    
+    DbResult rc= TryExecuteSql("VACUUM");
+
     if (savepoint)
         savepoint->Begin();
 
-    return DgnDbStatus::Success;
+    return BE_SQLITE_OK != rc ? DgnDbStatus::SQLiteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,19 +271,12 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, SqlPrintfString(
-        "INSERT %s INTO be_Prop (Namespace,  Name, Id, SubId, TxnMode, StrData) " 
-                       "VALUES('dgn_Script',?,?,?,0,?)", updateExisting ? "OR REPLACE" : ""));
-    stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
-    stmt.BindInt(2, 0);
-    stmt.BindInt(3, (int)stype);
-    stmt.BindText(4, tsProgramText, Statement::MakeCopy::No);
-    DbResult res = stmt.Step();
+    DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
+    if (BE_SQLITE_OK != files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts")
+     || BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, true))
+        return DgnDbStatus::SQLiteError;
     
-    NativeLogging::LoggingManager::GetLogger("DgnScript")->infov ("Registering %s -> %d", tsProgramName, res);
-    
-    return (BE_SQLITE_DONE == res)? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -288,17 +284,24 @@ DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProg
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred)
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT StrData,SubId FROM be_Prop WHERE (Namespace='dgn_Script' AND Name=? AND Id=?)");
-    stmt.BindText(1, sName, Statement::MakeCopy::No);
-    stmt.BindInt(2, 0);
-    if (stmt.Step() != BE_SQLITE_ROW)
+    DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
+    uint64_t size;
+    Utf8String ftype;
+    auto id = files.QueryFile(sName, &size, nullptr, nullptr, &ftype, nullptr);
+    if (!id.IsValid())
         return DgnDbStatus::NotFound;
-    do  {
-        sText = stmt.GetValueText(0);
-        stypeFound = (DgnScriptType)stmt.GetValueInt(1);
-        }
-    while ((stypeFound != stypePreferred) && (stmt.Step() == BE_SQLITE_ROW));
+
+    if (ftype.EqualsI("js"))
+        stypeFound = DgnScriptType::JavaScript;
+    else
+        stypeFound = DgnScriptType::TypeScript;
+
+    bvector<Byte> chars;
+    if (BE_SQLITE_OK != files.Read(chars, sName))
+        return DgnDbStatus::NotFound;
+
+    Utf8CP str = (Utf8CP)&chars[0];
+    sText.assign(str, str+chars.size());
     return DgnDbStatus::Success;
     }
 
@@ -311,12 +314,17 @@ DgnDbStatus DgnScriptLibrary::ReadText(Utf8StringR jsprog, BeFileNameCR jsFileNa
     if (jsFileName.GetFileSize(fileSize) != BeFileNameStatus::Success)
         return DgnDbStatus::NotFound;
 
+    BeFile file;
+    if (BeFileStatus::Success != file.Open(jsFileName, BeFileAccess::Read))
+        return DgnDbStatus::NotFound;
+
     size_t bufSize = (size_t)fileSize;
     jsprog.resize(bufSize+1);
-    FILE* fp = fopen(Utf8String(jsFileName).c_str(), "r");
-    size_t nread = fread(&jsprog[0], 1, bufSize, fp);
+    uint32_t nread;
+    if (BeFileStatus::Success != file.Read(&jsprog[0], &nread, (uint32_t)fileSize))
+        return DgnDbStatus::ReadError;
+
     BeAssert(nread <= bufSize);
-    fclose(fp);
     jsprog[nread] = 0;
     return DgnDbStatus::Success;
     }
@@ -328,15 +336,16 @@ DgnClassId DgnImportContext::RemapClassId(DgnClassId source)
     {
     if (!IsBetweenDbs())
         return source;
+
     DgnClassId dest = m_remap.Find(source);
     if (dest.IsValid())
         return dest;
 
-    ECN::ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source.GetValue());
+    ECClassCP sourceecclass = GetSourceDb().Schemas().GetECClass(source.GetValue());
     if (nullptr == sourceecclass)
         return DgnClassId();
 
-    ECN::ECClassCP destecclass = GetDestinationDb().Schemas().GetECClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
+    ECClassCP destecclass = GetDestinationDb().Schemas().GetECClass(sourceecclass->GetSchema().GetName().c_str(), sourceecclass->GetName().c_str());
     if (nullptr == destecclass)
         return DgnClassId();
 
