@@ -15,7 +15,6 @@ ECDbInstances.JsonValueStructure                        # Fails after geomlibs/e
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnMaterialsTest.*                                      # WIP DgnMaterials
 DgnLineStyleTest.*                                      # WIP DgnLineStyles
 DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
 NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
