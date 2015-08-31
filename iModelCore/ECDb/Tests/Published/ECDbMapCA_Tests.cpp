@@ -1110,6 +1110,65 @@ TEST_F (SchemaImportTestFixture, InstanceInsertionInExistingTable)
     }
 
 //---------------------------------------------------------------------------------------
+//*Test to verify the CRUD operations for a schema having similar Class and Property name
+// @bsimethod                                   Maha Nasir                     08/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (SchemaImportTestFixture, InstanceCRUD)
+    {
+    TestItem testItem (
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Product' isDomainClass='True'>"
+        "        <ECProperty propertyName='Product' typeName='string' />"
+        "        <ECProperty propertyName='Price' typeName='int' />"
+        "    </ECClass>"
+        "</ECSchema>", true, "");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport (db, asserted, testItem, "InstanceCRUD.ecdb");
+    ASSERT_FALSE (asserted);
+
+    //Inserts Instances.
+    ECSqlStatement stmt, s1, s2, s3, s4;
+    ASSERT_EQ (ECSqlStatus::Success, s1.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('Book',100)"));
+    ASSERT_EQ (ECSqlStepStatus::Done, s1.Step ());
+    ASSERT_EQ (ECSqlStatus::Success, s2.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('E-Reader',200)"));
+    ASSERT_EQ (ECSqlStepStatus::Done, s2.Step ());
+    ASSERT_EQ (ECSqlStatus::Success, s3.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('I-Pod',700)"));
+    ASSERT_EQ (ECSqlStepStatus::Done, s3.Step ());
+    ASSERT_EQ (ECSqlStatus::Success, s4.Prepare (db, "INSERT INTO ts.Product (Product,Price) VALUES('Goggles',500)"));
+    ASSERT_EQ (ECSqlStepStatus::Done, s4.Step ());
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT COUNT(*) FROM ts.Product"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (4, stmt.GetValueInt (0));
+    stmt.Finalize ();
+
+    //Deletes the instance
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "DELETE FROM ts.Product WHERE Price=200"));
+    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT COUNT(*) FROM ts.Product"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (3, stmt.GetValueInt (0));
+    stmt.Finalize ();
+
+    //Updates the instance
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "UPDATE ts.Product SET Product='Watch' WHERE Price=500"));
+    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    stmt.Finalize ();
+
+    //Select the instance matching the query.
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (db, "SELECT Product.Product FROM ts.Product WHERE Price=700"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_STREQ ("I-Pod", stmt.GetValueText (0));
+    stmt.Finalize ();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (SchemaImportTestFixture, MismatchDataTypesInExistingTable)
@@ -1258,6 +1317,11 @@ TEST_F (SchemaImportTestFixture, SharedTableInstanceInsertionAndDeletion)
     EXPECT_EQ (DbResult::BE_SQLITE_OK, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM TestTable"));
     ASSERT_TRUE (DbResult::BE_SQLITE_ROW == stmt.Step());
     EXPECT_EQ (2, stmt.GetValueInt (0));
+
+    //Updates the instance of ClassB.
+    EXPECT_EQ (ECSqlStatus::Success, statment.Prepare (ecdb, "UPDATE t.ClassB SET P2='UpdatedValue'"));
+    EXPECT_TRUE (ECSqlStepStatus::Done == statment.Step ());
+    statment.Finalize ();
     }
 
 //---------------------------------------------------------------------------------------
