@@ -383,7 +383,7 @@ DgnDbStatus DgnElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
     DateTime::FromJulianDay (dt, m_lastModTime, info.GetInfo(true));
     statement.BindDateTime(statement.GetParameterIndex("LastMod"), dt);
     auto stmtStatus = statement.Step();
-    if (BE_SQLITE_CONSTRAINT_UNIQUE == stmtStatus)
+    if (ECSqlStepStatus::Error == stmtStatus)
         {
         // SQLite doesn't tell us which constraint failed - check if it's the Code.
         auto existingElemWithCode = GetDgnDb().Elements().QueryElementIdByCode(m_code);
@@ -391,7 +391,7 @@ DgnDbStatus DgnElement::_InsertInDb(BeSQLite::EC::ECSqlStatement& statement)
             return DgnDbStatus::InvalidName;
         }
 
-    return stmtStatus != BE_SQLITE_DONE ? DgnDbStatus::WriteError : DgnDbStatus::Success;
+    return stmtStatus != ECSqlStepStatus::Done ? DgnDbStatus::WriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
