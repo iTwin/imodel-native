@@ -30,9 +30,13 @@ public:
 NativeType Get () const {return m_data;}
 };
 
+
+
+
 JSSTRUCT(JsDPoint3d);
 JSSTRUCT(JsDPoint2d);
 JSSTRUCT(JsDVector3d);
+JSSTRUCT(JsDVector2d);
 JSSTRUCT(JsDEllipse3d);
 JSSTRUCT(JsDSegment3d);
 JSSTRUCT(JsDRay3d);
@@ -55,7 +59,9 @@ JSSTRUCT(JsDoubleArray)
 
 JSSTRUCT(JsPolyfaceMesh)
 JSSTRUCT(JsPolyfaceVisitor)
-
+// Forward declare access methods so JsDPoint2d and JsDPoint3d can query their vector peers.
+DVec3d GetData (JsDVector3dP);
+DVec2d GetData (JsDVector2dP);
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 // Consistent method names for A.Plus(U) === A+U and similar expressions.
@@ -66,22 +72,36 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
     ATypeP Interpolate (double fraction, ATypeP right)\
         {return new AType(NativeType::FromInterpolate(m_data, fraction,right->m_data));}\
     ATypeP Plus (BTypeP vector)\
-        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vector))); }\
+        {return new AType(NativeType::FromSumOf(m_data, GetData (vector), 1.0)); }\
     ATypeP Minus (BTypeP vector)\
-        {return new AType (NativeType::FromSumOf (m_data, GetDVec3d (vector), -1.0));}\
+        {return new AType (NativeType::FromSumOf (m_data, GetData (vector), -1.0));}\
     ATypeP PlusScaled (BTypeP vector,double scalar)\
-        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vector), scalar));}\
+        {return new AType(NativeType::FromSumOf(m_data, GetData (vector), scalar));}\
     ATypeP Plus2Scaled (BTypeP vectorA, double scalarA,  BTypeP vectorB, double scalarB)\
-        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vectorA), scalarA, GetDVec3d(vectorB),scalarB)); }\
+        {return new AType(NativeType::FromSumOf(m_data, GetData (vectorA), scalarA, GetData(vectorB),scalarB)); }\
     ATypeP Plus3Scaled (BTypeP vectorA, double scalarA,  BTypeP vectorB, double scalarB, BTypeP vectorC, double scalarC)\
-        {return new AType(NativeType::FromSumOf(m_data, GetDVec3d (vectorA), scalarA, GetDVec3d(vectorB),scalarB,  GetDVec3d(vectorC),scalarC));}
+        {return new AType(NativeType::FromSumOf(m_data, GetData (vectorA), scalarA, GetData(vectorB),scalarB,  GetData(vectorC),scalarC));}
+
+// Distance and DistanceSquared methods between instance and other ...
+#define DistanceMethods(JsTypeP) \
+    double Distance (JsTypeP other){return m_data.Distance (other->m_data);}\
+    double DistanceSquared (JsTypeP other){return m_data.DistanceSquared (other->m_data);}\
+    double MaxAbsDiff (JsTypeP other){return m_data.MaxDiff (other->m_data);}\
+    double MaxAbs (){return m_data.MaxAbs ();}
+
+// Magnitude and MagnitudeSquared methods for instance
+#define MagnitudeMethods \
+    double Magnitude (){return m_data.Magnitude ();}\
+    double MagnitudeSquared (){return m_data.MagnitudeSquared ();}
 
 
 
 #include <DgnPlatform/GeomJsTypes/JsAngle.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3d.h>
-#include <DgnPlatform/GeomJsTypes/JSDPoint2d.h>
 #include <DgnPlatform/GeomJsTypes/JSDVector3d.h>
+#include <DgnPlatform/GeomJsTypes/JSDPoint2d.h>
+#include <DgnPlatform/GeomJsTypes/JSDVector2d.h>
+#include <DgnPlatform/GeomJsTypes/JSDVector2d.h>
 #include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3dDVector3dDVector3d.h>

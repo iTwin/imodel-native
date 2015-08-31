@@ -19,6 +19,8 @@ declare module BentleyApi.Dgn {
 
         Distance (other : JsDPoint3dP) : cxx_double;
         DistanceSquared (other : JsDPoint3dP) : cxx_double;        
+        MaxAbsDiff(vectorB: JsDPoint3dP): cxx_double;
+        MaxAbs (): cxx_double;
 
         OnDispose(): void;
         Dispose(): void;
@@ -33,9 +35,20 @@ declare module BentleyApi.Dgn {
         OnDispose(): void;
         Dispose(): void;
 
+        Interpolate(fraction: cxx_double, right: JsDPoint2dP): JsDPoint2dP;
+        Plus(vector: JsDVector2dP): JsDPoint2dP;
+        Minus(vector: JsDVector2dP): JsDPoint2dP;
+        PlusScaled(vector: JsDVector2dP, scalar: cxx_double): JsDPoint2dP;
+        Plus2Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double): JsDPoint2dP;
+        Plus3Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double, vectorC: JsDVector2dP, scalarC: cxx_double): JsDPoint2dP;
+
+
 
         Distance(other: JsDPoint2dP): cxx_double;
         DistanceSquared(other: JsDPoint2dP): cxx_double;        
+        MaxAbsDiff(vectorB: JsDPoint2dP): cxx_double;
+        MaxAbs(): cxx_double;
+
     }
 
 
@@ -100,6 +113,7 @@ declare module BentleyApi.Dgn {
     Distance (vectorB : JsDVector3dP) : cxx_double;
     DistanceSquared (vectorB : JsDVector3dP) : cxx_double;
     MaxAbs () : cxx_double;
+    MaxAbsDiff (vectorB: JsDVector3dP): cxx_double;
     UnitPerpendicular () : JsDVector3dP;
     AngleTo (vectorB : JsDVector3dP) : JsAngleP;
     AngleToXY (vectorB : JsDVector3dP) : JsAngleP;
@@ -114,6 +128,38 @@ declare module BentleyApi.Dgn {
     }
 
     type JsDVector3dP = cxx_pointer<JsDVector3d>;
+
+    //! A wrapper for BentleyApi::DVector2d
+    class JsDVector2d implements IDisposable
+    {
+        constructor(x: cxx_double, y: cxx_double);
+        X: cxx_double;
+        Y: cxx_double;
+
+        OnDispose(): void;
+        Dispose(): void;
+
+
+        Clone(): JsDVector2dP;
+
+        Interpolate(fraction: cxx_double, right: JsDVector2dP): JsDVector2dP;
+        Plus(vector: JsDVector2dP): JsDVector2dP;
+        Minus(vector: JsDVector2dP): JsDVector2dP;
+        PlusScaled(vector: JsDVector2dP, scalar: cxx_double): JsDVector2dP;
+        Plus2Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double): JsDVector2dP;
+        Plus3Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double, vectorC: JsDVector2dP, scalarC: cxx_double): JsDVector2dP;
+
+        Magnitude(): cxx_double;
+        MagnitudeSquared(): cxx_double;
+        Distance(vectorB: JsDVector2dP): cxx_double;
+        DistanceSquared(vectorB: JsDVector2dP): cxx_double;
+        MaxAbs(): cxx_double;
+        MaxAbsDiff(vectorB: JsDVector2dP): cxx_double;
+
+    }
+    type JsDVector2dP = cxx_pointer<JsDVector2d>;
+
+
 
     //! A wrapper for BentleyApi::YawPitchRollAngles
     class JsYawPitchRollAngles implements IDisposable {

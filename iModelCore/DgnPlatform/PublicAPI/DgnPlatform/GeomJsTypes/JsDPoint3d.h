@@ -14,7 +14,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-DVec3d GetDVec3d (JsDVector3dP);
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
@@ -37,9 +36,7 @@ public:
     JsDPoint3dP Clone () {return new JsDPoint3d (m_data);}
         
     VectorAdditionMethods(DPoint3d,JsDPoint3d,JsDPoint3dP,JsDVector3dP)
-
-    double Distance (JsDPoint3dP other){return m_data.Distance (other->m_data);}
-    double DistanceSquared (JsDPoint3dP other){return m_data.DistanceSquared (other->m_data);}
+    DistanceMethods (JsDPoint3dP)
 
 
 };

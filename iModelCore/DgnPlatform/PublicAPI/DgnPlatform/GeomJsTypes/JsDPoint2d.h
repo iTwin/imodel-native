@@ -30,11 +30,12 @@ public:
     void SetX(double v) {m_data.x = v;}
     void SetY(double v) {m_data.y = v;}
     
-    double Distance (JsDPoint2dP other){return m_data.Distance (other->m_data);}
-    double DistanceSquared (JsDPoint2dP other){return m_data.DistanceSquared (other->m_data);}
+    VectorAdditionMethods(DPoint2d,JsDPoint2d,JsDPoint2dP,JsDVector2dP)
+    DistanceMethods (JsDPoint2dP)
+
     
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#endif//ndef _JSDPOINt2d_H_
+#endif//ndef _JSDPOINT2D_H_
 

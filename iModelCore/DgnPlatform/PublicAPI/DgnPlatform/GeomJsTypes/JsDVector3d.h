@@ -85,6 +85,8 @@ static JsDVector3dP FromXYAngleAndMagnitude (double angle, double magnitude)
     }
 
     VectorAdditionMethods(DVec3d,JsDVector3d,JsDVector3dP,JsDVector3dP)
+    DistanceMethods (JsDVector3dP)
+    MagnitudeMethods
 
  JsDVector3dP Scale (double scale)
     {
@@ -147,26 +149,6 @@ double CrossProductXY (JsDVector3dP vectorB)
 double TripleProduct(JsDVector3dP vectorB, JsDVector3dP vectorC)
     {
     return m_data.TripleProduct(vectorB->Get(), vectorC->Get());
-    }
-double Magnitude ()
-    {
-    return m_data.Magnitude();
-    }
-double MagnitudeSquared ()
-    {
-    return m_data.MagnitudeSquared();
-    }
-double Distance (JsDVector3dP vectorB)
-    {
-    return m_data.Distance(vectorB->Get());
-    }
-double DistanceSquared (JsDVector3dP vectorB)
-    {
-    return m_data.DistanceSquared(vectorB->Get());
-    }
-double MaxAbs ()
-    {
-    return m_data.MaxAbs();
     }
     
 JsDVector3dP UnitPerpendicular ()

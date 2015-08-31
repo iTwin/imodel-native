@@ -43,7 +43,19 @@ module DgnScriptChecker {
             BentleyApi.Dgn.JsUtils.ReportError(':NearPoint');
             return false;
         }
-        IsNearJsDVector3d(a: BentleyApi.Dgn.JsDVector3d, b: BentleyApi.Dgn.JsDVector3d) {
+
+        IsNearJsDPoint2d(a: BentleyApi.Dgn.JsDPoint2d, b: BentleyApi.Dgn.JsDPoint2d)
+        {
+            if (this.NearDouble(this.Abs(a.X - b.X), 0.0, false)
+                && this.NearDouble(this.Abs(a.Y - b.Y), 0.0, false)
+                )
+                return true;
+            BentleyApi.Dgn.JsUtils.ReportError(':NearPoint');
+            return false;
+        }
+
+        IsNearJsDVector3d(a: BentleyApi.Dgn.JsDVector3d, b: BentleyApi.Dgn.JsDVector3d)
+        {
             if (this.NearDouble(this.Abs(a.X - b.X), 0.0, false)
                 && this.NearDouble(this.Abs(a.Y - b.Y), 0.0, false)
                 && this.NearDouble(this.Abs(a.Z - b.Z), 0.0, false)
@@ -52,6 +64,18 @@ module DgnScriptChecker {
             BentleyApi.Dgn.JsUtils.ReportError(':NearVector');
             return false;
         }
+
+        IsNearJsDVector2d(a: BentleyApi.Dgn.JsDVector2d, b: BentleyApi.Dgn.JsDVector2d)
+        {
+            if (this.NearDouble(this.Abs(a.X - b.X), 0.0, false)
+                && this.NearDouble(this.Abs(a.Y - b.Y), 0.0, false)
+                )
+                return true;
+            BentleyApi.Dgn.JsUtils.ReportError(':NearVector');
+            return false;
+        }
+
+
         IsNearJsRotmatrix(b: BentleyApi.Dgn.JsRotMatrix, c: BentleyApi.Dgn.JsRotMatrix, reportError: boolean): boolean
             {
             var d = b.MaxDiff (c);
