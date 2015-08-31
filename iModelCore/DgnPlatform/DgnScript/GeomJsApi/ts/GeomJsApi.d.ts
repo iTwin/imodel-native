@@ -87,7 +87,7 @@ declare module BentleyApi.Dgn {
 
 
     static FromXYAngleAndMagnitude(angle: cxx_double, magnitude: cxx_double): JsDVector3dP;
-
+    // Adding vectors
     Interpolate(fraction: cxx_double, right: JsDVector3dP): JsDVector3dP;
     Plus(vector: JsDVector3dP): JsDVector3dP;
     Minus(vector: JsDVector3dP): JsDVector3dP;
@@ -98,30 +98,40 @@ declare module BentleyApi.Dgn {
     VectorTo(other: JsDVector3dP): JsDVector3dP;
 
     Scale (scale : cxx_double) : JsDVector3dP;
-    ScaleToLength (scale : cxx_double) : JsDVector3dP;
-    CrossProduct (vectorB : JsDVector3dP) : JsDVector3dP;
-    NormalizedCrossProduct (vectorB : JsDVector3dP) : JsDVector3dP;
+
+    ScaleToLength(scale: cxx_double): JsDVector3dP;
+    NormalizedCrossProduct(vectorB: JsDVector3dP): JsDVector3dP;
     SizedCrossProduct (vectorA : JsDVector3dP, vectorB : JsDVector3dP, productLength : cxx_double) : JsDVector3dP;
-    RotateXY (angle : cxx_double) : JsDVector3dP;
-    UnitPerpendicularXY (vector : JsDVector3dP) : JsDVector3dP;
+    UnitPerpendicularXY(vector: JsDVector3dP): JsDVector3dP;
+    UnitPerpendicular(): JsDVector3dP;
+
+    RotateXY(angle: cxx_double): JsDVector3dP;
+
+    // products
     CrossProductMagnitude (vectorB : JsDVector3dP) : cxx_double;
     DotProduct (vectorB : JsDVector3dP) : cxx_double;
     DotProductXY (vectorB : JsDVector3dP) : cxx_double;
     CrossProductXY (vectorB : JsDVector3dP) : cxx_double;
-    TripleProduct (vectorB : JsDVector3dP, vectorC : JsDVector3dP) : cxx_double;
+    TripleProduct(vectorB: JsDVector3dP, vectorC: JsDVector3dP): cxx_double;
+    CrossProduct(vectorB: JsDVector3dP): JsDVector3dP;
+
+
     Magnitude () : cxx_double;
     MagnitudeSquared () : cxx_double;
     Distance (vectorB : JsDVector3dP) : cxx_double;
     DistanceSquared (vectorB : JsDVector3dP) : cxx_double;
     MaxAbs () : cxx_double;
-    MaxAbsDiff (vectorB: JsDVector3dP): cxx_double;
-    UnitPerpendicular () : JsDVector3dP;
+    MaxAbsDiff(vectorB: JsDVector3dP): cxx_double;
+
+
+    // angles
     AngleTo (vectorB : JsDVector3dP) : JsAngleP;
     AngleToXY (vectorB : JsDVector3dP) : JsAngleP;
     SmallerUnorientedAngleTo (vectorB : JsDVector3dP) : JsAngleP;
     SignedAngleTo (vectorB : JsDVector3dP, upVector : JsDVector3dP) : JsAngleP;
     PlanarAngleTo (vectorB : JsDVector3dP, planeNormal : JsDVector3dP) : JsAngleP;
-    IsInSmallerSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP) : cxx_bool;
+    // sectors
+    IsInSmallerSector(vectorA: JsDVector3dP, vectorB: JsDVector3dP): cxx_bool;
     IsInCCWSector (vectorA : JsDVector3dP, vectorB : JsDVector3dP, upVector : JsDVector3dP) : cxx_bool;
     IsParallelTo (vectorB : JsDVector3dP) : cxx_bool;
     IsPerpendicularTo (vectorB : JsDVector3dP) : cxx_bool;
@@ -199,6 +209,41 @@ declare module BentleyApi.Dgn {
         
         Low: JsDPoint3dP;
         High: JsDPoint3dP;
+
+
+        IsNull(): cxx_bool;
+        IsSinglePoint(): cxx_bool;
+
+        XLength(): cxx_double;
+        YLength(): cxx_double;
+        ZLength(): cxx_double;
+
+        MaxAbs(): cxx_double;
+        IsAlmostZeroX(): cxx_bool;
+        IsAlmostZeroY(): cxx_bool;
+        IsAlmostZeroZ(): cxx_bool;
+
+        ContainsXYZ(x: cxx_double, y: cxx_double, z: cxx_double): cxx_bool;
+        ContainsPoint(point: JsDPoint3dP): cxx_bool;
+        ContainsPointPointXY(point: JsDPoint3dP): cxx_bool;
+        ContainsRange(other: JsDRange3dP): cxx_bool;
+
+        IntersectsRange(other: JsDRange3dP): cxx_bool;
+
+        // policy: only return distances (squared : no -- sqrt time will not show up in ts)
+        DistanceToPoint(point: JsDPoint3dP): cxx_double;
+        DistanceToRange(other: JsDRange3dP): cxx_double;
+
+
+        ExtendAllDirections(a: cxx_double): void;
+        ExtendXYZ(x: cxx_double, y: cxx_double, z: cxx_double): void;
+        ExtendPoint(point: JsDPoint3dP): void;
+        ExtendRange(range: JsDRange3dP): void;
+
+        Intersect(other: JsDRange3dP): JsDRange3dP;
+        Union(other: JsDRange3dP): JsDRange3dP;
+
+        Init(): void;
 
         OnDispose(): void;
         Dispose(): void;

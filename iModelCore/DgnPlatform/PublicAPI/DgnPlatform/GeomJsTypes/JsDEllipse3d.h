@@ -67,6 +67,12 @@ struct JsDEllipse3d : JsGeomWrapperBase<DEllipse3d>
     void SetStartAngle (JsAngleP angle) {m_data.start = angle->GetRadians ();}
     void SetSweepAngle (JsAngleP angle) {m_data.sweep = angle->GetRadians ();}
     
+    JsDRange3dP Range ()
+        {
+        DRange3d range;
+        m_data.GetRange (range);
+        return new JsDRange3d (range);
+        }
     JsDPoint3dP PointAtFraction (double f)
         {
         DPoint3d xyz;

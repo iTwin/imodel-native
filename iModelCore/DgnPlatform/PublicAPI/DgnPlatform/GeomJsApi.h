@@ -108,12 +108,14 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #include <DgnPlatform/GeomJsTypes/JSDPoint2d.h>
 #include <DgnPlatform/GeomJsTypes/JSDVector2d.h>
 #include <DgnPlatform/GeomJsTypes/JSDVector2d.h>
+#include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
+
+
 #include <DgnPlatform/GeomJsTypes/JSYawPitchRollAngles.h>
 #include <DgnPlatform/GeomJsTypes/JSDRay3d.h>
 #include <DgnPlatform/GeomJsTypes/JSDPoint3dDVector3dDVector3d.h>
 #include <DgnPlatform/GeomJsTypes/JsDSegment3d.h>
 #include <DgnPlatform/GeomJsTypes/JsDEllipse3d.h>
-#include <DgnPlatform/GeomJsTypes/JSDRange3d.h>
 #include <DgnPlatform/GeomJsTypes/JSRotMatrix.h>
 #include <DgnPlatform/GeomJsTypes/JSTransform.h>
 #include <DgnPlatform/GeomJsTypes/JsDPoint3dArray.h>

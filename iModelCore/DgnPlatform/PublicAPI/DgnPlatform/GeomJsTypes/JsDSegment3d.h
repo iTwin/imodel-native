@@ -41,6 +41,12 @@ public:
     void SetEndPoint (JsDPoint3dP point) {m_data.point[1] = point->Get ();}
 
 
+    JsDRange3dP Range ()
+        {
+        DRange3d range;
+        m_data.GetRange (range);
+        return new JsDRange3d (range);
+        }
     JsDPoint3dP PointAtFraction (double f)
         {
         DPoint3d xyz;
