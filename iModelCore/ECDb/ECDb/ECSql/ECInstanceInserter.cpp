@@ -128,7 +128,7 @@ void ECInstanceInserter::Impl::Initialize ()
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
         Utf8String propNameSnippet ("[");
-        propNameSnippet.append (Utf8String (ecProperty->GetName ())).append ("]");
+        propNameSnippet.append (ecProperty->GetName ()).append ("]");
         builder.AddValue (propNameSnippet.c_str (), "?");
         if (SUCCESS != m_ecValueBindingInfos.AddBindingInfo (m_ecClass, *ecProperty, parameterIndex))
             {

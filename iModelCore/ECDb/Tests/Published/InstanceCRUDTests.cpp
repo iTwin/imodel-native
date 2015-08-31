@@ -62,6 +62,7 @@ struct InstanceCRUDTests : public ::testing::Test
     void updateECRelationshipClassInstances ();
     bool updateECInstances (bmap<ECN::ECClassCP, std::vector<ECN::IECInstancePtr>> const & insertedInstances, bmap<ECN::ECClassCP, std::vector<ECN::IECInstancePtr>> const & toUpdateInstances);
     };
+
 /*---------------------------------------------------------------------------------**//**
 * Initialize SQLite Lib for the tests
 * @bsimethod                           Majd Uddin                   09/14
@@ -75,6 +76,7 @@ void InstanceCRUDTests::initBeSQLiteLib ()
     BeTest::GetHost ().GetOutputRoot (temporaryDir);
     ECDb::Initialize (temporaryDir, &assetsDir);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Insert ECinstances from given list
 * @bsimethod                           Muhammad.Zaighum                   07/13
@@ -131,6 +133,7 @@ int InstanceCRUDTests::insertECInstances (bmap<ECN::ECClassCP, std::vector<ECN::
         }
     return instanceCount;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Compare ECinstances and return number of ECInstnaces
 * @bsimethod                           Muhammad.Zaighum                   07/13
@@ -189,6 +192,7 @@ int InstanceCRUDTests::countECInstnacesAndCompare (bmap<ECN::ECClassCP, std::vec
         }
     return numberOfInstnace;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Skips any classes that should not be added for testing
 * @bsimethod                           Majd Uddin                       10/14
@@ -222,8 +226,9 @@ bool InstanceCRUDTests::addClass (ECClassCP ecClass)
         return true;
         }
     }
+
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  1/15
+// @bsimethod                                      Muhammad Hassan                  1/15
 //+---------------+---------------+---------------+---------------+---------------+------
 ECClassCP InstanceCRUDTests::addClassInPlaceOFAnyClass (ECSchemaPtr schemaPtr)
     {
@@ -244,6 +249,10 @@ ECClassCP InstanceCRUDTests::addClassInPlaceOFAnyClass (ECSchemaPtr schemaPtr)
     size_t secretNumber = rand () % classCount;
     return list.at (secretNumber);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  1/15
+//+---------------+---------------+---------------+---------------+---------------+------
 bool InstanceCRUDTests::setUpDefaultECdbAndImportSchema ()
     {
     bool status = false;
@@ -267,6 +276,10 @@ bool InstanceCRUDTests::setUpDefaultECdbAndImportSchema ()
     else
         return false;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  1/15
+//+---------------+---------------+---------------+---------------+---------------+------
 void InstanceCRUDTests::setUpECDbForClass ()
     {
     BeFileName dbName2 (m_schemaFullPath);
@@ -296,6 +309,10 @@ void InstanceCRUDTests::setUpECDbForClass ()
     m_classList.clear ();
     ASSERT_EQ (BE_SQLITE_OK, m_db.OpenBeSQLiteDb (dbnamee, ECDb::OpenParams (Db::OpenMode::ReadWrite))) << "Could not open test file " << newdb.c_str ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  1/15
+//+---------------+---------------+---------------+---------------+---------------+------
 bool InstanceCRUDTests::setUpECdbSingleClass ()
     {
     BeFileName dbname (m_schemaFullPath);
@@ -326,6 +343,7 @@ bool InstanceCRUDTests::setUpECdbSingleClass ()
     else
         return false;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Create the Db and removes if there is one already
 * @bsimethod                           Majd Uddin                   11/14
@@ -352,6 +370,7 @@ void InstanceCRUDTests::createDb ()
     else
         LOG1.info ("Created ECDb ");
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Imports all needed schemas into the Db
 * @bsimethod                           Majd Uddin                   11/14
@@ -400,6 +419,7 @@ bool InstanceCRUDTests::importSchema (WString schemaNameWithoutVerionAndExtensio
     else
         return false;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Insert instances of a given EC Class. Deals with Relationship class and calls it
 * @bsimethod                           Majd Uddin                   11/14
@@ -456,6 +476,7 @@ void InstanceCRUDTests::insertECClassInstances (ECClassCP ecClass)
         insertECRelationshipClassInstances ();
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Insert instances of a given ECRelationshipClass.
 * @bsimethod                           Majd Uddin                   11/14
@@ -559,6 +580,9 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
         LOG1.errorv ("[IIF] Insertion failed for Relationship Class: %s \n", m_className.c_str ());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Muhammad Hassan                  1/15
+//+---------------+---------------+---------------+---------------+---------------+------
 void InstanceCRUDTests::addClassesForRelationship (ECRelationshipClassCP relClass)
     {
     const ECConstraintClassesList& sourceClasses = relClass->GetSource ().GetClasses ();
@@ -612,6 +636,7 @@ void InstanceCRUDTests::addClassesForRelationship (ECRelationshipClassCP relClas
             }
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Deletes all instances of provided class. Takes care of Relationship class case
 * @bsimethod                           Majd Uddin                   11/14
@@ -636,6 +661,7 @@ void InstanceCRUDTests::deleteECClassInstances (ECClassCP ecClass)
         deleteECRelationshipClassInstances ();
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Deletes all instances of Relationship class
 * @bsimethod                           Majd Uddin                   11/14
@@ -650,6 +676,7 @@ void InstanceCRUDTests::deleteECRelationshipClassInstances ()
         EXPECT_TRUE (false);
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * The method that does the deletion and returns delete count
 * @bsimethod                           Majd Uddin                   11/14
@@ -684,6 +711,7 @@ bool InstanceCRUDTests::deleteECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
         }
     return delstatus;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Updatess all instances of provided class. Takes care of Relationship class case
 * @bsimethod                           Majd Uddin                   11/14
@@ -727,6 +755,7 @@ void InstanceCRUDTests::updateECClassInstances (ECClassCP ecClass)
         updateECRelationshipClassInstances ();
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * Updates all instances of Relationship class
 * @bsimethod                           Majd Uddin                   11/14
@@ -775,6 +804,7 @@ void InstanceCRUDTests::updateECRelationshipClassInstances ()
     else
         LOG1.errorv ("[IUF] Instance update failed for Relationship Class: %s \n", m_className.c_str ());
     }
+
 /*---------------------------------------------------------------------------------**//**
 * The method that does the update and returns update count
 * @bsimethod                           Majd Uddin                   11/14
@@ -819,8 +849,9 @@ bool InstanceCRUDTests::updateECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
         }
     return upstat;
     }
+
 //---------------------------------------------------------------------------------------
-//                                               Muhammad Hassan                  1/15
+// @bsimethod                                      Muhammad Hassan                  1/15
 //+---------------+---------------+---------------+---------------+---------------+------
 void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
     {
@@ -958,6 +989,10 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  1/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
     {
     InstanceCRUDTests::initBeSQLiteLib ();
@@ -1049,6 +1084,10 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
             }
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad Hassan                  1/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (InstanceCRUDTests, singleClassTest)
     {
     WCharCP schema = L"SimpleCompany.01.00.ecschema.xml";//schema name

@@ -196,17 +196,17 @@ struct ECSqlSelectTests : public ::testing::Test
             setOrderValues(OrderInstance7, DateTime::GetCurrentTimeUtc(), 7, false);
             setOrderValues(OrderInstance8, DateTime::GetCurrentTimeUtc(), 8, false);
             setOrderValues(OrderInstance9, DateTime::GetCurrentTimeUtc(), 9, true);
-            ECInstanceInserter inserter(ecdb, *OrderClass);
-            ASSERT_TRUE(inserter.IsValid());
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance1, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance2, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance3, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance4, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance5, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance6, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance7, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance8, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance9, true));
+            //ECInstanceInserter inserter(ecdb, *OrderClass);
+            //ASSERT_TRUE(inserter.IsValid());
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance1, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance2, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance3, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance4, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance5, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance6, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance7, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance8, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance9, true));
 
             ECClassCP CustomerClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Customer");
             ASSERT_TRUE(CustomerClass != nullptr);
@@ -1029,6 +1029,55 @@ TEST_F (ECSqlTestFixture, PolymorphicUpdateWithSharedTable)
 //        }
 //    stmt.Finalize ();
 //    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlSelectTests, DeleteWithNestedSelectStatments)
+    {
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
+
+    ECSqlStatement stmt;
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (9, stmt.GetValueInt (0));
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ECST.Products WHERE ProductName IN(SELECT ProductName FROM ECST.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Products WHERE Price >500))"));
+    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (6, stmt.GetValueInt (0));
+    stmt.Finalize ();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlSelectTests, UpdateWithNestedSelectStatments)
+    {
+    ECDbTestProject testProject;
+    ECDbR ecdb = testProject.Create ("ECSqlStatementTests.ecdb", L"ECSqlStatementTests.01.00.ecschema.xml", false);
+    InsertInstancesForECSqlTestSchema (ecdb);
+
+    ECSqlStatement stmt;
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "UPDATE ECST.Products SET ProductName='Laptop' WHERE ProductName IN(SELECT ProductName FROM ECST.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN(SELECT ProductName FROM ECST.Products WHERE Price >500))"));
+    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ECST.Products WHERE ProductName='Laptop'"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (3, stmt.GetValueInt (0));
+    stmt.Finalize ();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
