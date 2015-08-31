@@ -184,15 +184,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_MAP_Geometry                               "Geometry"             
 
 
-
-
-
-
-
-
-
-
-
 // From V8 Palette Tokens.
 #define RENDER_MATERIAL_Color                                       "color" 
 #define RENDER_MATERIAL_SpecularColor                               "specular_color" 
