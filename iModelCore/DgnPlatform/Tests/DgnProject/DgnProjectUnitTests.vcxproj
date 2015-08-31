@@ -90,6 +90,7 @@
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
+    <ClInclude Include="Performance\ElementInsertPerformance.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
     <ClInclude Include="Published\AnnotationTestFixture.h" />

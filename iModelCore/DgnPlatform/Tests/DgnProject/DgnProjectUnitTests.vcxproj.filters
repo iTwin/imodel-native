@@ -222,6 +222,9 @@
     <ClInclude Include="Published\AnnotationTestFixture.h">
       <Filter>Published</Filter>
     </ClInclude>
+    <ClInclude Include="Performance\ElementInsertPerformance.h">
+      <Filter>Performance</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">

@@ -570,7 +570,6 @@ void ComponentModelTest::Client_InsertNonInstanceElement(Utf8CP modelName, Utf8C
     DgnClassId classid = DgnClassId(m_clientDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
     DgnCategoryId catid = m_clientDb->Categories().QueryHighestId();
     auto el = PhysicalElement::Create(PhysicalElement::CreateParams(*m_clientDb, targetModel->GetModelId(), classid, catid));
-    auto el2 = PhysicalElement::Create(*targetModel, catid);
     ASSERT_TRUE( el.IsValid() );
     ASSERT_TRUE( el->Insert().IsValid() );
     }
