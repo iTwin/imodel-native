@@ -42,7 +42,7 @@ struct DgnScriptContext : BeJsContext
 
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
     DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
-    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
+    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options);
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -156,16 +156,16 @@ DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
+DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
     {
     DgnScriptContext& ctx = static_cast<DgnScriptContext&>(T_HOST.GetScriptAdmin().GetDgnScriptContext());
-    return ctx.ExecuteModelSolver(functionReturnStatus, model, jsFunctionName, parms);
+    return ctx.ExecuteModelSolver(functionReturnStatus, model, jsFunctionName, parms, options);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
+DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
     {
     functionReturnStatus = -1;
 
@@ -183,8 +183,9 @@ DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn:
 
     BeginCallContext();
     BeJsObject parmsObj = EvaluateJson(parms);
+    BeJsObject optionsObj = EvaluateJson(options);
     BeJsNativePointer jsModel = ObtainProjectedClassInstancePointer(new JsDgnModel(model), true);
-    BeJsValue retval = jsfunc(jsModel, parmsObj);
+    BeJsValue retval = jsfunc(jsModel, parmsObj, optionsObj);
     EndCallContext();
 
     if (!retval.IsNumber())
@@ -287,7 +288,7 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
     auto ilib = m_importers.find(libName);
     if (ilib == m_importers.end())
         {
-        HandleScriptError(ScriptErrorHandler::Category::Other, Utf8PrintfString("Missing library: %s", libName));
+        HandleScriptError(ScriptErrorHandler::Category::Other, "Missing library", libName);
         return BSIERROR;
         }
     if (ilib->second.second)
@@ -301,19 +302,19 @@ BentleyStatus DgnPlatformLib::Host::ScriptAdmin::ImportScriptLibrary(Utf8CP libN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description)
+void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptErrorHandler::Category category, Utf8CP description, Utf8CP details)
     {
     if (nullptr == m_errorHandler)
         return;
-    m_errorHandler->_HandleScriptError(GetDgnScriptContext(), category, description);
+    m_errorHandler->_HandleScriptError(GetDgnScriptContext(), category, description, details);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description)
+void DgnPlatformLib::Host::ScriptAdmin::ScriptErrorHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details)
     {
-    NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv("Script error category: %x, description; %s", (int)category, description);
+    NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv("Script error category: %x, description: %s, details: %s", (int)category, description, details);
     }
 
 //---------------------------------------------------------------------------------------
@@ -346,6 +347,15 @@ DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, D
 //---------------------------------------------------------------------------------------
 void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP script)
     {
-    /*auto res = */GetDgnScriptContext().EvaluateScript(script);
+    BeJsContext::EvaluateStatus evstatus;
+    BeJsContext::EvaluateException evexception;
+    /*auto res = */GetDgnScriptContext().EvaluateScript(script, "file:///DgnScriptContex", &evstatus, &evexception);
     //m_jsContext->
+    if (BeJsContext::EvaluateStatus::Success != evstatus)
+        {
+        if (BeJsContext::EvaluateStatus::ParseError==evstatus)
+            HandleScriptError(ScriptErrorHandler::Category::ParseError, "", "");
+        else
+            HandleScriptError(ScriptErrorHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
+        }
     }

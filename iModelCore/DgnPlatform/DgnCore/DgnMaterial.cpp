@@ -50,7 +50,7 @@ DgnDbStatus DgnMaterials::Update(Material const& material) const
     if (!material.IsValid())
         return DgnDbStatus::InvalidId;
 
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId WHERE Id=?");
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Material) " SET Value=?,Descr=?,ParentId=? WHERE Id=?");
     stmt.BindText(1, material.GetValue(), Statement::MakeCopy::No);
     stmt.BindText(2, material.GetDescr(), Statement::MakeCopy::No);
     stmt.BindId(3, material.GetParentId());
@@ -102,6 +102,49 @@ DgnMaterialId DgnMaterials::QueryMaterialId(Utf8StringCR name, Utf8StringCR pale
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t   DgnMaterials::s_nextQvMaterialId;
+
+uintptr_t   DgnMaterials::AddQvMaterialId (DgnMaterialId materialId) const        { return (m_qvMaterialIds[materialId] = ++s_nextQvMaterialId); }
+uintptr_t   DgnMaterials::GetQvMaterialId (DgnMaterialId materialId) const
+    {
+    auto const&   found = m_qvMaterialIds.find(materialId);
+
+    return (found == m_qvMaterialIds.end()) ? 0 : found->second; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DgnMaterials::Material::GetAsset (JsonValueR value, char const* keyWord) const
+    {
+    Json::Value root;
+
+    if (!Json::Reader::Parse (GetValue(), root) ||
+        (value = root[keyWord]).isNull())
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void  DgnMaterials::Material::SetAsset (JsonValueCR value, char const* keyWord)
+    {
+    Json::Value root;
+
+    if (!Json::Reader::Parse (GetValue(), root))
+        root = Json::Value (Json::ValueType::objectValue);
+
+    root[keyWord] = value;
+
+
+    SetValue (Json::FastWriter::ToString (root).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
@@ -118,6 +161,17 @@ DgnMaterials::Iterator::const_iterator DgnMaterials::Iterator::begin() const
         }
 
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t DgnMaterials::Iterator::QueryCount() const
+    {
+    Utf8String sqlString = MakeSqlString ("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Material));
+    Statement sql;
+    sql.Prepare (*m_db, sqlString.c_str());
+    return (BE_SQLITE_ROW == sql.Step()) ? static_cast<size_t>(sql.GetValueInt (0)) : 0;
     }
 
 DgnMaterialId DgnMaterials::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnMaterialId>(0);}

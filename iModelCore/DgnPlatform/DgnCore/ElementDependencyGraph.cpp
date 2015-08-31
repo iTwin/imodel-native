@@ -657,7 +657,7 @@ DbResult DgnElementDependencyGraph::EdgeQueue::AddEdge(DgnElementDependencyGraph
     m_insert->BindId(1, edge.m_relId);
     auto stat = m_insert->Step();
 
-    if (IsConstraintDbResult(stat))
+    if (BeSQLiteLib::IsConstraintDbResult(stat))
         {
         //  We already discovered this edge. Nothing to do.
         EDGLOG(LOG_TRACE, "(KNOWN %s)", m_graph.FmtEdge(edge).c_str());

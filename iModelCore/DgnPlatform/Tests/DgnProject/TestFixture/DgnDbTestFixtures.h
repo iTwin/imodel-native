@@ -75,7 +75,7 @@ public:
 //! A test ElementHandler for a class in DgnPlatformTest schema
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : dgn_ElementHandler::Element
+struct TestElementHandler : dgn_ElementHandler::Physical
 {
     ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
 };
@@ -139,7 +139,7 @@ public:
 
     void SetupProject(WCharCP baseProjFile, WCharCP testProjFile, BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite);
 
-    DgnElementCPtr InsertElement(DgnElement::Code elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    DgnElementCPtr InsertElement(DgnElement::Code elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnDbStatus* result = nullptr);
     DgnElementCPtr InsertElement(DgnElement::Code elementCode, ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);
     DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, DgnElement::Code elementCode);

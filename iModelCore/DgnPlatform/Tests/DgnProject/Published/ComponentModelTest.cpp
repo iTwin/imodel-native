@@ -126,7 +126,7 @@ static void checkElementClassesInModel(DgnModelCR model, bset<DgnClassId> const&
     while (BE_SQLITE_ROW == statement.Step())
         {
         DgnClassId foundClassId = statement.GetValueId<DgnClassId>(0);
-        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8String("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str());
+        ASSERT_TRUE( allowedClasses.find(foundClassId) != allowedClasses.end() ) << Utf8PrintfString("Did not expect to find an instance of class %s", model.GetDgnDb().Schemas().GetECClass(ECN::ECClassId(foundClassId.GetValue()))->GetName().c_str()).c_str();
         }
     }
 
@@ -253,7 +253,7 @@ void ComponentModelTest::Developer_CreateCMs()
     // Note that a script will generally create elements from scratch. That's why it starts by deleting all elements in the model. They would have been the outputs of the last run.
     AddToFakeScriptLibrary(TEST_JS_NAMESPACE, 
 "(function () { \
-    function widgetSolver(model, params) { \
+    function widgetSolver(model, params, options) { \
         model.DeleteAllElements();\
         var element = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin = new BentleyApi.Dgn.JsDPoint3d(1,2,3);\
@@ -271,11 +271,9 @@ void ComponentModelTest::Developer_CreateCMs()
         element2.Insert(); \
         element.SetParent(element2);\
         element.Update();\
-        element.Dispose();\
-        element2.Dispose();\
         return 0;\
     } \
-    function gadgetSolver(model, params) { \
+    function gadgetSolver(model, params, options) { \
         model.DeleteAllElements();\
         var element = model.CreateElement('dgn.PhysicalElement', 'Gadget');\
         var origin = new BentleyApi.Dgn.JsDPoint3d(0,0,0);\
@@ -284,7 +282,6 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
         element.Insert(); \
-        element.Dispose();\
         return 0;\
     } \
     BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \

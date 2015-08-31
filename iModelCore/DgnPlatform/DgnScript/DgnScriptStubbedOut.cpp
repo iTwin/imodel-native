@@ -20,7 +20,7 @@ DgnDbStatus DgnScript::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
+DgnDbStatus DgnScript::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms, Json::Value const& options)
     {
     return DgnDbStatus::NotEnabled;
     }

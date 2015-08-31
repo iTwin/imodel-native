@@ -1404,7 +1404,8 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnElementId DgnElements::QueryElementIdByCode(DgnElement::Code const& code) const
     {
-    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? AND CodeAuthorityId=? LIMIT 1"); // find first if code not unique
     statement->BindText(1, code.GetValue(), Statement::MakeCopy::No);
+    statement->BindId(2, code.GetAuthority());
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

@@ -140,7 +140,7 @@ StatusInt       LsComponent::_StrokeLineString (ViewContextP context, LineStyleS
     lsSymb->SetElementClosed (isClosed);
     lsSymb->SetTotalLength (totalLength);
 
-    double iterationLength = _GetLength();
+    double iterationLength = _GetLength() * lsSymb->GetScale();
     if (nullptr == context || iterationLength == 0 || totalLength/iterationLength < 1000)
         return _DoStroke (context, pts, nPts, lsSymb);
 
@@ -236,7 +236,7 @@ BentleyStatus       LsComponent::StrokeContinuousArc (ViewContextP context, Line
             1) continuous linestyle
             2) not during picking
             3) r0==r1 (circular)
-            4) no taper
+            4) no tapertrokepattern
             5) width = 2*radius
 
            if all of that is true, then use the QV filled arc (or complex shape) rather than sending the arc through the normal linestyle code.
@@ -504,29 +504,11 @@ void                LsStroke::SetIsDashLast         SETSTROKEMODE (STROKE_DashLa
 void                LsStroke::SetIsStretchable      SETSTROKEMODE (STROKE_Stretchable)
 void                LsStroke::SetIsRigid            SETSTROKEMODE (STROKE_Rigid)
 
-void                LsStroke::SetIsTaper (bool isTaper)
-    {
-    if (isTaper)
-        m_widthMode |= LCWIDTH_TAPER;
-    else
-        m_widthMode = m_widthMode & ~LCWIDTH_TAPER;
-    }
-
-void                LsStroke::SetIsTaperEnd (bool isTaperEnd)
-    {
-    if (isTaperEnd)
-        m_widthMode |= LCWIDTH_TAPEREND;
-    else
-        m_widthMode = m_widthMode & ~LCWIDTH_TAPEREND;
-    }
-
 double              LsStroke::GetLength ()        const    {return m_length;}
 double              LsStroke::GetStartWidth ()    const    {return m_orgWidth;}
 double              LsStroke::GetEndWidth ()      const    {return m_endWidth;}
 LsStroke::CapMode   LsStroke::GetCapMode()        const    {return (CapMode)m_capMode;}
 LsStroke::WidthMode LsStroke::GetWidthMode ()     const    {return (WidthMode)(m_widthMode & 0x03);}
-bool                LsStroke::IsTaper ()          const    {return (m_widthMode & LCWIDTH_TAPER) != 0;}
-bool                LsStroke::IsTaperEnd ()       const    {return (m_widthMode & LCWIDTH_TAPEREND) != 0;}
 
 size_t              LsStrokePatternComponent::GetNumberStrokes ()     const {return  m_nStrokes;}
 LsStrokeCP          LsStrokePatternComponent::GetStrokeCP (size_t index) const {return  &m_strokes[index];}

@@ -41,12 +41,16 @@ protected:
     bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
     bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
     bmap<DgnClassId, DgnClassId> m_classId;
+    bmap<DgnAuthorityId, DgnAuthorityId> m_authorityId;
 
     template<typename T>
     T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
 
 public:
     DgnRemapTables& Get(DgnDbR);
+
+    DgnAuthorityId Find(DgnAuthorityId sourceId) const {return Find<DgnAuthorityId>(m_authorityId, sourceId);}
+    DgnAuthorityId Add(DgnAuthorityId sourceId, DgnAuthorityId targetId) {return m_authorityId[sourceId] = targetId;}
 
     DgnModelId Find(DgnModelId sourceId) const {return Find<DgnModelId>(m_modelId, sourceId);}
     DgnModelId Add(DgnModelId sourceId, DgnModelId targetId) {return m_modelId[sourceId] = targetId;}
@@ -93,6 +97,8 @@ public:
 
     //! @name ID remapping
     //! @{
+    //! Make sure that a DgnAuthority has been imported
+    DGNPLATFORM_EXPORT DgnAuthorityId RemapAuthorityId(DgnAuthorityId sourceId);
     //! Look up a copy of a model
     DGNPLATFORM_EXPORT DgnModelId FindModelId(DgnModelId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a model
@@ -192,7 +198,8 @@ public:
         Utf8StringCR GetValue() const {return m_value;}
         Utf8CP GetValueCP() const {return m_value.c_str();}
         //! Get the DgnAuthorityId of the DgnAuthority that issued this Code.
-        DgnAuthorityId GetAuthority() {return m_authority;}
+        DgnAuthorityId GetAuthority() const {return m_authority;}
+        void RelocateToDestinationDb(DgnImportContext&);
     };
 
     //! Parameters for creating new DgnElements
@@ -573,6 +580,9 @@ protected:
     virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
+    
+    //! Invokes _CopyFrom() in the context of _Clone() or _CloneForImport(), preserving this element's code as specified by the CreateParams supplied to those methods.
+    void    CopyForCloneFrom(DgnElementCR src);
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
@@ -687,6 +697,7 @@ protected:
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
 
     //! Virtual writeable deep copy method.
+    //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
     DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -762,6 +773,7 @@ protected:
     //! @return CreateParams initialized with the element's current data
     //! @remarks The m_id and m_lastModTime fields are \em not set, as it is never correct for two elements to have the same ID, and lastModTime is computed. The m_parentId field is not set,
     //! as it is not clear if the copy should be a child of the same parent as the original. The caller can set this if appropriate.
+    //! The m_code field is copied \em only when cloning between two different DgnDbs, as it is never correct for two elements to have the same code.
     CreateParams GetCreateParamsForImport(DgnImportContext& importer) const;
 
 public:
@@ -810,6 +822,7 @@ public:
     //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
+    //! @remarks If no CreateParams are supplied, a new Code will be generated for the cloned element - it will \em not be copied from this element's Code.
     DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const {return _Clone(stat, params);}
 
     //! Copy the content of another DgnElement into this DgnElement.
@@ -834,6 +847,7 @@ public:
     //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
     //! @param[in] destModel The destination model (which must be in the importer's destination Db).
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
+    //! @remarks The element's code will \em not be copied to the copied element if the import is being performed within a single DgnDb, as it is never correct for two elements within the same DgnDb to have the same code.
     //! @return The persistent copy of the element
     DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
@@ -1451,6 +1465,7 @@ public:
     //! @param[in] element The DgnElement to insert.
     //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
+    //! @remarks The element's code must be unique among all elements within the DgnDb, or this method will fail with DgnDbStatus::InvalidName.
     template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
     //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
