@@ -323,6 +323,12 @@ public:
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
     DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
+
+    //! Import an ECSchema for this DgnDomain.
+    //! @param[in] db Import the domain schema into this DgnDb
+    //! @param[in] schemaCache The ECSchemaCache containing the schema to import
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, ECN::ECSchemaCacheR schemaCache) const;
+
 };
 
 //=======================================================================================

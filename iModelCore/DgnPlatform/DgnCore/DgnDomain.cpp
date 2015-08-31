@@ -276,6 +276,19 @@ DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     return DgnDbStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, ECSchemaCacheR schemaCache) const
+    {
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(schemaCache))
+        return DgnDbStatus::BadSchema;
+
+    db.Domains().SyncWithSchemas();
+    _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
