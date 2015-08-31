@@ -29,9 +29,9 @@ public:
     void SetX(double v) {m_data.x = v;}
     void SetY(double v) {m_data.y = v;}
 
-    VectorAdditionMethods(DVec2d,JsDVector2d,JsDVector2dP,JsDVector2dP)
-    DistanceMethods (JsDVector2dP)
-    MagnitudeMethods
+    DeclareAndImplementMethods_AddVector(DVec2d,JsDVector2d,JsDVector2dP,DVec2d,JsDVector2d,JsDVector2dP)
+    DeclareAndImplementMethods_Distance (JsDVector2dP)
+    DeclareAndImplementMethods_Magnitude
 
     JsDVector2dP Clone (){return new JsDVector2d (m_data);}
 

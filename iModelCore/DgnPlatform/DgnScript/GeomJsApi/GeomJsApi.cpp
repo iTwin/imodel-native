@@ -18,6 +18,10 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 DVec3d GetData (JsDVector3dP vector) {return vector->Get();}
 DVec2d GetData (JsDVector2dP vector) {return vector->Get();}
+
+JsDVector3dP CreateJsVector (DVec3dCR data) {return new JsDVector3d (data);}
+JsDVector2dP CreateJsVector (DVec2dCR data) {return new JsDVector2d (data);}
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15

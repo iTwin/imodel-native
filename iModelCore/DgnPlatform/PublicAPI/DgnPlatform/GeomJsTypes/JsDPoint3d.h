@@ -35,8 +35,8 @@ public:
 
     JsDPoint3dP Clone () {return new JsDPoint3d (m_data);}
         
-    VectorAdditionMethods(DPoint3d,JsDPoint3d,JsDPoint3dP,JsDVector3dP)
-    DistanceMethods (JsDPoint3dP)
+    DeclareAndImplementMethods_AddVector(DPoint3d,JsDPoint3d,JsDPoint3dP,DVec3d,JsDVector3d,JsDVector3dP)
+    DeclareAndImplementMethods_Distance (JsDPoint3dP)
 
 
 };

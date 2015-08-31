@@ -30,9 +30,8 @@ public:
     void SetX(double v) {m_data.x = v;}
     void SetY(double v) {m_data.y = v;}
     
-    VectorAdditionMethods(DPoint2d,JsDPoint2d,JsDPoint2dP,JsDVector2dP)
-    DistanceMethods (JsDPoint2dP)
-
+    DeclareAndImplementMethods_AddVector(DPoint2d,JsDPoint2d,JsDPoint2dP,DVec2d,JsDVector2d,JsDVector2dP)
+    DeclareAndImplementMethods_Distance (JsDPoint2dP)
     
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -14,10 +14,11 @@ declare module BentleyApi.Dgn {
         Minus (vector : JsDVector3dP) : JsDPoint3dP;
         PlusScaled (vector : JsDVector3dP, scalar : cxx_double) : JsDPoint3dP;
         Plus2Scaled (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double) : JsDPoint3dP;
-
         Plus3Scaled (vectorA : JsDVector3dP, scalarA : cxx_double, vectorB : JsDVector3dP, scalarB : cxx_double, vectorC : JsDVector3dP, scalarC : cxx_double) : JsDPoint3dP;
 
-        Distance (other : JsDPoint3dP) : cxx_double;
+        VectorTo(other : JsDPoint3dP): JsDVector3dP;
+
+        Distance(other: JsDPoint3dP): cxx_double;
         DistanceSquared (other : JsDPoint3dP) : cxx_double;        
         MaxAbsDiff(vectorB: JsDPoint3dP): cxx_double;
         MaxAbs (): cxx_double;
@@ -42,7 +43,7 @@ declare module BentleyApi.Dgn {
         Plus2Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double): JsDPoint2dP;
         Plus3Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double, vectorC: JsDVector2dP, scalarC: cxx_double): JsDPoint2dP;
 
-
+        VectorTo (other: JsDPoint2dP) : JsDVector2dP;
 
         Distance(other: JsDPoint2dP): cxx_double;
         DistanceSquared(other: JsDPoint2dP): cxx_double;        
@@ -73,7 +74,6 @@ declare module BentleyApi.Dgn {
     //Scaled vector by -1
     Negate () : JsDVector3dP;
         
-    VectorTo (target : JsDPoint3dP) : JsDVector3dP;
     UnitVectorTowards (target : JsDPoint3dP) : JsDVector3dP;
 
     //Returns new vector that begins at start, and ends at end
@@ -95,6 +95,7 @@ declare module BentleyApi.Dgn {
     Plus2Scaled(vectorA: JsDVector3dP, scalarA: cxx_double, vectorB: JsDVector3dP, scalarB: cxx_double): JsDVector3dP;
     Plus3Scaled(vectorA: JsDVector3dP, scalarA: cxx_double, vectorB: JsDVector3dP, scalarB: cxx_double, vectorC: JsDVector3dP, scalarC: cxx_double): JsDVector3dP;
 
+    VectorTo(other: JsDVector3dP): JsDVector3dP;
 
     Scale (scale : cxx_double) : JsDVector3dP;
     ScaleToLength (scale : cxx_double) : JsDVector3dP;
@@ -148,6 +149,8 @@ declare module BentleyApi.Dgn {
         PlusScaled(vector: JsDVector2dP, scalar: cxx_double): JsDVector2dP;
         Plus2Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double): JsDVector2dP;
         Plus3Scaled(vectorA: JsDVector2dP, scalarA: cxx_double, vectorB: JsDVector2dP, scalarB: cxx_double, vectorC: JsDVector2dP, scalarC: cxx_double): JsDVector2dP;
+
+        VectorTo(other: JsDVector2dP ): JsDVector2dP;
 
         Magnitude(): cxx_double;
         MagnitudeSquared(): cxx_double;

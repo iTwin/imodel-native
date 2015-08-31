@@ -23,6 +23,8 @@ module DgnScriptTests {
         checker.IsNearJsDPoint3d(pointA1, pointA4);
 
         var pointB1 = origin.Plus(vectorX);
+        var vectorX1 = origin.VectorTo(pointB1);
+        checker.IsNearJsDVector3d(vectorX, vectorX1);
         var pointB2 = origin.PlusScaled (vectorX, 1.0);
         var pointB3 = pointB2.Minus(vectorX);
         checker.IsNearJsDPoint3d(origin, pointB3);
@@ -49,6 +51,8 @@ module DgnScriptTests {
         checker.IsNearJsDVector2d(vectorA3, vectorA5);
 
         var vectorB1 = origin.Plus(vectorX);
+        var vectorX1 = origin.VectorTo(vectorB1);
+        checker.IsNearJsDVector2d(vectorX, vectorX1);
         var vectorB2 = origin.PlusScaled(vectorX, 1.0);
         var vectorB3 = vectorB2.Minus(vectorX);
         checker.IsNearJsDVector2d(origin, vectorB3);
@@ -75,6 +79,8 @@ module DgnScriptTests {
         checker.IsNearJsDPoint2d(vectorA3, vectorA5);
 
         var vectorB1 = origin.Plus(vectorX);
+        var vectorX1 = origin.VectorTo(vectorB1);
+        checker.IsNearJsDVector2d (vectorX, vectorX1);
         var vectorB2 = origin.PlusScaled(vectorX, 1.0);
         var vectorB3 = vectorB2.Minus(vectorX);
         checker.IsNearJsDPoint2d(origin, vectorB3);

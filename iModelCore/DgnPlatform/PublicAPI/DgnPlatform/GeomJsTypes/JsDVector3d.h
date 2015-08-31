@@ -84,9 +84,9 @@ static JsDVector3dP FromXYAngleAndMagnitude (double angle, double magnitude)
     return new JsDVector3d(DVec3d::FromXYAngleAndMagnitude(angle, magnitude));
     }
 
-    VectorAdditionMethods(DVec3d,JsDVector3d,JsDVector3dP,JsDVector3dP)
-    DistanceMethods (JsDVector3dP)
-    MagnitudeMethods
+    DeclareAndImplementMethods_AddVector(DVec3d,JsDVector3d,JsDVector3dP,DVec3d,JsDVector3d,JsDVector3dP)
+    DeclareAndImplementMethods_Distance (JsDVector3dP)
+    DeclareAndImplementMethods_Magnitude
 
  JsDVector3dP Scale (double scale)
     {
