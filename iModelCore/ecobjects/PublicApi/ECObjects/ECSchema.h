@@ -199,8 +199,9 @@ struct ECCustomAttributeInstanceIterable;
 struct SupplementedSchemaBuilder;
 
 //=======================================================================================
-//! Base class for ECSchema, ECClass, ECProperty.  Represents a container object that can hold 
-//! Custom Attributes.
+//! Interface adopted by a container object which can hold custom attributes, such as those
+//! associated with an ECProperty, ECSchema, or ECClass.
+//! @see ECSchema::GetCustomAttributeContainer()
 //! @bsiclass
 //=======================================================================================
 struct IECCustomAttributeContainer
@@ -2195,6 +2196,8 @@ public:
 
     //! Get the IECCustomAttributeContainer holding this schema's custom attributes
     ECOBJECTS_EXPORT IECCustomAttributeContainer&   GetCustomAttributeContainer();
+    //! Get the const IECCustomAttributeContainer holding this schema's custom attributes
+    ECOBJECTS_EXPORT IECCustomAttributeContainer const& GetCustomAttributeContainer() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************

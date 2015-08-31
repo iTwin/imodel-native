@@ -2611,10 +2611,8 @@ SchemaKeyCR ECSchema::GetSchemaKey ()const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer()
-    {
-    return *this;
-    }
+IECCustomAttributeContainer& ECSchema::GetCustomAttributeContainer() { return *this; }
+IECCustomAttributeContainer const& ECSchema::GetCustomAttributeContainer() const { return *this; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Abeesh.Basheer                  03/2012
