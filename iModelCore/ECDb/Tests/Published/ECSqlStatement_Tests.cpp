@@ -196,17 +196,17 @@ struct ECSqlSelectTests : public ::testing::Test
             setOrderValues(OrderInstance7, DateTime::GetCurrentTimeUtc(), 7, false);
             setOrderValues(OrderInstance8, DateTime::GetCurrentTimeUtc(), 8, false);
             setOrderValues(OrderInstance9, DateTime::GetCurrentTimeUtc(), 9, true);
-            ECInstanceInserter inserter(ecdb, *OrderClass);
-            ASSERT_TRUE(inserter.IsValid());
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance1, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance2, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance3, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance4, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance5, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance6, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance7, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance8, true));
-            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance9, true));
+            //ECInstanceInserter inserter(ecdb, *OrderClass);
+            //ASSERT_TRUE(inserter.IsValid());
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance1, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance2, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance3, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance4, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance5, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance6, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance7, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance8, true));
+            //ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance9, true));
 
             ECClassCP CustomerClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Customer");
             ASSERT_TRUE(CustomerClass != nullptr);
