@@ -405,7 +405,17 @@ int CScalcEgm96 (struct cs_Egm96_ *__This,double *geoidHgt,const double wgs84 [2
 	uu = (cellNW [LAT] - lclLat) / __This->density [LAT];
 
 	/* Again, some defensive stuff. */
+#ifdef GEOCOORD_ENHANCEMENT
+    // CSMAP is too strict as floating point error can introduce small variations in lat/long computations
+    // Since the accuracy of a double is around 15 digits and lat / long values are up to 3 digits positive
+    // it is reasonable to expect inacuracy to 1E-11 degrees. We will apply 1E-10 just be safe
+    // Note that 1E-10 degrees is way smaller than measurable accuracy of any ground feature.
+#define VERY_SMALL_INSIGNIFICANT_LAT_LONG (0.0000000001) /* Should represent far less than a millimeter ground tolerance */
+	if (tt + (VERY_SMALL_INSIGNIFICANT_LAT_LONG / __This->density[LNG]) < 0.0 || tt - (VERY_SMALL_INSIGNIFICANT_LAT_LONG / __This->density[LNG]) > 1.0 || 
+        uu + (VERY_SMALL_INSIGNIFICANT_LAT_LONG / __This->density[LAT]) < 0.0 || uu - (VERY_SMALL_INSIGNIFICANT_LAT_LONG / __This->density[LAT]) > 1.0)
+#else
 	if (tt < 0.0 || tt > 1.0 || uu < 0.0 || uu > 1.0)
+#endif
 	{
 		CS_stncp (csErrnam,"CS_egm96:2",MAXPATH);
 		CS_erpt (cs_ISER);
