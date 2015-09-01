@@ -166,6 +166,239 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingRel
     EXPECT_EQ(db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP(), relationshipClass);
     }
 
+TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasTwoMatchingRelationsipClasses_NullReturned)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+            <ECClass typeName="B" />
+            <ECRelationshipClass typeName="AB1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB2">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+
+    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+
+    ECDbAdapter adapter(db);
+    ECRelationshipClassCP relationshipClass = adapter.FindRelationshipClassWithTarget(sourceClass->GetId(), targetClass->GetId());
+
+    EXPECT_EQ(nullptr, relationshipClass);
+    }
+
+TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AB1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB2">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="Base"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+
+    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+
+    ECDbAdapter adapter(db);
+    ECRelationshipClassCP relationshipClass = adapter.FindRelationshipClassWithTarget(sourceClass->GetId(), targetClass->GetId());
+
+    EXPECT_NE(nullptr, relationshipClass);
+    EXPECT_EQ(db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP(), relationshipClass);
+    }
+
+TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasTwoMatchingRelationsipClasses_BothReturned)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+            <ECClass typeName="B" />
+            <ECRelationshipClass typeName="AB1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB2">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+
+    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+
+    ECDbAdapter adapter(db);
+    bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClassesWithSource(sourceClass->GetId(), "TestSchema");
+
+    EXPECT_EQ(2, relationshipClasses.size());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    }
+
+TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AB1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB2">
+                <Source polymorphic="True"><Class class="Base"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+
+    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+
+    ECDbAdapter adapter(db);
+    bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClassesWithSource(sourceClass->GetId(), "TestSchema");
+
+    EXPECT_EQ(2, relationshipClasses.size());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    }
+
+TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="C">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AC1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="C"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB2">
+                <Source polymorphic="True"><Class class="Base"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+
+    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+
+    ECDbAdapter adapter(db);
+    bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClassesInSchema(sourceClass->GetId(), targetClass->GetId(), "TestSchema");
+
+    EXPECT_EQ(2, relationshipClasses.size());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    }
+
+TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelationsipClassAndOneWithBaseClasses_ReturnsMatching)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Base" />
+            <ECClass typeName="A">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="B">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECClass typeName="C">
+                <BaseClass>Base</BaseClass>
+            </ECClass>
+            <ECRelationshipClass typeName="AC1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="C"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB1">
+                <Source polymorphic="True"><Class class="A"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+            <ECRelationshipClass typeName="AB2">
+                <Source polymorphic="True"><Class class="Base"/></Source>
+                <Target polymorphic="True"><Class class="B"/></Target>
+            </ECRelationshipClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.GetEC().GetSchemaManager().ImportECSchemas(*cache));
+
+    auto sourceClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"A");
+    auto targetClass = db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"B");
+
+    ECDbAdapter adapter(db);
+    bvector<ECRelationshipClassCP> relationshipClasses = adapter.FindRelationshipClasses(sourceClass->GetId(), targetClass->GetId());
+
+    EXPECT_EQ(2, relationshipClasses.size());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB1")->GetRelationshipClassCP());
+    EXPECT_CONTAINS(relationshipClasses, db.GetEC().GetClassLocater().LocateClass(L"TestSchema", L"AB2")->GetRelationshipClassCP());
+    }
+
 TEST_F(ECDbAdapterTests, RelateInstances_InstancesExist_RelationshipIsCreated)
     {
     auto schema = ParseSchema(R"(

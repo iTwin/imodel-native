@@ -64,7 +64,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
         //! Find relationship classes by end classes polymorphically
         virtual bvector<ECRelationshipClassCP> FindRelationshipClasses(ECClassId sourceClassId, ECClassId targetClassId) = 0;
 
-        virtual bvector<ECRelationshipClassCP> FindRelationshipClassesWithSource(ECClassId sourceClassId, Utf8String schemaName) = 0;
+        //! Find relationship classes that matches given source or target class polymorphically
+        //! TODO: change misleading method name to to FindRelationshipClassesWithEnd
+        virtual bvector<ECRelationshipClassCP> FindRelationshipClassesWithSource(ECClassId endClassId, Utf8String schemaName) = 0;
+
+        //! Find relationship classes from given schema by end classes polymorphically
         virtual bvector<ECRelationshipClassCP> FindRelationshipClassesInSchema(ECClassId sourceClassId, ECClassId targetClassId, Utf8String schemaName) = 0;
 
         //! Find relationship class that matches source exactly and target polymorphically. Will return null if found more or none.
