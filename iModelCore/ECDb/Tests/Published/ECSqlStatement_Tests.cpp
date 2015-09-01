@@ -1349,6 +1349,87 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_StructArrayUpdate)
     ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStatus) << "Step for '" << ecsql << "' failed: " << statement.GetLastStatusMessage ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Maha Nasir                         08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (ECSqlTestFixture, DeleteWithNestedSelectStatments)
+    {
+    ECDbTestProject::Initialize ();
+
+    ECDb ecdb;
+    ASSERT_TRUE (BE_SQLITE_OK == ECDbTestUtility::CreateECDb (ecdb, nullptr, L"DeleteWithNestedSelect.ecdb"));
+
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"Products\" >"
+        "    <ECProperty propertyName=\"ProductId\" typeName=\"int\" />"
+        "    <ECProperty propertyName=\"ProductName\" typeName=\"string\" />"
+        "    <ECProperty propertyName=\"Price\" typeName=\"double\" />"
+        "  </ECClass>"
+        "</ECSchema>";
+
+    ECSchemaCachePtr schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXml);
+    ASSERT_TRUE (schemaCache != nullptr);
+
+    ASSERT_EQ (SUCCESS, ecdb.GetEC ().GetSchemaManager ().ImportECSchemas (*schemaCache));
+
+    ECSchemaP Schema = nullptr;
+    auto status = ecdb.GetEC ().GetSchemaManager ().GetECSchema (Schema, "TestSchema", true);
+    ASSERT_EQ (SUCCESS, status);
+
+    ECClassP Products = Schema->GetClassP (L"Products");
+    ASSERT_TRUE (Products!=nullptr);
+
+    //Create and Insert Instances of Products
+    StandaloneECInstancePtr ProductsInstance1 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance2 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance3 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance4 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance5 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance6 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance7 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance8 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    StandaloneECInstancePtr ProductsInstance9 = Products->GetDefaultStandaloneEnabler ()->CreateInstance ();
+
+    
+    setProductsValues (ProductsInstance1, 1, "Pencil", 189.05);
+    setProductsValues (ProductsInstance2, 2, "Binder", 999.50);
+    setProductsValues (ProductsInstance3, 3, "Pen", 539.73);
+    setProductsValues (ProductsInstance4, 4, "Binder", 299.40);
+    setProductsValues (ProductsInstance5, 5, "Desk", 150.00);
+    setProductsValues (ProductsInstance6, 6, "Pen Set", 255.84);
+    setProductsValues (ProductsInstance7, 7, "Pen Set", 479.04);
+    setProductsValues (ProductsInstance8, 8, "Pen", 539.73);
+    setProductsValues (ProductsInstance9, 9, "Pen", 539.73);
+
+    ECInstanceInserter ProductInserter (ecdb, *Products);
+    ASSERT_TRUE (ProductInserter.IsValid ());
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance1, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance2, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance3, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance4, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance5, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance6, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance7, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance8, true));
+    ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance9, true));
+
+    ECSqlStatement stmt;
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ts.Products"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (9, stmt.GetValueInt (0));
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "DELETE FROM ONLY ts.Products WHERE ProductName IN (SELECT ProductName FROM ts.Products GROUP BY ProductName HAVING COUNT(ProductName)>2 AND ProductName IN (SELECT ProductName FROM ts.Products WHERE Price >500))"));
+    ASSERT_TRUE (ECSqlStepStatus::Done == stmt.Step ());
+    stmt.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT COUNT(*) FROM ts.Products"));
+    ASSERT_TRUE (ECSqlStepStatus::HasRow == stmt.Step ());
+    ASSERT_EQ (6, stmt.GetValueInt (0));
+    stmt.Finalize ();
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Affan.Khan                 01/14
 //+---------------+---------------+---------------+---------------+---------------+------
